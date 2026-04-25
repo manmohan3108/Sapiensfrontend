@@ -57,6 +57,27 @@ export interface TextInputRequest {
   text: string;
 }
 
+/**
+ * Response from POST /api/query
+ * Matches Python backend: JsonResponse({ sapiens_id, query, result })
+ */
+export interface QueryResponse {
+  sapiens_id: number;
+  query: string;
+  result: string;
+}
+
+/**
+ * A single message in the chat window
+ */
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: string;
+  isLoading?: boolean;
+}
+
 export interface SapiensStateResponse {
   sapiens: Sapiens;
   activityLogs: ActivityLog[];

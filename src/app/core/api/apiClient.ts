@@ -3,13 +3,16 @@ import { ApiError, ApiResponse } from '../../types/apiTypes';
 
 class ApiClient {
   private baseUrl: string;
-  private timeout: number;
   private defaultHeaders: Record<string, string>;
 
   constructor() {
     this.baseUrl = apiConfig.baseUrl;
-    this.timeout = apiConfig.timeout;
     this.defaultHeaders = apiConfig.headers;
+  }
+
+  // Always read timeout from config so it picks up any runtime changes
+  private get timeout(): number {
+    return apiConfig.timeout;
   }
 
   private async request<T>(

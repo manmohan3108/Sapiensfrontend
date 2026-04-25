@@ -4,6 +4,7 @@ import { useSapiensStore } from '../core/state/sapiensStore';
 import { sapiensService } from '../core/services/sapiensService';
 import { CreateSapiensRequest, Sapiens } from '../types/sapiensTypes';
 import { logger } from '../utils/logger';
+import { generateId } from '../utils/formatters';
 
 /**
  * Custom hook for Sapiens operations
@@ -17,6 +18,8 @@ export function useSapiens() {
     setActivityLogs,
     setOutputs,
     setStatus,
+    addChatMessage,
+    updateChatMessage,
     reset,
   } = useSapiensStore();
 
@@ -156,7 +159,12 @@ export function useSapiens() {
   );
 
   /**
-   * Send text input to the current Sapiens instance
+   * Send text input to the current Sapiens instance.
+   * Manages the full chat message lifecycle:
+   *   1. Adds user message immediately
+   *   2. Adds a loading assistant placeholder
+   *   3. Awaits the API (which can take up to 10 min)
+   *   4. Replaces placeholder with the `result` from the response
    */
   const sendTextInput = useCallback(
     async (text: string) => {
@@ -165,25 +173,83 @@ export function useSapiens() {
         return;
       }
 
+      const now = () => new Date().toISOString();
+
+      // 1. Add user message
+      const userMsgId = generateId('user');
+      addChatMessage({
+        id: userMsgId,
+        role: 'user',
+        content: text,
+        timestamp: now(),
+      });
+
+      // 2. Add loading assistant placeholder
+      const assistantMsgId = generateId('assistant');
+      addChatMessage({
+        id: assistantMsgId,
+        role: 'assistant',
+        content: '',
+        timestamp: now(),
+        isLoading: true,
+      });
+
       try {
         setStatus('processing');
 
-        await sapiensService.sendTextInput({
+        const result = await sapiensService.sendTextInput({
           sapiensId: currentSapiens.id,
           text,
         });
 
+        // 3. Update placeholder with real result
+        updateChatMessage(assistantMsgId, {
+          content: result,
+          isLoading: false,
+          timestamp: now(),
+        });
+
         setStatus('idle');
-        
-        // Refresh state to get updated activity logs from backend
+
+        // Refresh activity logs / outputs from backend
         await refreshSapiensState();
       } catch (error) {
         logger.error('Failed to send text input', error);
+        updateChatMessage(assistantMsgId, {
+          content: 'An error occurred while processing your request. Please try again.',
+          isLoading: false,
+          timestamp: now(),
+        });
         setStatus('error');
       }
     },
-    [currentSapiens, setStatus, refreshSapiensState]
+    [currentSapiens, setStatus, addChatMessage, updateChatMessage, refreshSapiensState]
   );
+
+  /**
+   * Run the cognitive engine for the current Sapiens instance
+   */
+  const runEngine = useCallback(async () => {
+    if (!currentSapiens) {
+      logger.warn('No current Sapiens to run engine');
+      return;
+    }
+
+    try {
+      setStatus('processing');
+
+      await sapiensService.runEngine(currentSapiens.id);
+
+      setStatus('idle');
+
+      // Refresh state to get updated activity logs from backend
+      await refreshSapiensState();
+    } catch (error) {
+      logger.error('Failed to run engine', error);
+      setStatus('error');
+      throw error; // Re-throw so callers (e.g. multi-run loop) can react
+    }
+  }, [currentSapiens, setStatus, refreshSapiensState]);
 
   /**
    * Return to home and reset state
@@ -200,6 +266,7 @@ export function useSapiens() {
     saveSapiens,
     uploadFiles,
     sendTextInput,
+    runEngine,
     refreshSapiensState,
     returnToHome,
   };

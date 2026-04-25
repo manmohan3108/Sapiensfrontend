@@ -7,10 +7,10 @@ import {
   SaveSapiensRequest,
   LearnFolderRequest,
   TextInputRequest,
+  QueryResponse,
   SapiensStateResponse,
   Sapiens,
 } from '../../types/sapiensTypes';
-import { ApiResponse } from '../../types/apiTypes';
 
 /**
  * Backend response types (different from frontend types)
@@ -31,7 +31,7 @@ function transformSapiens(backendSapiens: BackendSapiens): Sapiens {
     name: backendSapiens.name,
     role: backendSapiens.role,
     createdAt: backendSapiens.created_at,
-    lastModified: backendSapiens.created_at, // Backend doesn't provide lastModified, use created_at
+    lastModified: backendSapiens.created_at,
   };
 }
 
@@ -77,15 +77,11 @@ class SapiensService {
   async uploadFolder(request: LearnFolderRequest): Promise<void> {
     const formData = new FormData();
     formData.append('sapiens_id', request.sapiensId);
-    
-    // Append files with their relative paths preserved
+
     request.files.forEach((file) => {
-      // Use webkitRelativePath if available (for folder uploads), fallback to file.name
-      const filePath = (file as any).webkitRelativePath || file.name;
-      // Append file with original name to ensure extension is preserved
+      const filePath = (file as File & { webkitRelativePath?: string }).webkitRelativePath || file.name;
       formData.append('files', file, file.name);
-      // Also send the full path as metadata if needed
-      if ((file as any).webkitRelativePath) {
+      if ((file as File & { webkitRelativePath?: string }).webkitRelativePath) {
         formData.append('file_paths', filePath);
       }
     });
@@ -94,13 +90,25 @@ class SapiensService {
   }
 
   /**
-   * Send text input to the Sapiens instance
+   * Send a query to the Sapiens instance
    * POST /api/query with payload { sapien_id: number, query: string }
+   * Returns the `result` string from the backend response.
    */
-  async sendTextInput(request: TextInputRequest): Promise<void> {
-    await apiClient.post(API_ENDPOINTS.query, {
+  async sendTextInput(request: TextInputRequest): Promise<string> {
+    const response = await apiClient.post<QueryResponse>(API_ENDPOINTS.query, {
       sapien_id: parseInt(request.sapiensId, 10),
       query: request.text,
+    });
+    return response.data.result;
+  }
+
+  /**
+   * Run the cognitive engine for the Sapiens instance
+   * POST /api/run-engine with payload { sapien_id: number }
+   */
+  async runEngine(sapiensId: string): Promise<void> {
+    await apiClient.post(API_ENDPOINTS.runEngine, {
+      sapien_id: parseInt(sapiensId, 10),
     });
   }
 
