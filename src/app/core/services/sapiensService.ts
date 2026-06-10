@@ -7,14 +7,16 @@ import {
   SaveSapiensRequest,
   LearnFolderRequest,
   TextInputRequest,
-  QueryResponse,
+  ChatRequest,
+  ChatApiResponse,
+  QueryRequest,
+  QueryApiResponse,
+  UserSignalPayload,
   SapiensStateResponse,
   Sapiens,
 } from '../../types/sapiensTypes';
+import { logger } from '../../utils/logger';
 
-/**
- * Backend response types (different from frontend types)
- */
 interface BackendSapiens {
   id: number;
   name: string;
@@ -22,9 +24,6 @@ interface BackendSapiens {
   created_at: string;
 }
 
-/**
- * Transform backend Sapiens to frontend Sapiens
- */
 function transformSapiens(backendSapiens: BackendSapiens): Sapiens {
   return {
     id: backendSapiens.id.toString(),
@@ -35,17 +34,8 @@ function transformSapiens(backendSapiens: BackendSapiens): Sapiens {
   };
 }
 
-/**
- * Service layer for Sapiens operations
- * Handles all communication with the backend API
- */
 class SapiensService {
-  /**
-   * Create a new Sapiens instance
-   */
-  async createSapiens(
-    request: CreateSapiensRequest
-  ): Promise<CreateSapiensResponse> {
+  async createSapiens(request: CreateSapiensRequest): Promise<CreateSapiensResponse> {
     const response = await apiClient.post<CreateSapiensResponse>(
       API_ENDPOINTS.createSapiens,
       request
@@ -53,9 +43,6 @@ class SapiensService {
     return response.data;
   }
 
-  /**
-   * Load an existing Sapiens instance
-   */
   async loadSapiens(request: LoadSapiensRequest): Promise<Sapiens> {
     const response = await apiClient.post<Sapiens>(
       API_ENDPOINTS.loadSapiens,
@@ -64,20 +51,13 @@ class SapiensService {
     return response.data;
   }
 
-  /**
-   * Save the current Sapiens instance
-   */
   async saveSapiens(request: SaveSapiensRequest): Promise<void> {
     await apiClient.post(API_ENDPOINTS.saveSapiens, request);
   }
 
-  /**
-   * Upload folder with files to the Sapiens instance
-   */
   async uploadFolder(request: LearnFolderRequest): Promise<void> {
     const formData = new FormData();
     formData.append('sapiens_id', request.sapiensId);
-
     request.files.forEach((file) => {
       const filePath = (file as File & { webkitRelativePath?: string }).webkitRelativePath || file.name;
       formData.append('files', file, file.name);
@@ -85,46 +65,80 @@ class SapiensService {
         formData.append('file_paths', filePath);
       }
     });
-
     await apiClient.postFormData(API_ENDPOINTS.learnFolder, formData);
   }
 
   /**
-   * Send a query to the Sapiens instance
-   * POST /api/query with payload { sapien_id: number, query: string }
-   * Returns the `result` string from the backend response.
+   * POST /api/chat
+   * Turn 1: session_id = null  → backend starts new thread, returns thread_id
+   * Turn 2+: session_id = thread_id from previous response → continues thread
    */
-  async sendTextInput(request: TextInputRequest): Promise<string> {
-    const response = await apiClient.post<QueryResponse>(API_ENDPOINTS.query, {
+  async sendTextInput(
+    request: TextInputRequest & { sessionId?: string | null }
+  ): Promise<ChatApiResponse> {
+    const body: ChatRequest = {
       sapien_id: parseInt(request.sapiensId, 10),
-      query: request.text,
-    });
-    return response.data.result;
+      session_id: request.sessionId ?? null,
+      message: request.text,
+    };
+    const response = await apiClient.post<ChatApiResponse>(API_ENDPOINTS.chat, body);
+    const data = response.data;
+    return {
+      ...data,
+      reply: data.reply ?? (data as { message?: string }).message ?? '',
+      thread_id: data.thread_id,
+      memory_units: data.memory_units ?? [],
+      context_used: data.context_used ?? 0,
+    };
   }
 
   /**
-   * Run the cognitive engine for the Sapiens instance
-   * POST /api/run-engine with payload { sapien_id: number }
+   * POST /api/query (legacy endpoint)
    */
+  async sendQuery(
+    sapiensId: string,
+    query: string
+  ): Promise<string> {
+    const body: QueryRequest = {
+      sapien_id: parseInt(sapiensId, 10),
+      query,
+    };
+    const response = await apiClient.post<QueryApiResponse>(API_ENDPOINTS.query, body);
+    const data = response.data;
+    return (
+      data.response ??
+      data.answer ??
+      data.result ??
+      data.message ??
+      JSON.stringify(data)
+    );
+  }
+
+  async sendUserSignal(payload: UserSignalPayload): Promise<void> {
+    try {
+      await apiClient.post(API_ENDPOINTS.chatSignal, payload);
+    } catch (err) {
+      logger.warn('User signal could not be sent to backend', err);
+    }
+  }
+
   async runEngine(sapiensId: string): Promise<void> {
     await apiClient.post(API_ENDPOINTS.runEngine, {
       sapien_id: parseInt(sapiensId, 10),
     });
   }
 
-  /**
-   * Get the current state of the Sapiens instance
-   */
   async getSapiensState(sapiensId: string): Promise<SapiensStateResponse> {
     const response = await apiClient.get<SapiensStateResponse>(
       `${API_ENDPOINTS.sapiensState}?sapiens_id=${sapiensId}`
     );
-    return response.data;
+    return {
+      sapiens: response.data.sapiens,
+      activityLogs: response.data.activityLogs ?? [],
+      outputs: response.data.outputs ?? [],
+    };
   }
 
-  /**
-   * Get list of saved Sapiens instances
-   */
   async listSapiens(): Promise<Sapiens[]> {
     const response = await apiClient.get<{ sapiens: BackendSapiens[] }>(
       API_ENDPOINTS.listSapiens

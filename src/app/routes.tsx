@@ -1,28 +1,34 @@
 import { createBrowserRouter } from 'react-router';
+import { LandingPage } from './pages/LandingPage';
+import { WorkspacePage } from './pages/WorkspacePage';
+import { EngramPage } from './pages/EngramPage';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 export const router = createBrowserRouter([
   {
     path: '/',
-    lazy: async () => {
-      const { LandingPage } = await import('./pages/LandingPage');
-      return { Component: LandingPage };
-    },
+    Component: LandingPage,
+    ErrorBoundary,
   },
   {
     path: '/workspace',
-    lazy: async () => {
-      const { WorkspacePage } = await import('./pages/WorkspacePage');
-      return { Component: WorkspacePage };
-    },
+    Component: WorkspacePage,
+    ErrorBoundary,
+  },
+  {
+    path: '/engram',
+    Component: EngramPage,
+    ErrorBoundary,
   },
   {
     path: '*',
+    ErrorBoundary,
     Component: () => (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#060a15' }}>
         <div className="text-center">
-          <h1 className="mb-2">404 - Page Not Found</h1>
-          <p className="text-muted-foreground">The page you&apos;re looking for doesn&apos;t exist.</p>
-          <a href="/" className="text-primary hover:underline mt-4 inline-block">
+          <h1 className="mb-2 text-white/80">404 — Page Not Found</h1>
+          <p className="text-white/40">The page you&apos;re looking for doesn&apos;t exist.</p>
+          <a href="/" className="text-violet-400 hover:text-violet-300 hover:underline mt-4 inline-block transition-colors">
             Return to Home
           </a>
         </div>

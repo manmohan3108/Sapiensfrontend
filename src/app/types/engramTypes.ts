@@ -1,0 +1,190 @@
+// ─── Core shapes ──────────────────────────────────────────────────────────────
+
+export type MemoryType = 'episodic' | 'entity' | 'summary' | 'semantic';
+export type LinkMechanism =
+  | 'entity_mention'
+  | 'semantic_similarity'
+  | 'narrative_thread'
+  | 'temporal_proximity'
+  | 'provenance_analysis';
+export type RecallDepth = 'shallow' | 'deep';
+export type RecallStrategy = 'meaning' | 'keyword' | 'graph';
+export type SequenceDirection = 'forward' | 'backward' | 'both';
+
+export interface EngramUnit {
+  id: string;
+  sapien_id: number;
+  memory_type: MemoryType;
+  content: string;
+  checksum?: string;
+  created_at: string;
+}
+
+export interface EngramLink {
+  id: string;
+  type: 'unit' | 'context';
+  relation: string;
+  mechanism: LinkMechanism;
+  mechanism_data?: Record<string, unknown>;
+  weight: number;
+}
+
+// MemoryRef is now hydrated — content + memory_type from adjacent/related/recall/sequence
+export interface MemoryRef {
+  id: string;
+  source: 'unit' | 'context';
+  score: number;
+  content?: string;
+  memory_type?: string;
+  meta: {
+    strategy: RecallStrategy;
+    qdrant_id?: string;
+    bm25_score?: number;
+    mechanism?: string;
+    weight?: number;
+  };
+}
+
+export interface ComposedMemory {
+  unit_id: string;
+  content: string;
+  memory_type: MemoryType;
+  score: number;
+  strategy: RecallStrategy;
+  sapien_id: number;
+  context?: Record<string, unknown>;
+  links?: EngramLink[];
+}
+
+// ─── Endpoint responses ───────────────────────────────────────────────────────
+
+export interface UnitsListResponse {
+  sapien_id: number;
+  memory_type: string | null;
+  page: number;
+  page_size: number;
+  total: number;
+  results: EngramUnit[];
+}
+
+export interface UnitDetailResponse {
+  unit: EngramUnit;
+  context: Record<string, unknown>;
+  links: EngramLink[];
+}
+
+export interface AdjacentResponse {
+  unit_id: string;
+  direction: string;
+  mechanism: string | null;
+  relation: string | null;
+  neighbors: MemoryRef[];
+}
+
+export interface RelatedResponse {
+  unit_id: string;
+  depth: number;
+  results: MemoryRef[];
+}
+
+export interface SequenceResponse {
+  unit_id: string;
+  direction: string;
+  limit: number;
+  sequence: MemoryRef[];
+}
+
+export interface EntitiesListResponse {
+  sapien_id: number;
+  page: number;
+  page_size: number;
+  total: number;
+  results: EngramUnit[];
+}
+
+export interface EntityEpisodesResponse {
+  entity: EngramUnit;
+  count: number;
+  episodes: Array<{
+    id: string;
+    weight: number;
+    content: string;
+    memory_type: MemoryType;
+  }>;
+}
+
+export interface RecallResponse {
+  query: string;
+  sapien_id: number;
+  depth: RecallDepth;
+  stages: {
+    meaning: MemoryRef[];   // now hydrated with content + memory_type
+    keyword: MemoryRef[];
+    graph: MemoryRef[];
+  };
+  merged: ComposedMemory[];
+}
+
+// WMEntry now includes content + memory_type for memory_source === "memory_unit"
+export interface WMEntry {
+  id: string;
+  memory_source: string;
+  score: number;
+  has_embedding: boolean;
+  content?: string;
+  memory_type?: string;
+}
+
+export interface WMResponse {
+  sapien_id: number;
+  wm: {
+    focus_id: string | null;
+    entries: WMEntry[];
+  };
+  capacity: {
+    global: number;
+    by_source: Record<string, number>;
+  };
+}
+
+export interface EngramStats {
+  sapien_id: number;
+  total_units: number;
+  total_links: number;
+  by_memory_type: Record<string, number>;
+  link_mechanisms: Record<string, number>;
+}
+
+// ─── Subgraph / overview (new endpoints) ─────────────────────────────────────
+
+export interface SubgraphNode {
+  id: string;
+  memory_type: string;
+  content: string;
+}
+
+export interface SubgraphEdge {
+  source: string;
+  target: string;
+  mechanism: string;
+  relation: string;
+  weight: number;
+}
+
+export interface SubgraphResponse {
+  center: string;
+  depth: number;
+  limit: number;
+  mechanism: string | null;
+  nodes: SubgraphNode[];
+  edges: SubgraphEdge[];
+}
+
+export interface OverviewResponse {
+  nodes: SubgraphNode[];
+  edges: SubgraphEdge[];
+}
+
+export interface BatchUnitsResponse {
+  results: UnitDetailResponse[];
+}

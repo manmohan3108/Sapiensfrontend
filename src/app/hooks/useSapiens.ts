@@ -2,37 +2,40 @@ import { useCallback } from 'react';
 import { useNavigate } from 'react-router';
 import { useSapiensStore } from '../core/state/sapiensStore';
 import { sapiensService } from '../core/services/sapiensService';
-import { CreateSapiensRequest, Sapiens } from '../types/sapiensTypes';
+import {
+  CreateSapiensRequest,
+  Sapiens,
+  UserSignalType,
+  UserSignalPayload,
+  DebugInfo,
+} from '../types/sapiensTypes';
 import { logger } from '../utils/logger';
 import { generateId } from '../utils/formatters';
 
-/**
- * Custom hook for Sapiens operations
- * Provides high-level functions for working with Sapiens instances
- */
 export function useSapiens() {
   const navigate = useNavigate();
   const {
     currentSapiens,
+    chatSessionId,
     setCurrentSapiens,
     setActivityLogs,
     setOutputs,
     setStatus,
     addChatMessage,
     updateChatMessage,
+    clearChatMessages,
+    setChatSessionId,
+    setLastMemoryUnits,
+    setLastDebugInfo,
     reset,
   } = useSapiensStore();
 
-  /**
-   * Create a new Sapiens instance
-   */
+  // ── Create ──────────────────────────────────────────────────────────────────
   const createSapiens = useCallback(
     async (request: CreateSapiensRequest) => {
       try {
         setStatus('loading');
-
         const response = await sapiensService.createSapiens(request);
-
         const newSapiens: Sapiens = {
           id: response.sapiensId,
           name: response.name,
@@ -40,13 +43,9 @@ export function useSapiens() {
           createdAt: response.createdAt,
           lastModified: response.createdAt,
         };
-
         setCurrentSapiens(newSapiens);
         setStatus('idle');
-        
-        // Navigate to workspace
         navigate('/workspace');
-        
         return newSapiens;
       } catch (error) {
         logger.error('Failed to create Sapiens', error);
@@ -57,23 +56,14 @@ export function useSapiens() {
     [setStatus, setCurrentSapiens, navigate]
   );
 
-  /**
-   * Load an existing Sapiens instance
-   * Sets the current Sapiens and navigates to workspace
-   * Details like activity logs will be loaded in the workspace
-   */
+  // ── Load ────────────────────────────────────────────────────────────────────
   const loadSapiens = useCallback(
     async (sapiens: Sapiens) => {
       try {
         setStatus('loading');
-
-        // Set current Sapiens with available info
         setCurrentSapiens(sapiens);
         setStatus('idle');
-        
-        // Navigate to workspace immediately
         navigate('/workspace');
-        
         return sapiens;
       } catch (error) {
         logger.error('Failed to load Sapiens', error);
@@ -84,15 +74,12 @@ export function useSapiens() {
     [setStatus, setCurrentSapiens, navigate]
   );
 
-  /**
-   * Refresh Sapiens state from backend (activity logs and outputs)
-   */
+  // ── Refresh state ────────────────────────────────────────────────────────────
   const refreshSapiensState = useCallback(async () => {
     if (!currentSapiens) {
       logger.warn('No current Sapiens to refresh');
       return;
     }
-
     try {
       const state = await sapiensService.getSapiensState(currentSapiens.id);
       setActivityLogs(state.activityLogs);
@@ -102,25 +89,16 @@ export function useSapiens() {
     }
   }, [currentSapiens, setActivityLogs, setOutputs]);
 
-  /**
-   * Save the current Sapiens instance
-   */
+  // ── Save ────────────────────────────────────────────────────────────────────
   const saveSapiens = useCallback(async () => {
     if (!currentSapiens) {
       logger.warn('No current Sapiens to save');
       return;
     }
-
     try {
       setStatus('loading');
-
-      await sapiensService.saveSapiens({
-        sapiensId: currentSapiens.id,
-      });
-
+      await sapiensService.saveSapiens({ sapiensId: currentSapiens.id });
       setStatus('idle');
-      
-      // Refresh state to get updated activity logs from backend
       await refreshSapiensState();
     } catch (error) {
       logger.error('Failed to save Sapiens', error);
@@ -128,27 +106,17 @@ export function useSapiens() {
     }
   }, [currentSapiens, setStatus, refreshSapiensState]);
 
-  /**
-   * Upload files to the current Sapiens instance
-   */
+  // ── Upload files ─────────────────────────────────────────────────────────────
   const uploadFiles = useCallback(
     async (files: File[]) => {
       if (!currentSapiens) {
         logger.warn('No current Sapiens for file upload');
         return;
       }
-
       try {
         setStatus('processing');
-
-        await sapiensService.uploadFolder({
-          sapiensId: currentSapiens.id,
-          files,
-        });
-
+        await sapiensService.uploadFolder({ sapiensId: currentSapiens.id, files });
         setStatus('idle');
-        
-        // Refresh state to get updated activity logs from backend
         await refreshSapiensState();
       } catch (error) {
         logger.error('Failed to upload files', error);
@@ -158,14 +126,7 @@ export function useSapiens() {
     [currentSapiens, setStatus, refreshSapiensState]
   );
 
-  /**
-   * Send text input to the current Sapiens instance.
-   * Manages the full chat message lifecycle:
-   *   1. Adds user message immediately
-   *   2. Adds a loading assistant placeholder
-   *   3. Awaits the API (which can take up to 10 min)
-   *   4. Replaces placeholder with the `result` from the response
-   */
+  // ── Send chat message ────────────────────────────────────────────────────────
   const sendTextInput = useCallback(
     async (text: string) => {
       if (!currentSapiens) {
@@ -175,7 +136,7 @@ export function useSapiens() {
 
       const now = () => new Date().toISOString();
 
-      // 1. Add user message
+      // 1. Add user message immediately
       const userMsgId = generateId('user');
       addChatMessage({
         id: userMsgId,
@@ -194,27 +155,54 @@ export function useSapiens() {
         isLoading: true,
       });
 
+      // Capture the request body for debug panel
+      const sessionId = useSapiensStore.getState().chatSessionId ?? null;
+      const rawRequest = {
+        sapien_id: parseInt(currentSapiens.id, 10),
+        session_id: sessionId,
+        message: text,
+      };
+
       try {
         setStatus('processing');
 
-        const result = await sapiensService.sendTextInput({
+        const chatResponse = await sapiensService.sendTextInput({
           sapiensId: currentSapiens.id,
           text,
+          sessionId: sessionId,
         });
 
-        // 3. Update placeholder with real result
+        // ── Persist thread_id for next turn (sent back as session_id) ──
+        if (chatResponse.thread_id) {
+          setChatSessionId(chatResponse.thread_id);
+        }
+
+        // ── Build augmented DebugInfo ──
+        const debugInfo: DebugInfo = {
+          ...(chatResponse.debug_info ?? { latency: {}, engine_flow: [] }),
+          raw_request: rawRequest,
+          raw_response: chatResponse,
+        };
+        setLastDebugInfo(debugInfo);
+
+        // ── Persist memory units ──
+        const memoryUnits = chatResponse.memory_units ?? [];
+        setLastMemoryUnits(memoryUnits);
+
+        // 3. Replace loading placeholder with real response + metadata
         updateChatMessage(assistantMsgId, {
-          content: result,
+          content: chatResponse.reply ?? '',
           isLoading: false,
           timestamp: now(),
+          memoryUnits,
+          contextUsed: chatResponse.context_used ?? 0,
+          sessionId: chatResponse.thread_id,
         });
 
         setStatus('idle');
-
-        // Refresh activity logs / outputs from backend
         await refreshSapiensState();
       } catch (error) {
-        logger.error('Failed to send text input', error);
+        logger.error('Failed to send chat message', error);
         updateChatMessage(assistantMsgId, {
           content: 'An error occurred while processing your request. Please try again.',
           isLoading: false,
@@ -223,37 +211,124 @@ export function useSapiens() {
         setStatus('error');
       }
     },
-    [currentSapiens, setStatus, addChatMessage, updateChatMessage, refreshSapiensState]
+    [
+      currentSapiens,
+      setStatus,
+      addChatMessage,
+      updateChatMessage,
+      setChatSessionId,
+      setLastMemoryUnits,
+      setLastDebugInfo,
+      refreshSapiensState,
+    ]
   );
 
-  /**
-   * Run the cognitive engine for the current Sapiens instance
-   */
+  // ── Send user signal ─────────────────────────────────────────────────────────
+  const sendUserSignal = useCallback(
+    async (messageId: string, signal: UserSignalType, content?: string) => {
+      // Optimistically update message in store
+      useSapiensStore.getState().updateChatMessage(messageId, {
+        userSignal: signal,
+        isImportant: signal === 'important' ? true : undefined,
+      });
+
+      const payload: UserSignalPayload = {
+        session_id: useSapiensStore.getState().chatSessionId ?? undefined,
+        message_id: messageId,
+        signal,
+        content,
+        timestamp: new Date().toISOString(),
+      };
+
+      await sapiensService.sendUserSignal(payload);
+    },
+    []
+  );
+
+  // ── Send query (legacy /api/query) ───────────────────────────────────────────
+  const sendQuery = useCallback(
+    async (text: string) => {
+      if (!currentSapiens) {
+        logger.warn('No current Sapiens for query');
+        return;
+      }
+
+      const now = () => new Date().toISOString();
+
+      // 1. User message
+      const userMsgId = generateId('user');
+      addChatMessage({
+        id: userMsgId,
+        role: 'user',
+        content: text,
+        timestamp: now(),
+        apiMode: 'query',
+      });
+
+      // 2. Loading placeholder
+      const assistantMsgId = generateId('assistant');
+      addChatMessage({
+        id: assistantMsgId,
+        role: 'assistant',
+        content: '',
+        timestamp: now(),
+        isLoading: true,
+        apiMode: 'query',
+      });
+
+      try {
+        setStatus('processing');
+
+        const reply = await sapiensService.sendQuery(currentSapiens.id, text);
+
+        updateChatMessage(assistantMsgId, {
+          content: reply,
+          isLoading: false,
+          timestamp: now(),
+          apiMode: 'query',
+        });
+
+        setStatus('idle');
+        await refreshSapiensState();
+      } catch (error) {
+        logger.error('Failed to send query', error);
+        updateChatMessage(assistantMsgId, {
+          content: 'An error occurred while processing your query. Please try again.',
+          isLoading: false,
+          timestamp: now(),
+          apiMode: 'query',
+        });
+        setStatus('error');
+      }
+    },
+    [
+      currentSapiens,
+      setStatus,
+      addChatMessage,
+      updateChatMessage,
+      refreshSapiensState,
+    ]
+  );
+
+  // ── Run engine ───────────────────────────────────────────────────────────────
   const runEngine = useCallback(async () => {
     if (!currentSapiens) {
       logger.warn('No current Sapiens to run engine');
       return;
     }
-
     try {
       setStatus('processing');
-
       await sapiensService.runEngine(currentSapiens.id);
-
       setStatus('idle');
-
-      // Refresh state to get updated activity logs from backend
       await refreshSapiensState();
     } catch (error) {
       logger.error('Failed to run engine', error);
       setStatus('error');
-      throw error; // Re-throw so callers (e.g. multi-run loop) can react
+      throw error;
     }
   }, [currentSapiens, setStatus, refreshSapiensState]);
 
-  /**
-   * Return to home and reset state
-   */
+  // ── Return to home ───────────────────────────────────────────────────────────
   const returnToHome = useCallback(() => {
     reset();
     navigate('/');
@@ -261,11 +336,14 @@ export function useSapiens() {
 
   return {
     currentSapiens,
+    chatSessionId,
     createSapiens,
     loadSapiens,
     saveSapiens,
     uploadFiles,
     sendTextInput,
+    sendQuery,
+    sendUserSignal,
     runEngine,
     refreshSapiensState,
     returnToHome,

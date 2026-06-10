@@ -21,12 +21,33 @@ export const apiConfig: ApiConfig = {
 
 // API Endpoints
 export const API_ENDPOINTS = {
-  createSapiens: "/create-sapiens",
-  loadSapiens: "/load-sapiens",
-  saveSapiens: "/save_sapiens",
-  learnFolder: "/sapiens/learn-folder",
-  query: "/query",
-  sapiensState: "/sapiens_state",
-  listSapiens: "/get-all-sapiens",
-  runEngine: "/run-engines",
+  createSapiens: '/create-sapiens',
+  loadSapiens: '/load-sapiens',
+  saveSapiens: '/save_sapiens',
+  learnFolder: '/sapiens/learn-folder',
+  chat: '/chat',
+  query: '/query',
+  chatSignal: '/chat/signal',
+  sapiensState: '/sapiens_state',
+  listSapiens: '/get-all-sapiens',
+  runEngine: '/run-engines',
+} as const;
+
+// Engram endpoints (base: /api/engram/)
+export const ENGRAM_BASE = 'http://localhost:8000/api/engram';
+
+export const ENGRAM_ENDPOINTS = {
+  stats:      (sapienId: number) => `${ENGRAM_BASE}/stats/${sapienId}`,
+  wm:         (sapienId: number) => `${ENGRAM_BASE}/wm/${sapienId}`,
+  units:      () => `${ENGRAM_BASE}/units`,
+  unit:       (id: string)       => `${ENGRAM_BASE}/units/${id}`,
+  adjacent:   (id: string)       => `${ENGRAM_BASE}/units/${id}/adjacent`,
+  related:    (id: string)       => `${ENGRAM_BASE}/units/${id}/related`,
+  sequence:   (id: string)       => `${ENGRAM_BASE}/units/${id}/sequence`,
+  subgraph:   (id: string)       => `${ENGRAM_BASE}/units/${id}/subgraph`,
+  batchUnits: ()                 => `${ENGRAM_BASE}/units/batch`,
+  entities:   () => `${ENGRAM_BASE}/entities`,
+  episodes:   (id: string)       => `${ENGRAM_BASE}/entities/${id}/episodes`,
+  recall:     () => `${ENGRAM_BASE}/recall`,
+  overview:   (sapienId: number) => `${ENGRAM_BASE}/sapien/${sapienId}/overview`,
 } as const;
