@@ -109,6 +109,7 @@ function StageColumn({
 }
 
 function MergedCard({ item, multiIds, onOpenInGraph }: { item: ComposedMemory; multiIds: Set<string>; onOpenInGraph?: (id: string) => void }) {
+  const [expanded, setExpanded] = useState(false);
   const stratInfo = STRATEGY_COLORS[item.strategy] ?? { color: '#94a3b8', label: item.strategy };
   const isMulti = multiIds.has(item.unit_id);
 
@@ -117,33 +118,36 @@ function MergedCard({ item, multiIds, onOpenInGraph }: { item: ComposedMemory; m
   };
   const tc = typeColor[item.memory_type] ?? '#94a3b8';
 
+  const prov    = item.context?.provenance;
+  const nouns   = item.context?.entities?.nouns ?? [];
+  const sysAt   = item.context?.temporal?.system_at;
+  const dateStr = sysAt ? new Date(sysAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : null;
+
+  const CONTENT_PREVIEW = 260;
+  const isLong = item.content.length > CONTENT_PREVIEW;
+
   return (
     <div
-      className="rounded-xl p-4 space-y-2"
+      className="rounded-xl p-4 space-y-2.5"
       style={{
         background: isMulti ? 'rgba(251,191,36,0.04)' : 'rgba(255,255,255,0.025)',
         border: `1px solid ${isMulti ? 'rgba(251,191,36,0.25)' : 'rgba(255,255,255,0.07)'}`,
       }}
     >
+      {/* Header row */}
       <div className="flex items-center gap-2 flex-wrap">
         <span className="text-[10px] font-mono text-white/30">{fmtId(item.unit_id)}</span>
-        <span
-          className="px-1.5 py-0.5 rounded text-[9px] font-mono"
-          style={{ color: tc, background: `${tc}18`, border: `1px solid ${tc}30` }}
-        >
+        <span className="px-1.5 py-0.5 rounded text-[9px] font-mono"
+          style={{ color: tc, background: `${tc}18`, border: `1px solid ${tc}30` }}>
           {item.memory_type}
         </span>
-        <span
-          className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-mono"
-          style={{ color: stratInfo.color, background: `${stratInfo.color}15`, border: `1px solid ${stratInfo.color}30` }}
-        >
+        <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-mono"
+          style={{ color: stratInfo.color, background: `${stratInfo.color}15`, border: `1px solid ${stratInfo.color}30` }}>
           {stratInfo.label}
         </span>
         {isMulti && (
-          <span
-            className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-mono"
-            style={{ color: '#fbbf24', background: 'rgba(251,191,36,0.12)', border: '1px solid rgba(251,191,36,0.3)' }}
-          >
+          <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-mono"
+            style={{ color: '#fbbf24', background: 'rgba(251,191,36,0.12)', border: '1px solid rgba(251,191,36,0.3)' }}>
             multi-source
           </span>
         )}
@@ -151,16 +155,81 @@ function MergedCard({ item, multiIds, onOpenInGraph }: { item: ComposedMemory; m
           {item.score.toFixed(3)}
         </span>
         {onOpenInGraph && (
-          <button
-            onClick={() => onOpenInGraph(item.unit_id)}
+          <button onClick={() => onOpenInGraph(item.unit_id)}
             className="text-white/20 hover:text-orange-400 transition-colors flex-shrink-0"
-            title="Open in Graph Explorer"
-          >
+            title="Open in Graph Explorer">
             <Network className="w-3.5 h-3.5" />
           </button>
         )}
       </div>
-      <p className="text-[11px] text-white/65 leading-relaxed">{item.content}</p>
+
+      {/* Provenance row */}
+      {prov?.source_name && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-[9px] text-white/30 flex items-center gap-1">
+            <span style={{ opacity: 0.5 }}>📄</span>
+            <span className="font-medium text-white/45">{prov.source_name}</span>
+          </span>
+          {prov.chunk_index !== undefined && (
+            <span className="text-[8px] font-mono text-white/20">chunk {prov.chunk_index}</span>
+          )}
+          {dateStr && (
+            <span className="text-[8px] font-mono text-white/20 ml-auto">{dateStr}</span>
+          )}
+        </div>
+      )}
+
+      {/* Entity tags */}
+      {nouns.length > 0 && (
+        <div className="flex items-center gap-1 flex-wrap">
+          {nouns.map(noun => (
+            <span key={noun}
+              className="px-1.5 py-0.5 rounded text-[8px] font-mono"
+              style={{ color: '#22d3ee', background: 'rgba(34,211,238,0.08)', border: '1px solid rgba(34,211,238,0.2)' }}>
+              {noun}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* Content */}
+      <div>
+        <p className="text-[11px] text-white/65 leading-relaxed">
+          {isLong && !expanded ? item.content.slice(0, CONTENT_PREVIEW) + '…' : item.content}
+        </p>
+        {isLong && (
+          <button onClick={() => setExpanded(v => !v)}
+            className="mt-1 text-[9px] transition-colors"
+            style={{ color: `${stratInfo.color}80` }}>
+            {expanded ? 'Show less' : 'Show more'}
+          </button>
+        )}
+      </div>
+
+      {/* Linked snippets (entity mentions etc.) */}
+      {item.links && item.links.length > 0 && (
+        <div className="flex flex-wrap gap-1 pt-1" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+          <span className="text-[8px] text-white/20 mr-1 self-center">links:</span>
+          {item.links.slice(0, 6).map((l, i) => {
+            const mechColor: Record<string, string> = {
+              entity_mention: '#22d3ee', semantic_similarity: '#f97316',
+              narrative_thread: '#94a3b8', temporal_proximity: '#eab308', provenance_analysis: '#a78bfa',
+            };
+            const lc = mechColor[l.mechanism] ?? '#94a3b8';
+            return (
+              <span key={i}
+                className="px-1.5 py-0.5 rounded text-[8px] font-mono"
+                style={{ color: lc, background: `${lc}12`, border: `1px solid ${lc}25` }}
+                title={`${l.mechanism} · w=${l.weight}`}>
+                {l.snippet || fmtId(l.unit_id)}
+              </span>
+            );
+          })}
+          {item.links.length > 6 && (
+            <span className="text-[8px] text-white/20 self-center">+{item.links.length - 6}</span>
+          )}
+        </div>
+      )}
     </div>
   );
 }

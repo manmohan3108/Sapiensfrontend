@@ -37,12 +37,52 @@ export interface MemoryRef {
   content?: string;
   memory_type?: string;
   meta: {
-    strategy: RecallStrategy;
+    strategy?: RecallStrategy;   // not present in recall stage refs — inferred from stage name
     qdrant_id?: string;
     bm25_score?: number;
     mechanism?: string;
+    relation?: string;
     weight?: number;
+    mechanism_data?: Record<string, unknown>;
   };
+}
+
+// Rich context attached to each merged recall result
+export interface ComposedMemoryContext {
+  provenance?: {
+    memory_entry_id?: string;
+    source_type?: string;
+    source_name?: string;
+    mime_type?: string;
+    source_position?: number;
+    chunk_index?: number;
+  };
+  temporal?: {
+    system_at?: string;
+    asserted_at?: string;
+    validity_window?: unknown;
+  };
+  quality?: {
+    indexed_by?: string;
+    spaces?: string[];
+  };
+  entities?: {
+    nouns?: string[];
+    activities?: string[];
+  };
+  keywords_extracted?: Record<string, unknown>;
+  entity_promoted?: Record<string, unknown>;
+}
+
+// Links in merged results use unit_id (not id) and carry a snippet
+export interface ComposedMemoryLink {
+  unit_id: string;
+  type: 'unit' | 'context';
+  relation: string;
+  mechanism: string;
+  mechanism_data?: Record<string, unknown>;
+  weight: number;
+  snippet?: string;
 }
 
 export interface ComposedMemory {
@@ -52,8 +92,8 @@ export interface ComposedMemory {
   score: number;
   strategy: RecallStrategy;
   sapien_id: number;
-  context?: Record<string, unknown>;
-  links?: EngramLink[];
+  context?: ComposedMemoryContext;
+  links?: ComposedMemoryLink[];
 }
 
 // ─── Endpoint responses ───────────────────────────────────────────────────────
