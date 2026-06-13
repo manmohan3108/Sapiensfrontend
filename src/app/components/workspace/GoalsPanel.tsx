@@ -440,6 +440,7 @@ function GoalDetailPane({
   const fastTimerRef   = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fetchDetail = useCallback(async (showSpinner = false) => {
+    if (document.visibilityState !== 'visible') return; // don't poll hidden tabs
     if (showSpinner) setLoading(true);
     setError(null);
     try {
@@ -452,28 +453,30 @@ function GoalDetailPane({
     }
   }, [sapienId, goalId]);
 
-  // Normal 10s poll
+  // Normal 30s poll (pause while fast-polling is active)
   useEffect(() => {
     fetchDetail(true);
-    normalTimerRef.current = setInterval(() => fetchDetail(false), 10_000);
+    normalTimerRef.current = setInterval(() => {
+      if (!fastTimerRef.current) fetchDetail(false); // skip if fast poll is running
+    }, 120_000); // 2 min
     return () => { if (normalTimerRef.current) clearInterval(normalTimerRef.current); };
   }, [fetchDetail]);
 
-  // Fast 5s poll for 60s after a comment
+  // Slow post-comment poll: every 30s for up to 3 min, replaces normal poll
   const startFastPoll = useCallback((submittedAt: number) => {
     setLastCommentAt(submittedAt);
     if (fastTimerRef.current) clearInterval(fastTimerRef.current);
-    const deadline = Date.now() + 60_000;
+    const deadline = Date.now() + 180_000; // 3 min window
     fastTimerRef.current = setInterval(() => {
       if (Date.now() > deadline) {
-        if (fastTimerRef.current) clearInterval(fastTimerRef.current);
+        clearInterval(fastTimerRef.current!);
         fastTimerRef.current = null;
         return;
       }
       fetchDetail(false);
-    }, 5_000);
-    // Also fetch immediately
-    setTimeout(() => fetchDetail(false), 1_500);
+    }, 30_000);
+    // One fetch ~10s after submit
+    setTimeout(() => fetchDetail(false), 10_000);
   }, [fetchDetail]);
 
   useEffect(() => () => { if (fastTimerRef.current) clearInterval(fastTimerRef.current); }, []);
@@ -486,7 +489,7 @@ function GoalDetailPane({
       setReplanReason('');
       setReplanOpen(false);
       toast.success('Replan requested — new plan appears within ~60s.');
-      setTimeout(() => fetchDetail(false), 10_000);
+      setTimeout(() => fetchDetail(false), 30_000); // replan check after 30s
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -702,7 +705,7 @@ export function GoalsPanel({ sapienId }: { sapienId: number }) {
 
   useEffect(() => {
     fetchGoals(true);
-    timerRef.current = setInterval(() => fetchGoals(false), 30_000);
+    timerRef.current = setInterval(() => fetchGoals(false), 120_000); // 2 min
     const onVis = () => { if (document.visibilityState === 'visible') fetchGoals(false); };
     document.addEventListener('visibilitychange', onVis);
     return () => {

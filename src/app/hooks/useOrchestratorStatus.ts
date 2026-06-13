@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useSapiensStore } from '../core/state/sapiensStore';
 import { apiConfig, API_ENDPOINTS } from '../core/config/apiConfig';
 
-const POLL_INTERVAL_MS = 10_000;
+const POLL_INTERVAL_MS = 60_000; // 1 min
 
 interface OrchestratorStatusResponse {
   overloaded: boolean;
