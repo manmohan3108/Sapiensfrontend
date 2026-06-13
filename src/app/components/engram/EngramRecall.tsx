@@ -24,6 +24,7 @@ function ScorePill({ score, strategy }: { score: number; strategy: string }) {
 }
 
 function RefCard({ ref: r, multiSource, strategy, onOpenInGraph }: { ref: MemoryRef; multiSource: boolean; strategy: string; onOpenInGraph?: (id: string) => void }) {
+  if (!r) return null;
   const stratColor = STRATEGY_COLORS[strategy]?.color ?? '#94a3b8';
   const mtColors: Record<string, string> = {
     episodic: '#818cf8', entity: '#22d3ee', summary: '#34d399', semantic: '#f59e0b',
@@ -99,7 +100,7 @@ function StageColumn({
         {refs.length === 0 ? (
           <p className="text-[10px] text-white/20 text-center py-4">No results</p>
         ) : (
-          refs.map(r => (
+          refs.filter(Boolean).map(r => (
             <RefCard key={r.id} ref={r} multiSource={multiIds.has(r.id)} strategy={strategy} onOpenInGraph={onOpenInGraph} />
           ))
         )}
@@ -110,7 +111,8 @@ function StageColumn({
 
 function MergedCard({ item, multiIds, onOpenInGraph }: { item: ComposedMemory; multiIds: Set<string>; onOpenInGraph?: (id: string) => void }) {
   const [expanded, setExpanded] = useState(false);
-  const stratInfo = STRATEGY_COLORS[item.strategy] ?? { color: '#94a3b8', label: item.strategy };
+  if (!item) return null;
+  const stratInfo = STRATEGY_COLORS[item.strategy] ?? { color: '#94a3b8', label: item.strategy ?? '' };
   const isMulti = multiIds.has(item.unit_id);
 
   const typeColor: Record<string, string> = {
@@ -360,7 +362,7 @@ export function EngramRecall({ sapienId, onOpenInGraph }: { sapienId: number; on
             {result.merged.length === 0 ? (
               <p className="text-xs text-white/25">No merged results.</p>
             ) : (
-              result.merged.map(m => (
+              result.merged.filter(Boolean).map(m => (
                 <MergedCard key={m.unit_id} item={m} multiIds={multiIds} onOpenInGraph={onOpenInGraph} />
               ))
             )}

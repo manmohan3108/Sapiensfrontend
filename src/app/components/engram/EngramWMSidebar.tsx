@@ -33,7 +33,8 @@ interface WMEntryRowProps {
 
 function WMEntryRow({ entry, isFocus, isNew, onOpenInGraph }: WMEntryRowProps) {
   const [expanded, setExpanded] = useState(false);
-  const pct = Math.min(100, Math.round(entry.score * 100));
+  if (!entry) return null;
+  const pct = Math.min(100, Math.round((entry.score ?? 0) * 100));
   const scoreColor = pct > 70 ? '#34d399' : pct > 40 ? '#fbbf24' : '#94a3b8';
   const mtColor  = entry.memory_type ? (MEMORY_TYPE_COLORS[entry.memory_type] ?? '#94a3b8') : '#94a3b8';
   const srcColor = SOURCE_COLORS[entry.memory_source] ?? SOURCE_COLORS.default;
@@ -197,7 +198,7 @@ export function EngramWMSidebar({
       .then(r => {
         // Client-side delta detection (backend didn't implement ?since=)
         const prevIds = prevIdsRef.current;
-        const nextIds = new Set(r.wm.entries.map(e => e.id));
+        const nextIds = new Set((r.wm?.entries ?? []).filter(Boolean).map((e: WMEntry) => e.id));
         const added   = [...nextIds].filter(id => !prevIds.has(id));
         const evicted = [...prevIds].filter(id => !nextIds.has(id));
         prevIdsRef.current = nextIds;
@@ -235,8 +236,9 @@ export function EngramWMSidebar({
     return () => { if (countdownRef.current) clearInterval(countdownRef.current); };
   }, []);
 
-  const entries  = wm?.wm.entries ?? [];
-  const focusId  = wm?.wm.focus_id ?? null;
+  // wm.wm always has entries + focus_id now (empty state: { focus_id: null, entries: [] })
+  const entries  = (wm?.wm?.entries ?? []).filter((e): e is WMEntry => e != null);
+  const focusId  = wm?.wm?.focus_id ?? null;
   const capacity = wm?.capacity ?? { global: 0, by_source: {} };
 
   // Sort: focus first, then score desc

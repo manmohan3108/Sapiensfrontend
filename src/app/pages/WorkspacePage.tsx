@@ -1,18 +1,20 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { Activity, Database } from 'lucide-react';
+import { Activity, Database, Target } from 'lucide-react';
 import { HeaderBar } from '../components/workspace/HeaderBar';
 import { CombinedInputPanel } from '../components/workspace/CombinedInputPanel';
 import { ActivityLog } from '../components/workspace/ActivityLog';
 import { ChatWindow } from '../components/workspace/ChatWindow';
 import { MemoryPanel } from '../components/workspace/MemoryPanel';
+import { GoalsPanel } from '../components/workspace/GoalsPanel';
 import { DebugPanel } from '../components/workspace/DebugPanel';
 import { MemoryTimeline } from '../components/workspace/MemoryTimeline';
 import { SessionSummary } from '../components/workspace/SessionSummary';
 import { useSapiensStore } from '../core/state/sapiensStore';
 import { useSapiens } from '../hooks/useSapiens';
+import { useOrchestratorStatus } from '../hooks/useOrchestratorStatus';
 
-type RightTab = 'activity' | 'memory';
+type RightTab = 'activity' | 'memory' | 'goals';
 
 // ─── Tab pill row ─────────────────────────────────────────────────────────────
 function TabRow({
@@ -24,64 +26,43 @@ function TabRow({
   setTab: (t: RightTab) => void;
   memoryCount: number;
 }) {
+  const TABS = [
+    { id: 'activity' as RightTab, label: 'Activity', icon: <Activity className="w-3 h-3" />, activeColor: '#93c5fd', activeBg: 'rgba(96,165,250,0.15)', activeBorder: 'rgba(96,165,250,0.3)' },
+    { id: 'memory'   as RightTab, label: 'Memory',   icon: <Database  className="w-3 h-3" />, activeColor: '#fcd34d', activeBg: 'rgba(245,158,11,0.15)', activeBorder: 'rgba(245,158,11,0.3)' },
+    { id: 'goals'    as RightTab, label: 'Goals',    icon: <Target    className="w-3 h-3" />, activeColor: '#86efac', activeBg: 'rgba(52,211,153,0.12)', activeBorder: 'rgba(52,211,153,0.3)' },
+  ] as const;
+
+  const active = TABS.find(t => t.id === tab) ?? TABS[0];
+
   return (
     <div
       className="flex-shrink-0 flex items-center gap-1 px-2 py-1.5 rounded-xl"
-      style={{
-        background: 'rgba(8,12,22,0.7)',
-        border: '1px solid rgba(255,255,255,0.07)',
-        backdropFilter: 'blur(12px)',
-      }}
+      style={{ background: 'rgba(8,12,22,0.7)', border: '1px solid rgba(255,255,255,0.07)', backdropFilter: 'blur(12px)' }}
     >
-      <button
-        onClick={() => setTab('activity')}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] transition-all duration-150"
-        style={
-          tab === 'activity'
-            ? { background: 'rgba(96,165,250,0.15)', border: '1px solid rgba(96,165,250,0.3)', color: '#93c5fd' }
-            : { background: 'transparent', border: '1px solid transparent', color: 'rgba(255,255,255,0.3)' }
-        }
-      >
-        <Activity className="w-3 h-3" />
-        Activity
-      </button>
-
-      <button
-        onClick={() => setTab('memory')}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] transition-all duration-150"
-        style={
-          tab === 'memory'
-            ? { background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.3)', color: '#fcd34d' }
-            : { background: 'transparent', border: '1px solid transparent', color: 'rgba(255,255,255,0.3)' }
-        }
-      >
-        <Database className="w-3 h-3" />
-        Memory
-        {memoryCount > 0 && (
-          <span
-            className="ml-0.5 min-w-[18px] px-1.5 py-0.5 rounded-full text-center text-[9px] font-mono tabular-nums"
-            style={{
-              background: tab === 'memory' ? 'rgba(245,158,11,0.25)' : 'rgba(245,158,11,0.15)',
-              color: '#fbbf24',
-            }}
-          >
-            {memoryCount}
-          </span>
-        )}
-      </button>
-
-      {/* Separator dot */}
+      {TABS.map(t => (
+        <button
+          key={t.id}
+          onClick={() => setTab(t.id)}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] transition-all duration-150"
+          style={
+            tab === t.id
+              ? { background: t.activeBg, border: `1px solid ${t.activeBorder}`, color: t.activeColor }
+              : { background: 'transparent', border: '1px solid transparent', color: 'rgba(255,255,255,0.3)' }
+          }
+        >
+          {t.icon}
+          {t.label}
+          {t.id === 'memory' && memoryCount > 0 && (
+            <span className="ml-0.5 min-w-[18px] px-1.5 py-0.5 rounded-full text-center text-[9px] font-mono tabular-nums"
+              style={{ background: tab === 'memory' ? 'rgba(245,158,11,0.25)' : 'rgba(245,158,11,0.15)', color: '#fbbf24' }}>
+              {memoryCount}
+            </span>
+          )}
+        </button>
+      ))}
       <div className="flex-1" />
-      <span
-        className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-        style={{
-          background: tab === 'activity' ? '#60a5fa' : '#f59e0b',
-          boxShadow: tab === 'activity'
-            ? '0 0 6px rgba(96,165,250,0.6)'
-            : '0 0 6px rgba(245,158,11,0.6)',
-          transition: 'background 0.25s, box-shadow 0.25s',
-        }}
-      />
+      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+        style={{ background: active.activeColor, boxShadow: `0 0 6px ${active.activeColor}99`, transition: 'background 0.25s, box-shadow 0.25s' }} />
     </div>
   );
 }
@@ -96,6 +77,9 @@ export function WorkspacePage() {
   const showMemoryTimeline = useSapiensStore((s) => s.showMemoryTimeline);
   const lastMemoryUnits = useSapiensStore((s) => s.lastMemoryUnits);
   const { refreshSapiensState } = useSapiens();
+
+  // Poll /api/orchestrator/status every 10 s while this tab is visible
+  useOrchestratorStatus();
 
   useEffect(() => {
     if (!currentSapiens) navigate('/');
@@ -160,7 +144,9 @@ export function WorkspacePage() {
 
           {/* Active panel — fills full height */}
           <div className="flex-1 min-h-0">
-            {rightTab === 'activity' ? <ActivityLog /> : <MemoryPanel />}
+            {rightTab === 'activity' && <ActivityLog />}
+            {rightTab === 'memory'   && <MemoryPanel />}
+            {rightTab === 'goals'    && <GoalsPanel sapienId={parseInt(currentSapiens.id, 10)} />}
           </div>
         </div>
       </div>

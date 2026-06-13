@@ -103,7 +103,7 @@ export function EngramBrowse({ sapienId, onOpenInGraph }: { sapienId: number; on
             <div className="flex items-center justify-center h-32 text-sm text-white/25">No units found.</div>
           ) : (
             <div className="space-y-1.5">
-              {data.results.map(unit => (
+              {data.results.filter(Boolean).map(unit => (
                 <UnitRow key={unit.id} unit={unit} onClick={() => openDetail(unit.id)} onOpenInGraph={onOpenInGraph} />
               ))}
             </div>
@@ -138,8 +138,9 @@ export function EngramBrowse({ sapienId, onOpenInGraph }: { sapienId: number; on
 }
 
 function UnitRow({ unit, onClick, onOpenInGraph }: { unit: EngramUnit; onClick: () => void; onOpenInGraph?: (id: string) => void }) {
+  if (!unit) return null;
   const color = TYPE_COLOR[unit.memory_type] ?? '#94a3b8';
-  const preview = unit.content.length > 120 ? unit.content.slice(0, 120) + '…' : unit.content;
+  const preview = (unit.content ?? '').length > 120 ? unit.content.slice(0, 120) + '…' : (unit.content ?? '');
 
   return (
     <div

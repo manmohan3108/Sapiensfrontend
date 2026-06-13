@@ -120,6 +120,8 @@ export interface ChatApiResponse {
   memory_units?: MemoryUnit[];
   context_used?: number;
   debug_info?: DebugInfo;
+  /** True when the sapien's background task queue is over its threshold */
+  overloaded?: boolean;
 }
 
 /**
@@ -166,6 +168,8 @@ export interface ChatMessage {
   userSignal?: UserSignalType;
   /** Whether the user marked this message as important */
   isImportant?: boolean;
+  /** True if the sapien was overloaded when it produced this reply */
+  overloaded?: boolean;
 }
 
 export interface SapiensStateResponse {

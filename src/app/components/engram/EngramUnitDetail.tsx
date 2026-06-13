@@ -110,6 +110,7 @@ export function EngramUnitDetail({
   if (!data)   return null;
 
   const { unit, context, links } = data;
+  if (!unit)   return null;
 
   // Group links by mechanism
   const grouped = links.reduce<Record<string, EngramLink[]>>((acc, l) => {

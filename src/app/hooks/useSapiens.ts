@@ -27,6 +27,7 @@ export function useSapiens() {
     setChatSessionId,
     setLastMemoryUnits,
     setLastDebugInfo,
+    setOverloaded,
     reset,
   } = useSapiensStore();
 
@@ -189,6 +190,11 @@ export function useSapiens() {
         const memoryUnits = chatResponse.memory_units ?? [];
         setLastMemoryUnits(memoryUnits);
 
+        // ── Overload signal ──
+        if (chatResponse.overloaded !== undefined) {
+          setOverloaded(chatResponse.overloaded);
+        }
+
         // 3. Replace loading placeholder with real response + metadata
         updateChatMessage(assistantMsgId, {
           content: chatResponse.reply ?? '',
@@ -197,6 +203,7 @@ export function useSapiens() {
           memoryUnits,
           contextUsed: chatResponse.context_used ?? 0,
           sessionId: chatResponse.thread_id,
+          overloaded: chatResponse.overloaded,
         });
 
         setStatus('idle');
@@ -219,6 +226,7 @@ export function useSapiens() {
       setChatSessionId,
       setLastMemoryUnits,
       setLastDebugInfo,
+      setOverloaded,
       refreshSapiensState,
     ]
   );

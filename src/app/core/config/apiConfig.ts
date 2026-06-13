@@ -31,6 +31,7 @@ export const API_ENDPOINTS = {
   sapiensState: '/sapiens_state',
   listSapiens: '/get-all-sapiens',
   runEngine: '/run-engines',
+  orchestratorStatus: '/orchestrator/status',
 } as const;
 
 // Engram endpoints (base: /api/engram/)
@@ -46,8 +47,9 @@ export const ENGRAM_ENDPOINTS = {
   sequence:   (id: string)       => `${ENGRAM_BASE}/units/${id}/sequence`,
   subgraph:   (id: string)       => `${ENGRAM_BASE}/units/${id}/subgraph`,
   batchUnits: ()                 => `${ENGRAM_BASE}/units/batch`,
-  entities:   () => `${ENGRAM_BASE}/entities`,
-  episodes:   (id: string)       => `${ENGRAM_BASE}/entities/${id}/episodes`,
+  entities:     () => `${ENGRAM_BASE}/entities`,
+  entityDetail: (id: string)       => `${ENGRAM_BASE}/entities/${id}`,
+  episodes:     (id: string)       => `${ENGRAM_BASE}/entities/${id}/episodes`,
   recall:     () => `${ENGRAM_BASE}/recall`,
   overview:   (sapienId: number) => `${ENGRAM_BASE}/sapien/${sapienId}/overview`,
 } as const;

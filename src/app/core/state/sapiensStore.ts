@@ -23,6 +23,10 @@ interface SapiensStore {
   /** Memory unit IDs the user has dismissed as irrelevant */
   ignoredMemoryIds: string[];
 
+  // ── Orchestrator / overload state ────────────────────────────────────────
+  /** True when the sapien's background queue is over its threshold */
+  isOverloaded: boolean;
+
   // ── UI panel visibility ───────────────────────────────────────────────────
   showDebugPanel: boolean;
   showMemoryTimeline: boolean;
@@ -51,6 +55,9 @@ interface SapiensStore {
   toggleIgnoredMemory: (id: string) => void;
   clearIgnoredMemories: () => void;
 
+  // ── Orchestrator actions ──────────────────────────────────────────────────
+  setOverloaded: (overloaded: boolean) => void;
+
   // ── UI panel actions ──────────────────────────────────────────────────────
   setShowDebugPanel: (show: boolean) => void;
   toggleDebugPanel: () => void;
@@ -73,6 +80,8 @@ export const useSapiensStore = create<SapiensStore>((set) => ({
   lastDebugInfo: null,
   pinnedMemoryIds: [],
   ignoredMemoryIds: [],
+
+  isOverloaded: false,
 
   showDebugPanel: false,
   showMemoryTimeline: false,
@@ -138,6 +147,8 @@ export const useSapiensStore = create<SapiensStore>((set) => ({
   clearIgnoredMemories: () => set({ ignoredMemoryIds: [] }),
 
   // ── UI panel actions ──────────────────────────────────────────────────────
+  setOverloaded: (overloaded) => set({ isOverloaded: overloaded }),
+
   setShowDebugPanel: (show) => set({ showDebugPanel: show }),
   toggleDebugPanel: () => set((s) => ({ showDebugPanel: !s.showDebugPanel })),
   setShowMemoryTimeline: (show) => set({ showMemoryTimeline: show }),
@@ -155,6 +166,7 @@ export const useSapiensStore = create<SapiensStore>((set) => ({
       lastDebugInfo: null,
       pinnedMemoryIds: [],
       ignoredMemoryIds: [],
+      isOverloaded: false,
       showDebugPanel: false,
       showMemoryTimeline: false,
       jumpToMessageId: null,

@@ -23,7 +23,20 @@ async function engramFetch<T>(url: string, options?: RequestInit): Promise<T> {
     ...options,
     headers: { 'Content-Type': 'application/json', ...options?.headers },
   });
-  const json = await res.json();
+
+  // Guard against HTML error pages (404, 500, nginx default pages etc.)
+  const ct = res.headers.get('content-type') ?? '';
+  if (!ct.includes('application/json')) {
+    throw new Error(`HTTP ${res.status} – endpoint not available (expected JSON, got ${ct || 'unknown content-type'})`);
+  }
+
+  let json: unknown;
+  try {
+    json = await res.json();
+  } catch {
+    throw new Error(`HTTP ${res.status} – response was not valid JSON`);
+  }
+
   if (!res.ok) {
     throw new Error((json as { error?: string }).error ?? `HTTP ${res.status}`);
   }
@@ -141,8 +154,14 @@ export const engramService = {
   },
 
   // ── Entity episodes ───────────────────────────────────────────────────────
-  getEpisodes(entityId: string): Promise<EntityEpisodesResponse> {
-    return engramFetch<EntityEpisodesResponse>(ENGRAM_ENDPOINTS.episodes(entityId));
+  // Try the convenience GET /entities/<id> endpoint first (same payload),
+  // fall back to GET /entities/<id>/episodes if the former isn't available.
+  async getEpisodes(entityId: string): Promise<EntityEpisodesResponse> {
+    try {
+      return await engramFetch<EntityEpisodesResponse>(ENGRAM_ENDPOINTS.entityDetail(entityId));
+    } catch {
+      return engramFetch<EntityEpisodesResponse>(ENGRAM_ENDPOINTS.episodes(entityId));
+    }
   },
 
   // ── Recall ────────────────────────────────────────────────────────────────

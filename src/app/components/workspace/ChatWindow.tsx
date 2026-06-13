@@ -313,6 +313,21 @@ function MessageBubble({
 
             {!msg.isLoading && <TransparencyStrip msg={msg} />}
 
+            {/* Overloaded inline hint */}
+            {!msg.isLoading && !isUser && msg.overloaded && (
+              <div
+                className="flex items-center gap-2 px-3 py-2 rounded-lg text-[11px] mt-1"
+                style={{
+                  background: 'rgba(251,191,36,0.07)',
+                  border: '1px solid rgba(251,191,36,0.2)',
+                  color: 'rgba(251,191,36,0.75)',
+                }}
+              >
+                <span style={{ fontSize: 13 }}>⏳</span>
+                Sapien is a bit overworked right now — give it a moment before introducing new goals.
+              </div>
+            )}
+
             {!msg.isLoading && !isError && (
               <SignalControls msg={msg} onSignal={(s) => onSignal(msg.id, s)} />
             )}

@@ -1,4 +1,4 @@
-import { Brain, Home, Save, ChevronRight, Cpu, Wifi, Bug, Clock, DatabaseZap } from 'lucide-react';
+import { Brain, Home, Save, ChevronRight, Cpu, Wifi, Bug, Clock, DatabaseZap, Hourglass } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { useSapiens } from '../../hooks/useSapiens';
 import { useSapiensStore } from '../../core/state/sapiensStore';
@@ -10,6 +10,7 @@ export function HeaderBar() {
   const { saveSapiens, returnToHome } = useSapiens();
   const navigate = useNavigate();
   const status = useSapiensStore((s) => s.status);
+  const isOverloaded = useSapiensStore((s) => s.isOverloaded);
   const showDebugPanel = useSapiensStore((s) => s.showDebugPanel);
   const toggleDebugPanel = useSapiensStore((s) => s.toggleDebugPanel);
   const setShowMemoryTimeline = useSapiensStore((s) => s.setShowMemoryTimeline);
@@ -110,6 +111,22 @@ export function HeaderBar() {
               <Wifi className="w-3 h-3 animate-pulse" style={{ color: sc.dot }} />
             )}
           </div>
+
+          {/* Overloaded pill */}
+          {isOverloaded && (
+            <div
+              className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-lg flex-shrink-0"
+              title="Sapien is processing background work. New goals you mention may not stick until it catches up."
+              style={{
+                background: 'rgba(251,191,36,0.12)',
+                border: '1px solid rgba(251,191,36,0.35)',
+                animation: 'pulse 2s ease-in-out infinite',
+              }}
+            >
+              <Hourglass className="w-3 h-3" style={{ color: '#fbbf24' }} />
+              <span className="text-[11px] font-medium" style={{ color: '#fbbf24' }}>Catching up…</span>
+            </div>
+          )}
 
           {/* Instance ID */}
           <div

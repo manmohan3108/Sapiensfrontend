@@ -7,7 +7,7 @@ export default function App() {
   return (
     <ThemeProvider>
       <RouterProvider router={router} />
-      <Toaster richColors position="bottom-right" />
+      <Toaster richColors position="bottom-right" closeButton />
     </ThemeProvider>
   );
 }
