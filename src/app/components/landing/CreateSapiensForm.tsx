@@ -34,7 +34,7 @@ export function CreateSapiensForm() {
       setRole('');
     } catch (error) {
       console.error('Failed to create Sapiens:', error);
-      setError('Unable to connect to backend server. Please ensure the server is running at http://localhost:8000');
+      setError('Unable to connect to the backend server. Please try again shortly.');
     } finally {
       setIsCreating(false);
     }

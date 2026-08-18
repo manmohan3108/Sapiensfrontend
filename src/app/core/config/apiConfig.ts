@@ -2,10 +2,13 @@ import type { ApiConfig } from "../../types/apiTypes";
 
 // Environment configuration
 export const getEnvironment = () => {
+  const apiBaseUrl = (
+    import.meta.env.VITE_API_BASE_URL ||
+    "http://localhost:8000/api"
+  ).replace(/\/$/, "");
+
   return {
-    apiBaseUrl:
-      import.meta.env.VITE_API_BASE_URL ||
-      "http://localhost:8000/api",
+    apiBaseUrl,
     environment: import.meta.env.MODE || "development",
   };
 };
@@ -35,7 +38,7 @@ export const API_ENDPOINTS = {
 } as const;
 
 // Engram endpoints (base: /api/engram/)
-export const ENGRAM_BASE = 'http://localhost:8000/api/engram';
+export const ENGRAM_BASE = `${apiConfig.baseUrl}/engram`;
 
 export const ENGRAM_ENDPOINTS = {
   stats:      (sapienId: number) => `${ENGRAM_BASE}/stats/${sapienId}`,
