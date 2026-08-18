@@ -1,48 +1,179 @@
-# Frontend deployment
+# AwareAI frontend server and deployment runbook
 
-This runbook deploys the static Vite SPA to the Debian 13 GCP VM at
-`8.231.70.214`. The repository lives at `/srv/apps/Sapiensfrontend`, and Nginx
-serves `/srv/apps/Sapiensfrontend/dist` directly. There is no frontend Node
-runtime or systemd service.
+This document records the confirmed production server layout and the operating
+procedure for the Sapiens/AwareAI Vite frontend. Keep it updated whenever the VM,
+DNS, package manager, paths, or deployment procedure changes. Do not put SSH keys,
+API keys, passwords, tokens, or other secrets in this file.
 
-## Prerequisites
+## Production summary
 
-- DNS: `awareai.in` has an A record for `8.231.70.214`; `www.awareai.in` is a
-  CNAME to `awareai.in`.
-- Only TCP ports 80 and 443 are public. Do not expose Vite or backend ports.
-- Git, Node.js with Corepack, Nginx, Certbot, and its Nginx plugin are installed.
-- The backend remains bound to `127.0.0.1:8000` and is healthy at
-  `https://api.awareai.in`. Production frontend builds call
-  `https://api.awareai.in/api` through the committed `.env.production`.
-- Backend CORS already permits `https://awareai.in` and
-  `https://www.awareai.in`.
+| Item | Production value |
+| --- | --- |
+| Cloud host | GCP VM, Debian 13 |
+| Static public IP | `8.231.70.214` |
+| Frontend domains | `https://awareai.in`, `https://www.awareai.in` |
+| Frontend Git remote | `https://github.com/manmohan3108/Sapiensfrontend.git` |
+| Frontend repository | `/srv/apps/Sapiensfrontend` |
+| Static document root | `/srv/apps/Sapiensfrontend/dist` |
+| Backend process | `127.0.0.1:8000` (not public) |
+| Public backend | `https://api.awareai.in` |
+| Frontend API base | `https://api.awareai.in/api` |
+| Web server | Nginx |
+| TLS manager | Certbot |
+| Frontend runtime service | None; Nginx serves static files directly |
+| Public firewall ports | TCP 80 and 443 only |
 
-The existing API certificate covers only `api.awareai.in`. Obtain a separate
-certificate covering both `awareai.in` and `www.awareai.in` as described below.
+DNS is configured as follows:
 
-## First checkout and build
+- `awareai.in`: A record to `8.231.70.214`.
+- `www.awareai.in`: CNAME to `awareai.in`.
+- `api.awareai.in`: existing backend hostname on the same infrastructure.
 
-Clone once using the repository's actual Git URL:
+The backend CORS configuration permits `https://awareai.in` and
+`https://www.awareai.in`.
+
+## Disk layout and placement rules
+
+The VM has two separate filesystems. Always check the mount before moving or
+creating large application data.
+
+| Filesystem | Approximate size | Mount | Purpose |
+| --- | ---: | --- | --- |
+| `/dev/sdb1` | 10 GB (`9.7G`) | `/` | Debian and system packages |
+| `/dev/sda` | 100 GB (`98G`) | `/srv` | Repositories, dependencies, builds, caches, releases |
+
+Confirmed during deployment, `/` had roughly 3.8 GB free and `/srv` roughly
+73 GB free. These values change; use `df` rather than relying on these figures.
+
+Appropriate locations on the 10 GB root filesystem:
+
+- APT-installed Git, Node.js/npm, Nginx, and Certbot.
+- Nginx configuration under `/etc/nginx`.
+- Certbot configuration and certificates under `/etc/letsencrypt`.
+- Small system logs and service metadata.
+
+Required locations on the 100 GB `/srv` filesystem:
+
+- Repository: `/srv/apps/Sapiensfrontend`.
+- Dependencies: `/srv/apps/Sapiensfrontend/node_modules`.
+- Vite output: `/srv/apps/Sapiensfrontend/dist`.
+- pnpm content-addressable store: `/srv/pnpm-store/v11`.
+- Future release archives or rollback copies: `/srv/releases/Sapiensfrontend`.
+
+Verify placement and capacity:
 
 ```sh
-sudo mkdir -p /srv/apps
-sudo chown "$USER":"$USER" /srv/apps
-git clone <repository-url> /srv/apps/Sapiensfrontend
-cd /srv/apps/Sapiensfrontend
-corepack enable
-corepack prepare pnpm@11.19.0 --activate
-pnpm install --frozen-lockfile
-pnpm build
+df -h / /srv
+findmnt /srv
+df -h /srv/apps/Sapiensfrontend /srv/pnpm-store
+du -sh /srv/apps/Sapiensfrontend/node_modules 2>/dev/null || true
+du -sh /srv/apps/Sapiensfrontend/dist 2>/dev/null || true
+du -sh /srv/pnpm-store 2>/dev/null || true
 ```
 
-The package manager and version come from `package.json`, and the committed
-`pnpm-lock.yaml` makes `pnpm install --frozen-lockfile` reproducible. A successful
-build creates `/srv/apps/Sapiensfrontend/dist/index.html` and its static assets.
+Do not put `node_modules`, the pnpm store, release copies, or build archives in
+`/root`, `/home`, `/var`, or another path on the 10 GB root filesystem.
 
-## Nginx HTTP configuration
+## Installed frontend toolchain
 
-Create `/etc/nginx/sites-available/awareai.in` with exactly this initial HTTP
-configuration:
+The confirmed production toolchain is:
+
+- Node.js `v22.23.2`, installed as the NodeSource `nodejs` APT package.
+- npm `10.9.8`.
+- pnpm `11.19.0`, installed directly at `/usr/local/bin/pnpm`.
+- pnpm store supplied explicitly as `/srv/pnpm-store` during installs.
+
+pnpm 11.19.0 requires Node.js 22.13 or newer. The original Debian Node 20 build
+was incompatible. An old Corepack wrapper also failed on this VM, so deployments
+use the working `/usr/local/bin/pnpm` directly. Do not run `pnpm setup` or change
+the pinned pnpm version just because an update notice appears.
+
+Check the active tools:
+
+```sh
+type -a node npm pnpm corepack
+node --version
+npm --version
+pnpm --version
+apt-cache policy nodejs
+```
+
+Expected active versions are Node 22.13+ and pnpm 11.19.0.
+
+## Repository configuration relevant to deployment
+
+- `.env.production` contains the non-secret public setting
+  `VITE_API_BASE_URL=https://api.awareai.in/api`.
+- `package.json` pins `pnpm@11.19.0` using `packageManager`.
+- `pnpm-lock.yaml` provides reproducible dependency resolution.
+- `pnpm-workspace.yaml` permits build scripts only for the required native build
+  packages:
+
+```yaml
+allowBuilds:
+  '@tailwindcss/oxide': true
+  esbuild: true
+```
+
+Never place secrets in a `VITE_*` variable. Vite embeds these values into the
+public browser bundle.
+
+## First clone
+
+The production clone already exists. These commands are only for reconstructing
+the VM or creating a replacement server:
+
+```sh
+sudo mkdir -p /srv/apps /srv/pnpm-store /srv/releases/Sapiensfrontend
+sudo chown "$USER":"$USER" /srv/apps /srv/pnpm-store /srv/releases/Sapiensfrontend
+git clone https://github.com/manmohan3108/Sapiensfrontend.git /srv/apps/Sapiensfrontend
+```
+
+The repository is public, so cloning does not require GitHub authentication.
+Public access does not grant push access; only authorized GitHub accounts can
+push.
+
+## Reproducible production build
+
+Run from the repository root:
+
+```sh
+cd /srv/apps/Sapiensfrontend
+git status --short
+pnpm install --frozen-lockfile --store-dir /srv/pnpm-store
+pnpm build
+test -f dist/index.html && echo "Frontend build succeeded"
+```
+
+There must be no tracked source/configuration modifications before deployment.
+Until the repository has a `.gitignore`, generated `node_modules/` and `dist/`
+may appear as untracked entries in `git status`. The Vite build writes
+`dist/index.html` and content-hashed assets under `dist/assets`. A Vite warning
+about JavaScript chunks larger than 500 kB is a performance warning, not a failed
+build.
+
+Verify the production API setting and reject localhost URLs:
+
+```sh
+grep -R -o "https://api.awareai.in/api" dist/assets | head
+if grep -R "localhost:8000" dist/assets; then
+  echo "ERROR: production bundle contains localhost"
+  exit 1
+else
+  echo "Production bundle contains no localhost API URL"
+fi
+```
+
+## Nginx layout
+
+| Purpose | Path |
+| --- | --- |
+| Frontend available-site file | `/etc/nginx/sites-available/awareai.in` |
+| Frontend enabled-site link | `/etc/nginx/sites-enabled/awareai.in` |
+| Frontend document root | `/srv/apps/Sapiensfrontend/dist` |
+| Backend site | Separate `api.awareai.in` configuration; do not modify for frontend deploys |
+
+The initial HTTP frontend configuration is:
 
 ```nginx
 server {
@@ -54,10 +185,15 @@ server {
     index index.html;
     client_max_body_size 1G;
 
-    location ~* \.(?:css|js|mjs|map|ico|png|jpg|jpeg|gif|svg|webp|avif|woff|woff2|ttf|otf)$ {
+    location ^~ /assets/ {
         try_files $uri =404;
         expires 1y;
-        add_header Cache-Control "public, immutable";
+        add_header Cache-Control "public, max-age=31536000, immutable";
+        access_log off;
+    }
+
+    location = /index.html {
+        add_header Cache-Control "no-cache";
     }
 
     location / {
@@ -66,80 +202,171 @@ server {
 }
 ```
 
-Enable the site and validate Nginx:
+`try_files $uri $uri/ /index.html` is required for React routes such as
+`/workspace`. Only Vite's hashed `/assets/` files receive immutable caching.
+`index.html` is not persistently cached, allowing new deployments to load their
+new asset filenames.
+
+Enable and validate the site:
 
 ```sh
-sudo ln -s /etc/nginx/sites-available/awareai.in /etc/nginx/sites-enabled/awareai.in
+if [ ! -e /etc/nginx/sites-enabled/awareai.in ]; then
+  sudo ln -s /etc/nginx/sites-available/awareai.in /etc/nginx/sites-enabled/awareai.in
+fi
 sudo nginx -t
 sudo systemctl reload nginx
 ```
 
-If that symlink already exists, do not recreate it. Remove or disable any other
-enabled server block that claims `awareai.in` or `www.awareai.in`, then validate
-again.
+Never reload Nginx after a failed `nginx -t`.
 
-## TLS and HTTP redirect
+## TLS certificates
 
-After HTTP works for both hostnames, let Certbot add TLS and redirect HTTP to
-HTTPS:
+The API certificate covers `api.awareai.in` only. The frontend uses a separate
+Certbot certificate covering both `awareai.in` and `www.awareai.in`. Certbot may
+add HTTPS blocks and HTTP-to-HTTPS redirects to the Nginx file, so do not replace
+the live file later with the initial HTTP template above.
+
+Issue or reconstruct the frontend certificate only after HTTP works:
 
 ```sh
 sudo certbot --nginx -d awareai.in -d www.awareai.in --redirect
 sudo nginx -t
 sudo systemctl reload nginx
+```
+
+Inspect certificates and renewal:
+
+```sh
+sudo certbot certificates
+systemctl status certbot.timer --no-pager
 sudo certbot renew --dry-run
 ```
 
-## Verification
+Certbot-managed certificate material normally lives under
+`/etc/letsencrypt/live/awareai.in/`. Never copy private keys into the repository.
+
+## Verification checklist
 
 ```sh
 test -f /srv/apps/Sapiensfrontend/dist/index.html
-curl -I http://awareai.in
-curl -I http://www.awareai.in
-curl -I https://awareai.in
-curl -I https://www.awareai.in
-curl -fsS https://api.awareai.in/api/orchestrator/status
 sudo nginx -t
+curl -I http://awareai.in/
+curl -I http://www.awareai.in/
+curl -I https://awareai.in/
+curl -I https://www.awareai.in/
+curl -I https://awareai.in/workspace
+curl -fsS https://api.awareai.in/api/orchestrator/status
 ```
 
-The HTTP frontend requests should redirect to HTTPS. Both HTTPS hostnames should
-return the SPA, including a client-side route such as
-`curl -I https://awareai.in/workspace`. Browser developer tools should show API
-requests going to `https://api.awareai.in/api`, never localhost or port 8000.
+Expected results:
 
-## Deploying an update
+- HTTP redirects to HTTPS after Certbot configuration.
+- Both HTTPS hostnames return the SPA successfully.
+- `/workspace` returns `index.html`, not a 404.
+- Browser developer tools show API requests to
+  `https://api.awareai.in/api`, never localhost or public port 8000.
+- Only ports 80 and 443 are publicly reachable.
 
-Use fast-forward-only pulls and record the currently deployed commit before the
-update:
+## Routine deployment update
+
+Before changing anything, record the current commit on the large disk:
 
 ```sh
 cd /srv/apps/Sapiensfrontend
 git status --short
-git rev-parse HEAD
+git rev-parse HEAD | tee /srv/apps/Sapiensfrontend.previous-commit
+```
+
+There must be no tracked modifications. Generated `node_modules/` and `dist/`
+may appear as untracked until a `.gitignore` is added. Then deploy:
+
+```sh
 git pull --ff-only
-corepack prepare pnpm@11.19.0 --activate
-pnpm install --frozen-lockfile
+pnpm install --frozen-lockfile --store-dir /srv/pnpm-store
 pnpm build
+test -f dist/index.html
 sudo nginx -t
 sudo systemctl reload nginx
 ```
 
-`git status --short` must be empty before pulling. Because Nginx serves `dist`
-directly, the new build becomes live when `pnpm build` completes; no application
-service restart is required.
+Nginx already reads `dist` directly. There is no frontend systemd service and no
+Node process to restart.
 
-## Rollback
+## Safe rollback
 
-Use the commit recorded before deployment, rebuild, and reload Nginx:
+Rebuild the commit recorded before the update without rewriting branch history:
 
 ```sh
 cd /srv/apps/Sapiensfrontend
-git switch --detach <previous-commit>
-pnpm install --frozen-lockfile
+git status --short
+git switch --detach "$(cat /srv/apps/Sapiensfrontend.previous-commit)"
+pnpm install --frozen-lockfile --store-dir /srv/pnpm-store
 pnpm build
+test -f dist/index.html
 sudo nginx -t
 sudo systemctl reload nginx
 ```
 
-After the issue is resolved, return to the deployment branch (replace `main` if
-the repository uses another branch) with `git switch main` and deploy normally.
+After resolving the problem, return to the deployment branch:
+
+```sh
+cd /srv/apps/Sapiensfrontend
+git switch main
+git pull --ff-only
+```
+
+For stronger rollback guarantees in the future, keep timestamped release copies
+under `/srv/releases/Sapiensfrontend`, never on the root filesystem.
+
+## Troubleshooting
+
+### `ERR_PNPM_IGNORED_BUILDS`
+
+Confirm the latest `pnpm-workspace.yaml` was pulled and contains `allowBuilds`
+with `true` for `@tailwindcss/oxide` and `esbuild`. Remove only the incomplete
+repository dependency directory and reinstall:
+
+```sh
+cd /srv/apps/Sapiensfrontend
+rm -rf /srv/apps/Sapiensfrontend/node_modules
+pnpm install --frozen-lockfile --store-dir /srv/pnpm-store
+```
+
+### pnpm reports `node:sqlite` is missing
+
+The active Node version is too old for pnpm 11.19.0. Confirm Node 22.13+ with
+`node --version`. Do not downgrade pnpm independently of `package.json`.
+
+### Pull blocked by local changes
+
+Inspect before discarding anything:
+
+```sh
+cd /srv/apps/Sapiensfrontend
+git status --short
+git diff
+```
+
+Never run a destructive Git reset without identifying why the VM working tree is
+dirty. Build output and dependencies should remain untracked.
+
+### SPA route returns 404
+
+Check that the frontend Nginx server uses:
+
+```nginx
+try_files $uri $uri/ /index.html;
+```
+
+Then run `sudo nginx -t` before reloading Nginx.
+
+### Disk usage grows unexpectedly
+
+```sh
+df -h / /srv
+sudo du -xhd1 / | sort -h
+du -hd2 /srv/apps /srv/pnpm-store /srv/releases 2>/dev/null | sort -h
+```
+
+Investigate before deleting anything. Do not delete `/srv/pnpm-store`, the live
+`dist`, Nginx configuration, certificates, or backend data as routine cleanup.

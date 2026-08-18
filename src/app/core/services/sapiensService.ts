@@ -24,6 +24,13 @@ interface BackendSapiens {
   created_at: string;
 }
 
+interface BackendCreateSapiensResponse {
+  id: number | string;
+  name: string;
+  role?: string;
+  created_at?: string;
+}
+
 function transformSapiens(backendSapiens: BackendSapiens): Sapiens {
   return {
     id: backendSapiens.id.toString(),
@@ -36,11 +43,18 @@ function transformSapiens(backendSapiens: BackendSapiens): Sapiens {
 
 class SapiensService {
   async createSapiens(request: CreateSapiensRequest): Promise<CreateSapiensResponse> {
-    const response = await apiClient.post<CreateSapiensResponse>(
+    const response = await apiClient.post<BackendCreateSapiensResponse>(
       API_ENDPOINTS.createSapiens,
       request
     );
-    return response.data;
+    const data = response.data;
+
+    return {
+      sapiensId: String(data.id),
+      name: data.name,
+      role: data.role,
+      createdAt: data.created_at ?? new Date().toISOString(),
+    };
   }
 
   async loadSapiens(request: LoadSapiensRequest): Promise<Sapiens> {
