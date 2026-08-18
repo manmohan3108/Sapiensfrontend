@@ -58,7 +58,7 @@ Required locations on the 100 GB `/srv` filesystem:
 - Dependencies: `/srv/apps/Sapiensfrontend/node_modules`.
 - Vite output: `/srv/apps/Sapiensfrontend/dist`.
 - pnpm content-addressable store: `/srv/pnpm-store/v11`.
-- Future release archives or rollback copies: `/srv/releases/Sapiensfrontend`.
+- Any optional future release archives: `/srv/releases/Sapiensfrontend`.
 
 Verify placement and capacity:
 
@@ -124,8 +124,8 @@ The production clone already exists. These commands are only for reconstructing
 the VM or creating a replacement server:
 
 ```sh
-sudo mkdir -p /srv/apps /srv/pnpm-store /srv/releases/Sapiensfrontend
-sudo chown "$USER":"$USER" /srv/apps /srv/pnpm-store /srv/releases/Sapiensfrontend
+sudo mkdir -p /srv/apps /srv/pnpm-store
+sudo chown "$USER":"$USER" /srv/apps /srv/pnpm-store
 git clone https://github.com/manmohan3108/Sapiensfrontend.git /srv/apps/Sapiensfrontend
 ```
 
@@ -269,42 +269,34 @@ Expected results:
 
 ## Routine deployment update
 
-Before changing anything, record the current commit on the large disk:
+Routine deployments are automated by the repository's `deploy.sh`. It pulls
+`origin/main`, performs a frozen-lockfile install using the pnpm store on `/srv`,
+and creates a new production `dist` build.
+
+After pushing changes to GitHub, deploy on the VM with:
 
 ```sh
 cd /srv/apps/Sapiensfrontend
-git status --short
-git rev-parse HEAD | tee /srv/apps/Sapiensfrontend.previous-commit
+./deploy.sh
 ```
 
-There must be no tracked modifications. Generated `node_modules/` and `dist/`
-may appear as untracked until a `.gitignore` is added. Then deploy:
-
-```sh
-git pull --ff-only
-pnpm install --frozen-lockfile --store-dir /srv/pnpm-store
-pnpm build
-test -f dist/index.html
-sudo nginx -t
-sudo systemctl reload nginx
-```
-
-Nginx already reads `dist` directly. There is no frontend systemd service and no
-Node process to restart.
+Run it as the normal deployment user, not with `sudo`. Nginx already reads `dist`
+directly, so there is no old frontend process to kill, no frontend systemd service
+to restart, and no routine Nginx reload.
 
 ## Safe rollback
 
-Rebuild the commit recorded before the update without rewriting branch history:
+Find the last known-good commit, check it out without rewriting branch history,
+and rebuild it:
 
 ```sh
 cd /srv/apps/Sapiensfrontend
 git status --short
-git switch --detach "$(cat /srv/apps/Sapiensfrontend.previous-commit)"
+git log --oneline -10
+git switch --detach <last-known-good-commit>
 pnpm install --frozen-lockfile --store-dir /srv/pnpm-store
 pnpm build
 test -f dist/index.html
-sudo nginx -t
-sudo systemctl reload nginx
 ```
 
 After resolving the problem, return to the deployment branch:
