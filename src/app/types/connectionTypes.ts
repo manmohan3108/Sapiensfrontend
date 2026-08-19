@@ -50,4 +50,10 @@ export interface ConnectionsResponse {
 
 export type ConnectionFormValue = string | boolean;
 export type CreateConnectionPayload = Record<string, ConnectionFormValue> & { provider: string };
-
+export interface UpdateConnectionPayload {
+  base_url?: string;
+  account_label?: string;
+  email?: string;
+  api_token?: string;
+  read_only?: boolean;
+}

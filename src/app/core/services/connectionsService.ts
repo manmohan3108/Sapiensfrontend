@@ -2,6 +2,7 @@ import { apiConfig } from '../config/apiConfig';
 import type {
   ConnectionsResponse,
   CreateConnectionPayload,
+  UpdateConnectionPayload,
   SapiensConnection,
   SapiensConnectionRequest,
 } from '../../types/connectionTypes';
@@ -41,6 +42,13 @@ export const connectionsService = {
     return connectionFetch<VerifyResponse>(`${collectionPath(sapienId)}/${connectionId}`, { method: 'POST' });
   },
 
+  update(sapienId: number, connectionId: number, payload: UpdateConnectionPayload): Promise<ConnectionResponse> {
+    return connectionFetch<ConnectionResponse>(`${collectionPath(sapienId)}/${connectionId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    });
+  },
+
   disconnect(sapienId: number, connectionId: number): Promise<{ deleted: true; connection_id: number }> {
     return connectionFetch(`${collectionPath(sapienId)}/${connectionId}`, { method: 'DELETE' });
   },
@@ -52,4 +60,3 @@ export const connectionsService = {
     });
   },
 };
-
