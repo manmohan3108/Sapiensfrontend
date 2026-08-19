@@ -2,6 +2,7 @@ import { createBrowserRouter } from 'react-router';
 import { LandingPage } from './pages/LandingPage';
 import { WorkspacePage } from './pages/WorkspacePage';
 import { EngramPage } from './pages/EngramPage';
+import { ConnectionsPage } from './pages/ConnectionsPage';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
 export const router = createBrowserRouter([
@@ -18,6 +19,11 @@ export const router = createBrowserRouter([
   {
     path: '/engram',
     Component: EngramPage,
+    ErrorBoundary,
+  },
+  {
+    path: '/connections',
+    Component: ConnectionsPage,
     ErrorBoundary,
   },
   {

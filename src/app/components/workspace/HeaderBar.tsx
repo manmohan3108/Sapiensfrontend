@@ -1,4 +1,4 @@
-import { Brain, Home, Save, ChevronRight, Cpu, Wifi, Bug, Clock, DatabaseZap, Hourglass } from 'lucide-react';
+import { Brain, Home, Save, ChevronRight, Cpu, Wifi, Bug, Clock, DatabaseZap, Hourglass, PlugZap } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { useSapiens } from '../../hooks/useSapiens';
 import { useSapiensStore } from '../../core/state/sapiensStore';
@@ -149,6 +149,16 @@ export function HeaderBar() {
           />
 
           <div className="w-px h-5 bg-white/10" />
+
+          <button
+            onClick={() => navigate('/connections')}
+            title="Manage external account connections"
+            className="flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs transition-all duration-150"
+            style={{ background: 'rgba(34,211,238,0.08)', border: '1px solid rgba(34,211,238,0.22)', color: 'rgba(103,232,249,0.78)' }}
+          >
+            <PlugZap className="w-3.5 h-3.5" />
+            Connections
+          </button>
 
           {/* Engram Explorer */}
           <button
