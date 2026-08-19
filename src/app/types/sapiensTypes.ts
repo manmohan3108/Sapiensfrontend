@@ -177,3 +177,30 @@ export interface SapiensStateResponse {
   activityLogs: ActivityLog[];
   outputs: Output[];
 }
+
+export interface ChatHistoryItem {
+  thread_id: string;
+  title: string;
+  message_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ChatHistoryResponse {
+  sapien_id: number;
+  count: number;
+  chats: ChatHistoryItem[];
+}
+
+export interface StoredChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  occurred_at: string;
+  source?: Record<string, unknown>;
+}
+
+export interface ChatDetail extends ChatHistoryItem {
+  sapien_id: number;
+  messages: StoredChatMessage[];
+}

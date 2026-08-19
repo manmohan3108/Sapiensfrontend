@@ -1,14 +1,17 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import {
-  Send, Trash2, Brain, User, AlertCircle,
+  Send, Brain, User, AlertCircle,
   Loader2, ChevronDown, Sparkles, Copy, Check,
   ThumbsUp, ThumbsDown, Star, BookMarked, MinusCircle,
   Database, ChevronRight, Search,
+  History, Plus, RefreshCw,
 } from 'lucide-react';
 import { useSapiens } from '../../hooks/useSapiens';
 import { useSapiensStore } from '../../core/state/sapiensStore';
+import { sapiensService } from '../../core/services/sapiensService';
 import { formatTime } from '../../utils/formatters';
-import { ChatMessage, UserSignalType } from '../../types/sapiensTypes';
+import { ChatHistoryItem, ChatMessage, UserSignalType } from '../../types/sapiensTypes';
+import { ApiError } from '../../types/apiTypes';
 
 // ─── Typing dots ──────────────────────────────────────────────────────────────
 function TypingDots() {
@@ -407,10 +410,14 @@ export function ChatWindow() {
   const [focused, setFocused] = useState(false);
   const [showScroll, setShowScroll] = useState(false);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [history, setHistory] = useState<ChatHistoryItem[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [historyError, setHistoryError] = useState<string | null>(null);
 
-  const { sendTextInput, sendUserSignal, sendQuery } = useSapiens();
+  const { sendTextInput, sendUserSignal, sendQuery, loadChat, startNewChat } = useSapiens();
   const msgs = useSapiensStore((s) => s.chatMessages);
-  const clear = useSapiensStore((s) => s.clearChatMessages);
   const currentSapiens = useSapiensStore((s) => s.currentSapiens);
   const chatSessionId = useSapiensStore((s) => s.chatSessionId);
   const status = useSapiensStore((s) => s.status);
@@ -422,6 +429,49 @@ export function ChatWindow() {
   const atBottomRef = useRef(true);
 
   const isProcessing = status === 'processing';
+
+  const refreshHistory = useCallback(async () => {
+    if (!currentSapiens) return;
+    setHistoryLoading(true);
+    setHistoryError(null);
+    try {
+      const result = await sapiensService.getChatHistory(currentSapiens.id);
+      setHistory(result.chats ?? []);
+    } catch (error) {
+      setHistoryError((error as ApiError).message || 'Could not load chat history.');
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, [currentSapiens]);
+
+  useEffect(() => {
+    startNewChat();
+    setHistory([]);
+    setHistoryOpen(false);
+    void refreshHistory();
+  }, [currentSapiens?.id]); // Reset the conversation when the selected sapien changes.
+
+  const selectChat = async (threadId: string) => {
+    if (detailLoading || isProcessing) return;
+    setDetailLoading(true);
+    setHistoryError(null);
+    try {
+      await loadChat(threadId);
+      setHistoryOpen(false);
+      atBottomRef.current = true;
+    } catch (error) {
+      const apiError = error as ApiError;
+      if (apiError.status === 404) {
+        startNewChat();
+        setHistory((items) => items.filter((item) => item.thread_id !== threadId));
+        setHistoryError('That chat is no longer available. A new chat is ready.');
+      } else {
+        setHistoryError(apiError.message || 'Could not open this chat.');
+      }
+    } finally {
+      setDetailLoading(false);
+    }
+  };
 
   const scrollToBottom = useCallback((smooth = true) => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: smooth ? 'smooth' : 'instant' });
@@ -467,6 +517,7 @@ export function ChatWindow() {
       await sendQuery(t);
     } else {
       await sendTextInput(t);
+      await refreshHistory();
     }
   };
 
@@ -501,7 +552,7 @@ export function ChatWindow() {
       <div style={{ height: '3px', background: 'linear-gradient(90deg, #7c3aed, #4f46e5, #7c3aed)', flexShrink: 0 }} />
 
       {/* ── Header ── */}
-      <div className="flex-shrink-0 flex items-center justify-between px-4 py-3"
+      <div className="flex-shrink-0 relative flex items-center justify-between px-4 py-3"
         style={{ background: 'rgba(124,58,237,0.07)', borderBottom: '1px solid rgba(124,58,237,0.12)' }}>
         <div className="flex items-center gap-3 min-w-0">
           <div className="w-8 h-8 rounded-xl flex items-center justify-center"
@@ -539,13 +590,54 @@ export function ChatWindow() {
             </span>
           )}
           {msgs.length > 0 && (
-            <button onClick={clear}
+            <button onClick={startNewChat}
               className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] text-white/20
                 hover:text-red-400 hover:bg-red-500/10 transition-all border border-transparent hover:border-red-500/15">
-              <Trash2 className="w-3 h-3" /> Clear
+              <Plus className="w-3 h-3" /> New
             </button>
           )}
+          <button onClick={() => setHistoryOpen((open) => !open)}
+            className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] text-white/35 hover:text-violet-300 hover:bg-violet-500/10 transition-all border border-white/[0.06]">
+            <History className="w-3 h-3" /> History
+          </button>
         </div>
+
+        {historyOpen && (
+          <div className="absolute z-30 top-[calc(100%+6px)] right-3 left-3 sm:left-auto sm:w-80 rounded-xl overflow-hidden"
+            style={{ background: 'rgba(10,14,26,0.98)', border: '1px solid rgba(124,58,237,0.28)', boxShadow: '0 18px 45px rgba(0,0,0,0.55)', backdropFilter: 'blur(18px)' }}>
+            <div className="flex items-center justify-between px-3 py-2 border-b border-white/[0.06]">
+              <span className="text-xs text-white/65">Recent chats</span>
+              <div className="flex items-center gap-1">
+                <button onClick={() => void refreshHistory()} disabled={historyLoading} title="Refresh history"
+                  className="p-1.5 rounded-md text-white/30 hover:text-violet-300 hover:bg-white/[0.06] disabled:opacity-40">
+                  <RefreshCw className={`w-3 h-3 ${historyLoading ? 'animate-spin' : ''}`} />
+                </button>
+                <button onClick={() => { startNewChat(); setHistoryOpen(false); }}
+                  className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] text-violet-300 bg-violet-500/10 hover:bg-violet-500/20">
+                  <Plus className="w-3 h-3" /> New chat
+                </button>
+              </div>
+            </div>
+            {historyError && <p className="px-3 py-2 text-[10px] text-red-300/80 border-b border-red-500/10">{historyError}</p>}
+            <div className="max-h-72 overflow-y-auto p-1.5">
+              {historyLoading && history.length === 0 ? (
+                <div className="flex items-center justify-center gap-2 py-8 text-xs text-white/30"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading chats…</div>
+              ) : history.length === 0 ? (
+                <p className="py-8 text-center text-xs text-white/25">No saved chats yet.</p>
+              ) : history.map((chat) => (
+                <button key={chat.thread_id} onClick={() => void selectChat(chat.thread_id)} disabled={detailLoading || isProcessing}
+                  className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-violet-500/10 disabled:opacity-50 transition-colors"
+                  style={chat.thread_id === chatSessionId ? { background: 'rgba(124,58,237,0.13)', border: '1px solid rgba(124,58,237,0.2)' } : { border: '1px solid transparent' }}>
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="truncate text-xs text-white/70">{chat.title || 'Untitled chat'}</span>
+                    <span className="flex-shrink-0 text-[9px] text-white/25">{chat.message_count} msgs</span>
+                  </div>
+                  <p className="mt-1 text-[9px] text-white/25">{new Date(chat.updated_at).toLocaleString()}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── Messages ── */}

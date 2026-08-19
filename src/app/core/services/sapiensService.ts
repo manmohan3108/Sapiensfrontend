@@ -14,6 +14,8 @@ import {
   UserSignalPayload,
   SapiensStateResponse,
   Sapiens,
+  ChatHistoryResponse,
+  ChatDetail,
 } from '../../types/sapiensTypes';
 import { logger } from '../../utils/logger';
 
@@ -134,6 +136,20 @@ class SapiensService {
     } catch (err) {
       logger.warn('User signal could not be sent to backend', err);
     }
+  }
+
+  async getChatHistory(sapiensId: string, limit = 20): Promise<ChatHistoryResponse> {
+    const response = await apiClient.get<ChatHistoryResponse>(
+      `${API_ENDPOINTS.sapienChats(sapiensId)}?limit=${limit}`
+    );
+    return response.data;
+  }
+
+  async getChatDetail(sapiensId: string, threadId: string): Promise<ChatDetail> {
+    const response = await apiClient.get<ChatDetail>(
+      `${API_ENDPOINTS.sapienChats(sapiensId)}/${encodeURIComponent(threadId)}`
+    );
+    return response.data;
   }
 
   async runEngine(sapiensId: string): Promise<void> {

@@ -31,6 +31,7 @@ export const API_ENDPOINTS = {
   chat: '/chat',
   query: '/query',
   chatSignal: '/chat/signal',
+  sapienChats: (sapienId: string | number) => `/sapien/${sapienId}/chats`,
   sapiensState: '/sapiens_state',
   listSapiens: '/get-all-sapiens',
   runEngine: '/run-engines',

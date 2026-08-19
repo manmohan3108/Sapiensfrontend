@@ -46,6 +46,7 @@ interface SapiensStore {
   addChatMessage: (msg: ChatMessage) => void;
   updateChatMessage: (id: string, partial: Partial<ChatMessage>) => void;
   clearChatMessages: () => void;
+  setChatMessages: (messages: ChatMessage[]) => void;
   setChatSessionId: (id: string | null) => void;
 
   // ── Observability actions ─────────────────────────────────────────────────
@@ -122,6 +123,8 @@ export const useSapiensStore = create<SapiensStore>((set) => ({
 
   clearChatMessages: () =>
     set({ chatMessages: [], chatSessionId: null, lastMemoryUnits: [], lastDebugInfo: null }),
+
+  setChatMessages: (messages) => set({ chatMessages: messages }),
 
   setChatSessionId: (id) => set({ chatSessionId: id }),
 

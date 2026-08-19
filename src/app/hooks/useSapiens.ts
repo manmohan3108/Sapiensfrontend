@@ -24,6 +24,7 @@ export function useSapiens() {
     addChatMessage,
     updateChatMessage,
     clearChatMessages,
+    setChatMessages,
     setChatSessionId,
     setLastMemoryUnits,
     setLastDebugInfo,
@@ -231,6 +232,31 @@ export function useSapiens() {
     ]
   );
 
+  const loadChat = useCallback(async (threadId: string) => {
+    if (!currentSapiens) return;
+    const detail = await sapiensService.getChatDetail(currentSapiens.id, threadId);
+    const seen = new Set<string>();
+    const messages = [...detail.messages]
+      .sort((a, b) => new Date(a.occurred_at).getTime() - new Date(b.occurred_at).getTime())
+      .filter((message) => !seen.has(message.id) && seen.add(message.id))
+      .map((message) => ({
+        id: message.id,
+        role: message.role,
+        content: message.content,
+        timestamp: message.occurred_at,
+        sessionId: detail.thread_id,
+      }));
+    setChatMessages(messages);
+    setChatSessionId(detail.thread_id);
+    setLastMemoryUnits([]);
+    setLastDebugInfo(null);
+    return detail;
+  }, [currentSapiens, setChatMessages, setChatSessionId, setLastMemoryUnits, setLastDebugInfo]);
+
+  const startNewChat = useCallback(() => {
+    clearChatMessages();
+  }, [clearChatMessages]);
+
   // ── Send user signal ─────────────────────────────────────────────────────────
   const sendUserSignal = useCallback(
     async (messageId: string, signal: UserSignalType, content?: string) => {
@@ -352,6 +378,8 @@ export function useSapiens() {
     sendTextInput,
     sendQuery,
     sendUserSignal,
+    loadChat,
+    startNewChat,
     runEngine,
     refreshSapiensState,
     returnToHome,
