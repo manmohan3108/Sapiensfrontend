@@ -1,47 +1,19 @@
-import { Brain } from 'lucide-react';
+import { ArrowRight, Brain, Check, FileText, MessageCircle, Sparkles } from 'lucide-react';
 import { Button } from '../ui/button';
-
-interface HeroSectionProps {
-  onCreateClick: () => void;
-  onLoadClick: () => void;
-}
-
+interface HeroSectionProps { onCreateClick: () => void; onLoadClick: () => void; }
 export function HeroSection({ onCreateClick, onLoadClick }: HeroSectionProps) {
-  return (
-    <div className="text-center mb-24 pt-8">
-      <div className="flex justify-center mb-8">
-        <div className="p-6 bg-gradient-to-br from-primary/10 via-primary/5 to-accent rounded-3xl shadow-lg">
-          <Brain className="w-20 h-20 text-primary" />
-        </div>
-      </div>
-      
-      <h1 className="mb-6 text-5xl bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-        Sapiens — Experimental Cognitive Architecture
-      </h1>
-      
-      <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-8 leading-relaxed">
-        A platform for building and experimenting with artificial cognitive systems.
-        Create Sapiens instances, feed them knowledge, and observe how they reason, 
-        organize information, and evolve their internal understanding.
-      </p>
-      
-      <div className="flex gap-4 justify-center">
-        <Button 
-          size="lg" 
-          onClick={onCreateClick}
-          className="px-8 py-6 text-lg shadow-lg hover:shadow-xl transition-shadow"
-        >
-          Create Sapiens
-        </Button>
-        <Button 
-          size="lg" 
-          variant="outline" 
-          onClick={onLoadClick}
-          className="px-8 py-6 text-lg"
-        >
-          Load Existing Sapiens
-        </Button>
-      </div>
-    </div>
-  );
+  return <section className="relative isolate overflow-hidden pb-20 pt-32 sm:pb-28 sm:pt-40">
+    <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_16%_10%,rgba(245,158,11,0.14),transparent_28%),radial-gradient(circle_at_80%_25%,rgba(139,92,246,0.18),transparent_34%)]" />
+    <div className="mx-auto grid max-w-7xl items-center gap-14 px-4 sm:px-6 lg:grid-cols-[1.08fr_.92fr] lg:px-8"><div className="max-w-3xl">
+      <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-violet-200/80 bg-white/70 px-3 py-1.5 text-sm font-medium text-violet-700 shadow-sm backdrop-blur dark:border-violet-800 dark:bg-violet-950/50 dark:text-violet-300"><Sparkles className="size-3.5" />A memory that becomes more useful over time</div>
+      <h1 className="text-balance text-5xl font-semibold leading-[1.02] tracking-[-0.045em] sm:text-6xl lg:text-7xl">Your thoughts, remembered. <span className="bg-gradient-to-r from-violet-600 via-fuchsia-500 to-amber-500 bg-clip-text text-transparent">Your context, connected.</span></h1>
+      <p className="mt-7 max-w-2xl text-lg leading-8 text-muted-foreground sm:text-xl">Sapiens is an experimental cognitive architecture—and your personal memory keeper. Give it conversations, notes, and documents, then explore how ideas connect and understanding evolves.</p>
+      <div className="mt-9 flex flex-col gap-3 sm:flex-row"><Button size="lg" onClick={onCreateClick} className="group h-12 rounded-full bg-violet-600 px-6 text-base text-white shadow-lg shadow-violet-600/20 hover:bg-violet-700">Create your Sapiens <ArrowRight className="ml-1 size-4 transition-transform group-hover:translate-x-1" /></Button><Button size="lg" variant="outline" onClick={onLoadClick} className="h-12 rounded-full bg-background/70 px-6 text-base">Open an existing memory</Button></div>
+      <div className="mt-7 flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">{['Persistent context', 'Observable memory', 'You stay in control'].map(item => <span key={item} className="flex items-center gap-1.5"><Check className="size-4 text-emerald-600" />{item}</span>)}</div>
+    </div><div className="relative mx-auto w-full max-w-lg" aria-label="Sapiens connecting conversations and documents into memory"><div className="absolute -inset-8 -z-10 rounded-full bg-violet-500/10 blur-3xl" /><div className="rounded-[2rem] border border-white/70 bg-white/70 p-4 shadow-2xl shadow-violet-950/10 backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/70"><div className="rounded-[1.5rem] border border-border/70 bg-background/90 p-5 sm:p-7">
+      <div className="flex items-center justify-between border-b border-border/60 pb-5"><div className="flex items-center gap-3"><span className="grid size-10 place-items-center rounded-xl bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-300"><Brain className="size-5" /></span><div><p className="font-semibold">My Sapiens</p><p className="text-xs text-muted-foreground">Memory is evolving</p></div></div><span className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"><span className="size-1.5 rounded-full bg-emerald-500" />Active</span></div>
+      <div className="space-y-3 py-5"><div className="ml-auto max-w-[85%] rounded-2xl rounded-tr-sm bg-violet-600 px-4 py-3 text-sm leading-6 text-white">Remember the themes from my research notes and help me connect them.</div><div className="max-w-[90%] rounded-2xl rounded-tl-sm bg-muted px-4 py-3 text-sm leading-6">I’ll keep the people, ideas, and relationships in context as we work.</div></div>
+      <div className="grid grid-cols-2 gap-3"><div className="rounded-xl border p-3"><FileText className="mb-3 size-4 text-amber-600" /><p className="text-xs font-medium">Research notes</p><p className="mt-1 text-[11px] text-muted-foreground">12 memories linked</p></div><div className="rounded-xl border p-3"><MessageCircle className="mb-3 size-4 text-fuchsia-600" /><p className="text-xs font-medium">Conversations</p><p className="mt-1 text-[11px] text-muted-foreground">Context preserved</p></div></div>
+    </div></div></div></div>
+  </section>;
 }

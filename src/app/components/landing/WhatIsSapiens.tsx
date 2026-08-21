@@ -1,55 +1,7 @@
-import { Network, Database, Lightbulb } from 'lucide-react';
-import { Card } from '../ui/card';
-
-export function WhatIsSapiens() {
-  return (
-    <div className="mb-24">
-      <div className="text-center mb-12">
-        <h2 className="text-slate-900 mb-4">What is Sapiens?</h2>
-        <p className="text-lg text-slate-600 max-w-3xl mx-auto leading-relaxed">
-          Sapiens is a cognitive system architecture designed to simulate aspects of human-like thinking. 
-          Instead of being a single black-box AI model, Sapiens organizes memory, reasoning engines, 
-          and structured knowledge to process information over time.
-        </p>
-      </div>
-
-      <div className="grid md:grid-cols-3 gap-6">
-        <Card className="p-6 border-slate-200 hover:border-blue-300 transition-colors">
-          <div className="flex justify-center mb-4">
-            <div className="p-3 bg-blue-50 rounded-xl">
-              <Database className="w-8 h-8 text-blue-600" />
-            </div>
-          </div>
-          <h3 className="text-center mb-3 text-slate-900">Structured Memory</h3>
-          <p className="text-slate-600 text-center">
-            Information is organized in a structured memory system that evolves with each interaction.
-          </p>
-        </Card>
-
-        <Card className="p-6 border-slate-200 hover:border-purple-300 transition-colors">
-          <div className="flex justify-center mb-4">
-            <div className="p-3 bg-purple-50 rounded-xl">
-              <Lightbulb className="w-8 h-8 text-purple-600" />
-            </div>
-          </div>
-          <h3 className="text-center mb-3 text-slate-900">Reasoning Engines</h3>
-          <p className="text-slate-600 text-center">
-            Multiple cognitive processes work together to analyze, synthesize, and generate insights.
-          </p>
-        </Card>
-
-        <Card className="p-6 border-slate-200 hover:border-green-300 transition-colors">
-          <div className="flex justify-center mb-4">
-            <div className="p-3 bg-green-50 rounded-xl">
-              <Network className="w-8 h-8 text-green-600" />
-            </div>
-          </div>
-          <h3 className="text-center mb-3 text-slate-900">Knowledge Evolution</h3>
-          <p className="text-slate-600 text-center">
-            The system's understanding grows and adapts as it processes new information and experiences.
-          </p>
-        </Card>
-      </div>
-    </div>
-  );
-}
+import { BrainCircuit, Database, Network } from 'lucide-react';
+const ideas = [
+  { icon: Database, title: 'It remembers', text: 'New information joins a persistent, structured memory instead of disappearing when a conversation ends.' },
+  { icon: Network, title: 'It connects', text: 'People, topics, and ideas become relationships you can inspect, revisit, and build upon.' },
+  { icon: BrainCircuit, title: 'It reasons in context', text: 'Cognitive engines work from what your Sapiens has learned, so each response can reflect the bigger picture.' },
+];
+export function WhatIsSapiens() { return <section className="py-20 sm:py-28" aria-labelledby="what-heading"><div className="grid gap-12 lg:grid-cols-[.8fr_1.2fr] lg:items-start"><div className="lg:sticky lg:top-28"><p className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-violet-600 dark:text-violet-400">More than a chatbot</p><h2 id="what-heading" className="text-3xl font-semibold tracking-tight sm:text-5xl">A living map of what matters to you.</h2><p className="mt-5 text-lg leading-8 text-muted-foreground">Most AI conversations start from zero. Sapiens is designed to process information over time—organizing memory, reasoning systems, and structured knowledge into an understanding that can evolve with you.</p></div><div className="grid gap-4">{ideas.map(({ icon: Icon, title, text }, index) => <article key={title} className="group flex gap-5 rounded-2xl border border-border/70 bg-card p-6 transition-all hover:-translate-y-0.5 hover:border-violet-300 hover:shadow-lg dark:hover:border-violet-800"><span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-300"><Icon className="size-6" /></span><div><p className="mb-1 text-xs font-semibold text-muted-foreground">0{index + 1}</p><h3 className="text-xl font-semibold">{title}</h3><p className="mt-2 leading-7 text-muted-foreground">{text}</p></div></article>)}</div></div></section>; }

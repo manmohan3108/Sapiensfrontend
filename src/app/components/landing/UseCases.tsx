@@ -1,60 +1,8 @@
-import { FlaskConical, BookOpen, Cpu, Search } from 'lucide-react';
-import { Card } from '../ui/card';
-
-export function UseCases() {
-  const useCases = [
-    {
-      icon: FlaskConical,
-      title: 'Research Experimentation',
-      description: 'Test hypotheses about cognitive architectures, memory systems, and reasoning patterns.'
-    },
-    {
-      icon: BookOpen,
-      title: 'Knowledge Exploration',
-      description: 'Build systems that can ingest, organize, and explore large bodies of information.'
-    },
-    {
-      icon: Cpu,
-      title: 'AI Cognition Prototyping',
-      description: 'Develop and iterate on novel approaches to artificial intelligence and reasoning systems.'
-    },
-    {
-      icon: Search,
-      title: 'Studying Reasoning Systems',
-      description: 'Observe and analyze how different cognitive processes interact and produce emergent behaviors.'
-    }
-  ];
-
-  return (
-    <div className="mb-24">
-      <div className="text-center mb-12">
-        <h2 className="text-slate-900 mb-4">Example Use Cases</h2>
-        <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-          Explore the possibilities of cognitive system experimentation
-        </p>
-      </div>
-
-      <div className="grid md:grid-cols-2 gap-6">
-        {useCases.map((useCase, index) => {
-          const Icon = useCase.icon;
-          return (
-            <Card 
-              key={index} 
-              className="p-6 border-slate-200 hover:border-blue-400 transition-all cursor-default"
-            >
-              <div className="flex items-start gap-4">
-                <div className="p-3 bg-slate-100 rounded-lg">
-                  <Icon className="w-6 h-6 text-slate-700" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="mb-2 text-slate-900">{useCase.title}</h3>
-                  <p className="text-slate-600">{useCase.description}</p>
-                </div>
-              </div>
-            </Card>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
+import { BookOpen, FlaskConical, Lightbulb, PenLine } from 'lucide-react';
+const uses = [
+  { icon: PenLine, title: 'For creators', text: 'Keep characters, themes, references, and unfinished ideas close while a body of work grows.' },
+  { icon: BookOpen, title: 'For knowledge explorers', text: 'Collect a subject over time and return to it without rebuilding your context.' },
+  { icon: FlaskConical, title: 'For researchers', text: 'Experiment with memory structures and observe how new evidence changes understanding.' },
+  { icon: Lightbulb, title: 'For curious builders', text: 'Prototype cognitive workflows and study how multiple reasoning processes cooperate.' },
+];
+export function UseCases() { return <section className="rounded-[2rem] bg-slate-950 px-6 py-16 text-white sm:px-10 lg:px-14" aria-labelledby="uses-heading"><div className="grid gap-12 lg:grid-cols-[.8fr_1.2fr]"><div><p className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-violet-300">Made for deep work</p><h2 id="uses-heading" className="text-3xl font-semibold tracking-tight sm:text-4xl">When one conversation is not enough.</h2><p className="mt-4 leading-7 text-slate-400">Sapiens is for work where the history, relationships, and evolution of an idea matter as much as the latest prompt.</p></div><div className="grid gap-x-8 gap-y-10 sm:grid-cols-2">{uses.map(({icon: Icon,title,text}) => <article key={title}><Icon className="mb-4 size-5 text-amber-300" /><h3 className="text-lg font-semibold">{title}</h3><p className="mt-2 leading-7 text-slate-400">{text}</p></article>)}</div></div></section>; }

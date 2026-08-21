@@ -18,6 +18,7 @@ export function ThemeToggle({ variant = 'ghost', size = 'icon', className }: The
       onClick={toggleTheme}
       className={className}
       title={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+      aria-label={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
     >
       <div className="relative w-5 h-5">
         <Sun className={`absolute inset-0 h-5 w-5 transition-all duration-300 ${

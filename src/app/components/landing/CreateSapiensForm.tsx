@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, AlertCircle } from 'lucide-react';
+import { ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -41,11 +41,11 @@ export function CreateSapiensForm() {
   };
 
   return (
-    <Card className="max-w-md mx-auto">
+    <Card className="mx-auto max-w-xl rounded-3xl border-border/70 bg-card/90 shadow-xl shadow-violet-950/5 backdrop-blur">
       <CardHeader>
-        <CardTitle>Create New Sapiens</CardTitle>
+        <CardTitle className="text-2xl">Create your Sapiens</CardTitle>
         <CardDescription>
-          Initialize a new cognitive instance
+          A name is all you need. You can shape its role as you go.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -63,7 +63,7 @@ export function CreateSapiensForm() {
             <Input
               id="name"
               type="text"
-              placeholder="Enter Sapiens name"
+              placeholder="e.g. Atlas, Studio Memory"
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
@@ -76,7 +76,7 @@ export function CreateSapiensForm() {
             <Input
               id="role"
               type="text"
-              placeholder="e.g., Research Assistant, Analyst"
+              placeholder="e.g. Research companion, Story editor"
               value={role}
               onChange={(e) => setRole(e.target.value)}
               disabled={isCreating}
@@ -85,11 +85,11 @@ export function CreateSapiensForm() {
           
           <Button
             type="submit"
-            className="w-full"
+            className="h-11 w-full bg-violet-600 text-white hover:bg-violet-700"
             disabled={!name.trim() || isCreating}
           >
-            <Plus className="w-4 h-4 mr-2" />
-            {isCreating ? 'Creating...' : 'Create Sapiens'}
+            {isCreating ? <Loader2 className="mr-2 size-4 animate-spin" /> : <ArrowRight className="mr-2 size-4" />}
+            {isCreating ? 'Creating your memory…' : 'Create and enter workspace'}
           </Button>
         </form>
       </CardContent>

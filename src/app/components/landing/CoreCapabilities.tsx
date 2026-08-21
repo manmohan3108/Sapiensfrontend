@@ -1,71 +1,8 @@
-import { Brain, FileText, Eye, TrendingUp } from 'lucide-react';
-import { Card } from '../ui/card';
-
-export function CoreCapabilities() {
-  const capabilities = [
-    {
-      icon: Brain,
-      title: 'Memory-Driven Cognition',
-      description: 'Persistent memory structures that retain and organize knowledge across sessions, enabling contextual understanding.',
-      color: 'blue'
-    },
-    {
-      icon: TrendingUp,
-      title: 'Structured Knowledge Evolution',
-      description: 'Dynamic knowledge graphs that grow and refine themselves as the system processes new information.',
-      color: 'purple'
-    },
-    {
-      icon: FileText,
-      title: 'Interactive Input',
-      description: 'Feed the system through files and text inputs, allowing it to ingest and process diverse information sources.',
-      color: 'green'
-    },
-    {
-      icon: Eye,
-      title: 'Observable Reasoning',
-      description: 'Track internal reasoning processes, memory updates, and cognitive state changes in real-time.',
-      color: 'orange'
-    }
-  ];
-
-  const colorClasses = {
-    blue: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 group-hover:bg-blue-500/20',
-    purple: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 group-hover:bg-purple-500/20',
-    green: 'bg-green-500/10 text-green-600 dark:text-green-400 group-hover:bg-green-500/20',
-    orange: 'bg-orange-500/10 text-orange-600 dark:text-orange-400 group-hover:bg-orange-500/20'
-  };
-
-  return (
-    <div className="mb-24">
-      <div className="text-center mb-12">
-        <h2 className="mb-4">Core Capabilities</h2>
-        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          Sapiens provides a comprehensive set of features for experimenting with cognitive architectures
-        </p>
-      </div>
-
-      <div className="grid md:grid-cols-2 gap-6">
-        {capabilities.map((capability, index) => {
-          const Icon = capability.icon;
-          const colorClass = colorClasses[capability.color as keyof typeof colorClasses];
-          return (
-            <Card key={index} className="p-8 hover:shadow-lg transition-all group">
-              <div className="flex items-start gap-4">
-                <div className={`p-3 rounded-xl transition-colors ${colorClass}`}>
-                  <Icon className="w-7 h-7" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="mb-2">{capability.title}</h3>
-                  <p className="text-muted-foreground leading-relaxed">
-                    {capability.description}
-                  </p>
-                </div>
-              </div>
-            </Card>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
+import { Eye, FileText, MessagesSquare, Route } from 'lucide-react';
+const capabilities = [
+  { icon: MessagesSquare, title: 'Context across conversations', text: 'Pick up with the people, projects, and ideas you have already introduced.', tone: 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300' },
+  { icon: FileText, title: 'Knowledge from your files', text: 'Bring notes and documents into the same evolving body of memory.', tone: 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300' },
+  { icon: Route, title: 'Connected understanding', text: 'See isolated facts become useful relationships as more context arrives.', tone: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' },
+  { icon: Eye, title: 'Memory you can inspect', text: 'Explore stored units and internal activity instead of trusting an invisible black box.', tone: 'bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-300' },
+];
+export function CoreCapabilities() { return <section className="pb-20 sm:pb-28" aria-labelledby="capabilities-heading"><div className="mb-10 max-w-2xl"><p className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-violet-600 dark:text-violet-400">Designed for continuity</p><h2 id="capabilities-heading" className="text-3xl font-semibold tracking-tight sm:text-4xl">A workspace that learns the shape of your world.</h2></div><div className="grid gap-px overflow-hidden rounded-3xl border border-border bg-border sm:grid-cols-2">{capabilities.map(({icon: Icon,title,text,tone}) => <article key={title} className="bg-card p-7 sm:p-9"><span className={`mb-8 grid size-11 place-items-center rounded-xl ${tone}`}><Icon className="size-5" /></span><h3 className="text-xl font-semibold">{title}</h3><p className="mt-2 max-w-md leading-7 text-muted-foreground">{text}</p></article>)}</div></section>; }
