@@ -301,7 +301,7 @@ export function EngramRecall({ sapienId, onOpenInGraph }: { sapienId: number; on
           onBlur={e  => { (e.target as HTMLElement).style.borderColor = 'rgba(255,255,255,0.1)'; }}
         />
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {/* Depth toggle */}
           <div className="flex rounded-lg overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.1)' }}>
             {(['shallow', 'deep'] as RecallDepth[]).map(d => (
@@ -339,7 +339,7 @@ export function EngramRecall({ sapienId, onOpenInGraph }: { sapienId: number; on
       {result && (
         <>
           {/* Stage columns */}
-          <div className="flex gap-3">
+          <div className="flex flex-col gap-3 md:flex-row">
             <StageColumn title="Meaning" strategy="meaning" refs={result.stages.meaning} multiIds={multiIds} onOpenInGraph={onOpenInGraph} />
             <StageColumn title="Keyword" strategy="keyword" refs={result.stages.keyword} multiIds={multiIds} onOpenInGraph={onOpenInGraph} />
             <StageColumn title="Graph"   strategy="graph"   refs={result.stages.graph}   multiIds={multiIds} onOpenInGraph={onOpenInGraph} />

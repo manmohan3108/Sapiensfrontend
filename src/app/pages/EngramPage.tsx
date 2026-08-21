@@ -48,7 +48,7 @@ export function EngramPage() {
   const accent   = TAB_ACCENT[tab];
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden" style={{ background: '#060a15' }}>
+    <div className="min-h-[100dvh] lg:h-screen flex flex-col lg:overflow-hidden" style={{ background: '#060a15' }}>
 
       {/* ── Ambient canvas ── */}
       <div className="fixed inset-0 pointer-events-none select-none z-0">
@@ -68,7 +68,7 @@ export function EngramPage() {
       <div className="relative z-30 flex-shrink-0">
         <div style={{ height: '2px', background: `linear-gradient(90deg, transparent, ${accent}, transparent)`, transition: 'background 0.3s' }} />
         <div
-          className="h-13 px-4 flex items-center gap-4"
+          className="min-h-13 px-3 py-2 flex flex-wrap items-center gap-2 sm:px-4 lg:flex-nowrap lg:gap-4"
           style={{
             background: 'rgba(6,10,21,0.96)',
             backdropFilter: 'blur(24px)',
@@ -91,7 +91,7 @@ export function EngramPage() {
           </div>
 
           {/* Tab nav */}
-          <nav className="flex items-center gap-1 flex-1 justify-center">
+          <nav className="order-3 flex w-full items-center gap-1 overflow-x-auto lg:order-none lg:w-auto lg:flex-1 lg:justify-center">
             {TABS.map(t => {
               const ac = TAB_ACCENT[t.id];
               const active = tab === t.id;
@@ -99,7 +99,7 @@ export function EngramPage() {
                 <button
                   key={t.id}
                   onClick={() => setTab(t.id)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] transition-all duration-150"
+                  className="flex flex-shrink-0 items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] transition-all duration-150"
                   style={
                     active
                       ? { background: `${ac}18`, border: `1px solid ${ac}40`, color: ac }
@@ -125,17 +125,17 @@ export function EngramPage() {
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] text-white/35 hover:text-white/70 hover:bg-white/[0.05] transition-all"
             >
               <Home className="w-3.5 h-3.5" />
-              Workspace
+              <span className="hidden sm:inline">Workspace</span>
             </button>
           </div>
         </div>
       </div>
 
       {/* ── Body ── */}
-      <div className="relative z-10 flex-1 min-h-0 flex gap-3 p-3 overflow-hidden">
+      <div className="relative z-10 flex-1 min-h-0 flex flex-col gap-3 p-2 sm:p-3 lg:flex-row lg:overflow-hidden">
 
         {/* Main content area */}
-        <div className="flex-1 min-w-0 overflow-y-auto rounded-2xl px-5 py-4"
+        <div className="flex-1 min-w-0 overflow-y-auto rounded-2xl px-3 py-4 sm:px-5"
           style={{
             background: 'rgba(8,12,22,0.85)',
             border: `1px solid ${accent}20`,
@@ -158,7 +158,7 @@ export function EngramPage() {
         </div>
 
         {/* Working Memory sidebar (always visible) */}
-        <div className="w-52 flex-shrink-0">
+        <div className="min-h-[24rem] w-full flex-shrink-0 lg:min-h-0 lg:w-52">
           <EngramWMSidebar sapienId={sapienId} onOpenInGraph={openInGraph} />
         </div>
       </div>

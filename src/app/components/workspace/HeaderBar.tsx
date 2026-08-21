@@ -34,7 +34,7 @@ export function HeaderBar() {
 
       {/* Main bar */}
       <div
-        className="h-14 px-4 flex items-center justify-between gap-4"
+        className="min-h-14 px-3 py-2 sm:px-4 flex flex-wrap items-center justify-between gap-2 lg:flex-nowrap lg:gap-4"
         style={{
           background: 'rgba(6,10,21,0.96)',
           backdropFilter: 'blur(24px)',
@@ -42,7 +42,7 @@ export function HeaderBar() {
         }}
       >
         {/* ── LEFT: Brand + Instance ── */}
-        <div className="flex items-center gap-4 min-w-0">
+        <div className="flex flex-1 items-center gap-3 min-w-0 lg:gap-4">
 
           {/* Logo */}
           <div className="relative flex-shrink-0">
@@ -141,7 +141,7 @@ export function HeaderBar() {
         </div>
 
         {/* ── RIGHT: Actions ── */}
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="order-3 flex w-full items-center gap-2 overflow-x-auto pb-0.5 lg:order-none lg:w-auto lg:flex-shrink-0 lg:overflow-visible lg:pb-0">
           <ThemeToggle
             variant="ghost"
             size="icon"
@@ -157,7 +157,7 @@ export function HeaderBar() {
             style={{ background: 'rgba(34,211,238,0.08)', border: '1px solid rgba(34,211,238,0.22)', color: 'rgba(103,232,249,0.78)' }}
           >
             <PlugZap className="w-3.5 h-3.5" />
-            Connections
+            <span className="hidden sm:inline">Connections</span>
           </button>
 
           {/* Engram Explorer */}
@@ -180,7 +180,7 @@ export function HeaderBar() {
             }}
           >
             <DatabaseZap className="w-3.5 h-3.5" />
-            Memory
+            <span className="hidden sm:inline">Memory</span>
           </button>
 
           {/* Memory Timeline toggle */}
@@ -203,7 +203,7 @@ export function HeaderBar() {
             }}
           >
             <Clock className="w-3.5 h-3.5" />
-            Timeline
+            <span className="hidden sm:inline">Timeline</span>
           </button>
 
           {/* Debug Panel toggle */}
@@ -232,7 +232,7 @@ export function HeaderBar() {
             }}
           >
             <Bug className="w-3.5 h-3.5" />
-            Debug
+            <span className="hidden sm:inline">Debug</span>
           </button>
 
           <div className="w-px h-5 bg-white/10" />
@@ -260,7 +260,7 @@ export function HeaderBar() {
             }}
           >
             <Save className="w-3.5 h-3.5" />
-            Save
+            <span className="hidden sm:inline">Save</span>
           </button>
 
           <button
@@ -268,7 +268,7 @@ export function HeaderBar() {
             className="flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs text-white/35 hover:text-white/70 hover:bg-white/[0.05] transition-all duration-150"
           >
             <Home className="w-3.5 h-3.5" />
-            Home
+            <span className="hidden sm:inline">Home</span>
           </button>
         </div>
       </div>

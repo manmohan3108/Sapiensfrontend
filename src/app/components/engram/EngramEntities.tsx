@@ -36,10 +36,10 @@ export function EngramEntities({ sapienId, onOpenInGraph }: { sapienId: number; 
   if (error)   return <ErrorBox msg={error} />;
 
   return (
-    <div className="flex gap-4 h-full min-h-0">
+    <div className="flex flex-col gap-4 h-full min-h-0 sm:flex-row">
       {/* Left — entity list */}
       <div
-        className="w-56 flex-shrink-0 flex flex-col gap-1.5 overflow-y-auto pr-1"
+        className="w-full max-h-56 flex-shrink-0 flex flex-col gap-1.5 overflow-y-auto pr-1 sm:w-56 sm:max-h-none"
         style={{ maxHeight: 'calc(100vh - 220px)' }}
       >
         <p className="text-[9px] uppercase tracking-widest font-mono text-white/25 px-2 mb-1 flex-shrink-0">
@@ -80,7 +80,7 @@ export function EngramEntities({ sapienId, onOpenInGraph }: { sapienId: number; 
       </div>
 
       {/* Divider */}
-      <div className="w-px flex-shrink-0" style={{ background: 'rgba(255,255,255,0.07)' }} />
+      <div className="h-px w-full flex-shrink-0 sm:h-auto sm:w-px" style={{ background: 'rgba(255,255,255,0.07)' }} />
 
       {/* Right — episodes */}
       <div className="flex-1 min-w-0 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 220px)' }}>

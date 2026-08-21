@@ -315,9 +315,9 @@ export function EngramGraph({ sapienId: _sapienId, initialId }: { sapienId: numb
     <div className="flex flex-col gap-3 h-full">
 
       {/* ── Toolbar ── */}
-      <div className="flex items-center gap-2 flex-shrink-0"
+      <div className="flex flex-wrap items-center gap-2 flex-shrink-0"
         style={{ background: 'rgba(6,10,20,0.85)', backdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: '8px 12px' }}>
-        <div className="flex-1 flex items-center gap-2 rounded-lg px-3 py-1.5"
+        <div className="flex min-w-[12rem] flex-1 items-center gap-2 rounded-lg px-3 py-1.5"
           style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
           <Search className="w-3.5 h-3.5 text-white/25 flex-shrink-0" />
           <input
@@ -357,7 +357,7 @@ export function EngramGraph({ sapienId: _sapienId, initialId }: { sapienId: numb
       {error && <ErrorBox msg={error} />}
 
       {/* ── Main: canvas + panel ── */}
-      <div className="flex flex-1 gap-3 min-h-0">
+      <div className="flex flex-1 flex-col gap-3 min-h-0 md:flex-row">
 
         {/* Canvas — cyRef IS the direct flex child so dimensions are always correct */}
         <div
@@ -395,8 +395,8 @@ export function EngramGraph({ sapienId: _sapienId, initialId }: { sapienId: numb
         </div>
 
         {/* Detail / legend panel */}
-        <div className="flex-shrink-0 flex flex-col rounded-2xl overflow-hidden"
-          style={{ width: 216, background: 'rgba(6,10,20,0.96)', border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(20px)' }}>
+        <div className="w-full flex-shrink-0 flex flex-col rounded-2xl overflow-hidden md:w-[216px]"
+          style={{ background: 'rgba(6,10,20,0.96)', border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(20px)' }}>
 
           {/* Color strip */}
           <div className="h-1 flex-shrink-0"
