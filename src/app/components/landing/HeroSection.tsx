@@ -1,4 +1,4 @@
-import { Check, MessageCircle, Sparkles } from 'lucide-react';
+import { BrainCircuit, Check, FileText, Lightbulb, MessageCircle, Sparkles } from 'lucide-react';
 import { Button } from '../ui/button';
 import { CreateSapiensForm } from './CreateSapiensForm';
 
@@ -11,6 +11,39 @@ const benefits = [
   'Connects and reflects on what it learns',
   'Keeps working between conversations',
 ];
+
+function LivingMindGraphic() {
+  return (
+    <div className="relative mx-auto mt-10 hidden h-56 max-w-xl sm:block lg:mx-0" aria-label="Sapiens connecting memories and developing ideas in the background">
+      <div className="absolute left-1/2 top-1/2 size-40 -translate-x-1/2 -translate-y-1/2 rounded-full bg-violet-500/15 blur-3xl" />
+      <svg className="absolute inset-0 size-full text-violet-300/70 dark:text-violet-800" viewBox="0 0 560 224" fill="none" aria-hidden="true">
+        <path d="M102 54C180 54 189 111 260 111M105 174C176 174 192 117 260 113M300 111C373 111 383 59 456 59M300 113C370 113 390 170 468 170" stroke="currentColor" strokeWidth="1.5" strokeDasharray="5 7" />
+      </svg>
+
+      <div className="absolute left-1/2 top-1/2 grid size-24 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-[2rem] border border-violet-200 bg-background shadow-xl shadow-violet-500/15 dark:border-violet-800">
+        <BrainCircuit className="size-10 text-violet-600 dark:text-violet-400" aria-hidden="true" />
+        <span className="absolute -bottom-3 rounded-full bg-violet-600 px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-white">Thinking</span>
+      </div>
+
+      <div className="absolute left-0 top-5 flex items-center gap-2 rounded-2xl border border-border/70 bg-background/90 px-3 py-2.5 shadow-sm backdrop-blur">
+        <FileText className="size-4 text-amber-600" aria-hidden="true" />
+        <span className="text-xs font-medium">Your notes</span>
+      </div>
+      <div className="absolute bottom-4 left-3 flex items-center gap-2 rounded-2xl border border-border/70 bg-background/90 px-3 py-2.5 shadow-sm backdrop-blur">
+        <MessageCircle className="size-4 text-fuchsia-600" aria-hidden="true" />
+        <span className="text-xs font-medium">Conversations</span>
+      </div>
+      <div className="absolute right-0 top-7 flex items-center gap-2 rounded-2xl border border-border/70 bg-background/90 px-3 py-2.5 shadow-sm backdrop-blur">
+        <Lightbulb className="size-4 text-emerald-600" aria-hidden="true" />
+        <span className="text-xs font-medium">New connection</span>
+      </div>
+      <div className="absolute bottom-5 right-1 rounded-2xl border border-border/70 bg-background/90 px-3 py-2.5 shadow-sm backdrop-blur">
+        <div className="mb-1.5 flex items-center gap-2 text-xs font-medium"><span className="size-1.5 rounded-full bg-emerald-500" />Working in background</div>
+        <div className="h-1.5 w-28 overflow-hidden rounded-full bg-muted"><div className="h-full w-3/4 rounded-full bg-violet-500" /></div>
+      </div>
+    </div>
+  );
+}
 
 export function HeroSection({ onLoadClick }: HeroSectionProps) {
   return (
@@ -39,6 +72,8 @@ export function HeroSection({ onLoadClick }: HeroSectionProps) {
               </li>
             ))}
           </ul>
+
+          <LivingMindGraphic />
 
           <div className="mt-8 flex items-center gap-3 text-sm text-muted-foreground lg:hidden">
             <MessageCircle className="size-4" aria-hidden="true" />
