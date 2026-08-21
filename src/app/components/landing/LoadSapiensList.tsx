@@ -61,9 +61,9 @@ export function LoadSapiensList() {
         <CardContent className="py-6">
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Service Unavailable</AlertTitle>
+            <AlertTitle>We couldn’t load your memories</AlertTitle>
             <AlertDescription>
-              We couldn’t reach your saved memories. Check your connection or try again.
+              Check your connection and try again.
             </AlertDescription>
           </Alert>
           <Button variant="outline" onClick={fetchList} className="mt-4 w-full"><RefreshCw className="mr-2 size-4" />Try again</Button>

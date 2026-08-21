@@ -45,7 +45,7 @@ export function CreateSapiensForm() {
       <CardHeader>
         <CardTitle className="text-2xl">Create your Sapiens</CardTitle>
         <CardDescription>
-          A name is all you need. You can shape its role as you go.
+          Give it a name. You can personalize everything else later.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -59,11 +59,11 @@ export function CreateSapiensForm() {
           )}
           
           <div className="space-y-2">
-            <Label htmlFor="name">Name *</Label>
+            <Label htmlFor="name">What would you like to call it?</Label>
             <Input
               id="name"
               type="text"
-              placeholder="e.g. Atlas, Studio Memory"
+              placeholder="e.g. Atlas"
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
@@ -72,11 +72,11 @@ export function CreateSapiensForm() {
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="role">Role (optional)</Label>
+            <Label htmlFor="role">What should it help with? <span className="font-normal text-muted-foreground">(optional)</span></Label>
             <Input
               id="role"
               type="text"
-              placeholder="e.g. Research companion, Story editor"
+              placeholder="e.g. My research, writing, or daily life"
               value={role}
               onChange={(e) => setRole(e.target.value)}
               disabled={isCreating}
@@ -89,7 +89,7 @@ export function CreateSapiensForm() {
             disabled={!name.trim() || isCreating}
           >
             {isCreating ? <Loader2 className="mr-2 size-4 animate-spin" /> : <ArrowRight className="mr-2 size-4" />}
-            {isCreating ? 'Creating your memory…' : 'Create and enter workspace'}
+            {isCreating ? 'Creating…' : 'Create my Sapiens'}
           </Button>
         </form>
       </CardContent>
