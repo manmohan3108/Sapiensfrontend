@@ -178,6 +178,28 @@ export interface SapiensStateResponse {
   outputs: Output[];
 }
 
+export interface AwarenessHistoryItem {
+  id: string;
+  focus: string;
+  source: string;
+  created_at: string;
+}
+
+export interface AwarenessAlsoOnMindItem {
+  content: string;
+  source: string;
+}
+
+export interface AwarenessCurrent extends AwarenessHistoryItem {
+  also_on_mind: AwarenessAlsoOnMindItem[];
+}
+
+export interface AwarenessResponse {
+  sapien_id: number;
+  current: AwarenessCurrent | null;
+  history: AwarenessHistoryItem[];
+}
+
 export interface ChatHistoryItem {
   thread_id: string;
   title: string;

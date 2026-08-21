@@ -1,20 +1,18 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { Activity, Database, Target } from 'lucide-react';
+import { Database, Eye, Target } from 'lucide-react';
 import { HeaderBar } from '../components/workspace/HeaderBar';
-import { CombinedInputPanel } from '../components/workspace/CombinedInputPanel';
-import { ActivityLog } from '../components/workspace/ActivityLog';
+import { AwarenessPanel } from '../components/workspace/AwarenessPanel';
 import { ChatWindow } from '../components/workspace/ChatWindow';
 import { MemoryPanel } from '../components/workspace/MemoryPanel';
 import { GoalsPanel } from '../components/workspace/GoalsPanel';
 import { DebugPanel } from '../components/workspace/DebugPanel';
 import { MemoryTimeline } from '../components/workspace/MemoryTimeline';
-import { SessionSummary } from '../components/workspace/SessionSummary';
 import { useSapiensStore } from '../core/state/sapiensStore';
 import { useSapiens } from '../hooks/useSapiens';
 import { useOrchestratorStatus } from '../hooks/useOrchestratorStatus';
 
-type RightTab = 'activity' | 'memory' | 'goals';
+type RightTab = 'awareness' | 'memory' | 'goals';
 
 // ─── Tab pill row ─────────────────────────────────────────────────────────────
 function TabRow({
@@ -27,7 +25,7 @@ function TabRow({
   memoryCount: number;
 }) {
   const TABS = [
-    { id: 'activity' as RightTab, label: 'Activity', icon: <Activity className="w-3 h-3" />, activeColor: '#93c5fd', activeBg: 'rgba(96,165,250,0.15)', activeBorder: 'rgba(96,165,250,0.3)' },
+    { id: 'awareness' as RightTab, label: 'Awareness', icon: <Eye className="w-3 h-3" />, activeColor: '#67e8f9', activeBg: 'rgba(34,211,238,0.12)', activeBorder: 'rgba(34,211,238,0.25)' },
     { id: 'memory'   as RightTab, label: 'Memory',   icon: <Database  className="w-3 h-3" />, activeColor: '#fcd34d', activeBg: 'rgba(245,158,11,0.15)', activeBorder: 'rgba(245,158,11,0.3)' },
     { id: 'goals'    as RightTab, label: 'Goals',    icon: <Target    className="w-3 h-3" />, activeColor: '#86efac', activeBg: 'rgba(52,211,153,0.12)', activeBorder: 'rgba(52,211,153,0.3)' },
   ] as const;
@@ -70,7 +68,7 @@ function TabRow({
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export function WorkspacePage() {
   const navigate = useNavigate();
-  const [rightTab, setRightTab] = useState<RightTab>('activity');
+  const [rightTab, setRightTab] = useState<RightTab>('awareness');
 
   const currentSapiens = useSapiensStore((state) => state.currentSapiens);
   const showDebugPanel = useSapiensStore((s) => s.showDebugPanel);
@@ -123,16 +121,8 @@ export function WorkspacePage() {
       {/* ── Panel grid ── */}
       <div className="relative z-10 flex-1 min-h-0 p-2 gap-2 grid grid-cols-1 lg:grid-cols-12">
 
-        {/* LEFT — Session summary + Files */}
-        <div className="min-h-0 flex flex-col gap-2 lg:col-span-3">
-          <SessionSummary />
-          <div className="min-h-[28rem] flex-1 lg:min-h-0">
-            <CombinedInputPanel />
-          </div>
-        </div>
-
-        {/* CENTER — Chat */}
-        <div className="min-h-[36rem] lg:col-span-5 lg:min-h-0">
+        {/* MAIN — Chat and attachments */}
+        <div className="min-h-[36rem] lg:col-span-8 lg:min-h-0">
           <ChatWindow />
         </div>
 
@@ -144,7 +134,7 @@ export function WorkspacePage() {
 
           {/* Active panel — fills full height */}
           <div className="flex-1 min-h-0">
-            {rightTab === 'activity' && <ActivityLog />}
+            {rightTab === 'awareness' && <AwarenessPanel />}
             {rightTab === 'memory'   && <MemoryPanel />}
             {rightTab === 'goals'    && <GoalsPanel sapienId={parseInt(currentSapiens.id, 10)} />}
           </div>

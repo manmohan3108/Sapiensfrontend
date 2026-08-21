@@ -5,6 +5,7 @@ import {
   ThumbsUp, ThumbsDown, Star, BookMarked, MinusCircle,
   Database, ChevronRight, Search,
   History, Plus, RefreshCw,
+  Paperclip, X,
 } from 'lucide-react';
 import { useSapiens } from '../../hooks/useSapiens';
 import { useSapiensStore } from '../../core/state/sapiensStore';
@@ -12,6 +13,7 @@ import { sapiensService } from '../../core/services/sapiensService';
 import { formatTime } from '../../utils/formatters';
 import { ChatHistoryItem, ChatMessage, UserSignalType } from '../../types/sapiensTypes';
 import { ApiError } from '../../types/apiTypes';
+import { CombinedInputPanel } from './CombinedInputPanel';
 
 // ─── Typing dots ──────────────────────────────────────────────────────────────
 function TypingDots() {
@@ -415,6 +417,7 @@ export function ChatWindow() {
   const [historyLoading, setHistoryLoading] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [historyError, setHistoryError] = useState<string | null>(null);
+  const [attachmentsOpen, setAttachmentsOpen] = useState(false);
 
   const { sendTextInput, sendUserSignal, sendQuery, loadChat, startNewChat } = useSapiens();
   const msgs = useSapiensStore((s) => s.chatMessages);
@@ -673,13 +676,45 @@ export function ChatWindow() {
       </div>
 
       {/* ── Input area ── */}
-      <div className="flex-shrink-0 p-3" style={{ background: 'rgba(0,0,0,0.25)', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+      <div className="flex-shrink-0 relative p-3" style={{ background: 'rgba(0,0,0,0.25)', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+        {attachmentsOpen && (
+          <div
+            className="absolute z-30 bottom-[calc(100%-4px)] left-3 right-3 sm:right-auto sm:w-[390px] h-[min(30rem,70vh)] rounded-2xl"
+            style={{ boxShadow: '0 22px 60px rgba(0,0,0,0.65)' }}
+          >
+            <button
+              onClick={() => setAttachmentsOpen(false)}
+              title="Close attachments"
+              aria-label="Close attachments"
+              className="absolute z-40 right-3 top-3 w-7 h-7 rounded-lg flex items-center justify-center text-white/35 hover:text-white/75 hover:bg-white/10 transition-colors"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+            <CombinedInputPanel />
+          </div>
+        )}
         <div className="flex items-end gap-2 rounded-xl p-1.5 transition-all duration-200"
           style={{
             background: 'rgba(255,255,255,0.03)',
             border: `1px solid ${focused ? 'rgba(124,58,237,0.45)' : 'rgba(255,255,255,0.07)'}`,
             boxShadow: focused ? '0 0 0 3px rgba(124,58,237,0.07)' : 'none',
           }}>
+          <button
+            onClick={() => setAttachmentsOpen((open) => !open)}
+            disabled={isProcessing}
+            title="Attach files or a folder"
+            aria-label="Attach files or a folder"
+            aria-expanded={attachmentsOpen}
+            className="flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center transition-all disabled:opacity-35"
+            style={{
+              background: attachmentsOpen ? 'rgba(16,185,129,0.14)' : 'rgba(255,255,255,0.04)',
+              border: `1px solid ${attachmentsOpen ? 'rgba(16,185,129,0.35)' : 'rgba(255,255,255,0.07)'}`,
+              color: attachmentsOpen ? '#6ee7b7' : 'rgba(255,255,255,0.38)',
+            }}
+          >
+            <Paperclip className="w-4 h-4" />
+          </button>
+
           <textarea ref={textareaRef} value={input} onChange={onInputChange} onKeyDown={onKey}
             onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
             placeholder={isProcessing ? 'Waiting for response…' : 'Ask Sapiens anything…'}
@@ -723,6 +758,13 @@ export function ChatWindow() {
           </button>
         </div>
         <div className="flex items-center gap-3 mt-1.5 px-1">
+          <p className="text-[10px] text-white/12">
+            <span className="inline-flex items-center gap-0.5 font-mono bg-emerald-500/[0.07] px-1 py-0.5 rounded text-emerald-400/35">
+              <Paperclip className="w-2 h-2" /> Attach
+            </span>
+            {' '}files or folders
+          </p>
+          <span className="text-white/10">·</span>
           <p className="text-[10px] text-white/12">
             <span className="font-mono bg-white/[0.05] px-1 py-0.5 rounded text-white/20">Ctrl+Enter</span>
             {' '}chat

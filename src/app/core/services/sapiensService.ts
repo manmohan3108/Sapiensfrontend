@@ -16,6 +16,7 @@ import {
   Sapiens,
   ChatHistoryResponse,
   ChatDetail,
+  AwarenessResponse,
 } from '../../types/sapiensTypes';
 import { logger } from '../../utils/logger';
 
@@ -148,6 +149,13 @@ class SapiensService {
   async getChatDetail(sapiensId: string, threadId: string): Promise<ChatDetail> {
     const response = await apiClient.get<ChatDetail>(
       `${API_ENDPOINTS.sapienChats(sapiensId)}/${encodeURIComponent(threadId)}`
+    );
+    return response.data;
+  }
+
+  async getAwareness(sapiensId: string, limit = 10): Promise<AwarenessResponse> {
+    const response = await apiClient.get<AwarenessResponse>(
+      `${API_ENDPOINTS.sapienAwareness(sapiensId)}?limit=${limit}`
     );
     return response.data;
   }
