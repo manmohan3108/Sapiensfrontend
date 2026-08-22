@@ -525,7 +525,10 @@ export function ChatWindow() {
   };
 
   const onKey = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); send('chat'); }
+    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+      e.preventDefault();
+      void send('chat');
+    }
   };
 
   const onInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -746,7 +749,7 @@ export function ChatWindow() {
           <button
             onClick={() => send('chat')}
             disabled={!input.trim() || isProcessing}
-            title="Send via /api/chat  (Ctrl+Enter)"
+            title="Send via /api/chat (Enter)"
             className="flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200 active:scale-95 disabled:cursor-not-allowed"
             style={{
               background: input.trim() && !isProcessing ? 'linear-gradient(135deg, #7c3aed, #4f46e5)' : 'rgba(255,255,255,0.05)',
@@ -766,8 +769,8 @@ export function ChatWindow() {
           </p>
           <span className="text-white/10">·</span>
           <p className="text-[10px] text-white/12">
-            <span className="font-mono bg-white/[0.05] px-1 py-0.5 rounded text-white/20">Ctrl+Enter</span>
-            {' '}chat
+            <span className="font-mono bg-white/[0.05] px-1 py-0.5 rounded text-white/20">Enter</span>
+            {' '}chat · Shift+Enter for newline
           </p>
           <span className="text-white/10">·</span>
           <p className="text-[10px] text-white/12">
