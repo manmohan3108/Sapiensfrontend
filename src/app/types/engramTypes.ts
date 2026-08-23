@@ -198,8 +198,27 @@ export interface RecallExplainResponse {
   depth: RecallDepth;
   read_only: boolean;
   timings_ms: Record<string, number>;
-  limits: { top_k: number; graph_depth: number; graph_seed_limit: number; graph_seeds_used: number };
-  graph: { seeds: number; depth: number; neo4j_round_trips: number; visited: number; net_new: number };
+  limits: {
+    top_k: number;
+    graph_depth: number;
+    graph_seed_limit: number;
+    graph_seeds_used: number;
+    candidate_limit_per_source?: number;
+  };
+  graph: {
+    seeds: number;
+    depth: number;
+    neo4j_round_trips: number;
+    visited: number;
+    net_new: number;
+    seed_details?: Array<{ unit_id: string; reason: 'entity' | 'meaning' | 'keyword' }>;
+    links_read?: number;
+    weak_links?: number;
+    within_walk_duplicates?: number;
+    structural_links?: number;
+    direct_candidate_overlap?: number;
+    cross_seed_duplicates?: number;
+  };
   learning: { applied: false; final_result_set?: string[]; [key: string]: unknown };
   stages: {
     meaning: RecallStageCandidate[];
