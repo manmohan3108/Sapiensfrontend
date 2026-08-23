@@ -13,7 +13,7 @@ import type {
   BatchUnitsResponse,
   EntitiesListResponse,
   EntityEpisodesResponse,
-  RecallResponse,
+  RecallExplainResponse,
   RecallDepth,
   MemoryType,
 } from '../../types/engramTypes';
@@ -164,18 +164,20 @@ export const engramService = {
     }
   },
 
-  // ── Recall ────────────────────────────────────────────────────────────────
-  recall(params: {
+  // ── Read-only recall research ─────────────────────────────────────────────
+  explainRecall(params: {
     sapienId: number;
     query: string;
     depth: RecallDepth;
-  }): Promise<RecallResponse> {
-    return engramFetch<RecallResponse>(ENGRAM_ENDPOINTS.recall(), {
+    expectUnitId?: string;
+  }): Promise<RecallExplainResponse> {
+    return engramFetch<RecallExplainResponse>(ENGRAM_ENDPOINTS.recallExplain(), {
       method: 'POST',
       body: JSON.stringify({
         sapien_id: params.sapienId,
         query:     params.query,
         depth:     params.depth,
+        ...(params.expectUnitId ? { expect_unit_id: params.expectUnitId } : {}),
       }),
     });
   },

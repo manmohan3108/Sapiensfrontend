@@ -55,6 +55,6 @@ export const ENGRAM_ENDPOINTS = {
   entities:     () => `${ENGRAM_BASE}/entities`,
   entityDetail: (id: string)       => `${ENGRAM_BASE}/entities/${id}`,
   episodes:     (id: string)       => `${ENGRAM_BASE}/entities/${id}/episodes`,
-  recall:     () => `${ENGRAM_BASE}/recall`,
+  recallExplain: () => `${ENGRAM_BASE}/recall/explain`,
   overview:   (sapienId: number) => `${ENGRAM_BASE}/sapien/${sapienId}/overview`,
 } as const;

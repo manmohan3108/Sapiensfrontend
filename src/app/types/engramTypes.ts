@@ -153,16 +153,56 @@ export interface EntityEpisodesResponse {
   }>;
 }
 
-export interface RecallResponse {
+export interface RecallStageCandidate {
+  unit_id: string;
+  raw_score: number;
+  strategy: RecallStrategy;
+}
+
+export interface RecallResultStage {
+  hit: boolean;
+  raw: number | null;
+}
+
+export interface RecallRelevance {
+  value: number;
+  basis: string;
+  set_size: number;
+  rank: number;
+  components: string[];
+}
+
+export interface RecallExplainResult {
+  unit_id: string;
+  title?: string;
+  content: string;
+  memory_type: MemoryType;
+  strategy: RecallStrategy;
+  final_score: number;
+  stages: Record<RecallStrategy, RecallResultStage>;
+  wm_boost: number;
+  worth_boost: number;
+  relevance: RecallRelevance | null;
+  context?: ComposedMemoryContext;
+  links?: ComposedMemoryLink[];
+}
+
+export interface RecallExplainResponse {
   query: string;
   sapien_id: number;
   depth: RecallDepth;
+  read_only: boolean;
+  timings_ms: Record<string, number>;
+  limits: { top_k: number; graph_depth: number; graph_seed_limit: number; graph_seeds_used: number };
+  graph: { seeds: number; depth: number; neo4j_round_trips: number; visited: number; net_new: number };
+  learning: { applied: false; final_result_set?: string[]; [key: string]: unknown };
   stages: {
-    meaning: MemoryRef[];   // now hydrated with content + memory_type
-    keyword: MemoryRef[];
-    graph: MemoryRef[];
+    meaning: RecallStageCandidate[];
+    keyword: RecallStageCandidate[];
+    graph: RecallStageCandidate[];
   };
-  merged: ComposedMemory[];
+  results: RecallExplainResult[];
+  why_not: Record<string, unknown> | null;
 }
 
 // WMEntry now includes content + memory_type for memory_source === "memory_unit"

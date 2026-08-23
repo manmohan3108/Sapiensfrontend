@@ -1,374 +1,93 @@
-import { useState } from 'react';
-import { Search, Loader2, Layers, Zap, Share2, GitMerge, Network } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { ChevronDown, Download, Layers, Loader2, Network, RotateCcw, Search, Share2, ShieldCheck, Zap } from 'lucide-react';
 import { engramService } from '../../core/services/engramService';
-import type { RecallResponse, MemoryRef, ComposedMemory, RecallDepth } from '../../types/engramTypes';
+import type { MemoryType, RecallDepth, RecallExplainResponse, RecallExplainResult, RecallStageCandidate, RecallStrategy } from '../../types/engramTypes';
 import { ErrorBox } from './EngramDashboard';
 import { fmtId } from './EngramUnitDetail';
 
-const STRATEGY_COLORS: Record<string, { color: string; label: string; icon: React.ReactNode }> = {
-  meaning: { color: '#818cf8', label: 'Meaning',  icon: <Layers className="w-3.5 h-3.5" /> },
-  keyword: { color: '#34d399', label: 'Keyword',  icon: <Zap    className="w-3.5 h-3.5" /> },
-  graph:   { color: '#f97316', label: 'Graph',    icon: <Share2  className="w-3.5 h-3.5" /> },
-};
+const STAGES: Array<{ key: RecallStrategy; label: string; color: string; icon: React.ReactNode }> = [
+  { key: 'meaning', label: 'Meaning', color: '#818cf8', icon: <Layers className="w-3.5 h-3.5" /> },
+  { key: 'keyword', label: 'Keyword', color: '#34d399', icon: <Zap className="w-3.5 h-3.5" /> },
+  { key: 'graph', label: 'Graph', color: '#f97316', icon: <Share2 className="w-3.5 h-3.5" /> },
+];
+type ResultSort = 'rank' | 'final_score' | 'relevance' | 'wm_boost' | 'worth_boost' | 'memory_time' | 'memory_type';
+type Direction = 'asc' | 'desc';
+type EffectFilter = 'all' | 'yes' | 'no';
 
-function ScorePill({ score, strategy }: { score: number; strategy: string }) {
-  const color = STRATEGY_COLORS[strategy]?.color ?? '#94a3b8';
-  return (
-    <span
-      className="px-1.5 py-0.5 rounded text-[9px] font-mono tabular-nums flex-shrink-0"
-      style={{ color, background: `${color}18`, border: `1px solid ${color}35` }}
-    >
-      {score.toFixed(3)}
-    </span>
-  );
+const num = (value: number | null | undefined, digits = 3) => value == null ? '—' : value.toFixed(digits);
+const timeValue = (item: RecallExplainResult) => Date.parse(item.context?.temporal?.asserted_at ?? item.context?.temporal?.system_at ?? '') || 0;
+const provenance = (item: RecallExplainResult) => item.context?.provenance?.source_name ?? item.context?.provenance?.source_type ?? '';
+const readableTime = (value?: string) => value ? new Date(value).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'long' }) : 'unknown';
+const inputClass = 'rounded-lg border border-white/10 bg-transparent px-2 py-1.5 text-[10px] text-white/65 outline-none placeholder:text-white/20';
+
+function Metric({ label, value, note }: { label: string; value: React.ReactNode; note?: string }) {
+  return <div className="rounded-lg px-3 py-2" style={{ background: 'rgba(255,255,255,.025)', border: '1px solid rgba(255,255,255,.06)' }}>
+    <div className="text-[9px] uppercase tracking-wide text-white/25">{label}</div><div className="mt-1 text-xs font-mono text-white/65">{value}</div>{note && <div className="mt-1 text-[8px] text-white/20">{note}</div>}
+  </div>;
 }
 
-function RefCard({ ref: r, multiSource, strategy, onOpenInGraph }: { ref: MemoryRef; multiSource: boolean; strategy: string; onOpenInGraph?: (id: string) => void }) {
-  if (!r) return null;
-  const stratColor = STRATEGY_COLORS[strategy]?.color ?? '#94a3b8';
-  const mtColors: Record<string, string> = {
-    episodic: '#818cf8', entity: '#22d3ee', summary: '#34d399', semantic: '#f59e0b',
-  };
-  const mtColor = r.memory_type ? (mtColors[r.memory_type] ?? '#94a3b8') : null;
-
-  return (
-    <div
-      className="flex flex-col gap-1.5 px-3 py-2.5 rounded-lg transition-all"
-      style={{
-        background: multiSource ? 'rgba(251,191,36,0.06)' : 'rgba(255,255,255,0.025)',
-        border: `1px solid ${multiSource ? 'rgba(251,191,36,0.3)' : 'rgba(255,255,255,0.06)'}`,
-      }}
-    >
-      <div className="flex items-center gap-1.5 flex-wrap">
-        <span className="text-[9px] font-mono text-white/30 flex-shrink-0">{fmtId(r.id)}</span>
-        {mtColor && r.memory_type && (
-          <span className="px-1 py-0.5 rounded text-[8px] font-mono flex-shrink-0"
-            style={{ color: mtColor, background: `${mtColor}15`, border: `1px solid ${mtColor}25` }}>
-            {r.memory_type}
-          </span>
-        )}
-        {multiSource && (
-          <span className="px-1.5 py-0.5 rounded text-[9px] font-mono flex-shrink-0"
-            style={{ color: '#fbbf24', background: 'rgba(251,191,36,0.15)', border: '1px solid rgba(251,191,36,0.3)' }}>
-            multi
-          </span>
-        )}
-        <ScorePill score={r.score} strategy={strategy} />
-        {onOpenInGraph && (
-          <button onClick={() => onOpenInGraph(r.id)}
-            className="ml-auto text-white/20 hover:text-orange-400 transition-colors flex-shrink-0"
-            title="Open in Graph Explorer">
-            <Network className="w-3 h-3" />
-          </button>
-        )}
-      </div>
-      {r.content && (
-        <p className="text-[9px] leading-relaxed line-clamp-2" style={{ color: `${stratColor}99` }}>
-          {r.content}
-        </p>
-      )}
-    </div>
-  );
+function StageTable({ stage, rows, timing }: { stage: typeof STAGES[number]; rows: RecallStageCandidate[]; timing?: number }) {
+  const [text, setText] = useState('');
+  const [sort, setSort] = useState<'original' | 'raw'>('original');
+  const [direction, setDirection] = useState<Direction>('asc');
+  const visible = useMemo(() => rows.map((row, index) => ({ row, index })).filter(({ row }) => `${row.unit_id} ${row.strategy}`.toLowerCase().includes(text.toLowerCase())).sort((a, b) => {
+    const comparison = sort === 'original' ? a.index - b.index : a.row.raw_score - b.row.raw_score;
+    return direction === 'asc' ? comparison : -comparison;
+  }), [rows, text, sort, direction]);
+  return <details className="rounded-xl overflow-hidden" style={{ border: `1px solid ${stage.color}25` }}>
+    <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2" style={{ background: `${stage.color}10` }}><span style={{ color: stage.color }}>{stage.icon}</span><span className="text-[11px]" style={{ color: stage.color }}>{stage.label}</span><span className="ml-auto text-[10px] font-mono text-white/30">{rows.length} candidates · {num(timing, 2)} ms</span><ChevronDown className="w-3 h-3 text-white/25" /></summary>
+    <div className="flex flex-wrap gap-2 p-2"><input value={text} onChange={event => setText(event.target.value)} placeholder="Filter unit ID" className={`${inputClass} min-w-44 flex-1`} /><select value={sort} onChange={event => setSort(event.target.value as typeof sort)} className={inputClass}><option value="original">Original order</option><option value="raw">Raw score</option></select><button onClick={() => setDirection(value => value === 'asc' ? 'desc' : 'asc')} className={inputClass}>{direction}</button><span className="self-center text-[9px] text-white/25">{visible.length} of {rows.length}</span></div>
+    <div className="overflow-x-auto"><table className="w-full text-left text-[10px]"><thead className="text-white/25"><tr><th className="p-2 font-normal">Original</th><th className="p-2 font-normal">Unit ID</th><th className="p-2 font-normal">Strategy</th><th className="p-2 font-normal">Raw score</th></tr></thead><tbody>{visible.length === 0 ? <tr><td colSpan={4} className="p-4 text-center text-white/20">No matching candidates</td></tr> : visible.map(({ row, index }) => <tr key={`${row.unit_id}-${index}`} style={{ borderTop: '1px solid rgba(255,255,255,.05)' }}><td className="p-2 font-mono text-white/25">#{index + 1}</td><td className="p-2 font-mono text-white/50">{row.unit_id}</td><td className="p-2 text-white/35">{row.strategy}</td><td className="p-2 font-mono" style={{ color: stage.color }}>{num(row.raw_score)}</td></tr>)}</tbody></table></div>
+  </details>;
 }
 
-function StageColumn({
-  title, strategy, refs, multiIds, onOpenInGraph,
-}: {
-  title: string; strategy: string; refs: MemoryRef[]; multiIds: Set<string>; onOpenInGraph?: (id: string) => void;
-}) {
-  const { color, icon } = STRATEGY_COLORS[strategy] ?? { color: '#94a3b8', icon: null };
-  return (
-    <div className="flex flex-col min-w-0 flex-1" style={{ minWidth: 0 }}>
-      <div
-        className="flex items-center gap-2 px-3 py-2 rounded-t-xl flex-shrink-0"
-        style={{ background: `${color}12`, border: `1px solid ${color}30`, borderBottom: 'none' }}
-      >
-        <span style={{ color }}>{icon}</span>
-        <span className="text-[11px] font-medium" style={{ color }}>{title}</span>
-        <span className="ml-auto text-[10px] font-mono text-white/25">{refs.length} refs</span>
-      </div>
-      <div
-        className="flex flex-col gap-1.5 p-2 overflow-y-auto flex-1"
-        style={{
-          background: 'rgba(255,255,255,0.015)',
-          border: `1px solid ${color}20`,
-          borderTop: 'none',
-          borderRadius: '0 0 12px 12px',
-          maxHeight: '340px',
-        }}
-      >
-        {refs.length === 0 ? (
-          <p className="text-[10px] text-white/20 text-center py-4">No results</p>
-        ) : (
-          refs.filter(Boolean).map(r => (
-            <RefCard key={r.id} ref={r} multiSource={multiIds.has(r.id)} strategy={strategy} onOpenInGraph={onOpenInGraph} />
-          ))
-        )}
-      </div>
+function ResultRow({ item, originalRank, onOpenInGraph }: { item: RecallExplainResult; originalRank: number; onOpenInGraph?: (id: string) => void }) {
+  const links = [...(item.links ?? [])].sort((a, b) => b.weight - a.weight);
+  const temporal = item.context?.temporal;
+  return <details className="rounded-xl" style={{ background: 'rgba(255,255,255,.025)', border: '1px solid rgba(255,255,255,.07)' }}>
+    <summary className="grid cursor-pointer list-none grid-cols-[2.5rem_minmax(0,1fr)_auto] gap-3 p-3 items-start"><span className="text-xs font-mono text-white/25">#{originalRank}</span><div className="min-w-0"><div className="flex flex-wrap gap-2 items-center"><span className="text-[10px] font-mono text-white/40">{fmtId(item.unit_id)}</span><span className="text-[9px] text-violet-300">{item.memory_type}</span><span className="text-[9px] text-white/25">primary: {item.strategy}</span></div><div className="mt-1 text-xs text-white/70 line-clamp-2">{item.title || item.content}</div></div><div className="text-right"><div className="text-xs font-mono text-violet-300">{num(item.final_score)}</div><div className="text-[8px] text-white/20">composite score</div></div></summary>
+    <div className="space-y-3 px-3 pb-3" style={{ borderTop: '1px solid rgba(255,255,255,.05)' }}>
+      {item.title && <p className="pt-3 text-[11px] leading-relaxed text-white/55 whitespace-pre-wrap">{item.content}</p>}
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4"><Metric label="Relevance" value={num(item.relevance?.value)} note={item.relevance ? `${item.relevance.basis} · rank ${item.relevance.rank}/${item.relevance.set_size}` : 'Not available'} /><Metric label="WM boost" value={num(item.wm_boost)} /><Metric label="Worth boost" value={num(item.worth_boost)} /><Metric label="Links" value={links.length} /></div>
+      <p className="text-[9px] text-white/30"><span className="text-violet-300/70">Composite score</span> ranks the assembled retrieval signal and boosts. <span className="text-cyan-300/70">Relevance</span> is normalized relative to this result set, so it is not an absolute or cross-run score.</p>
+      <div className="overflow-x-auto"><table className="w-full text-[10px]"><thead className="text-white/25"><tr>{STAGES.map(stage => <th key={stage.key} className="p-2 text-left font-normal">{stage.label}</th>)}</tr></thead><tbody><tr style={{ borderTop: '1px solid rgba(255,255,255,.05)' }}>{STAGES.map(stage => { const value = item.stages[stage.key]; return <td key={stage.key} className="p-2 font-mono text-white/50">{value.hit ? `hit · ${num(value.raw)}` : 'miss'}</td>; })}</tr></tbody></table></div>
+      {item.relevance && item.relevance.components.length > 0 && <div className="flex flex-wrap gap-1">{item.relevance.components.map(component => <span key={component} className="rounded px-1.5 py-1 text-[9px] text-cyan-300/65" style={{ border: '1px solid rgba(34,211,238,.2)' }}>{component}</span>)}</div>}
+      <div className="rounded-lg p-2 text-[10px] text-white/40" style={{ border: '1px solid rgba(255,255,255,.05)' }}><div>Memory time: {readableTime(temporal?.asserted_at ?? temporal?.system_at)}</div><div className="font-mono text-[9px] text-white/25">Exact: {temporal?.asserted_at ?? temporal?.system_at ?? 'unknown'}</div><div className="mt-1">Provenance: {provenance(item) || 'unknown'}</div></div>
+      {item.context && <details className="rounded-lg p-2" style={{ border: '1px solid rgba(255,255,255,.05)' }}><summary className="cursor-pointer text-[10px] text-white/40">All context slots</summary><pre className="mt-2 overflow-auto whitespace-pre-wrap text-[9px] text-white/30">{JSON.stringify(item.context, null, 2)}</pre></details>}
+      {links.length > 0 && <details className="rounded-lg p-2" style={{ border: '1px solid rgba(249,115,22,.15)' }}><summary className="cursor-pointer text-[10px] text-orange-300/60">Links by weight ({links.length})</summary><div className="mt-2 space-y-1">{links.map((link, index) => <div key={`${link.unit_id}-${index}`} className="text-[9px] text-white/40">{num(link.weight)} · {link.relation} · {link.mechanism} → {link.unit_id}{link.snippet ? ` · ${link.snippet}` : ''}</div>)}</div></details>}
+      {onOpenInGraph && <button onClick={() => onOpenInGraph(item.unit_id)} className="flex items-center gap-1 text-[10px] text-orange-300/60 hover:text-orange-300"><Network className="w-3 h-3" />Open in graph</button>}
     </div>
-  );
-}
-
-function MergedCard({ item, multiIds, onOpenInGraph }: { item: ComposedMemory; multiIds: Set<string>; onOpenInGraph?: (id: string) => void }) {
-  const [expanded, setExpanded] = useState(false);
-  if (!item) return null;
-  const stratInfo = STRATEGY_COLORS[item.strategy] ?? { color: '#94a3b8', label: item.strategy ?? '' };
-  const isMulti = multiIds.has(item.unit_id);
-
-  const typeColor: Record<string, string> = {
-    episodic: '#818cf8', entity: '#22d3ee', summary: '#34d399', semantic: '#f59e0b',
-  };
-  const tc = typeColor[item.memory_type] ?? '#94a3b8';
-
-  const prov    = item.context?.provenance;
-  const nouns   = item.context?.entities?.nouns ?? [];
-  const sysAt   = item.context?.temporal?.system_at;
-  const dateStr = sysAt ? new Date(sysAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : null;
-
-  const CONTENT_PREVIEW = 260;
-  const isLong = item.content.length > CONTENT_PREVIEW;
-
-  return (
-    <div
-      className="rounded-xl p-4 space-y-2.5"
-      style={{
-        background: isMulti ? 'rgba(251,191,36,0.04)' : 'rgba(255,255,255,0.025)',
-        border: `1px solid ${isMulti ? 'rgba(251,191,36,0.25)' : 'rgba(255,255,255,0.07)'}`,
-      }}
-    >
-      {/* Header row */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-[10px] font-mono text-white/30">{fmtId(item.unit_id)}</span>
-        <span className="px-1.5 py-0.5 rounded text-[9px] font-mono"
-          style={{ color: tc, background: `${tc}18`, border: `1px solid ${tc}30` }}>
-          {item.memory_type}
-        </span>
-        <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-mono"
-          style={{ color: stratInfo.color, background: `${stratInfo.color}15`, border: `1px solid ${stratInfo.color}30` }}>
-          {stratInfo.label}
-        </span>
-        {isMulti && (
-          <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-mono"
-            style={{ color: '#fbbf24', background: 'rgba(251,191,36,0.12)', border: '1px solid rgba(251,191,36,0.3)' }}>
-            multi-source
-          </span>
-        )}
-        <span className="ml-auto text-[10px] font-mono tabular-nums" style={{ color: stratInfo.color }}>
-          {item.score.toFixed(3)}
-        </span>
-        {onOpenInGraph && (
-          <button onClick={() => onOpenInGraph(item.unit_id)}
-            className="text-white/20 hover:text-orange-400 transition-colors flex-shrink-0"
-            title="Open in Graph Explorer">
-            <Network className="w-3.5 h-3.5" />
-          </button>
-        )}
-      </div>
-
-      {/* Provenance row */}
-      {prov?.source_name && (
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-[9px] text-white/30 flex items-center gap-1">
-            <span style={{ opacity: 0.5 }}>📄</span>
-            <span className="font-medium text-white/45">{prov.source_name}</span>
-          </span>
-          {prov.chunk_index !== undefined && (
-            <span className="text-[8px] font-mono text-white/20">chunk {prov.chunk_index}</span>
-          )}
-          {dateStr && (
-            <span className="text-[8px] font-mono text-white/20 ml-auto">{dateStr}</span>
-          )}
-        </div>
-      )}
-
-      {/* Entity tags */}
-      {nouns.length > 0 && (
-        <div className="flex items-center gap-1 flex-wrap">
-          {nouns.map(noun => (
-            <span key={noun}
-              className="px-1.5 py-0.5 rounded text-[8px] font-mono"
-              style={{ color: '#22d3ee', background: 'rgba(34,211,238,0.08)', border: '1px solid rgba(34,211,238,0.2)' }}>
-              {noun}
-            </span>
-          ))}
-        </div>
-      )}
-
-      {/* Content */}
-      <div>
-        <p className="text-[11px] text-white/65 leading-relaxed">
-          {isLong && !expanded ? item.content.slice(0, CONTENT_PREVIEW) + '…' : item.content}
-        </p>
-        {isLong && (
-          <button onClick={() => setExpanded(v => !v)}
-            className="mt-1 text-[9px] transition-colors"
-            style={{ color: `${stratInfo.color}80` }}>
-            {expanded ? 'Show less' : 'Show more'}
-          </button>
-        )}
-      </div>
-
-      {/* Linked snippets (entity mentions etc.) */}
-      {item.links && item.links.length > 0 && (
-        <div className="flex flex-wrap gap-1 pt-1" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-          <span className="text-[8px] text-white/20 mr-1 self-center">links:</span>
-          {item.links.slice(0, 6).map((l, i) => {
-            const mechColor: Record<string, string> = {
-              entity_mention: '#22d3ee', semantic_similarity: '#f97316',
-              narrative_thread: '#94a3b8', temporal_proximity: '#eab308', provenance_analysis: '#a78bfa',
-            };
-            const lc = mechColor[l.mechanism] ?? '#94a3b8';
-            return (
-              <span key={i}
-                className="px-1.5 py-0.5 rounded text-[8px] font-mono"
-                style={{ color: lc, background: `${lc}12`, border: `1px solid ${lc}25` }}
-                title={`${l.mechanism} · w=${l.weight}`}>
-                {l.snippet || fmtId(l.unit_id)}
-              </span>
-            );
-          })}
-          {item.links.length > 6 && (
-            <span className="text-[8px] text-white/20 self-center">+{item.links.length - 6}</span>
-          )}
-        </div>
-      )}
-    </div>
-  );
+  </details>;
 }
 
 export function EngramRecall({ sapienId, onOpenInGraph }: { sapienId: number; onOpenInGraph?: (id: string) => void }) {
-  const [query, setQuery]   = useState('');
-  const [depth, setDepth]   = useState<RecallDepth>('shallow');
-  const [loading, setLoading] = useState(false);
-  const [error, setError]   = useState<string | null>(null);
-  const [result, setResult] = useState<RecallResponse | null>(null);
+  const [query, setQuery] = useState(''); const [expectedId, setExpectedId] = useState(''); const [depth, setDepth] = useState<RecallDepth>('shallow');
+  const [loading, setLoading] = useState(false); const [error, setError] = useState<string | null>(null); const [result, setResult] = useState<RecallExplainResponse | null>(null);
+  const [sort, setSort] = useState<ResultSort>('rank'); const [direction, setDirection] = useState<Direction>('asc'); const [text, setText] = useState('');
+  const [stage, setStage] = useState<'all' | RecallStrategy>('all'); const [strategy, setStrategy] = useState<'all' | RecallStrategy>('all'); const [memoryType, setMemoryType] = useState<'all' | MemoryType>('all');
+  const [minScore, setMinScore] = useState(''); const [maxScore, setMaxScore] = useState(''); const [minRelevance, setMinRelevance] = useState(''); const [maxRelevance, setMaxRelevance] = useState('');
+  const [source, setSource] = useState(''); const [wm, setWm] = useState<EffectFilter>('all'); const [worth, setWorth] = useState<EffectFilter>('all');
+  const reset = () => { setSort('rank'); setDirection('asc'); setText(''); setStage('all'); setStrategy('all'); setMemoryType('all'); setMinScore(''); setMaxScore(''); setMinRelevance(''); setMaxRelevance(''); setSource(''); setWm('all'); setWorth('all'); };
+  const submit = async () => { if (!query.trim() || loading) return; setLoading(true); setError(null); try { setResult(await engramService.explainRecall({ sapienId, query: query.trim(), depth, expectUnitId: expectedId.trim() || undefined })); reset(); } catch (reason) { setError((reason as Error).message); } finally { setLoading(false); } };
+  const displayed = useMemo(() => (result?.results ?? []).map((item, index) => ({ item, originalRank: index + 1 })).filter(({ item }) => {
+    const corpus = [item.unit_id, item.title, item.content, provenance(item), JSON.stringify(item.context?.entities), JSON.stringify(item.context?.keywords_extracted)].join(' ').toLowerCase();
+    const relevance = item.relevance?.value;
+    return corpus.includes(text.toLowerCase()) && (stage === 'all' || item.stages[stage].hit) && (strategy === 'all' || item.strategy === strategy) && (memoryType === 'all' || item.memory_type === memoryType) && (!source || provenance(item).toLowerCase().includes(source.toLowerCase())) && (!minScore || item.final_score >= Number(minScore)) && (!maxScore || item.final_score <= Number(maxScore)) && (!minRelevance || (relevance != null && relevance >= Number(minRelevance))) && (!maxRelevance || (relevance != null && relevance <= Number(maxRelevance))) && (wm === 'all' || (wm === 'yes' ? item.wm_boost !== 0 : item.wm_boost === 0)) && (worth === 'all' || (worth === 'yes' ? item.worth_boost !== 0 : item.worth_boost === 0));
+  }).sort((a, b) => { let comparison = 0; if (sort === 'rank') comparison = a.originalRank - b.originalRank; else if (sort === 'final_score') comparison = a.item.final_score - b.item.final_score; else if (sort === 'relevance') comparison = (a.item.relevance?.value ?? -Infinity) - (b.item.relevance?.value ?? -Infinity); else if (sort === 'wm_boost') comparison = a.item.wm_boost - b.item.wm_boost; else if (sort === 'worth_boost') comparison = a.item.worth_boost - b.item.worth_boost; else if (sort === 'memory_time') comparison = timeValue(a.item) - timeValue(b.item); else comparison = a.item.memory_type.localeCompare(b.item.memory_type); return direction === 'asc' ? comparison : -comparison; }), [result, text, stage, strategy, memoryType, source, minScore, maxScore, minRelevance, maxRelevance, wm, worth, sort, direction]);
+  const download = () => { if (!result) return; const blob = new Blob([JSON.stringify(result, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const anchor = document.createElement('a'); anchor.href = url; anchor.download = `engram-recall-trace-${result.sapien_id}.json`; anchor.click(); URL.revokeObjectURL(url); };
 
-  const submit = async () => {
-    if (!query.trim() || loading) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const r = await engramService.recall({ sapienId, query: query.trim(), depth });
-      setResult(r);
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const onKey = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) submit();
-  };
-
-  // Compute which unit IDs appear in >1 stage
-  const multiIds = new Set<string>();
-  if (result) {
-    const counts = new Map<string, number>();
-    const all = [
-      ...result.stages.meaning.map(r => r.id),
-      ...result.stages.keyword.map(r => r.id),
-      ...result.stages.graph.map(r => r.id),
-    ];
-    all.forEach(id => counts.set(id, (counts.get(id) ?? 0) + 1));
-    counts.forEach((n, id) => { if (n > 1) multiIds.add(id); });
-    // Also include merged unit_ids that are multi-source
-    result.merged.forEach(m => { if (multiIds.has(m.unit_id)) multiIds.add(m.unit_id); });
-  }
-
-  return (
-    <div className="space-y-5">
-      {/* Query form */}
-      <div
-        className="rounded-xl p-4 space-y-3"
-        style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}
-      >
-        <div className="flex items-center gap-2 mb-1">
-          <Search className="w-4 h-4 text-violet-400" />
-          <span className="text-sm text-white/70">Recall Debugger</span>
-        </div>
-
-        <textarea
-          value={query}
-          onChange={e => setQuery(e.target.value)}
-          onKeyDown={onKey}
-          placeholder="Enter a query to trace through the recall pipeline…"
-          rows={2}
-          className="w-full bg-transparent border rounded-lg px-3 py-2 text-sm text-white/80
-            placeholder:text-white/20 resize-none outline-none transition-colors"
-          style={{ borderColor: 'rgba(255,255,255,0.1)' }}
-          onFocus={e => { (e.target as HTMLElement).style.borderColor = 'rgba(124,58,237,0.4)'; }}
-          onBlur={e  => { (e.target as HTMLElement).style.borderColor = 'rgba(255,255,255,0.1)'; }}
-        />
-
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Depth toggle */}
-          <div className="flex rounded-lg overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.1)' }}>
-            {(['shallow', 'deep'] as RecallDepth[]).map(d => (
-              <button
-                key={d}
-                onClick={() => setDepth(d)}
-                className="px-3 py-1.5 text-[11px] transition-all"
-                style={
-                  depth === d
-                    ? { background: 'rgba(124,58,237,0.25)', color: '#c4b5fd' }
-                    : { background: 'transparent', color: 'rgba(255,255,255,0.35)' }
-                }
-              >
-                {d}
-              </button>
-            ))}
-          </div>
-
-          <p className="text-[10px] text-white/20">Ctrl+Enter to run</p>
-
-          <button
-            onClick={submit}
-            disabled={!query.trim() || loading}
-            className="ml-auto flex items-center gap-2 px-4 py-1.5 rounded-lg text-[12px] font-medium transition-all disabled:opacity-40"
-            style={{ background: 'linear-gradient(135deg, #7c3aed, #4f46e5)', color: '#fff', boxShadow: '0 0 16px rgba(124,58,237,0.3)' }}
-          >
-            {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
-            {loading ? 'Running…' : 'Run Recall'}
-          </button>
-        </div>
-      </div>
-
-      {error && <ErrorBox msg={error} />}
-
-      {result && (
-        <>
-          {/* Stage columns */}
-          <div className="flex flex-col gap-3 md:flex-row">
-            <StageColumn title="Meaning" strategy="meaning" refs={result.stages.meaning} multiIds={multiIds} onOpenInGraph={onOpenInGraph} />
-            <StageColumn title="Keyword" strategy="keyword" refs={result.stages.keyword} multiIds={multiIds} onOpenInGraph={onOpenInGraph} />
-            <StageColumn title="Graph"   strategy="graph"   refs={result.stages.graph}   multiIds={multiIds} onOpenInGraph={onOpenInGraph} />
-          </div>
-
-          {/* Merged results */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <GitMerge className="w-4 h-4 text-white/40" />
-              <span className="text-[11px] text-white/50">Merged results ({result.merged.length})</span>
-              {multiIds.size > 0 && (
-                <span
-                  className="px-2 py-0.5 rounded-full text-[9px] font-mono"
-                  style={{ color: '#fbbf24', background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.25)' }}
-                >
-                  {multiIds.size} multi-source
-                </span>
-              )}
-            </div>
-            {result.merged.length === 0 ? (
-              <p className="text-xs text-white/25">No merged results.</p>
-            ) : (
-              result.merged.filter(Boolean).map(m => (
-                <MergedCard key={m.unit_id} item={m} multiIds={multiIds} onOpenInGraph={onOpenInGraph} />
-              ))
-            )}
-          </div>
-        </>
-      )}
-    </div>
-  );
+  return <div className="space-y-5">
+    <div className="rounded-xl p-4 space-y-3" style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.08)' }}><div className="flex flex-wrap items-center gap-2"><Search className="w-4 h-4 text-violet-400" /><span className="text-sm text-white/70">Recall Research</span><span className="ml-auto flex items-center gap-1 rounded-full px-2 py-1 text-[9px] text-emerald-300" style={{ border: '1px solid rgba(52,211,153,.2)' }}><ShieldCheck className="w-3 h-3" />Read-only · learning unapplied</span></div><p className="text-[10px] text-white/30">Bounded production retrieval trace. Working Memory, usage, and co-recall learning are unchanged.</p><textarea value={query} onChange={event => setQuery(event.target.value)} onKeyDown={event => { if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) submit(); }} placeholder="What should Engram be able to recall?" rows={2} className="w-full resize-none rounded-lg border border-white/10 bg-transparent px-3 py-2 text-sm text-white/80 outline-none placeholder:text-white/20" /><div className="grid gap-3 sm:grid-cols-[7rem_minmax(0,1fr)_auto_auto]"><label className="rounded-lg border border-white/10 px-3 py-2"><span className="block text-[8px] uppercase text-white/20">Sapien</span><span className="text-[11px] font-mono text-white/55">{sapienId}</span></label><input value={expectedId} onChange={event => setExpectedId(event.target.value)} placeholder="Expected memory unit ID (optional)" className={inputClass} /><div className="flex rounded-lg overflow-hidden border border-white/10">{(['shallow', 'deep'] as RecallDepth[]).map(option => <button key={option} onClick={() => setDepth(option)} className="px-3 py-1.5 text-[11px]" style={depth === option ? { background: 'rgba(124,58,237,.25)', color: '#c4b5fd' } : { color: 'rgba(255,255,255,.35)' }}>{option}</button>)}</div><button onClick={submit} disabled={!query.trim() || loading} className="flex items-center justify-center gap-2 rounded-lg px-4 py-1.5 text-[12px] text-white disabled:opacity-40" style={{ background: 'linear-gradient(135deg,#7c3aed,#4f46e5)' }}>{loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}{loading ? 'Tracing…' : 'Trace recall'}</button></div></div>
+    {error && <ErrorBox msg={error} />}
+    {result && <><div className="flex flex-wrap gap-2"><button onClick={download} className={`${inputClass} flex items-center gap-1`}><Download className="w-3 h-3" />Download trace JSON</button><span className="self-center text-[9px] text-white/25">Client-side export · nothing persisted</span></div>
+      <details open className="rounded-xl p-3" style={{ border: '1px solid rgba(255,255,255,.07)' }}><summary className="cursor-pointer text-[11px] text-white/50">Timing, limits, and graph cost</summary><div className="mt-3 grid grid-cols-2 gap-2 md:grid-cols-4">{Object.entries(result.timings_ms).map(([label, value]) => <Metric key={label} label={label.replaceAll('_', ' ')} value={`${num(value, 2)} ms`} />)}</div><div className="mt-2 grid grid-cols-2 gap-2 md:grid-cols-4">{Object.entries(result.limits).map(([label, value]) => <Metric key={label} label={label.replaceAll('_', ' ')} value={value} />)}<Metric label="Graph seeds" value={result.graph.seeds} /><Metric label="Graph depth used" value={result.graph.depth} /><Metric label="Neo4j round trips" value={result.graph.neo4j_round_trips} note="Current traversal cost; exact graph paths are not returned." /><Metric label="Graph visited" value={result.graph.visited} /><Metric label="Graph net new" value={result.graph.net_new} /></div></details>
+      <div className="space-y-2">{STAGES.map(item => <StageTable key={item.key} stage={item} rows={result.stages[item.key]} timing={result.timings_ms[item.key]} />)}</div>
+      <div className="rounded-xl p-3 space-y-2" style={{ border: '1px solid rgba(255,255,255,.07)' }}><div className="flex flex-wrap gap-2"><input value={text} onChange={event => setText(event.target.value)} placeholder="ID, content, provenance, entities, keywords" className={`${inputClass} min-w-64 flex-1`} /><select value={sort} onChange={event => setSort(event.target.value as ResultSort)} className={inputClass}>{[['rank','Original rank'],['final_score','Final score'],['relevance','Relevance'],['wm_boost','WM boost'],['worth_boost','Worth boost'],['memory_time','Memory time'],['memory_type','Memory type']].map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select><button onClick={() => setDirection(value => value === 'asc' ? 'desc' : 'asc')} className={inputClass}>{direction}</button><button onClick={reset} className={`${inputClass} flex items-center gap-1`}><RotateCcw className="w-3 h-3" />Reset</button></div>
+        <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-6"><select value={stage} onChange={event => setStage(event.target.value as typeof stage)} className={inputClass}><option value="all">Any stage hit</option>{STAGES.map(item => <option key={item.key} value={item.key}>{item.label} hit</option>)}</select><select value={strategy} onChange={event => setStrategy(event.target.value as typeof strategy)} className={inputClass}><option value="all">Any strategy</option>{STAGES.map(item => <option key={item.key} value={item.key}>{item.label}</option>)}</select><select value={memoryType} onChange={event => setMemoryType(event.target.value as typeof memoryType)} className={inputClass}><option value="all">Any memory type</option>{['episodic','entity','summary','semantic'].map(value => <option key={value}>{value}</option>)}</select><input value={source} onChange={event => setSource(event.target.value)} placeholder="Provenance source" className={inputClass} /><select value={wm} onChange={event => setWm(event.target.value as EffectFilter)} className={inputClass}><option value="all">Any WM effect</option><option value="yes">WM affected</option><option value="no">WM unaffected</option></select><select value={worth} onChange={event => setWorth(event.target.value as EffectFilter)} className={inputClass}><option value="all">Any worth effect</option><option value="yes">Worth affected</option><option value="no">Worth unaffected</option></select></div>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4"><input type="number" value={minScore} onChange={event => setMinScore(event.target.value)} placeholder="Min score" className={inputClass} /><input type="number" value={maxScore} onChange={event => setMaxScore(event.target.value)} placeholder="Max score" className={inputClass} /><input type="number" value={minRelevance} onChange={event => setMinRelevance(event.target.value)} placeholder="Min relevance" className={inputClass} /><input type="number" value={maxRelevance} onChange={event => setMaxRelevance(event.target.value)} placeholder="Max relevance" className={inputClass} /></div><div className="text-[10px] text-white/40">Showing {displayed.length} of {result.results.length}; original rank is always retained.</div></div>
+      <div className="space-y-2">{displayed.map(({ item, originalRank }) => <ResultRow key={item.unit_id} item={item} originalRank={originalRank} onOpenInGraph={onOpenInGraph} />)}</div>
+      <details className="rounded-xl p-3" style={{ border: '1px solid rgba(52,211,153,.18)' }}><summary className="cursor-pointer text-[11px] text-emerald-300/70">Learning effects preview · not applied</summary><pre className="mt-3 overflow-auto whitespace-pre-wrap text-[9px] text-white/35">{JSON.stringify(result.learning, null, 2)}</pre></details>
+      {result.why_not !== null && <details open className="rounded-xl p-3" style={{ border: '1px solid rgba(251,191,36,.2)' }}><summary className="cursor-pointer text-[11px] text-amber-300/80">Why the expected memory was not returned</summary><pre className="mt-3 overflow-auto whitespace-pre-wrap text-[9px] text-white/45">{JSON.stringify(result.why_not, null, 2)}</pre></details>}
+      <p className="text-[9px] text-white/20">Exact graph paths and built-in run comparison are not available in the current backend trace contract.</p></>}
+  </div>;
 }
