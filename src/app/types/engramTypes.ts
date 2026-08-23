@@ -18,6 +18,11 @@ export interface EngramUnit {
   content: string;
   checksum?: string;
   created_at: string;
+  weights?: {
+    worth: number;
+    frequency: number;
+    recency: string;
+  };
 }
 
 export interface EngramLink {

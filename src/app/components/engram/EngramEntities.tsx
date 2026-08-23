@@ -65,6 +65,15 @@ export function EngramEntities({ sapienId, onOpenInGraph }: { sapienId: number; 
             >
               <User className="w-3 h-3 flex-shrink-0" />
               <span className="truncate">{e.content}</span>
+              {typeof e.weights?.worth === 'number' && (
+                <span
+                  className="ml-auto flex-shrink-0 rounded px-1.5 py-0.5 text-[8px] font-mono"
+                  style={{ color: '#fbbf24', background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.2)' }}
+                  title="Entity MemoryUnit worth"
+                >
+                  worth {e.weights.worth.toFixed(2)}
+                </span>
+              )}
             </button>
             {onOpenInGraph && (
               <button
@@ -105,6 +114,15 @@ export function EngramEntities({ sapienId, onOpenInGraph }: { sapienId: number; 
                 <p className="text-[10px] font-mono text-white/25">{fmtId(selected.id)}</p>
               </div>
               <div className="ml-auto flex items-center gap-2 flex-shrink-0">
+                {typeof (episodes?.entity.weights?.worth ?? selected.weights?.worth) === 'number' && (
+                  <span
+                    className="px-2 py-0.5 rounded-full text-[10px] font-mono text-amber-300"
+                    style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.2)' }}
+                    title="Entity MemoryUnit importance"
+                  >
+                    worth {(episodes?.entity.weights?.worth ?? selected.weights?.worth)!.toFixed(2)}
+                  </span>
+                )}
                 {episodes && (
                   <span className="px-2 py-0.5 rounded-full text-[10px] font-mono text-cyan-300"
                     style={{ background: 'rgba(34,211,238,0.1)', border: '1px solid rgba(34,211,238,0.2)' }}>
@@ -147,7 +165,7 @@ export function EngramEntities({ sapienId, onOpenInGraph }: { sapienId: number; 
                   >
                     {ep.memory_type}
                   </span>
-                  <span className="text-[9px] font-mono text-white/20">w={ep.weight.toFixed(2)}</span>
+                  <span className="text-[9px] font-mono text-white/20" title="Entity mention relationship strength">link w={ep.weight.toFixed(2)}</span>
                   {onOpenInGraph && (
                     <button
                       onClick={() => onOpenInGraph(ep.id)}
