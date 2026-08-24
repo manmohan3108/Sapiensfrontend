@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { Sparkles } from 'lucide-react';
+import { Brain, Sparkles } from 'lucide-react';
 import { Button } from '../ui/button';
 import { CreateSapiensForm } from './CreateSapiensForm';
-import birthSilhouette from '../../../assets/sapiens-birth-silhouette.png';
 
 interface HeroSectionProps {
   onLoadClick: () => void;
@@ -12,41 +11,46 @@ function BirthStory({ name }: { name: string }) {
   const displayName = name.trim() || 'A new Sapiens';
 
   return (
-    <figure className="relative mx-auto h-[22rem] w-full max-w-[22rem] overflow-hidden sm:h-[24rem]" aria-label="A human silhouette giving rise to a new Sapiens">
+    <figure className="relative mx-auto h-[18rem] w-full max-w-[20rem]" aria-label="An illuminated brain emerging from a simple human form">
       <style>{`
-        @keyframes creator-recede {
-          0%, 24% { opacity: .92; transform: scale(1); }
-          70%, 100% { opacity: .28; transform: scale(.97); }
+        @keyframes body-recede {
+          0%, 18% { opacity: .7; transform: scale(1); }
+          70%, 100% { opacity: .14; transform: scale(1.04); }
         }
-        @keyframes presence-emerge {
-          0%, 18% { opacity: .35; transform: translate(-50%, 0) scale(.5); }
-          62%, 100% { opacity: 1; transform: translate(-50%, -235px) scale(1.45); }
+        @keyframes brain-emerge {
+          0%, 16% { transform: translate(-50%, 0) scale(.72); }
+          65%, 100% { transform: translate(-50%, -105px) scale(1.35); }
         }
-        @keyframes presence-breathe {
-          0%, 100% { box-shadow: 0 0 20px 8px rgba(251,191,36,.28), 0 0 70px 24px rgba(139,92,246,.14); }
-          50% { box-shadow: 0 0 32px 13px rgba(251,191,36,.4), 0 0 95px 34px rgba(139,92,246,.2); }
+        @keyframes brain-glow {
+          0%, 100% { filter: drop-shadow(0 0 8px rgba(253,224,71,.8)) drop-shadow(0 0 24px rgba(139,92,246,.55)); }
+          50% { filter: drop-shadow(0 0 14px rgba(254,240,138,1)) drop-shadow(0 0 38px rgba(168,85,247,.75)); }
         }
         @media (prefers-reduced-motion: reduce) {
-          .creator-silhouette, .emerging-presence, .presence-core { animation: none !important; }
-          .creator-silhouette { opacity: .45; }
-          .emerging-presence { opacity: 1; transform: translate(-50%, -190px) scale(1.15); }
+          .body-lines, .emerging-brain, .brain-light { animation: none !important; }
         }
       `}</style>
 
-      <div className="absolute inset-x-10 bottom-14 h-36 rounded-full bg-violet-500/15 blur-3xl" />
-      <img
-        src={birthSilhouette}
-        alt=""
-        className={`creator-silhouette absolute inset-0 size-full object-contain transition-opacity duration-700 ${name.trim() ? 'motion-safe:animate-[creator-recede_4.8s_ease-in-out_1_forwards]' : ''}`}
-      />
+      <svg viewBox="0 0 320 288" className="absolute inset-0 size-full" fill="none" aria-hidden="true">
+        <defs>
+          <linearGradient id="bodyLine" x1="40" y1="35" x2="142" y2="260" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#c4b5fd" stopOpacity=".18" />
+            <stop offset=".48" stopColor="#a78bfa" stopOpacity=".8" />
+            <stop offset="1" stopColor="#f0abfc" stopOpacity=".3" />
+          </linearGradient>
+        </defs>
+        <g className={`body-lines ${name.trim() ? 'motion-safe:animate-[body-recede_4.4s_ease-in-out_1_forwards]' : ''}`} style={{ transformOrigin: '160px 160px' }}>
+          <path d="M112 30C105 70 70 87 68 137C66 190 92 222 118 262" stroke="url(#bodyLine)" strokeWidth="3" strokeLinecap="round" />
+          <path d="M208 30C215 70 250 87 252 137C254 190 228 222 202 262" stroke="url(#bodyLine)" strokeWidth="3" strokeLinecap="round" />
+        </g>
+      </svg>
 
-      <div className={`emerging-presence absolute bottom-[27%] left-1/2 z-10 -translate-x-1/2 ${name.trim() ? 'motion-safe:animate-[presence-emerge_4.8s_cubic-bezier(.22,.75,.25,1)_1_forwards]' : ''}`}>
-        <div className="presence-core grid size-14 place-items-center rounded-full border border-amber-100/80 bg-[radial-gradient(circle_at_35%_30%,#fff,rgba(253,230,138,.95)_30%,rgba(245,158,11,.8)_66%,rgba(139,92,246,.28))] motion-safe:animate-[presence-breathe_2.8s_ease-in-out_infinite]">
-          <span className="size-2 rounded-full bg-white/90" />
+      <div className={`emerging-brain absolute bottom-[22%] left-1/2 z-10 -translate-x-1/2 ${name.trim() ? 'motion-safe:animate-[brain-emerge_4.4s_cubic-bezier(.22,.75,.25,1)_1_forwards]' : ''}`}>
+        <div className="brain-light grid size-20 place-items-center rounded-full bg-[radial-gradient(circle,rgba(253,224,71,.28),rgba(139,92,246,.1)_58%,transparent_72%)] motion-safe:animate-[brain-glow_2.6s_ease-in-out_infinite]">
+          <Brain className="size-12 fill-amber-200/15 stroke-[1.7] text-amber-200" aria-hidden="true" />
         </div>
       </div>
 
-      <figcaption className="absolute inset-x-0 bottom-2 z-20 text-center">
+      <figcaption className="absolute inset-x-0 bottom-0 z-20 text-center">
         <p className="text-sm font-semibold">{name.trim() ? `${displayName} is beginning` : 'It begins with you'}</p>
         <p className="mt-1 text-xs text-muted-foreground">Then it learns how to grow.</p>
       </figcaption>
