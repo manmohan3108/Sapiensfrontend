@@ -269,6 +269,11 @@ export interface WMResponse {
   sapien_id: number;
   summary?: {
     entry_count?: number;
+    total?: number;
+    total_count?: number;
+    total_entries?: number;
+    matching_count?: number;
+    returned_count?: number;
     focus_id?: string | null;
     focus_count?: number;
     pending_count?: number;
