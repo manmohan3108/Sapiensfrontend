@@ -7,9 +7,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { useSapiens } from '../../hooks/useSapiens';
 
-export function CreateSapiensForm() {
+interface CreateSapiensFormProps {
+  onNameChange?: (name: string) => void;
+}
+
+export function CreateSapiensForm({ onNameChange }: CreateSapiensFormProps) {
   const [name, setName] = useState('');
-  const [role, setRole] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { createSapiens } = useSapiens();
@@ -26,12 +29,11 @@ export function CreateSapiensForm() {
       setError(null);
       await createSapiens({
         name: name.trim(),
-        role: role.trim() || undefined,
       });
       
       // Reset form
       setName('');
-      setRole('');
+      onNameChange?.('');
     } catch (error) {
       console.error('Failed to create Sapiens:', error);
       setError('Unable to connect to the backend server. Please try again shortly.');
@@ -43,9 +45,10 @@ export function CreateSapiensForm() {
   return (
     <Card className="mx-auto max-w-xl rounded-3xl border-border/70 bg-card/90 shadow-xl shadow-violet-950/5 backdrop-blur">
       <CardHeader>
-        <CardTitle className="text-2xl">Create your Sapiens</CardTitle>
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-violet-600 dark:text-violet-400">Begin its story</p>
+        <CardTitle className="text-2xl">First, give it a name</CardTitle>
         <CardDescription>
-          Give it a name. You can personalize everything else later.
+          Start with one small choice. You can shape everything else after you meet.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -59,26 +62,17 @@ export function CreateSapiensForm() {
           )}
           
           <div className="space-y-2">
-            <Label htmlFor="name">What would you like to call it?</Label>
+            <Label htmlFor="name">Its name</Label>
             <Input
               id="name"
               type="text"
               placeholder="e.g. Atlas"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => {
+                setName(e.target.value);
+                onNameChange?.(e.target.value);
+              }}
               required
-              disabled={isCreating}
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="role">What should it help with? <span className="font-normal text-muted-foreground">(optional)</span></Label>
-            <Input
-              id="role"
-              type="text"
-              placeholder="e.g. My research, writing, or daily life"
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
               disabled={isCreating}
             />
           </div>
@@ -89,8 +83,9 @@ export function CreateSapiensForm() {
             disabled={!name.trim() || isCreating}
           >
             {isCreating ? <Loader2 className="mr-2 size-4 animate-spin" /> : <ArrowRight className="mr-2 size-4" />}
-            {isCreating ? 'Creating…' : 'Create my Sapiens'}
+            {isCreating ? 'Creating…' : name.trim() ? `Begin with ${name.trim()}` : 'Begin creating'}
           </Button>
+          <p className="text-center text-xs text-muted-foreground">No setup journey. Give it a name and begin.</p>
         </form>
       </CardContent>
     </Card>
