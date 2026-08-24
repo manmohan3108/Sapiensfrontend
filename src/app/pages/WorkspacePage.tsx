@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { Database, Eye, Target } from 'lucide-react';
+import { BrainCircuit, Eye, Target } from 'lucide-react';
 import { HeaderBar } from '../components/workspace/HeaderBar';
 import { AwarenessPanel } from '../components/workspace/AwarenessPanel';
 import { ChatWindow } from '../components/workspace/ChatWindow';
@@ -18,15 +18,13 @@ type RightTab = 'awareness' | 'memory' | 'goals';
 function TabRow({
   tab,
   setTab,
-  memoryCount,
 }: {
   tab: RightTab;
   setTab: (t: RightTab) => void;
-  memoryCount: number;
 }) {
   const TABS = [
     { id: 'awareness' as RightTab, label: 'Awareness', icon: <Eye className="w-3 h-3" />, activeColor: '#67e8f9', activeBg: 'rgba(34,211,238,0.12)', activeBorder: 'rgba(34,211,238,0.25)' },
-    { id: 'memory'   as RightTab, label: 'Memory',   icon: <Database  className="w-3 h-3" />, activeColor: '#fcd34d', activeBg: 'rgba(245,158,11,0.15)', activeBorder: 'rgba(245,158,11,0.3)' },
+    { id: 'memory'   as RightTab, label: 'Working Memory', icon: <BrainCircuit className="w-3 h-3" />, activeColor: '#c4b5fd', activeBg: 'rgba(124,58,237,0.15)', activeBorder: 'rgba(124,58,237,0.3)' },
     { id: 'goals'    as RightTab, label: 'Goals',    icon: <Target    className="w-3 h-3" />, activeColor: '#86efac', activeBg: 'rgba(52,211,153,0.12)', activeBorder: 'rgba(52,211,153,0.3)' },
   ] as const;
 
@@ -50,12 +48,6 @@ function TabRow({
         >
           {t.icon}
           {t.label}
-          {t.id === 'memory' && memoryCount > 0 && (
-            <span className="ml-0.5 min-w-[18px] px-1.5 py-0.5 rounded-full text-center text-[9px] font-mono tabular-nums"
-              style={{ background: tab === 'memory' ? 'rgba(245,158,11,0.25)' : 'rgba(245,158,11,0.15)', color: '#fbbf24' }}>
-              {memoryCount}
-            </span>
-          )}
         </button>
       ))}
       <div className="flex-1" />
@@ -73,7 +65,6 @@ export function WorkspacePage() {
   const currentSapiens = useSapiensStore((state) => state.currentSapiens);
   const showDebugPanel = useSapiensStore((s) => s.showDebugPanel);
   const showMemoryTimeline = useSapiensStore((s) => s.showMemoryTimeline);
-  const lastMemoryUnits = useSapiensStore((s) => s.lastMemoryUnits);
   const { refreshSapiensState } = useSapiens();
 
   // Poll /api/orchestrator/status every 10 s while this tab is visible
@@ -86,11 +77,6 @@ export function WorkspacePage() {
   useEffect(() => {
     if (currentSapiens) refreshSapiensState();
   }, [currentSapiens, refreshSapiensState]);
-
-  // Auto-switch to memory tab when memory units arrive
-  useEffect(() => {
-    if (lastMemoryUnits.length > 0) setRightTab('memory');
-  }, [lastMemoryUnits]);
 
   if (!currentSapiens) return null;
 
@@ -130,7 +116,7 @@ export function WorkspacePage() {
         <div className="min-h-[36rem] flex flex-col gap-2 lg:col-span-4 lg:min-h-0">
 
           {/* Tab pill row */}
-          <TabRow tab={rightTab} setTab={setRightTab} memoryCount={lastMemoryUnits.length} />
+          <TabRow tab={rightTab} setTab={setRightTab} />
 
           {/* Active panel — fills full height */}
           <div className="flex-1 min-h-0">

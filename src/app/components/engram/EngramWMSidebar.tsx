@@ -34,7 +34,8 @@ interface WMEntryRowProps {
 function WMEntryRow({ entry, isFocus, isNew, onOpenInGraph }: WMEntryRowProps) {
   const [expanded, setExpanded] = useState(false);
   if (!entry) return null;
-  const pct = Math.min(100, Math.round((entry.score ?? 0) * 100));
+  const score = entry.activation ?? entry.score ?? 0;
+  const pct = Math.min(100, Math.round(score * 100));
   const scoreColor = pct > 70 ? '#34d399' : pct > 40 ? '#fbbf24' : '#94a3b8';
   const mtColor  = entry.memory_type ? (MEMORY_TYPE_COLORS[entry.memory_type] ?? '#94a3b8') : '#94a3b8';
   const srcColor = SOURCE_COLORS[entry.memory_source] ?? SOURCE_COLORS.default;
@@ -166,7 +167,7 @@ function WMEntryRow({ entry, isFocus, isNew, onOpenInGraph }: WMEntryRowProps) {
             <span className="text-[8px] font-mono text-emerald-400/50">vec✓</span>
           )}
           <span className="text-[9px] font-mono tabular-nums ml-auto flex-shrink-0" style={{ color: scoreColor }}>
-            {entry.score.toFixed(2)}
+            {score.toFixed(2)}
           </span>
         </div>
       </div>
@@ -194,7 +195,7 @@ export function EngramWMSidebar({
   const newIdTimerRef   = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const poll = useCallback(() => {
-    engramService.getWM(sapienId)
+    engramService.getWorkingMemory(sapienId, { sort: 'activation', order: 'desc', limit: 100, includeContent: true })
       .then(r => {
         // Client-side delta detection (backend didn't implement ?since=)
         const prevIds = prevIdsRef.current;
@@ -245,14 +246,14 @@ export function EngramWMSidebar({
   const sorted = [...entries].sort((a, b) => {
     if (a.id === focusId) return -1;
     if (b.id === focusId) return 1;
-    return b.score - a.score;
+    return (b.activation ?? b.score ?? 0) - (a.activation ?? a.score ?? 0);
   });
 
   // Per-source current counts
   const sourceCounts: Record<string, number> = {};
   entries.forEach(e => { sourceCounts[e.memory_source] = (sourceCounts[e.memory_source] ?? 0) + 1; });
 
-  const maxScore = sorted.length > 0 ? sorted[0].score : 1;
+  const maxScore = sorted.length > 0 ? (sorted[0].activation ?? sorted[0].score ?? 0) : 1;
   const globalUsedPct = capacity.global > 0 ? Math.round((entries.length / capacity.global) * 100) : 0;
 
   return (
@@ -356,13 +357,14 @@ export function EngramWMSidebar({
           </div>
           <div className="flex gap-0.5 items-end" style={{ height: '12px' }}>
             {sorted.map(e => {
-              const rel = maxScore > 0 ? e.score / maxScore : 0;
+              const score = e.activation ?? e.score ?? 0;
+              const rel = maxScore > 0 ? score / maxScore : 0;
               const isFocus = e.id === focusId;
               return (
                 <div
                   key={e.id}
                   className="flex-1 rounded-sm transition-all duration-700"
-                  title={`${fmtId(e.id)}: ${e.score.toFixed(2)}`}
+                    title={`${fmtId(e.id)}: ${score.toFixed(2)}`}
                   style={{
                     background: isFocus
                       ? `rgba(196,181,253,${0.3 + rel * 0.7})`

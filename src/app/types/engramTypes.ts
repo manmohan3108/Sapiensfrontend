@@ -11,6 +11,9 @@ export type RecallDepth = 'shallow' | 'deep';
 export type RecallStrategy = 'meaning' | 'keyword' | 'graph';
 export type RecallStageStrategy = RecallStrategy | 'working_memory';
 export type SequenceDirection = 'forward' | 'backward' | 'both';
+export type WMSort = 'activation' | 'recency' | 'frequency' | 'last_used' | 'worth' | 'created_at';
+export type WMOrder = 'asc' | 'desc';
+export type WMEmbeddingFilter = 'all' | 'with' | 'without';
 
 export interface EngramUnit {
   id: string;
@@ -236,16 +239,46 @@ export interface RecallExplainResponse {
 
 // WMEntry now includes content + memory_type for memory_source === "memory_unit"
 export interface WMEntry {
+  rank?: number;
+  activation_rank?: number;
   id: string;
   memory_source: string;
-  score: number;
-  has_embedding: boolean;
+  score?: number;
+  activation?: number;
+  recency?: number;
+  frequency?: number;
+  last_used?: number | string;
+  last_used_at?: string;
+  age_seconds?: number;
+  event_at?: string;
+  timeline?: Record<string, unknown> | string | null;
+  provenance?: Record<string, unknown> | string | null;
+  pending?: boolean;
+  has_embedding?: boolean;
+  is_focus?: boolean;
+  metadata?: Record<string, unknown> | null;
   content?: string;
   memory_type?: string;
+  created_at?: string;
+  worth?: number;
+  memory_frequency?: number;
+  memory_recency_at?: string;
 }
 
 export interface WMResponse {
   sapien_id: number;
+  summary?: {
+    entry_count?: number;
+    focus_id?: string | null;
+    focus_count?: number;
+    pending_count?: number;
+    embedded_count?: number;
+    activation_version?: string | number;
+    activation_min?: number;
+    activation_max?: number;
+    activation_avg?: number;
+    [key: string]: unknown;
+  };
   wm: {
     focus_id: string | null;
     entries: WMEntry[];
@@ -254,6 +287,21 @@ export interface WMResponse {
     global: number;
     by_source: Record<string, number>;
   };
+  timeline?: { earliest?: string | null; latest?: string | null; [key: string]: unknown };
+  sources?: Record<string, number> | Array<{ source: string; count: number }>;
+  filters?: Record<string, unknown>;
+}
+
+export interface WMQuery {
+  source?: string;
+  sort?: WMSort;
+  order?: WMOrder;
+  limit?: number;
+  minActivation?: number;
+  hasEmbedding?: boolean;
+  focusOnly?: boolean;
+  includeContent?: boolean;
+  includeMetadata?: boolean;
 }
 
 export interface EngramStats {

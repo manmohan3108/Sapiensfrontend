@@ -1,4 +1,4 @@
-import { ENGRAM_ENDPOINTS } from '../config/apiConfig';
+import { API_ENDPOINTS, ENGRAM_ENDPOINTS } from '../config/apiConfig';
 import type {
   EngramStats,
   WMResponse,
@@ -16,6 +16,7 @@ import type {
   RecallExplainResponse,
   RecallDepth,
   MemoryType,
+  WMQuery,
 } from '../../types/engramTypes';
 
 async function engramFetch<T>(url: string, options?: RequestInit): Promise<T> {
@@ -50,8 +51,24 @@ export const engramService = {
   },
 
   // ── Working memory ────────────────────────────────────────────────────────
-  getWM(sapienId: number): Promise<WMResponse> {
-    return engramFetch<WMResponse>(ENGRAM_ENDPOINTS.wm(sapienId));
+  getWorkingMemory(sapienId: number, params: WMQuery = {}): Promise<WMResponse> {
+    const q = new URLSearchParams();
+    if (params.source) q.set('source', params.source);
+    if (params.sort) q.set('sort', params.sort);
+    if (params.order) q.set('order', params.order);
+    if (params.limit !== undefined) q.set('limit', String(Math.min(100, Math.max(1, params.limit))));
+    if (params.minActivation !== undefined) q.set('min_activation', String(Math.min(1, Math.max(0, params.minActivation))));
+    if (params.hasEmbedding !== undefined) q.set('has_embedding', String(params.hasEmbedding));
+    if (params.focusOnly !== undefined) q.set('focus_only', String(params.focusOnly));
+    if (params.includeContent !== undefined) q.set('include_content', String(params.includeContent));
+    if (params.includeMetadata !== undefined) q.set('include_metadata', String(params.includeMetadata));
+    const qs = q.toString();
+    return engramFetch<WMResponse>(`${API_ENDPOINTS.sapienWorkingMemory(sapienId)}${qs ? `?${qs}` : ''}`);
+  },
+
+  /** @deprecated Use getWorkingMemory. Kept as a source-compatible canonical fetch. */
+  getWM(sapienId: number, params: WMQuery = {}): Promise<WMResponse> {
+    return this.getWorkingMemory(sapienId, params);
   },
 
   // ── Units list ────────────────────────────────────────────────────────────

@@ -33,6 +33,7 @@ export const API_ENDPOINTS = {
   chatSignal: '/chat/signal',
   sapienChats: (sapienId: string | number) => `/sapien/${sapienId}/chats`,
   sapienAwareness: (sapienId: string | number) => `/sapien/${sapienId}/awareness`,
+  sapienWorkingMemory: (sapienId: string | number) => `${apiConfig.baseUrl}/sapien/${sapienId}/working-memory`,
   sapiensState: '/sapiens_state',
   listSapiens: '/get-all-sapiens',
   runEngine: '/run-engines',
@@ -44,7 +45,6 @@ export const ENGRAM_BASE = `${apiConfig.baseUrl}/engram`;
 
 export const ENGRAM_ENDPOINTS = {
   stats:      (sapienId: number) => `${ENGRAM_BASE}/stats/${sapienId}`,
-  wm:         (sapienId: number) => `${ENGRAM_BASE}/wm/${sapienId}`,
   units:      () => `${ENGRAM_BASE}/units`,
   unit:       (id: string)       => `${ENGRAM_BASE}/units/${id}`,
   adjacent:   (id: string)       => `${ENGRAM_BASE}/units/${id}/adjacent`,
