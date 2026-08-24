@@ -9,6 +9,7 @@ export type LinkMechanism =
   | 'provenance_analysis';
 export type RecallDepth = 'shallow' | 'deep';
 export type RecallStrategy = 'meaning' | 'keyword' | 'graph';
+export type RecallStageStrategy = RecallStrategy | 'working_memory';
 export type SequenceDirection = 'forward' | 'backward' | 'both';
 
 export interface EngramUnit {
@@ -161,7 +162,7 @@ export interface EntityEpisodesResponse {
 export interface RecallStageCandidate {
   unit_id: string;
   raw_score: number;
-  strategy: RecallStrategy;
+  strategy: RecallStageStrategy;
 }
 
 export interface RecallResultStage {
@@ -184,7 +185,8 @@ export interface RecallExplainResult {
   memory_type: MemoryType;
   strategy: RecallStrategy;
   final_score: number;
-  stages: Record<RecallStrategy, RecallResultStage>;
+  stages: Record<RecallStrategy, RecallResultStage> & { working_memory?: RecallResultStage };
+  score_components?: string[];
   wm_boost: number;
   worth_boost: number;
   relevance: RecallRelevance | null;
@@ -216,7 +218,9 @@ export interface RecallExplainResponse {
     weak_links?: number;
     within_walk_duplicates?: number;
     structural_links?: number;
+    evidence?: number;
     direct_candidate_overlap?: number;
+    direct_candidate_overlap_ids?: string[];
     cross_seed_duplicates?: number;
   };
   learning: { applied: false; final_result_set?: string[]; [key: string]: unknown };
@@ -224,6 +228,7 @@ export interface RecallExplainResponse {
     meaning: RecallStageCandidate[];
     keyword: RecallStageCandidate[];
     graph: RecallStageCandidate[];
+    working_memory?: RecallStageCandidate[];
   };
   results: RecallExplainResult[];
   why_not: Record<string, unknown> | null;
