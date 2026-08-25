@@ -1,14 +1,12 @@
 import { create } from 'zustand';
 import {
-  Sapiens, ActivityLog, Output, ChatMessage,
+  Sapiens, ChatMessage,
   MemoryUnit, DebugInfo,
 } from '../../types/sapiensTypes';
 
 interface SapiensStore {
   // ── Core state ────────────────────────────────────────────────────────────
   currentSapiens: Sapiens | null;
-  activityLogs: ActivityLog[];
-  outputs: Output[];
   chatMessages: ChatMessage[];
   chatSessionId: string | null;
   status: 'idle' | 'loading' | 'processing' | 'error';
@@ -35,12 +33,7 @@ interface SapiensStore {
 
   // ── Core actions ──────────────────────────────────────────────────────────
   setCurrentSapiens: (sapiens: Sapiens | null) => void;
-  setActivityLogs: (logs: ActivityLog[]) => void;
-  setOutputs: (outputs: Output[]) => void;
-  addOutput: (output: Omit<Output, 'id' | 'timestamp'>) => void;
   setStatus: (status: 'idle' | 'loading' | 'processing' | 'error') => void;
-  clearLogs: () => void;
-  clearOutputs: () => void;
 
   // ── Chat actions ──────────────────────────────────────────────────────────
   addChatMessage: (msg: ChatMessage) => void;
@@ -71,8 +64,6 @@ interface SapiensStore {
 export const useSapiensStore = create<SapiensStore>((set) => ({
   // ── Initial state ─────────────────────────────────────────────────────────
   currentSapiens: null,
-  activityLogs: [],
-  outputs: [],
   chatMessages: [],
   chatSessionId: null,
   status: 'idle',
@@ -91,24 +82,7 @@ export const useSapiensStore = create<SapiensStore>((set) => ({
   // ── Core actions ──────────────────────────────────────────────────────────
   setCurrentSapiens: (sapiens) => set({ currentSapiens: sapiens }),
 
-  setActivityLogs: (logs) => set({ activityLogs: logs }),
-
-  setOutputs: (outputs) => set({ outputs }),
-
-  addOutput: (output) => {
-    const newOutput: Output = {
-      id: `output_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      timestamp: new Date().toISOString(),
-      ...output,
-    };
-    set((state) => ({ outputs: [...state.outputs, newOutput] }));
-  },
-
   setStatus: (status) => set({ status }),
-
-  clearLogs: () => set({ activityLogs: [] }),
-
-  clearOutputs: () => set({ outputs: [] }),
 
   // ── Chat actions ──────────────────────────────────────────────────────────
   addChatMessage: (msg) =>
@@ -160,8 +134,6 @@ export const useSapiensStore = create<SapiensStore>((set) => ({
   reset: () =>
     set({
       currentSapiens: null,
-      activityLogs: [],
-      outputs: [],
       chatMessages: [],
       chatSessionId: null,
       status: 'idle',

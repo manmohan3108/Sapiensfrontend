@@ -34,7 +34,6 @@ export const API_ENDPOINTS = {
   sapienChats: (sapienId: string | number) => `/sapien/${sapienId}/chats`,
   sapienAwareness: (sapienId: string | number) => `/sapien/${sapienId}/awareness`,
   sapienWorkingMemory: (sapienId: string | number) => `${apiConfig.baseUrl}/sapien/${sapienId}/working-memory`,
-  sapiensState: '/sapiens_state',
   listSapiens: '/get-all-sapiens',
   runEngine: '/run-engines',
   orchestratorStatus: '/orchestrator/status',

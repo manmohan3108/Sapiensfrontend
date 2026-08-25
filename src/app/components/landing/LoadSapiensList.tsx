@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArrowRight, FolderOpen, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
+import { ArrowRight, FolderOpen, Loader2, AlertCircle, RefreshCw, Search, SearchX } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
@@ -14,7 +14,12 @@ export function LoadSapiensList() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [query, setQuery] = useState('');
   const { loadSapiens } = useSapiens();
+  const normalizedQuery = query.trim().toLocaleLowerCase();
+  const filteredSapiens = sapiensList.filter((sapiens) =>
+    [sapiens.name, sapiens.role, sapiens.id].some((value) => value?.toLocaleLowerCase().includes(normalizedQuery))
+  );
 
   const fetchList = async () => {
       setIsLoading(true);
@@ -79,7 +84,7 @@ export function LoadSapiensList() {
           <div className="flex flex-col items-center justify-center text-muted-foreground">
             <FolderOpen className="w-12 h-12 mb-4 opacity-30" />
             <p className="mb-1 text-lg font-medium text-foreground">No saved memories yet</p>
-            <p className="text-sm">Create your first Sapiens above, and it will appear here next time.</p>
+            <p className="text-sm">Use the create action below to make the first one.</p>
           </div>
         </CardContent>
       </Card>
@@ -87,16 +92,27 @@ export function LoadSapiensList() {
   }
 
   return (
-    <Card className="mx-auto max-w-2xl rounded-3xl border-border/70 shadow-lg shadow-slate-950/5">
+    <Card className="mx-auto max-w-3xl rounded-3xl border-border/70 shadow-lg shadow-slate-950/5">
       <CardHeader>
-        <CardTitle>Your saved Sapiens</CardTitle>
+        <CardTitle>Available Sapiens</CardTitle>
         <CardDescription>
-          Choose a memory to continue in its workspace.
+          Choose one to continue in its workspace. You can search by name, role, or ID.
         </CardDescription>
       </CardHeader>
       <CardContent>
+        <div className="relative mb-5">
+          <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <input
+            type="search"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search Sapiens…"
+            aria-label="Search Sapiens by name, role, or ID"
+            className="h-11 w-full rounded-xl border border-input bg-background pl-10 pr-4 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20"
+          />
+        </div>
         <div className="space-y-3">
-          {sapiensList.map((sapiens) => (
+          {filteredSapiens.map((sapiens) => (
             <div
               key={sapiens.id}
               className="flex flex-col gap-4 rounded-2xl border border-border p-4 transition-all hover:border-violet-300 hover:bg-violet-50/40 sm:flex-row sm:items-center sm:justify-between dark:hover:border-violet-800 dark:hover:bg-violet-950/20"
@@ -127,6 +143,13 @@ export function LoadSapiensList() {
               </Button>
             </div>
           ))}
+          {filteredSapiens.length === 0 && (
+            <div className="flex flex-col items-center rounded-2xl border border-dashed border-border py-10 text-center text-muted-foreground">
+              <SearchX className="mb-3 size-7 opacity-40" />
+              <p className="font-medium text-foreground">No matching Sapiens</p>
+              <p className="mt-1 text-sm">Try another name, role, or ID.</p>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

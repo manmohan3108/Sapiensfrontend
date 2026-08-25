@@ -12,7 +12,6 @@ import {
   QueryRequest,
   QueryApiResponse,
   UserSignalPayload,
-  SapiensStateResponse,
   Sapiens,
   ChatHistoryResponse,
   ChatDetail,
@@ -164,17 +163,6 @@ class SapiensService {
     await apiClient.post(API_ENDPOINTS.runEngine, {
       sapien_id: parseInt(sapiensId, 10),
     });
-  }
-
-  async getSapiensState(sapiensId: string): Promise<SapiensStateResponse> {
-    const response = await apiClient.get<SapiensStateResponse>(
-      `${API_ENDPOINTS.sapiensState}?sapiens_id=${sapiensId}`
-    );
-    return {
-      sapiens: response.data.sapiens,
-      activityLogs: response.data.activityLogs ?? [],
-      outputs: response.data.outputs ?? [],
-    };
   }
 
   async listSapiens(): Promise<Sapiens[]> {

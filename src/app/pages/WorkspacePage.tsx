@@ -9,7 +9,6 @@ import { GoalsPanel } from '../components/workspace/GoalsPanel';
 import { DebugPanel } from '../components/workspace/DebugPanel';
 import { MemoryTimeline } from '../components/workspace/MemoryTimeline';
 import { useSapiensStore } from '../core/state/sapiensStore';
-import { useSapiens } from '../hooks/useSapiens';
 import { useOrchestratorStatus } from '../hooks/useOrchestratorStatus';
 
 type RightTab = 'awareness' | 'memory' | 'goals';
@@ -65,7 +64,6 @@ export function WorkspacePage() {
   const currentSapiens = useSapiensStore((state) => state.currentSapiens);
   const showDebugPanel = useSapiensStore((s) => s.showDebugPanel);
   const showMemoryTimeline = useSapiensStore((s) => s.showMemoryTimeline);
-  const { refreshSapiensState } = useSapiens();
 
   // Poll /api/orchestrator/status every 10 s while this tab is visible
   useOrchestratorStatus();
@@ -73,10 +71,6 @@ export function WorkspacePage() {
   useEffect(() => {
     if (!currentSapiens) navigate('/');
   }, [currentSapiens, navigate]);
-
-  useEffect(() => {
-    if (currentSapiens) refreshSapiensState();
-  }, [currentSapiens, refreshSapiensState]);
 
   if (!currentSapiens) return null;
 

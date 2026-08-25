@@ -6,27 +6,6 @@ export interface Sapiens {
   lastModified: string;
 }
 
-export interface SapiensState {
-  sapiens: Sapiens | null;
-  activityLogs: ActivityLog[];
-  outputs: Output[];
-  status: 'idle' | 'loading' | 'processing' | 'error';
-}
-
-export interface ActivityLog {
-  id: string;
-  timestamp: string;
-  message: string;
-  type: 'info' | 'success' | 'warning' | 'error';
-}
-
-export interface Output {
-  id: string;
-  timestamp: string;
-  content: string;
-  type: 'response' | 'result' | 'error';
-}
-
 export interface CreateSapiensRequest {
   name: string;
   role?: string;
@@ -170,12 +149,6 @@ export interface ChatMessage {
   isImportant?: boolean;
   /** True if the sapien was overloaded when it produced this reply */
   overloaded?: boolean;
-}
-
-export interface SapiensStateResponse {
-  sapiens: Sapiens;
-  activityLogs: ActivityLog[];
-  outputs: Output[];
 }
 
 export interface AwarenessHistoryItem {

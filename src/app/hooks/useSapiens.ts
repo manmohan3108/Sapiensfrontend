@@ -18,8 +18,6 @@ export function useSapiens() {
     currentSapiens,
     chatSessionId,
     setCurrentSapiens,
-    setActivityLogs,
-    setOutputs,
     setStatus,
     addChatMessage,
     updateChatMessage,
@@ -76,21 +74,6 @@ export function useSapiens() {
     [setStatus, setCurrentSapiens, navigate]
   );
 
-  // ── Refresh state ────────────────────────────────────────────────────────────
-  const refreshSapiensState = useCallback(async () => {
-    if (!currentSapiens) {
-      logger.warn('No current Sapiens to refresh');
-      return;
-    }
-    try {
-      const state = await sapiensService.getSapiensState(currentSapiens.id);
-      setActivityLogs(state.activityLogs);
-      setOutputs(state.outputs);
-    } catch (error) {
-      logger.error('Failed to refresh Sapiens state', error);
-    }
-  }, [currentSapiens, setActivityLogs, setOutputs]);
-
   // ── Save ────────────────────────────────────────────────────────────────────
   const saveSapiens = useCallback(async () => {
     if (!currentSapiens) {
@@ -101,12 +84,11 @@ export function useSapiens() {
       setStatus('loading');
       await sapiensService.saveSapiens({ sapiensId: currentSapiens.id });
       setStatus('idle');
-      await refreshSapiensState();
     } catch (error) {
       logger.error('Failed to save Sapiens', error);
       setStatus('error');
     }
-  }, [currentSapiens, setStatus, refreshSapiensState]);
+  }, [currentSapiens, setStatus]);
 
   // ── Upload files ─────────────────────────────────────────────────────────────
   const uploadFiles = useCallback(
@@ -119,13 +101,12 @@ export function useSapiens() {
         setStatus('processing');
         await sapiensService.uploadFolder({ sapiensId: currentSapiens.id, files });
         setStatus('idle');
-        await refreshSapiensState();
       } catch (error) {
         logger.error('Failed to upload files', error);
         setStatus('error');
       }
     },
-    [currentSapiens, setStatus, refreshSapiensState]
+    [currentSapiens, setStatus]
   );
 
   // ── Send chat message ────────────────────────────────────────────────────────
@@ -208,7 +189,6 @@ export function useSapiens() {
         });
 
         setStatus('idle');
-        await refreshSapiensState();
       } catch (error) {
         logger.error('Failed to send chat message', error);
         updateChatMessage(assistantMsgId, {
@@ -228,7 +208,6 @@ export function useSapiens() {
       setLastMemoryUnits,
       setLastDebugInfo,
       setOverloaded,
-      refreshSapiensState,
     ]
   );
 
@@ -323,7 +302,6 @@ export function useSapiens() {
         });
 
         setStatus('idle');
-        await refreshSapiensState();
       } catch (error) {
         logger.error('Failed to send query', error);
         updateChatMessage(assistantMsgId, {
@@ -340,7 +318,6 @@ export function useSapiens() {
       setStatus,
       addChatMessage,
       updateChatMessage,
-      refreshSapiensState,
     ]
   );
 
@@ -354,13 +331,12 @@ export function useSapiens() {
       setStatus('processing');
       await sapiensService.runEngine(currentSapiens.id);
       setStatus('idle');
-      await refreshSapiensState();
     } catch (error) {
       logger.error('Failed to run engine', error);
       setStatus('error');
       throw error;
     }
-  }, [currentSapiens, setStatus, refreshSapiensState]);
+  }, [currentSapiens, setStatus]);
 
   // ── Return to home ───────────────────────────────────────────────────────────
   const returnToHome = useCallback(() => {
@@ -381,7 +357,6 @@ export function useSapiens() {
     loadChat,
     startNewChat,
     runEngine,
-    refreshSapiensState,
     returnToHome,
   };
 }
