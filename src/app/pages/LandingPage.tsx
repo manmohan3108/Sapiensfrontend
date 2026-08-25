@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Brain, Heart, Plus } from 'lucide-react';
+import { Brain, Heart, Plus, Sparkles, ArrowRight } from 'lucide-react';
 import { LoadSapiensList } from '../components/landing/LoadSapiensList';
 import { CreateSapiensForm } from '../components/landing/CreateSapiensForm';
 import { ThemeToggle } from '../components/ThemeToggle';
@@ -34,13 +34,35 @@ export function LandingPage() {
       </header>
 
       <main id="top">
-        <section ref={loadSectionRef} id="saved-memories" className="scroll-mt-8 py-8 sm:py-10">
+        <section ref={loadSectionRef} id="saved-memories" className="scroll-mt-8 py-8 sm:py-10 lg:py-12">
           <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-            <div className="mx-auto mb-5 max-w-3xl">
-              <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Choose a Sapiens</h1>
-              <p className="mt-1.5 text-sm text-muted-foreground">Search and open a workspace to begin testing—no login required.</p>
+            <div className="grid gap-8 lg:grid-cols-[minmax(0,0.72fr)_minmax(0,1.28fr)] lg:items-start lg:gap-12">
+              <div className="lg:sticky lg:top-10 lg:pt-5">
+                <div className="inline-flex items-center gap-2 rounded-full bg-violet-100 px-3 py-1.5 text-xs font-medium text-violet-700 dark:bg-violet-950 dark:text-violet-300">
+                  <Sparkles className="size-3.5" aria-hidden="true" /> A mind that grows with every interaction
+                </div>
+                <h1 className="mt-5 text-balance text-3xl font-semibold leading-tight tracking-[-0.035em] sm:text-4xl">
+                  Every Sapiens has a story already in motion.
+                </h1>
+                <p className="mt-4 max-w-md text-base leading-7 text-muted-foreground">
+                  It remembers what it learns, connects ideas over time, and develops a perspective shaped by every conversation.
+                </p>
+                <p className="mt-4 max-w-md text-sm leading-6 text-muted-foreground">
+                  Choose one to step into its ongoing story and explore how it thinks—no login or setup required.
+                </p>
+                <div className="mt-7 flex items-center gap-2 text-sm font-medium text-violet-600 dark:text-violet-400">
+                  Pick a Sapiens to begin <ArrowRight className="size-4" aria-hidden="true" />
+                </div>
+              </div>
+
+              <div className="min-w-0">
+                <div className="mb-4">
+                  <h2 className="text-xl font-semibold tracking-tight">Existing Sapiens</h2>
+                  <p className="mt-1 text-sm text-muted-foreground">Search by name, role, or ID.</p>
+                </div>
+                <LoadSapiensList />
+              </div>
             </div>
-            <LoadSapiensList />
           </div>
         </section>
 
