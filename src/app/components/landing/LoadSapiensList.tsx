@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ArrowRight, FolderOpen, Loader2, AlertCircle, RefreshCw, Search, SearchX } from 'lucide-react';
 import { Button } from '../ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
+import { Card, CardContent } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { Sapiens } from '../../types/sapiensTypes';
@@ -93,14 +93,8 @@ export function LoadSapiensList() {
 
   return (
     <Card className="mx-auto max-w-3xl rounded-3xl border-border/70 shadow-lg shadow-slate-950/5">
-      <CardHeader>
-        <CardTitle>Available Sapiens</CardTitle>
-        <CardDescription>
-          Choose one to continue in its workspace. You can search by name, role, or ID.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="relative mb-5">
+      <CardContent className="pt-6">
+        <div className="relative mb-4">
           <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <input
             type="search"

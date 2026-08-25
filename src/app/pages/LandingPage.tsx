@@ -1,6 +1,5 @@
 import { useRef, useState } from 'react';
 import { Brain, Heart, Plus } from 'lucide-react';
-import { HeroSection } from '../components/landing/HeroSection';
 import { LoadSapiensList } from '../components/landing/LoadSapiensList';
 import { CreateSapiensForm } from '../components/landing/CreateSapiensForm';
 import { ThemeToggle } from '../components/ThemeToggle';
@@ -17,8 +16,8 @@ export function LandingPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground selection:bg-violet-200 dark:selection:bg-violet-900">
-      <header className="absolute inset-x-0 top-0 z-20">
-        <nav aria-label="Primary navigation" className="mx-auto flex h-20 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
+      <header className="border-b border-border/60 bg-background/90 backdrop-blur">
+        <nav aria-label="Primary navigation" className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <a href="#top" className="flex items-center gap-2.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500">
             <span className="grid size-9 place-items-center rounded-xl bg-violet-600 text-white">
               <Brain className="size-5" aria-hidden="true" />
@@ -35,19 +34,17 @@ export function LandingPage() {
       </header>
 
       <main id="top">
-        <HeroSection />
-
-        <section ref={loadSectionRef} id="saved-memories" className="scroll-mt-8 border-t border-border/60 pb-16 sm:pb-20">
+        <section ref={loadSectionRef} id="saved-memories" className="scroll-mt-8 py-8 sm:py-10">
           <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-            <div className="mx-auto mb-8 max-w-xl text-center">
-              <h2 className="text-3xl font-semibold tracking-tight">Existing Sapiens</h2>
-              <p className="mt-3 text-muted-foreground">Search for one, then open its workspace to begin testing.</p>
+            <div className="mx-auto mb-5 max-w-3xl">
+              <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Choose a Sapiens</h1>
+              <p className="mt-1.5 text-sm text-muted-foreground">Search and open a workspace to begin testing—no login required.</p>
             </div>
             <LoadSapiensList />
           </div>
         </section>
 
-        <section ref={createSectionRef} className="border-t border-border/60 py-12 sm:py-16">
+        <section ref={createSectionRef} className="border-t border-border/60 py-8 sm:py-10">
           <div className="mx-auto max-w-6xl px-4 text-center sm:px-6 lg:px-8">
             {!showCreate ? (
               <div>
