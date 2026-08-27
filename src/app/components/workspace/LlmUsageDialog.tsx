@@ -46,6 +46,23 @@ function MetricRows({ values, emptyText }: { values: Record<string, number>; emp
   );
 }
 
+function TierLimitCards({ limits, usage, ariaScope }: { limits: Record<string, number>; usage: Record<string, number>; ariaScope: string }) {
+  return (
+    <div className="grid gap-3 sm:grid-cols-2">
+      {Object.entries(limits).map(([tier, limit]) => {
+        const used = usage[tier] ?? 0;
+        const percent = limit > 0 ? Math.min(100, used / limit * 100) : 0;
+        return (
+          <div key={tier} className="rounded-xl border border-cyan-400/15 bg-cyan-400/[.04] p-4">
+            <div className="flex items-center justify-between gap-3"><span className="text-xs text-white/55">{label(tier)}</span><span className="font-mono text-xs text-cyan-100">{number.format(used)} / {number.format(limit)}</span></div>
+            <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/[.07]" role="progressbar" aria-label={`${ariaScope}, ${label(tier)} usage`} aria-valuemin={0} aria-valuemax={limit} aria-valuenow={Math.min(used, limit)}><div className="h-full rounded-full bg-cyan-400" style={{ width: `${percent}%` }} /></div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function UsageHistory({ usage, unit }: { usage: AiUsageResponse; unit: string }) {
   if (!usage.history.length) return <p className="text-xs text-white/35">No usage has been recorded in this period.</p>;
   return (
@@ -70,6 +87,8 @@ function ScopeError({ scope, message }: { scope: string; message: string }) {
 function UsageKindSection({ kind, state, sapienId, sapienName, onRetry }: { kind: AiUsageKind; state: KindState; sapienId: string; sapienName: string; onRetry: () => void }) {
   const title = kind === 'llm' ? 'LLM calls' : 'Embedding calls';
   const hasData = Boolean(state.global || state.sapien);
+  const sapienLimits = state.sapien?.sapien_limits ?? {};
+  const globalLimits = state.global?.global_limits ?? state.global?.limits ?? {};
   return (
     <section aria-labelledby={`${kind}-usage-heading`} className="space-y-4">
       <div className="flex items-start justify-between gap-3">
@@ -80,17 +99,19 @@ function UsageKindSection({ kind, state, sapienId, sapienName, onRetry }: { kind
       {state.errors.map((error) => <ScopeError key={error.scope} {...error} />)}
       {state.sapien && (
         <div>
-          <div className="mb-3"><h4 className="text-xs font-semibold text-white/65">{sapienName} attribution</h4><p className="mt-1 text-[11px] text-white/30">{title} attributed to sapien {sapienId}; this is usage, not a separate quota.</p></div>
+          <div className="mb-3"><h4 className="text-xs font-semibold text-white/65">{sapienName} · per-sapien quota</h4><p className="mt-1 text-[11px] text-white/30">{title} for sapien {sapienId} count toward this sapien’s enforced daily tier quota.</p></div>
           <div className="mb-3 rounded-xl border border-violet-400/15 bg-violet-400/[.05] p-4"><p className="text-[10px] uppercase tracking-wider text-white/30">{title} today · {state.sapien.today} UTC</p><p className="mt-1 font-mono text-2xl text-violet-200">{number.format(state.sapien.today_total)}</p></div>
-          <h5 className="mb-2 text-xs font-medium text-white/50">Today by purpose</h5><MetricRows values={state.sapien.today_by_purpose} emptyText={`No ${title.toLowerCase()} are attributed to this sapien today.`} />
-          <h5 className="mb-2 mt-4 text-xs font-medium text-white/50">Recent daily attribution</h5><UsageHistory usage={state.sapien} unit={title} />
+          <h5 className="mb-2 text-xs font-medium text-white/50">Per-sapien daily tier quota</h5>
+          {Object.keys(sapienLimits).length > 0 ? <TierLimitCards limits={sapienLimits} usage={state.sapien.today_by_tier} ariaScope={`${title}, ${sapienName} per-sapien quota`} /> : <p className="text-xs text-white/35">No per-sapien tier quota was returned.</p>}
+          <h5 className="mb-2 mt-4 text-xs font-medium text-white/50">Today by purpose</h5><MetricRows values={state.sapien.today_by_purpose} emptyText={`No ${title.toLowerCase()} are attributed to this sapien today.`} />
+          <h5 className="mb-2 mt-4 text-xs font-medium text-white/50">Recent daily per-sapien usage</h5><UsageHistory usage={state.sapien} unit={title} />
         </div>
       )}
       {state.global && (
         <div className="border-t border-white/[.07] pt-4">
-          <div className="mb-3"><h4 className="text-xs font-semibold text-white/65">Global shared usage & limits</h4><p className="mt-1 text-[11px] text-white/30">Shared daily tier limits across all sapiens and system {title.toLowerCase()}.</p></div>
-          <div className="grid gap-3 sm:grid-cols-2">{Object.entries(state.global.limits).map(([tier, limit]) => { const used = state.global?.today_by_tier[tier] ?? 0; const percent = limit > 0 ? Math.min(100, used / limit * 100) : 0; return <div key={tier} className="rounded-xl border border-cyan-400/15 bg-cyan-400/[.04] p-4"><div className="flex items-center justify-between gap-3"><span className="text-xs text-white/55">{label(tier)}</span><span className="font-mono text-xs text-cyan-100">{number.format(used)} / {number.format(limit)}</span></div><div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/[.07]" role="progressbar" aria-label={`${title}, ${label(tier)} global shared usage`} aria-valuemin={0} aria-valuemax={limit} aria-valuenow={Math.min(used, limit)}><div className="h-full rounded-full bg-cyan-400" style={{ width: `${percent}%` }} /></div></div>; })}</div>
-          {!Object.keys(state.global.limits).length && <p className="text-xs text-white/35">No global shared limits were returned.</p>}
+          <div className="mb-3"><h4 className="text-xs font-semibold text-white/65">Shared global quota</h4><p className="mt-1 text-[11px] text-white/30">Enforced daily tier quota shared across all sapiens and system {title.toLowerCase()}. System calls consume only this global pool.</p></div>
+          <TierLimitCards limits={globalLimits} usage={state.global.today_by_tier} ariaScope={`${title}, global shared limit`} />
+          {!Object.keys(globalLimits).length && <p className="text-xs text-white/35">No global shared limits were returned.</p>}
           <h5 className="mb-2 mt-4 text-xs font-medium text-white/50">Global {title.toLowerCase()} today by purpose</h5><MetricRows values={state.global.today_by_purpose} emptyText={`No global ${title.toLowerCase()} have been recorded today.`} />
         </div>
       )}

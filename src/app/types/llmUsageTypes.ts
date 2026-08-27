@@ -13,6 +13,8 @@ export interface AiUsageResponse<Kind extends AiUsageKind = AiUsageKind> {
   kind: Kind;
   today: string;
   limits: Record<string, number>;
+  global_limits: Record<string, number>;
+  sapien_limits: Record<string, number>;
   scope: AiUsageScope;
   today_by_tier: Record<string, number>;
   today_by_purpose: Record<string, number>;
