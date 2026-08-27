@@ -37,6 +37,8 @@ export const API_ENDPOINTS = {
   listSapiens: '/get-all-sapiens',
   runEngine: '/run-engines',
   orchestratorStatus: '/orchestrator/status',
+  llmUsage: '/llm-usage',
+  embeddingUsage: '/embedding-usage',
 } as const;
 
 // Engram endpoints (base: /api/engram/)

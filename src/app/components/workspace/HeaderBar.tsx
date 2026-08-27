@@ -1,11 +1,14 @@
-import { Brain, Home, Save, ChevronRight, Cpu, Wifi, Bug, Clock, DatabaseZap, Hourglass, PlugZap } from 'lucide-react';
+import { useState } from 'react';
+import { Brain, Home, Save, ChevronRight, Cpu, Wifi, Bug, Clock, DatabaseZap, Hourglass, PlugZap, BarChart3 } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { useSapiens } from '../../hooks/useSapiens';
 import { useSapiensStore } from '../../core/state/sapiensStore';
 import { ThemeToggle } from '../ThemeToggle';
 import { RunEngineButton } from './RunEngineButton';
+import { LlmUsageDialog } from './LlmUsageDialog';
 
 export function HeaderBar() {
+  const [showLlmUsage, setShowLlmUsage] = useState(false);
   const { currentSapiens } = useSapiensStore();
   const { saveSapiens, returnToHome } = useSapiens();
   const navigate = useNavigate();
@@ -151,6 +154,17 @@ export function HeaderBar() {
           <div className="w-px h-5 bg-white/10" />
 
           <button
+            onClick={() => setShowLlmUsage(true)}
+            title="View AI usage and global limits"
+            aria-haspopup="dialog"
+            className="flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs transition-all duration-150"
+            style={{ background: 'rgba(34,211,238,0.08)', border: '1px solid rgba(34,211,238,0.2)', color: 'rgba(103,232,249,0.75)' }}
+          >
+            <BarChart3 className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">AI usage</span>
+          </button>
+
+          <button
             onClick={() => navigate('/connections')}
             title="Manage external account connections"
             className="flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs transition-all duration-150"
@@ -272,6 +286,12 @@ export function HeaderBar() {
           </button>
         </div>
       </div>
+      <LlmUsageDialog
+        open={showLlmUsage}
+        onOpenChange={setShowLlmUsage}
+        sapienId={currentSapiens.id}
+        sapienName={currentSapiens.name}
+      />
     </header>
   );
 }
