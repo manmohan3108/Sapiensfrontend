@@ -163,10 +163,14 @@ export const engramService = {
     sapienId: number;
     page?: number;
     pageSize?: number;
+    sort?: 'episode_count';
+    order?: 'asc' | 'desc';
   }): Promise<EntitiesListResponse> {
     const q = new URLSearchParams({ sapien_id: String(params.sapienId) });
     if (params.page)     q.set('page',      String(params.page));
     if (params.pageSize) q.set('page_size', String(params.pageSize));
+    if (params.sort)     q.set('sort',       params.sort);
+    if (params.order)    q.set('order',      params.order);
     return engramFetch<EntitiesListResponse>(`${ENGRAM_ENDPOINTS.entities()}?${q}`);
   },
 

@@ -5,7 +5,7 @@ import type { EngramUnit, EntityEpisodesResponse } from '../../types/engramTypes
 import { CenteredLoader, ErrorBox } from './EngramDashboard';
 import { fmtId } from './EngramUnitDetail';
 
-type EntitySort = 'name' | 'worth' | 'frequency' | 'recency';
+type EntitySort = 'name' | 'worth' | 'frequency' | 'recency' | 'episode_count';
 type SortOrder = 'asc' | 'desc';
 
 const controlClass = 'rounded-lg border border-white/10 bg-transparent px-2 py-1.5 text-[9px] text-white/55 outline-none placeholder:text-white/20';
@@ -26,13 +26,17 @@ export function EngramEntities({ sapienId, onOpenInGraph }: { sapienId: number; 
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<EntitySort>('name');
   const [order, setOrder] = useState<SortOrder>('asc');
+  const serverEntitySort = sort === 'episode_count' ? 'episode_count' : undefined;
+  const serverEntityOrder = serverEntitySort ? order : undefined;
 
   useEffect(() => {
-    engramService.getEntities({ sapienId, pageSize: 200 })
+    setLoading(true);
+    setError(null);
+    engramService.getEntities({ sapienId, pageSize: 200, sort: serverEntitySort, order: serverEntityOrder })
       .then(r => setEntities(r.results))
       .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false));
-  }, [sapienId]);
+  }, [sapienId, serverEntitySort, serverEntityOrder]);
 
   const selectEntity = (entity: EngramUnit) => {
     setSelected(entity);
@@ -51,6 +55,7 @@ export function EngramEntities({ sapienId, onOpenInGraph }: { sapienId: number; 
       if (sort === 'name') return entity.content.toLocaleLowerCase();
       if (sort === 'worth') return entity.weights?.worth ?? null;
       if (sort === 'frequency') return entity.weights?.frequency ?? null;
+      if (sort === 'episode_count') return entity.episode_count ?? null;
       const timestamp = entity.weights?.recency ? Date.parse(entity.weights.recency) : NaN;
       return Number.isNaN(timestamp) ? null : timestamp;
     };
@@ -78,8 +83,8 @@ export function EngramEntities({ sapienId, onOpenInGraph }: { sapienId: number; 
       >
         <div className="flex-shrink-0 space-y-1.5 pb-1">
           <div className="relative"><Search className="pointer-events-none absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-white/20" /><input value={search} onChange={event => setSearch(event.target.value)} placeholder="Search loaded entities" className={`${controlClass} w-full pl-7`} /></div>
-          <div className="grid grid-cols-[1fr_auto] gap-1.5"><select value={sort} onChange={event => setSort(event.target.value as EntitySort)} className={controlClass}><option value="name">Name</option><option value="worth">Worth</option><option value="frequency">Frequency</option><option value="recency">Last used</option></select><button onClick={() => setOrder(value => value === 'asc' ? 'desc' : 'asc')} className={controlClass} title="Toggle sort direction">{order}</button></div>
-          <p className="px-1 text-[8px] font-mono text-white/25">Showing {visibleEntities.length} of {entities.length} loaded</p>
+          <div className="grid grid-cols-[1fr_auto] gap-1.5"><select value={sort} onChange={event => setSort(event.target.value as EntitySort)} className={controlClass}><option value="name">Name</option><option value="worth">Worth</option><option value="frequency">Frequency</option><option value="recency">Last used</option><option value="episode_count">Episode count</option></select><button onClick={() => setOrder(value => value === 'asc' ? 'desc' : 'asc')} className={controlClass} title="Toggle sort direction">{order}</button></div>
+          <p className="px-1 text-[8px] font-mono text-white/25">Showing {visibleEntities.length} of {entities.length} loaded{sort === 'episode_count' ? ' · globally ordered before paging' : ''}</p>
         </div>
         {entities.length === 0 && (
           <p className="text-xs text-white/25 px-2">No entities found.</p>
@@ -101,7 +106,7 @@ export function EngramEntities({ sapienId, onOpenInGraph }: { sapienId: number; 
               style={{ color: selected?.id === e.id ? '#67e8f9' : 'rgba(255,255,255,0.55)' }}
             >
               <User className="mt-0.5 w-3 h-3 flex-shrink-0" />
-              <span className="min-w-0 flex-1"><span className="block truncate">{e.content}</span><span className="mt-0.5 block truncate text-[8px] font-mono text-white/25" title={e.weights?.recency}>freq {e.weights?.frequency ?? '—'} · used {recencyLabel(e.weights?.recency)}</span></span>
+              <span className="min-w-0 flex-1"><span className="block truncate">{e.content}</span><span className="mt-0.5 block truncate text-[8px] font-mono text-white/25" title={e.weights?.recency}>episodes {e.episode_count ?? '—'} · freq {e.weights?.frequency ?? '—'} · used {recencyLabel(e.weights?.recency)}</span></span>
               {typeof e.weights?.worth === 'number' && (
                 <span
                   className="ml-auto flex-shrink-0 rounded px-1.5 py-0.5 text-[8px] font-mono"

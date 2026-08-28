@@ -22,6 +22,7 @@ export interface EngramUnit {
   content: string;
   checksum?: string;
   created_at: string;
+  episode_count?: number;
   weights?: {
     worth: number;
     frequency: number;
