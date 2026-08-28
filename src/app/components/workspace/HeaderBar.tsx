@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Brain, Home, Save, ChevronRight, Cpu, Wifi, Bug, Clock, DatabaseZap, Hourglass, PlugZap, BarChart3 } from 'lucide-react';
+import { Brain, Home, Save, ChevronRight, Cpu, Wifi, Bug, Clock, DatabaseZap, Hourglass, PlugZap, BarChart3, Activity } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { useSapiens } from '../../hooks/useSapiens';
 import { useSapiensStore } from '../../core/state/sapiensStore';
@@ -172,6 +172,16 @@ export function HeaderBar() {
           >
             <PlugZap className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Connections</span>
+          </button>
+
+          <button
+            onClick={() => navigate('/engine-bus')}
+            title="Monitor Engine Bus signals and delivery flows"
+            className="flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs transition-all duration-150"
+            style={{ background: 'rgba(52,211,153,0.08)', border: '1px solid rgba(52,211,153,0.2)', color: 'rgba(110,231,183,0.78)' }}
+          >
+            <Activity className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Engine Bus</span>
           </button>
 
           {/* Engram Explorer */}
