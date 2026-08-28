@@ -1,9 +1,19 @@
-import { useEffect, useState } from 'react';
-import { User, FileText, Share2 } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { User, FileText, Search, Share2 } from 'lucide-react';
 import { engramService } from '../../core/services/engramService';
 import type { EngramUnit, EntityEpisodesResponse } from '../../types/engramTypes';
 import { CenteredLoader, ErrorBox } from './EngramDashboard';
 import { fmtId } from './EngramUnitDetail';
+
+type EntitySort = 'name' | 'worth' | 'frequency' | 'recency';
+type SortOrder = 'asc' | 'desc';
+
+const controlClass = 'rounded-lg border border-white/10 bg-transparent px-2 py-1.5 text-[9px] text-white/55 outline-none placeholder:text-white/20';
+const recencyLabel = (value?: string) => {
+  if (!value) return 'never';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: '2-digit' });
+};
 
 export function EngramEntities({ sapienId, onOpenInGraph }: { sapienId: number; onOpenInGraph?: (id: string) => void }) {
   const [entities, setEntities] = useState<EngramUnit[]>([]);
@@ -13,6 +23,9 @@ export function EngramEntities({ sapienId, onOpenInGraph }: { sapienId: number; 
   const [episodes, setEpisodes] = useState<EntityEpisodesResponse | null>(null);
   const [epLoading, setEpLoading] = useState(false);
   const [epError, setEpError] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [sort, setSort] = useState<EntitySort>('name');
+  const [order, setOrder] = useState<SortOrder>('asc');
 
   useEffect(() => {
     engramService.getEntities({ sapienId, pageSize: 200 })
@@ -32,6 +45,27 @@ export function EngramEntities({ sapienId, onOpenInGraph }: { sapienId: number; 
       .finally(() => setEpLoading(false));
   };
 
+  const visibleEntities = useMemo(() => {
+    const query = search.trim().toLocaleLowerCase();
+    const valueOf = (entity: EngramUnit): string | number | null => {
+      if (sort === 'name') return entity.content.toLocaleLowerCase();
+      if (sort === 'worth') return entity.weights?.worth ?? null;
+      if (sort === 'frequency') return entity.weights?.frequency ?? null;
+      const timestamp = entity.weights?.recency ? Date.parse(entity.weights.recency) : NaN;
+      return Number.isNaN(timestamp) ? null : timestamp;
+    };
+    return entities.filter(entity => entity.content.toLocaleLowerCase().includes(query)).sort((a, b) => {
+      const left = valueOf(a); const right = valueOf(b);
+      let primary = 0;
+      if (left === null || right === null) {
+        if (left !== right) return left === null ? 1 : -1;
+      } else primary = typeof left === 'string' && typeof right === 'string' ? left.localeCompare(right) : Number(left) - Number(right);
+      if (primary !== 0) return order === 'asc' ? primary : -primary;
+      const name = a.content.localeCompare(b.content, undefined, { sensitivity: 'base' });
+      return name || a.id.localeCompare(b.id);
+    });
+  }, [entities, search, sort, order]);
+
   if (loading) return <CenteredLoader />;
   if (error)   return <ErrorBox msg={error} />;
 
@@ -42,13 +76,16 @@ export function EngramEntities({ sapienId, onOpenInGraph }: { sapienId: number; 
         className="w-full max-h-56 flex-shrink-0 flex flex-col gap-1.5 overflow-y-auto pr-1 sm:w-56 sm:max-h-none"
         style={{ maxHeight: 'calc(100vh - 220px)' }}
       >
-        <p className="text-[9px] uppercase tracking-widest font-mono text-white/25 px-2 mb-1 flex-shrink-0">
-          {entities.length} entities
-        </p>
+        <div className="flex-shrink-0 space-y-1.5 pb-1">
+          <div className="relative"><Search className="pointer-events-none absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-white/20" /><input value={search} onChange={event => setSearch(event.target.value)} placeholder="Search loaded entities" className={`${controlClass} w-full pl-7`} /></div>
+          <div className="grid grid-cols-[1fr_auto] gap-1.5"><select value={sort} onChange={event => setSort(event.target.value as EntitySort)} className={controlClass}><option value="name">Name</option><option value="worth">Worth</option><option value="frequency">Frequency</option><option value="recency">Last used</option></select><button onClick={() => setOrder(value => value === 'asc' ? 'desc' : 'asc')} className={controlClass} title="Toggle sort direction">{order}</button></div>
+          <p className="px-1 text-[8px] font-mono text-white/25">Showing {visibleEntities.length} of {entities.length} loaded</p>
+        </div>
         {entities.length === 0 && (
           <p className="text-xs text-white/25 px-2">No entities found.</p>
         )}
-        {entities.map(e => (
+        {entities.length > 0 && visibleEntities.length === 0 && <p className="text-xs text-white/25 px-2">No loaded entities match.</p>}
+        {visibleEntities.map(e => (
           <div
             key={e.id}
             className="flex items-center gap-1 rounded-lg transition-all"
@@ -60,11 +97,11 @@ export function EngramEntities({ sapienId, onOpenInGraph }: { sapienId: number; 
           >
             <button
               onClick={() => selectEntity(e)}
-              className="flex-1 flex items-center gap-2 px-3 py-2 text-left text-[11px] transition-all truncate min-w-0"
+              className="flex-1 flex items-start gap-2 px-3 py-2 text-left text-[11px] transition-all min-w-0"
               style={{ color: selected?.id === e.id ? '#67e8f9' : 'rgba(255,255,255,0.55)' }}
             >
-              <User className="w-3 h-3 flex-shrink-0" />
-              <span className="truncate">{e.content}</span>
+              <User className="mt-0.5 w-3 h-3 flex-shrink-0" />
+              <span className="min-w-0 flex-1"><span className="block truncate">{e.content}</span><span className="mt-0.5 block truncate text-[8px] font-mono text-white/25" title={e.weights?.recency}>freq {e.weights?.frequency ?? '—'} · used {recencyLabel(e.weights?.recency)}</span></span>
               {typeof e.weights?.worth === 'number' && (
                 <span
                   className="ml-auto flex-shrink-0 rounded px-1.5 py-0.5 text-[8px] font-mono"

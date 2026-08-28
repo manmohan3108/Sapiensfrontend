@@ -13,6 +13,7 @@ interface CreateSapiensFormProps {
 
 export function CreateSapiensForm({ onNameChange }: CreateSapiensFormProps) {
   const [name, setName] = useState('');
+  const [role, setRole] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { createSapiens } = useSapiens();
@@ -29,10 +30,12 @@ export function CreateSapiensForm({ onNameChange }: CreateSapiensFormProps) {
       setError(null);
       await createSapiens({
         name: name.trim(),
+        ...(role.trim() ? { role: role.trim() } : {}),
       });
       
       // Reset form
       setName('');
+      setRole('');
       onNameChange?.('');
     } catch (error) {
       console.error('Failed to create Sapiens:', error);
@@ -76,6 +79,20 @@ export function CreateSapiensForm({ onNameChange }: CreateSapiensFormProps) {
               disabled={isCreating}
             />
           </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="role">
+              Its role <span className="font-normal text-muted-foreground">(optional)</span>
+            </Label>
+            <Input
+              id="role"
+              type="text"
+              placeholder="e.g. Research assistant"
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+              disabled={isCreating}
+            />
+          </div>
           
           <Button
             type="submit"
@@ -85,7 +102,7 @@ export function CreateSapiensForm({ onNameChange }: CreateSapiensFormProps) {
             {isCreating ? <Loader2 className="mr-2 size-4 animate-spin" /> : <ArrowRight className="mr-2 size-4" />}
             {isCreating ? 'Creating…' : name.trim() ? `Begin with ${name.trim()}` : 'Begin creating'}
           </Button>
-          <p className="text-center text-xs text-muted-foreground">No setup journey. Give it a name and begin.</p>
+          <p className="text-center text-xs text-muted-foreground">Give it a name, optionally define its role, and begin.</p>
         </form>
       </CardContent>
     </Card>

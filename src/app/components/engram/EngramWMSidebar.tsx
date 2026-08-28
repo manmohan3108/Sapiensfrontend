@@ -1,10 +1,11 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { Cpu, RefreshCw, Share2, ChevronDown, ChevronRight, Zap, TrendingUp } from 'lucide-react';
 import { engramService } from '../../core/services/engramService';
-import type { WMResponse, WMEntry } from '../../types/engramTypes';
+import type { WMResponse, WMEntry, WMOrder, WMSort } from '../../types/engramTypes';
 import { fmtId } from './EngramUnitDetail';
 
 const POLL_INTERVAL = 30_000;
+const WM_SORT_OPTIONS: Array<[WMSort, string]> = [['activation', 'Activation'], ['worth', 'Worth'], ['frequency', 'Frequency'], ['recency', 'Recency'], ['created_at', 'Created']];
 
 const MEMORY_TYPE_COLORS: Record<string, string> = {
   episodic:   '#818cf8',
@@ -188,6 +189,8 @@ export function EngramWMSidebar({
   const [countdown, setCountdown] = useState(POLL_INTERVAL / 1000);
   const [newIds, setNewIds]     = useState<Set<string>>(new Set());
   const [evictedCount, setEvictedCount] = useState(0);
+  const [sort, setSort] = useState<WMSort>('activation');
+  const [order, setOrder] = useState<WMOrder>('desc');
 
   const timerRef        = useRef<ReturnType<typeof setInterval> | null>(null);
   const countdownRef    = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -195,7 +198,7 @@ export function EngramWMSidebar({
   const newIdTimerRef   = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const poll = useCallback(() => {
-    engramService.getWorkingMemory(sapienId, { sort: 'activation', order: 'desc', limit: 100, includeContent: true })
+    engramService.getWorkingMemory(sapienId, { sort, order, limit: 100, includeContent: true })
       .then(r => {
         // Client-side delta detection (backend didn't implement ?since=)
         const prevIds = prevIdsRef.current;
@@ -221,7 +224,7 @@ export function EngramWMSidebar({
         setCountdown(POLL_INTERVAL / 1000);
       })
       .catch(() => {});
-  }, [sapienId]);
+  }, [sapienId, sort, order]);
 
   useEffect(() => {
     poll();
@@ -242,18 +245,14 @@ export function EngramWMSidebar({
   const focusId  = wm?.wm?.focus_id ?? null;
   const capacity = wm?.capacity ?? { global: 0, by_source: {} };
 
-  // Sort: focus first, then score desc
-  const sorted = [...entries].sort((a, b) => {
-    if (a.id === focusId) return -1;
-    if (b.id === focusId) return 1;
-    return (b.activation ?? b.score ?? 0) - (a.activation ?? a.score ?? 0);
-  });
+  // Preserve the backend's requested order. Focus remains visually marked in place.
+  const sorted = entries;
 
   // Per-source current counts
   const sourceCounts: Record<string, number> = {};
   entries.forEach(e => { sourceCounts[e.memory_source] = (sourceCounts[e.memory_source] ?? 0) + 1; });
 
-  const maxScore = sorted.length > 0 ? (sorted[0].activation ?? sorted[0].score ?? 0) : 1;
+  const maxScore = sorted.length > 0 ? Math.max(...sorted.map(entry => entry.activation ?? entry.score ?? 0)) : 1;
   const globalUsedPct = capacity.global > 0 ? Math.round((entries.length / capacity.global) * 100) : 0;
 
   return (
@@ -292,6 +291,14 @@ export function EngramWMSidebar({
         <button onClick={poll} className="w-5 h-5 flex items-center justify-center rounded text-white/25 hover:text-white/60 transition-colors" title="Refresh now">
           <RefreshCw className={`w-3 h-3 ${pulsing ? 'animate-spin' : ''}`} />
         </button>
+      </div>
+
+      {/* Server-backed ordering */}
+      <div className="grid grid-cols-[1fr_auto] gap-1.5 px-2 py-1.5 flex-shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+        <select value={sort} onChange={event => setSort(event.target.value as WMSort)} className="min-w-0 rounded-md border border-white/10 bg-transparent px-1.5 py-1 text-[8px] text-white/45 outline-none" aria-label="Sort Working Memory">
+          {WM_SORT_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+        </select>
+        <button onClick={() => setOrder(value => value === 'asc' ? 'desc' : 'asc')} className="rounded-md border border-white/10 px-2 py-1 text-[8px] text-white/40" title="Toggle Working Memory sort direction">{order}</button>
       </div>
 
       {/* Capacity bar */}
