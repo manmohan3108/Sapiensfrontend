@@ -406,6 +406,41 @@ function EmptyState({ name, onHint }: { name: string; onHint: (h: string) => voi
   );
 }
 
+function ChatHistorySidebar({ history, historyLoading, historyError, detailLoading, isProcessing, chatSessionId, onRefresh, onNewChat, onSelectChat }: {
+  history: ChatHistoryItem[]; historyLoading: boolean; historyError: string | null; detailLoading: boolean;
+  isProcessing: boolean; chatSessionId: string | null; onRefresh: () => void; onNewChat: () => void;
+  onSelectChat: (threadId: string) => void;
+}) {
+  return <>
+    <div className="flex items-center justify-between gap-2 px-3 py-3 border-b border-white/[0.08]">
+      <div><p className="text-sm font-semibold text-white/90">Chat history</p><p className="text-xs text-white/40">Continue a conversation</p></div>
+      <button onClick={onRefresh} disabled={historyLoading} title="Refresh history" aria-label="Refresh chat history" className="p-2 rounded-lg text-white/50 hover:text-violet-200 hover:bg-white/[0.08] disabled:opacity-40">
+        <RefreshCw className={`w-4 h-4 ${historyLoading ? 'animate-spin' : ''}`} />
+      </button>
+    </div>
+    <div className="p-2">
+      <button onClick={onNewChat} className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium text-white bg-violet-600 hover:bg-violet-500 transition-colors shadow-lg shadow-violet-950/30">
+        <Plus className="w-4 h-4" /> New chat
+      </button>
+    </div>
+    {historyError && <p className="mx-2 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-200">{historyError}</p>}
+    <div className="flex-1 min-h-0 overflow-y-auto p-2 pt-1">
+      {historyLoading && history.length === 0 ? (
+        <div className="flex items-center justify-center gap-2 py-10 text-sm text-white/50"><Loader2 className="w-4 h-4 animate-spin" /> Loading chats…</div>
+      ) : history.length === 0 ? (
+        <div className="px-3 py-10 text-center"><History className="mx-auto mb-3 h-6 w-6 text-violet-300/60" /><p className="text-sm text-white/60">No saved chats yet.</p><p className="mt-1 text-xs text-white/40">Your conversations will appear here.</p></div>
+      ) : history.map((chat) => (
+        <button key={chat.thread_id} onClick={() => onSelectChat(chat.thread_id)} disabled={detailLoading || isProcessing}
+          className="mb-1 w-full rounded-xl px-3 py-3 text-left hover:bg-violet-500/10 disabled:opacity-50 transition-colors"
+          style={chat.thread_id === chatSessionId ? { background: 'rgba(124,58,237,0.16)', border: '1px solid rgba(139,92,246,0.35)' } : { border: '1px solid transparent' }}>
+          <span className="block truncate text-sm font-medium text-white/80">{chat.title || 'Untitled chat'}</span>
+          <span className="mt-1.5 flex items-center justify-between gap-2 text-xs text-white/40"><span>{new Date(chat.updated_at).toLocaleDateString()}</span><span>{chat.message_count} messages</span></span>
+        </button>
+      ))}
+    </div>
+  </>;
+}
+
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export function ChatWindow() {
   const [input, setInput] = useState('');
@@ -546,7 +581,7 @@ export function ChatWindow() {
   const userCount = msgs.filter((m) => m.role === 'user').length;
 
   return (
-    <div className="h-full flex flex-col rounded-2xl overflow-hidden relative"
+    <div className="h-full flex rounded-2xl overflow-hidden relative"
       style={{
         background: 'rgba(8,12,22,0.85)',
         border: '1px solid rgba(124,58,237,0.22)',
@@ -554,6 +589,12 @@ export function ChatWindow() {
         backdropFilter: 'blur(24px)',
       }}
     >
+      <aside className="hidden lg:flex w-60 xl:w-64 flex-shrink-0 flex-col border-r border-white/[0.08] bg-black/20">
+        <ChatHistorySidebar history={history} historyLoading={historyLoading} historyError={historyError}
+          detailLoading={detailLoading} isProcessing={isProcessing} chatSessionId={chatSessionId}
+          onRefresh={() => void refreshHistory()} onNewChat={startNewChat} onSelectChat={(id) => void selectChat(id)} />
+      </aside>
+      <div className="min-w-0 flex-1 flex flex-col relative">
       {/* Violet top accent */}
       <div style={{ height: '3px', background: 'linear-gradient(90deg, #7c3aed, #4f46e5, #7c3aed)', flexShrink: 0 }} />
 
@@ -603,13 +644,13 @@ export function ChatWindow() {
             </button>
           )}
           <button onClick={() => setHistoryOpen((open) => !open)}
-            className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] text-white/35 hover:text-violet-300 hover:bg-violet-500/10 transition-all border border-white/[0.06]">
+            className="flex lg:hidden items-center gap-1 px-2 py-1 rounded-lg text-[11px] text-white/35 hover:text-violet-300 hover:bg-violet-500/10 transition-all border border-white/[0.06]">
             <History className="w-3 h-3" /> History
           </button>
         </div>
 
         {historyOpen && (
-          <div className="absolute z-30 top-[calc(100%+6px)] right-3 left-3 sm:left-auto sm:w-80 rounded-xl overflow-hidden"
+          <div className="absolute lg:hidden z-30 top-[calc(100%+6px)] right-3 left-3 sm:left-auto sm:w-80 rounded-xl overflow-hidden"
             style={{ background: 'rgba(10,14,26,0.98)', border: '1px solid rgba(124,58,237,0.28)', boxShadow: '0 18px 45px rgba(0,0,0,0.55)', backdropFilter: 'blur(18px)' }}>
             <div className="flex items-center justify-between px-3 py-2 border-b border-white/[0.06]">
               <span className="text-xs text-white/65">Recent chats</span>
@@ -780,6 +821,7 @@ export function ChatWindow() {
             {' '}hits /api/query
           </p>
         </div>
+      </div>
       </div>
     </div>
   );

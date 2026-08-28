@@ -1,7 +1,7 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --font-size: 16px;
+  --font-size: 17px;
   --background: #ffffff;
   --foreground: #0f172a;
   --card: #ffffff;
@@ -127,6 +127,24 @@
   body {
     @apply bg-background text-foreground;
     transition: background-color 0.3s ease, color 0.3s ease;
+    line-height: 1.55;
+  }
+
+  .text-\[9px\] { font-size: 0.72rem !important; line-height: 1rem !important; }
+  .text-\[10px\] { font-size: 0.76rem !important; line-height: 1.05rem !important; }
+  .text-\[11px\] { font-size: 0.8rem !important; line-height: 1.1rem !important; }
+
+  .workspace-shell [class*="text-white/1"],
+  .workspace-shell [class*="text-white/2"],
+  .workspace-shell [class*="text-white/3"] {
+    color: rgba(226, 232, 240, 0.58) !important;
+  }
+
+  .workspace-shell button:focus-visible,
+  .workspace-shell textarea:focus-visible,
+  .workspace-shell input:focus-visible {
+    outline: 2px solid rgba(167, 139, 250, 0.9);
+    outline-offset: 2px;
   }
 
   /**

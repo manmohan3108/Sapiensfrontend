@@ -75,7 +75,7 @@ export function WorkspacePage() {
   if (!currentSapiens) return null;
 
   return (
-    <div className="min-h-[100dvh] lg:h-screen flex flex-col lg:overflow-hidden" style={{ background: '#060a15' }}>
+    <div className="workspace-shell min-h-[100dvh] lg:h-screen flex flex-col lg:overflow-hidden" style={{ background: '#080c18' }}>
 
       {/* ── Ambient canvas ── */}
       <div className="fixed inset-0 pointer-events-none select-none z-0">
