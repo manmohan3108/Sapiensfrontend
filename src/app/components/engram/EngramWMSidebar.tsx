@@ -6,6 +6,8 @@ import { fmtId } from './EngramUnitDetail';
 
 const POLL_INTERVAL = 30_000;
 const WM_SORT_OPTIONS: Array<[WMSort, string]> = [['activation', 'Activation'], ['worth', 'Worth'], ['frequency', 'Frequency'], ['recency', 'Recency'], ['created_at', 'Created']];
+const selectStyle = { colorScheme: 'dark', backgroundColor: '#0b1020', color: 'rgba(255,255,255,0.65)' } as const;
+const optionStyle = { backgroundColor: '#0b1020', color: '#cbd5e1' } as const;
 
 const MEMORY_TYPE_COLORS: Record<string, string> = {
   episodic:   '#818cf8',
@@ -294,11 +296,11 @@ export function EngramWMSidebar({
       </div>
 
       {/* Server-backed ordering */}
-      <div className="grid grid-cols-[1fr_auto] gap-1.5 px-2 py-1.5 flex-shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-        <select value={sort} onChange={event => setSort(event.target.value as WMSort)} className="min-w-0 rounded-md border border-white/10 bg-transparent px-1.5 py-1 text-[8px] text-white/45 outline-none" aria-label="Sort Working Memory">
-          {WM_SORT_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+      <div className="grid grid-cols-2 gap-1.5 px-2 py-1.5 flex-shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+        <select value={sort} onChange={event => setSort(event.target.value as WMSort)} className="min-w-0 rounded-md border border-white/10 px-1.5 py-1 text-[8px] outline-none" style={selectStyle} aria-label="Sort Working Memory">
+          {WM_SORT_OPTIONS.map(([value, label]) => <option style={optionStyle} key={value} value={value}>{label}</option>)}
         </select>
-        <button onClick={() => setOrder(value => value === 'asc' ? 'desc' : 'asc')} className="rounded-md border border-white/10 px-2 py-1 text-[8px] text-white/40" title="Toggle Working Memory sort direction">{order}</button>
+        <select value={order} onChange={event => setOrder(event.target.value as WMOrder)} className="min-w-0 rounded-md border border-white/10 px-1.5 py-1 text-[8px] outline-none" style={selectStyle} aria-label="Working Memory sort direction"><option style={optionStyle} value="asc">Min first</option><option style={optionStyle} value="desc">Max first</option></select>
       </div>
 
       {/* Capacity bar */}

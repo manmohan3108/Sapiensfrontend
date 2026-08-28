@@ -9,6 +9,8 @@ type EntitySort = 'name' | 'worth' | 'frequency' | 'recency' | 'episode_count';
 type SortOrder = 'asc' | 'desc';
 
 const controlClass = 'rounded-lg border border-white/10 bg-transparent px-2 py-1.5 text-[9px] text-white/55 outline-none placeholder:text-white/20';
+const selectStyle = { colorScheme: 'dark', backgroundColor: '#0b1020', color: 'rgba(255,255,255,0.65)' } as const;
+const optionStyle = { backgroundColor: '#0b1020', color: '#cbd5e1' } as const;
 const recencyLabel = (value?: string) => {
   if (!value) return 'never';
   const date = new Date(value);
@@ -83,7 +85,7 @@ export function EngramEntities({ sapienId, onOpenInGraph }: { sapienId: number; 
       >
         <div className="flex-shrink-0 space-y-1.5 pb-1">
           <div className="relative"><Search className="pointer-events-none absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-white/20" /><input value={search} onChange={event => setSearch(event.target.value)} placeholder="Search loaded entities" className={`${controlClass} w-full pl-7`} /></div>
-          <div className="grid grid-cols-[1fr_auto] gap-1.5"><select value={sort} onChange={event => setSort(event.target.value as EntitySort)} className={controlClass}><option value="name">Name</option><option value="worth">Worth</option><option value="frequency">Frequency</option><option value="recency">Last used</option><option value="episode_count">Episode count</option></select><button onClick={() => setOrder(value => value === 'asc' ? 'desc' : 'asc')} className={controlClass} title="Toggle sort direction">{order}</button></div>
+          <div className="grid grid-cols-2 gap-1.5"><select value={sort} onChange={event => setSort(event.target.value as EntitySort)} className={controlClass} style={selectStyle} aria-label="Entity sort field"><option style={optionStyle} value="name">Name</option><option style={optionStyle} value="worth">Worth</option><option style={optionStyle} value="frequency">Frequency</option><option style={optionStyle} value="recency">Last used</option><option style={optionStyle} value="episode_count">Episode count</option></select><select value={order} onChange={event => setOrder(event.target.value as SortOrder)} className={controlClass} style={selectStyle} aria-label="Entity sort direction"><option style={optionStyle} value="asc">Min / A–Z first</option><option style={optionStyle} value="desc">Max / Z–A first</option></select></div>
           <p className="px-1 text-[8px] font-mono text-white/25">Showing {visibleEntities.length} of {entities.length} loaded{sort === 'episode_count' ? ' · globally ordered before paging' : ''}</p>
         </div>
         {entities.length === 0 && (
