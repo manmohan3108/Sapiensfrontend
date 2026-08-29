@@ -1,7 +1,7 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --font-size: 17px;
+  --font-size: 16px;
   --background: #ffffff;
   --foreground: #0f172a;
   --card: #ffffff;
@@ -130,9 +130,21 @@
     line-height: 1.55;
   }
 
-  .text-\[9px\] { font-size: 0.72rem !important; line-height: 1rem !important; }
-  .text-\[10px\] { font-size: 0.76rem !important; line-height: 1.05rem !important; }
-  .text-\[11px\] { font-size: 0.8rem !important; line-height: 1.1rem !important; }
+  .text-\[9px\] { font-size: 0.69rem !important; line-height: 0.95rem !important; }
+  .text-\[10px\] { font-size: 0.73rem !important; line-height: 1rem !important; }
+  .text-\[11px\] { font-size: 0.77rem !important; line-height: 1.05rem !important; }
+
+  .workspace-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(139, 92, 246, 0.38) transparent;
+  }
+
+  .workspace-scrollbar::-webkit-scrollbar { width: 7px; }
+  .workspace-scrollbar::-webkit-scrollbar-track { background: transparent; }
+  .workspace-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(139, 92, 246, 0.34);
+    border-radius: 999px;
+  }
 
   .workspace-shell [class*="text-white/1"],
   .workspace-shell [class*="text-white/2"],

@@ -99,15 +99,15 @@ export function WorkspacePage() {
       </div>
 
       {/* ── Panel grid ── */}
-      <div className="relative z-10 flex-1 min-h-0 p-2 gap-3 grid grid-cols-1 2xl:grid-cols-12">
+      <div className="relative z-10 flex-1 min-h-0 p-2 gap-3 grid grid-cols-1 lg:grid-cols-12">
 
         {/* MAIN — Chat and attachments */}
-        <div className="min-h-[calc(100dvh-9rem)] 2xl:col-span-8 2xl:min-h-0">
+        <div className="min-h-[38rem] lg:col-span-8 lg:min-h-0">
           <ChatWindow />
         </div>
 
         {/* RIGHT — Tab row + active panel */}
-        <div className="min-h-[36rem] flex flex-col gap-2 2xl:col-span-4 2xl:min-h-0">
+        <div className="min-h-[38rem] flex flex-col gap-2 lg:col-span-4 lg:min-h-0">
 
           {/* Tab pill row */}
           <TabRow tab={rightTab} setTab={setRightTab} />

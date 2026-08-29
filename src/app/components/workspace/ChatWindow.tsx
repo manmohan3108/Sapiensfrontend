@@ -4,7 +4,7 @@ import {
   Loader2, ChevronDown, Sparkles, Copy, Check,
   ThumbsUp, ThumbsDown, Star, BookMarked, MinusCircle,
   Database, ChevronRight, Search,
-  History, Plus, RefreshCw,
+  History, Plus, RefreshCw, PanelLeftClose, PanelLeftOpen,
   Paperclip, X,
 } from 'lucide-react';
 import { useSapiens } from '../../hooks/useSapiens';
@@ -406,17 +406,22 @@ function EmptyState({ name, onHint }: { name: string; onHint: (h: string) => voi
   );
 }
 
-function ChatHistorySidebar({ history, historyLoading, historyError, detailLoading, isProcessing, chatSessionId, onRefresh, onNewChat, onSelectChat }: {
+function ChatHistorySidebar({ history, historyLoading, historyError, detailLoading, isProcessing, chatSessionId, onRefresh, onNewChat, onSelectChat, onCollapse }: {
   history: ChatHistoryItem[]; historyLoading: boolean; historyError: string | null; detailLoading: boolean;
   isProcessing: boolean; chatSessionId: string | null; onRefresh: () => void; onNewChat: () => void;
-  onSelectChat: (threadId: string) => void;
+  onSelectChat: (threadId: string) => void; onCollapse: () => void;
 }) {
   return <>
     <div className="flex items-center justify-between gap-2 px-3 py-3 border-b border-white/[0.08]">
       <div><p className="text-sm font-semibold text-white/90">Chat history</p><p className="text-xs text-white/40">Continue a conversation</p></div>
-      <button onClick={onRefresh} disabled={historyLoading} title="Refresh history" aria-label="Refresh chat history" className="p-2 rounded-lg text-white/50 hover:text-violet-200 hover:bg-white/[0.08] disabled:opacity-40">
-        <RefreshCw className={`w-4 h-4 ${historyLoading ? 'animate-spin' : ''}`} />
-      </button>
+      <div className="flex items-center gap-1">
+        <button onClick={onRefresh} disabled={historyLoading} title="Refresh history" aria-label="Refresh chat history" className="p-2 rounded-lg text-white/50 hover:text-violet-200 hover:bg-white/[0.08] disabled:opacity-40">
+          <RefreshCw className={`w-4 h-4 ${historyLoading ? 'animate-spin' : ''}`} />
+        </button>
+        <button onClick={onCollapse} title="Collapse chat history" aria-label="Collapse chat history" className="p-2 rounded-lg text-white/50 hover:text-violet-200 hover:bg-white/[0.08]">
+          <PanelLeftClose className="w-4 h-4" />
+        </button>
+      </div>
     </div>
     <div className="p-2">
       <button onClick={onNewChat} className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium text-white bg-violet-600 hover:bg-violet-500 transition-colors shadow-lg shadow-violet-950/30">
@@ -424,7 +429,7 @@ function ChatHistorySidebar({ history, historyLoading, historyError, detailLoadi
       </button>
     </div>
     {historyError && <p className="mx-2 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-200">{historyError}</p>}
-    <div className="flex-1 min-h-0 overflow-y-auto p-2 pt-1">
+    <div className="workspace-scrollbar flex-1 min-h-0 overflow-y-auto p-2 pt-1">
       {historyLoading && history.length === 0 ? (
         <div className="flex items-center justify-center gap-2 py-10 text-sm text-white/50"><Loader2 className="w-4 h-4 animate-spin" /> Loading chats…</div>
       ) : history.length === 0 ? (
@@ -448,6 +453,7 @@ export function ChatWindow() {
   const [showScroll, setShowScroll] = useState(false);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyCollapsed, setHistoryCollapsed] = useState(false);
   const [history, setHistory] = useState<ChatHistoryItem[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -589,10 +595,19 @@ export function ChatWindow() {
         backdropFilter: 'blur(24px)',
       }}
     >
-      <aside className="hidden lg:flex w-60 xl:w-64 flex-shrink-0 flex-col border-r border-white/[0.08] bg-black/20">
-        <ChatHistorySidebar history={history} historyLoading={historyLoading} historyError={historyError}
+      <aside className={`${historyCollapsed ? 'w-14' : 'w-56 xl:w-60'} hidden lg:flex flex-shrink-0 flex-col border-r border-white/[0.08] bg-gradient-to-b from-violet-950/15 to-black/20 transition-[width] duration-200`}>
+        {historyCollapsed ? (
+          <div className="flex h-full flex-col items-center gap-2 py-3">
+            <button onClick={() => setHistoryCollapsed(false)} title="Expand chat history" aria-label="Expand chat history" className="p-2.5 rounded-xl text-violet-200 bg-violet-500/10 hover:bg-violet-500/20 border border-violet-400/20">
+              <PanelLeftOpen className="w-4 h-4" />
+            </button>
+            <button onClick={startNewChat} title="New chat" aria-label="New chat" className="p-2.5 rounded-xl text-white/70 hover:text-white hover:bg-white/[0.08]">
+              <Plus className="w-4 h-4" />
+            </button>
+          </div>
+        ) : <ChatHistorySidebar history={history} historyLoading={historyLoading} historyError={historyError}
           detailLoading={detailLoading} isProcessing={isProcessing} chatSessionId={chatSessionId}
-          onRefresh={() => void refreshHistory()} onNewChat={startNewChat} onSelectChat={(id) => void selectChat(id)} />
+          onRefresh={() => void refreshHistory()} onNewChat={startNewChat} onSelectChat={(id) => void selectChat(id)} onCollapse={() => setHistoryCollapsed(true)} />}
       </aside>
       <div className="min-w-0 flex-1 flex flex-col relative">
       {/* Violet top accent */}
@@ -692,7 +707,7 @@ export function ChatWindow() {
         <div className="absolute top-0 left-0 right-0 h-8 z-10 pointer-events-none"
           style={{ background: 'linear-gradient(to bottom, rgba(8,12,22,0.6), transparent)' }} />
         <div ref={scrollRef} onScroll={handleScroll}
-          className="h-full overflow-y-auto px-5 py-5 space-y-5">
+          className="workspace-scrollbar h-full overflow-y-auto px-5 py-5 space-y-5">
           {msgs.length === 0
             ? <EmptyState name={currentSapiens?.name ?? 'Sapiens'} onHint={(h) => { setInput(h); textareaRef.current?.focus(); }} />
             : (
