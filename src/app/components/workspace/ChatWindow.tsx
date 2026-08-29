@@ -801,26 +801,6 @@ export function ChatWindow() {
             {isProcessing ? <Loader2 className="w-4 h-4 text-white animate-spin" /> : <Send className="w-4 h-4 text-white" />}
           </button>
         </div>
-        <div className="flex items-center gap-3 mt-1.5 px-1">
-          <p className="text-[10px] text-white/12">
-            <span className="inline-flex items-center gap-0.5 font-mono bg-emerald-500/[0.07] px-1 py-0.5 rounded text-emerald-400/35">
-              <Paperclip className="w-2 h-2" /> Attach
-            </span>
-            {' '}files or folders
-          </p>
-          <span className="text-white/10">·</span>
-          <p className="text-[10px] text-white/12">
-            <span className="font-mono bg-white/[0.05] px-1 py-0.5 rounded text-white/20">Enter</span>
-            {' '}chat · Shift+Enter for newline
-          </p>
-          <span className="text-white/10">·</span>
-          <p className="text-[10px] text-white/12">
-            <span className="inline-flex items-center gap-0.5 font-mono bg-cyan-500/[0.07] px-1 py-0.5 rounded text-cyan-400/30">
-              <Search className="w-2 h-2" /> Query
-            </span>
-            {' '}hits /api/query
-          </p>
-        </div>
       </div>
       </div>
     </div>

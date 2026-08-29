@@ -37,7 +37,7 @@ export function HeaderBar() {
 
       {/* Main bar */}
       <div
-        className="min-h-14 px-3 py-2 sm:px-4 flex flex-wrap items-center justify-between gap-2 lg:flex-nowrap lg:gap-4"
+        className="min-h-14 px-3 py-2 sm:px-4 flex flex-wrap items-center justify-between gap-3 min-[1800px]:flex-nowrap min-[1800px]:gap-4"
         style={{
           background: 'rgba(6,10,21,0.96)',
           backdropFilter: 'blur(24px)',
@@ -144,7 +144,7 @@ export function HeaderBar() {
         </div>
 
         {/* ── RIGHT: Actions ── */}
-        <div className="order-3 flex w-full items-center gap-2 overflow-x-auto pb-0.5 lg:order-none lg:w-auto lg:flex-shrink-0 lg:overflow-visible lg:pb-0">
+        <div className="order-3 flex w-full items-center gap-2 overflow-x-auto border-t border-white/[0.06] pt-2 pb-0.5 min-[1800px]:order-none min-[1800px]:w-auto min-[1800px]:flex-shrink-0 min-[1800px]:overflow-visible min-[1800px]:border-0 min-[1800px]:pt-0 min-[1800px]:pb-0">
           <ThemeToggle
             variant="ghost"
             size="icon"
