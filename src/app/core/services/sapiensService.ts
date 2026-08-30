@@ -160,11 +160,11 @@ class SapiensService {
     return response.data;
   }
 
-  async getAwarenessBeats(sapiensId: string, limit = 20): Promise<AwarenessBeatsResponse> {
+  async getAwarenessBeats(sapiensId: string, limit = 20, includeStaffSession = false): Promise<AwarenessBeatsResponse> {
     const boundedLimit = Math.min(20, Math.max(1, limit));
     const response = await apiClient.get<AwarenessBeatsResponse>(
       `${API_ENDPOINTS.sapienAwarenessBeats(sapiensId)}?limit=${boundedLimit}`,
-      { credentials: 'include' }
+      includeStaffSession ? { credentials: 'include' } : undefined
     );
     return response.data;
   }
