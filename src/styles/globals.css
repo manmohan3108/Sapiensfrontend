@@ -1,0 +1,16 @@
+/* Native select menus do not inherit Tailwind's dark surface colors on Windows.
+   Keep both the closed control and the opened option list readable. */
+select {
+  color-scheme: dark;
+}
+
+select option,
+select optgroup {
+  background-color: #101421;
+  color: #e5e7eb;
+}
+
+select option:checked {
+  background-color: #312e81;
+  color: #ffffff;
+}

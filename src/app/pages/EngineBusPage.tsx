@@ -9,7 +9,7 @@ import { engineBusService } from '../core/services/engineBusService';
 import type { EngineBusSignal, EngineBusSignalDetailResponse } from '../types/engineBusTypes';
 
 const accent = '#34d399';
-const fieldClass = 'h-9 w-full rounded-lg border border-white/10 bg-white/[.045] px-3 text-xs text-white outline-none placeholder:text-white/25 focus:border-emerald-400/50';
+const fieldClass = 'h-9 w-full rounded-lg border border-white/10 bg-[#101421] px-3 text-xs text-slate-100 outline-none placeholder:text-white/25 focus:border-emerald-400/50';
 const presets = { '15m': 15 * 60_000, '1h': 60 * 60_000, '6h': 6 * 60 * 60_000, '24h': 24 * 60 * 60_000 } as const;
 
 function errorText(error: unknown) {
