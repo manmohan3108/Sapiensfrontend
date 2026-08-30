@@ -14,6 +14,7 @@ import { LlmUsageDialog } from '../components/workspace/LlmUsageDialog';
 import { EngramPage } from './EngramPage';
 import { EngineBusPage } from './EngineBusPage';
 import { useOrchestratorStatus } from '../hooks/useOrchestratorStatus';
+import { AwarenessDiagnostics as AwarenessAnalysis } from '../components/analyse/AwarenessDiagnostics';
 
 type Section = 'overview' | 'awareness' | 'working-memory' | 'goals' | 'engram' | 'engine-bus' | 'timeline' | 'debug' | 'usage';
 const NAV: Array<{ id: Section; label: string; icon: typeof Eye; color: string }> = [
@@ -40,7 +41,7 @@ function Metric({ label, value, detail, color = '#c4b5fd' }: { label: string; va
 }
 function Empty({ text }: { text: string }) { return <div className="grid min-h-44 place-items-center text-center"><div><Sparkles className="mx-auto h-6 w-6 text-white/15" /><p className="mt-3 text-xs text-white/30">{text}</p></div></div>; }
 
-function AwarenessAnalysis({ sapienId }: { sapienId: string }) {
+function LegacyAwarenessAnalysis({ sapienId }: { sapienId: string }) {
   const [data, setData] = useState<AwarenessResponse | null>(null); const [loading, setLoading] = useState(true); const [error, setError] = useState(''); const [search, setSearch] = useState(''); const [source, setSource] = useState('all'); const [selected, setSelected] = useState<AwarenessHistoryItem | null>(null);
   const refresh = useCallback(async () => {
     setLoading(true); setError('');

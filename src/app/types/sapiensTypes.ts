@@ -171,6 +171,58 @@ export interface AwarenessResponse {
   sapien_id: number;
   current: AwarenessCurrent | null;
   history: AwarenessHistoryItem[];
+  /** Admin-only diagnostics. Absent on legacy backend responses. */
+  current_beat?: AwarenessBeat | null;
+  beats?: AwarenessBeat[];
+}
+
+export interface AwarenessBeatEvent {
+  type?: string;
+  kind?: string;
+  event_type?: string;
+  name?: string;
+  status?: string;
+  occurred_at?: string;
+  created_at?: string;
+  timestamp?: string;
+  summary?: string;
+  decision?: string;
+  reason?: string;
+  thought?: string;
+  outcome?: string;
+  feedback?: string;
+  capability?: string;
+  argument_names?: string[];
+  uncertainty?: number | string | boolean;
+  activity_id?: string;
+  action_id?: string;
+}
+
+export interface AwarenessBeatCandidateSummary {
+  collected?: number;
+  held?: number;
+  source_counts?: Record<string, number>;
+  sources?: Record<string, number>;
+  bounded_candidates?: Array<Record<string, unknown>>;
+  candidates?: Array<Record<string, unknown>>;
+  truncated?: boolean;
+  was_truncated?: boolean;
+}
+
+export interface AwarenessBeat {
+  _id: string;
+  sapien_id: number;
+  mode: 'reactive' | 'autonomous' | string;
+  trigger_source?: string;
+  started_at?: string;
+  completed_at?: string;
+  winner?: string | Record<string, unknown> | null;
+  candidate_summary?: AwarenessBeatCandidateSummary | null;
+  preparation?: Record<string, unknown> | string | null;
+  curation?: Record<string, unknown> | string | null;
+  events?: AwarenessBeatEvent[];
+  final?: Record<string, unknown> | string | null;
+  delivery?: Record<string, unknown> | string | null;
 }
 
 export interface ChatHistoryItem {
