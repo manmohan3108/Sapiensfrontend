@@ -4,42 +4,40 @@ import { WorkspacePage } from './pages/WorkspacePage';
 import { ConnectionsPage } from './pages/ConnectionsPage';
 import { AnalysePage } from './pages/AnalysePage';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { AuthPage } from './pages/AuthPage';
+import { AccessDeniedPage, GuestRoute, ProtectedRoute } from './components/auth/RouteGuards';
 
 export const router = createBrowserRouter([
   {
-    path: '/',
-    Component: LandingPage,
-    ErrorBoundary,
+    Component: GuestRoute,
+    children: [
+      { path: '/login', Component: () => <AuthPage mode="login" />, ErrorBoundary },
+      { path: '/register', Component: () => <AuthPage mode="register" />, ErrorBoundary },
+    ],
   },
   {
-    path: '/workspace',
-    Component: WorkspacePage,
-    ErrorBoundary,
+    Component: ProtectedRoute,
+    children: [
+      { path: '/workspace', Component: WorkspacePage, ErrorBoundary },
+      { path: '/access-denied', Component: AccessDeniedPage, ErrorBoundary },
+    ],
   },
   {
-    path: '/engram',
-    Component: () => <Navigate to="/admin/analyse/engram" replace />,
-    ErrorBoundary,
+    Component: () => <ProtectedRoute roles={['customer']} />,
+    children: [
+      { path: '/', Component: LandingPage, ErrorBoundary },
+      { path: '/connections', Component: ConnectionsPage, ErrorBoundary },
+    ],
   },
   {
-    path: '/connections',
-    Component: ConnectionsPage,
-    ErrorBoundary,
-  },
-  {
-    path: '/engine-bus',
-    Component: () => <Navigate to="/admin/analyse/engine-bus" replace />,
-    ErrorBoundary,
-  },
-  {
-    path: '/admin/analyse',
-    Component: AnalysePage,
-    ErrorBoundary,
-  },
-  {
-    path: '/admin/analyse/:section',
-    Component: AnalysePage,
-    ErrorBoundary,
+    Component: () => <ProtectedRoute roles={['admin']} />,
+    children: [
+      { path: '/admin', Component: LandingPage, ErrorBoundary },
+      { path: '/admin/analyse', Component: AnalysePage, ErrorBoundary },
+      { path: '/admin/analyse/:section', Component: AnalysePage, ErrorBoundary },
+      { path: '/engram', Component: () => <Navigate to="/admin/analyse/engram" replace />, ErrorBoundary },
+      { path: '/engine-bus', Component: () => <Navigate to="/admin/analyse/engine-bus" replace />, ErrorBoundary },
+    ],
   },
   {
     path: '*',

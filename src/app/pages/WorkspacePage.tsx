@@ -8,6 +8,7 @@ import { MemoryPanel } from '../components/workspace/MemoryPanel';
 import { GoalsPanel } from '../components/workspace/GoalsPanel';
 import { useSapiensStore } from '../core/state/sapiensStore';
 import { useOrchestratorStatus } from '../hooks/useOrchestratorStatus';
+import { useAuth } from '../contexts/AuthContext';
 
 type RightTab = 'awareness' | 'memory' | 'goals';
 
@@ -57,6 +58,7 @@ function TabRow({
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export function WorkspacePage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [rightTab, setRightTab] = useState<RightTab>('awareness');
 
   const currentSapiens = useSapiensStore((state) => state.currentSapiens);
@@ -65,8 +67,8 @@ export function WorkspacePage() {
   useOrchestratorStatus();
 
   useEffect(() => {
-    if (!currentSapiens) navigate('/');
-  }, [currentSapiens, navigate]);
+    if (!currentSapiens) navigate(user?.role === 'admin' ? '/admin' : '/');
+  }, [currentSapiens, navigate, user?.role]);
 
   if (!currentSapiens) return null;
 

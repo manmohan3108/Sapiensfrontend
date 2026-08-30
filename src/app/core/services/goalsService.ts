@@ -1,5 +1,6 @@
 import { apiConfig } from '../config/apiConfig';
 import type { Goal, GoalDetail, GoalsListResponse } from '../../types/goalTypes';
+import { authenticatedFetch } from '../auth/authSession';
 
 export class OverloadedError extends Error {
   constructor() { super('overloaded'); this.name = 'OverloadedError'; }
@@ -15,7 +16,7 @@ export interface CommentResponse {
 const base = apiConfig.baseUrl;
 
 async function goalsFetch<T>(url: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(url, {
+  const res = await authenticatedFetch(url, {
     ...options,
     headers: { 'Content-Type': 'application/json', ...options?.headers },
   });
@@ -70,7 +71,7 @@ export const goalsService = {
     scope: 'goal' | 'plan' | 'step';
     step_id?: string;
   }): Promise<CommentResponse> {
-    const res = await fetch(`${base}/sapien/${sapienId}/goals/${goalId}/comment`, {
+    const res = await authenticatedFetch(`${base}/sapien/${sapienId}/goals/${goalId}/comment`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(params),

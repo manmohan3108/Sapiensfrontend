@@ -18,9 +18,10 @@ import type {
   MemoryType,
   WMQuery,
 } from '../../types/engramTypes';
+import { authenticatedFetch } from '../auth/authSession';
 
 async function engramFetch<T>(url: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(url, {
+  const res = await authenticatedFetch(url, {
     ...options,
     headers: { 'Content-Type': 'application/json', ...options?.headers },
   });

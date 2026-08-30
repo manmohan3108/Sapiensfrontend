@@ -1,11 +1,14 @@
 import { useRef, useState } from 'react';
-import { Brain, Heart, Plus, Sparkles, ArrowRight } from 'lucide-react';
+import { Brain, Heart, Plus, Sparkles, ArrowRight, LogOut, ShieldCheck, UserRound } from 'lucide-react';
 import { LoadSapiensList } from '../components/landing/LoadSapiensList';
 import { CreateSapiensForm } from '../components/landing/CreateSapiensForm';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { Button } from '../components/ui/button';
+import { useAuth } from '../contexts/AuthContext';
 
 export function LandingPage() {
+  const { user, logout } = useAuth();
+  const isAdmin = user?.role === 'admin';
   const loadSectionRef = useRef<HTMLElement>(null);
   const createSectionRef = useRef<HTMLElement>(null);
   const [showCreate, setShowCreate] = useState(false);
@@ -25,10 +28,12 @@ export function LandingPage() {
             <span className="font-semibold tracking-tight">Sapiens</span>
           </a>
           <div className="flex items-center gap-2">
+            <span className="hidden items-center gap-2 rounded-full border border-border bg-muted/40 px-3 py-1.5 text-xs text-muted-foreground sm:flex">{isAdmin ? <ShieldCheck className="size-3.5 text-violet-500" /> : <UserRound className="size-3.5 text-violet-500" />}<span className="max-w-28 truncate">{user?.username}</span><span className="capitalize text-foreground/70">· {user?.role}</span></span>
             <ThemeToggle className="rounded-full" />
-            <Button variant="ghost" size="sm" onClick={openCreate} className="rounded-full px-4">
+            {!isAdmin && <Button variant="ghost" size="sm" onClick={openCreate} className="rounded-full px-4">
               <Plus className="mr-1.5 size-4" /> Create new
-            </Button>
+            </Button>}
+            <Button variant="ghost" size="icon" onClick={() => void logout()} className="rounded-full" aria-label="Sign out"><LogOut className="size-4" /></Button>
           </div>
         </nav>
       </header>
@@ -48,7 +53,7 @@ export function LandingPage() {
                   It remembers what it learns, connects ideas over time, and develops a perspective shaped by every conversation.
                 </p>
                 <p className="mt-4 max-w-md text-sm leading-6 text-muted-foreground">
-                  Choose one to step into its ongoing story and explore how it thinks—no login or setup required.
+                  {isAdmin ? 'Choose one to open its administrator-only analysis workspace.' : 'Choose one to step into its ongoing story and explore how it thinks.'}
                 </p>
                 <div className="mt-7 flex items-center gap-2 text-sm font-medium text-violet-600 dark:text-violet-400">
                   Pick a Sapiens to begin <ArrowRight className="size-4" aria-hidden="true" />
@@ -66,7 +71,7 @@ export function LandingPage() {
           </div>
         </section>
 
-        <section ref={createSectionRef} className="border-t border-border/60 py-8 sm:py-10">
+        {!isAdmin && <section ref={createSectionRef} className="border-t border-border/60 py-8 sm:py-10">
           <div className="mx-auto max-w-6xl px-4 text-center sm:px-6 lg:px-8">
             {!showCreate ? (
               <div>
@@ -86,7 +91,7 @@ export function LandingPage() {
               </div>
             )}
           </div>
-        </section>
+        </section>}
       </main>
 
       <footer className="border-t border-border/60">

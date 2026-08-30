@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "build": "vite build",
+    "test:auth": "node scripts/test-auth-session.mjs",
     "dev": "vite"
   },
   "dependencies": {

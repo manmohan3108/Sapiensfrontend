@@ -1,9 +1,10 @@
-import { Brain, Home, Save, ChevronRight, Cpu, Wifi, Hourglass, PlugZap, ScanSearch } from 'lucide-react';
+import { Brain, Home, Save, ChevronRight, Cpu, Wifi, Hourglass, PlugZap, ScanSearch, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { useSapiens } from '../../hooks/useSapiens';
 import { useSapiensStore } from '../../core/state/sapiensStore';
 import { ThemeToggle } from '../ThemeToggle';
 import { RunEngineButton } from './RunEngineButton';
+import { useAuth } from '../../contexts/AuthContext';
 
 export function HeaderBar() {
   const { currentSapiens } = useSapiensStore();
@@ -11,6 +12,7 @@ export function HeaderBar() {
   const navigate = useNavigate();
   const status = useSapiensStore((s) => s.status);
   const isOverloaded = useSapiensStore((s) => s.isOverloaded);
+  const { user, logout } = useAuth();
 
   if (!currentSapiens) return null;
 
@@ -147,7 +149,7 @@ export function HeaderBar() {
 
           <div className="w-px h-5 bg-white/10" />
 
-          <button
+          {user?.role === 'customer' && <button
             onClick={() => navigate('/connections')}
             title="Manage external account connections"
             className="flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs transition-all duration-150"
@@ -155,9 +157,9 @@ export function HeaderBar() {
           >
             <PlugZap className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Connections</span>
-          </button>
+          </button>}
 
-          <button
+          {user?.role === 'admin' && <button
             onClick={() => navigate('/admin/analyse')}
             title="Open the analysis platform"
             className="flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs transition-all duration-150"
@@ -165,7 +167,7 @@ export function HeaderBar() {
           >
             <ScanSearch className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Analyse</span>
-          </button>
+          </button>}
 
           <div className="w-px h-5 bg-white/10" />
 
@@ -202,6 +204,7 @@ export function HeaderBar() {
             <Home className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Home</span>
           </button>
+          <button onClick={() => void logout()} title={`Sign out ${user?.username ?? ''}`} className="flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs text-white/35 transition hover:bg-red-400/[.06] hover:text-red-300"><LogOut className="h-3.5 w-3.5" /><span className="hidden sm:inline">Sign out</span></button>
         </div>
       </div>
     </header>

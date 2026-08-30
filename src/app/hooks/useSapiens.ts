@@ -11,9 +11,11 @@ import {
 } from '../types/sapiensTypes';
 import { logger } from '../utils/logger';
 import { generateId } from '../utils/formatters';
+import { useAuth } from '../contexts/AuthContext';
 
 export function useSapiens() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const {
     currentSapiens,
     chatSessionId,
@@ -45,7 +47,7 @@ export function useSapiens() {
         };
         setCurrentSapiens(newSapiens);
         setStatus('idle');
-        navigate('/workspace');
+        navigate(user?.role === 'admin' ? '/admin/analyse' : '/workspace');
         return newSapiens;
       } catch (error) {
         logger.error('Failed to create Sapiens', error);
@@ -53,7 +55,7 @@ export function useSapiens() {
         throw error;
       }
     },
-    [setStatus, setCurrentSapiens, navigate]
+    [setStatus, setCurrentSapiens, navigate, user?.role]
   );
 
   // ── Load ────────────────────────────────────────────────────────────────────
@@ -63,7 +65,7 @@ export function useSapiens() {
         setStatus('loading');
         setCurrentSapiens(sapiens);
         setStatus('idle');
-        navigate('/workspace');
+        navigate(user?.role === 'admin' ? '/admin/analyse' : '/workspace');
         return sapiens;
       } catch (error) {
         logger.error('Failed to load Sapiens', error);
@@ -71,7 +73,7 @@ export function useSapiens() {
         throw error;
       }
     },
-    [setStatus, setCurrentSapiens, navigate]
+    [setStatus, setCurrentSapiens, navigate, user?.role]
   );
 
   // ── Save ────────────────────────────────────────────────────────────────────
@@ -341,8 +343,8 @@ export function useSapiens() {
   // ── Return to home ───────────────────────────────────────────────────────────
   const returnToHome = useCallback(() => {
     reset();
-    navigate('/');
-  }, [reset, navigate]);
+    navigate(user?.role === 'admin' ? '/admin' : '/');
+  }, [reset, navigate, user?.role]);
 
   return {
     currentSapiens,

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useSapiensStore } from '../core/state/sapiensStore';
 import { apiConfig, API_ENDPOINTS } from '../core/config/apiConfig';
+import { authenticatedFetch } from '../core/auth/authSession';
 
 const POLL_INTERVAL_MS = 60_000; // 1 min
 
@@ -12,7 +13,7 @@ interface OrchestratorStatusResponse {
 
 async function fetchStatus(baseUrl: string): Promise<OrchestratorStatusResponse | null> {
   try {
-    const res = await fetch(`${baseUrl}${API_ENDPOINTS.orchestratorStatus}`);
+    const res = await authenticatedFetch(`${baseUrl}${API_ENDPOINTS.orchestratorStatus}`);
     if (!res.ok) return null;
     const ct = res.headers.get('content-type') ?? '';
     if (!ct.includes('application/json')) return null;

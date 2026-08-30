@@ -1,5 +1,6 @@
 import { apiConfig } from '../config/apiConfig';
 import { ApiError, ApiResponse } from '../../types/apiTypes';
+import { authenticatedFetch } from '../auth/authSession';
 
 class ApiClient {
   private baseUrl: string;
@@ -24,7 +25,7 @@ class ApiClient {
 
     try {
       const url = `${this.baseUrl}${endpoint}`;
-      const response = await fetch(url, {
+      const response = await authenticatedFetch(url, {
         ...options,
         headers: {
           ...this.defaultHeaders,
@@ -36,8 +37,9 @@ class ApiClient {
       clearTimeout(timeoutId);
 
       if (!response.ok) {
+        const body = await response.clone().json().catch(() => null) as { error?: string } | null;
         const error: ApiError = {
-          message: `HTTP Error: ${response.statusText}`,
+          message: body?.error ?? `Request failed (HTTP ${response.status})`,
           status: response.status,
         };
         throw error;
@@ -94,7 +96,7 @@ class ApiClient {
       const url = `${this.baseUrl}${endpoint}`;
       
       // Don't include default headers for FormData - let browser set Content-Type with boundary
-      const response = await fetch(url, {
+      const response = await authenticatedFetch(url, {
         method: 'POST',
         body: formData,
         signal: controller.signal,

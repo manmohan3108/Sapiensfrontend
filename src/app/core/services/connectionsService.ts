@@ -6,13 +6,14 @@ import type {
   SapiensConnection,
   SapiensConnectionRequest,
 } from '../../types/connectionTypes';
+import { authenticatedFetch } from '../auth/authSession';
 
 interface ConnectionResponse { connection: SapiensConnection }
 interface VerifyResponse extends ConnectionResponse { verified: boolean }
 interface RequestResponse { request: SapiensConnectionRequest }
 
 async function connectionFetch<T>(path: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(`${apiConfig.baseUrl}${path}`, {
+  const response = await authenticatedFetch(`${apiConfig.baseUrl}${path}`, {
     ...options,
     headers: { 'Content-Type': 'application/json', ...options?.headers },
   });
