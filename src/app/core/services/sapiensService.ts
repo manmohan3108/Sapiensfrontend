@@ -16,6 +16,7 @@ import {
   ChatHistoryResponse,
   ChatDetail,
   AwarenessResponse,
+  AwarenessBeatsResponse,
 } from '../../types/sapiensTypes';
 import { logger } from '../../utils/logger';
 
@@ -155,6 +156,15 @@ class SapiensService {
   async getAwareness(sapiensId: string, limit = 10): Promise<AwarenessResponse> {
     const response = await apiClient.get<AwarenessResponse>(
       `${API_ENDPOINTS.sapienAwareness(sapiensId)}?limit=${limit}`
+    );
+    return response.data;
+  }
+
+  async getAwarenessBeats(sapiensId: string, limit = 20): Promise<AwarenessBeatsResponse> {
+    const boundedLimit = Math.min(20, Math.max(1, limit));
+    const response = await apiClient.get<AwarenessBeatsResponse>(
+      `${API_ENDPOINTS.sapienAwarenessBeats(sapiensId)}?limit=${boundedLimit}`,
+      { credentials: 'include' }
     );
     return response.data;
   }

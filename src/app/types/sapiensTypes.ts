@@ -171,9 +171,12 @@ export interface AwarenessResponse {
   sapien_id: number;
   current: AwarenessCurrent | null;
   history: AwarenessHistoryItem[];
-  /** Admin-only diagnostics. Absent on legacy backend responses. */
-  current_beat?: AwarenessBeat | null;
-  beats?: AwarenessBeat[];
+}
+
+export interface AwarenessBeatsResponse {
+  sapien_id: number;
+  current_beat: AwarenessBeat | null;
+  beats: AwarenessBeat[];
 }
 
 export interface AwarenessBeatEvent {
@@ -209,15 +212,26 @@ export interface AwarenessBeatCandidateSummary {
   was_truncated?: boolean;
 }
 
+export interface AwarenessBeatAttention {
+  source: string;
+  handle: string;
+  raw_salience: number;
+  attention_factor: number;
+  adjusted_priority: number;
+  recent_attentions: number;
+}
+
 export interface AwarenessBeat {
   _id: string;
   sapien_id: number;
+  occurrence_id?: string;
   mode: 'reactive' | 'autonomous' | string;
   trigger_source?: string;
   started_at?: string;
   completed_at?: string;
   winner?: string | Record<string, unknown> | null;
   candidate_summary?: AwarenessBeatCandidateSummary | null;
+  attention?: AwarenessBeatAttention[];
   preparation?: Record<string, unknown> | string | null;
   curation?: Record<string, unknown> | string | null;
   events?: AwarenessBeatEvent[];

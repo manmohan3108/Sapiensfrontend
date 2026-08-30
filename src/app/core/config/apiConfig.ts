@@ -33,6 +33,7 @@ export const API_ENDPOINTS = {
   chatSignal: '/chat/signal',
   sapienChats: (sapienId: string | number) => `/sapien/${sapienId}/chats`,
   sapienAwareness: (sapienId: string | number) => `/sapien/${sapienId}/awareness`,
+  sapienAwarenessBeats: (sapienId: string | number) => `/sapien/${sapienId}/awareness/beats`,
   sapienWorkingMemory: (sapienId: string | number) => `${apiConfig.baseUrl}/sapien/${sapienId}/working-memory`,
   listSapiens: '/get-all-sapiens',
   runEngine: '/run-engines',
