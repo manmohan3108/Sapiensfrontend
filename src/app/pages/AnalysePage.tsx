@@ -1,135 +1,81 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router';
-import {
-  Activity, ArrowLeft, BarChart3, BrainCircuit, Bug, Clock3, DatabaseZap,
-  Eye, Filter, ListFilter, Search, Target, Workflow,
-} from 'lucide-react';
-import { AwarenessPanel } from '../components/workspace/AwarenessPanel';
-import { MemoryPanel } from '../components/workspace/MemoryPanel';
-import { GoalsPanel } from '../components/workspace/GoalsPanel';
-import { MemoryTimeline } from '../components/workspace/MemoryTimeline';
-import { DebugPanel } from '../components/workspace/DebugPanel';
-import { LlmUsageDialog } from '../components/workspace/LlmUsageDialog';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate, useParams } from 'react-router';
+import { Activity, ArrowLeft, BarChart3, Brain, BrainCircuit, Bug, ChevronRight, Clock3, DatabaseZap, Eye, LayoutDashboard, Menu, RefreshCw, Search, Sparkles, Target, X } from 'lucide-react';
+import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { sapiensService } from '../core/services/sapiensService';
+import { engramService } from '../core/services/engramService';
 import { useSapiensStore } from '../core/state/sapiensStore';
+import type { AwarenessHistoryItem, AwarenessResponse } from '../types/sapiensTypes';
+import type { WMEntry, WMResponse } from '../types/engramTypes';
+import { GoalsPanel } from '../components/workspace/GoalsPanel';
+import { DebugPanel } from '../components/workspace/DebugPanel';
+import { MemoryTimeline } from '../components/workspace/MemoryTimeline';
+import { LlmUsageDialog } from '../components/workspace/LlmUsageDialog';
+import { EngramPage } from './EngramPage';
+import { EngineBusPage } from './EngineBusPage';
 import { useOrchestratorStatus } from '../hooks/useOrchestratorStatus';
 
-type ModuleId = 'awareness' | 'working-memory' | 'goals' | 'plans' | 'timeline' | 'debug';
+type Section = 'overview' | 'awareness' | 'working-memory' | 'goals' | 'engram' | 'engine-bus' | 'timeline' | 'debug' | 'usage';
+const NAV: Array<{ id: Section; label: string; icon: typeof Eye; color: string }> = [
+  { id: 'overview', label: 'Overview', icon: LayoutDashboard, color: '#a5b4fc' },
+  { id: 'awareness', label: 'Awareness', icon: Eye, color: '#67e8f9' },
+  { id: 'working-memory', label: 'Working Memory', icon: BrainCircuit, color: '#c4b5fd' },
+  { id: 'goals', label: 'Goals & Plans', icon: Target, color: '#86efac' },
+  { id: 'engram', label: 'Engram', icon: DatabaseZap, color: '#a5b4fc' },
+  { id: 'engine-bus', label: 'Engine Bus', icon: Activity, color: '#6ee7b7' },
+  { id: 'timeline', label: 'Timeline', icon: Clock3, color: '#d8b4fe' },
+  { id: 'debug', label: 'Debug', icon: Bug, color: '#fda4af' },
+  { id: 'usage', label: 'AI Usage', icon: BarChart3, color: '#7dd3fc' },
+];
+const panel = 'rounded-xl border border-white/[.07] bg-white/[.025]';
+const tooltipStyle = { background: '#0b1220', border: '1px solid rgba(255,255,255,.1)', borderRadius: 10, fontSize: 11 };
 
-const modules = [
-  { id: 'awareness', label: 'Awareness', description: 'Inspect current and recent focus', icon: Eye, tone: '#67e8f9', mode: 'panel' },
-  { id: 'working-memory', label: 'Working Memory', description: 'Explore active cognitive context', icon: BrainCircuit, tone: '#c4b5fd', mode: 'panel' },
-  { id: 'goals', label: 'Goals', description: 'Review priorities and outcomes', icon: Target, tone: '#86efac', mode: 'panel' },
-  { id: 'plans', label: 'Plans', description: 'Inspect goal plans and progress', icon: Workflow, tone: '#fcd34d', mode: 'panel' },
-  { id: 'engine-bus', label: 'Engine Bus', description: 'Monitor signals and delivery flows', icon: Activity, tone: '#6ee7b7', mode: 'route' },
-  { id: 'engram', label: 'Engram', description: 'Open long-term memory explorer', icon: DatabaseZap, tone: '#a5b4fc', mode: 'route' },
-  { id: 'timeline', label: 'Timeline', description: 'Trace memory events over time', icon: Clock3, tone: '#d8b4fe', mode: 'panel' },
-  { id: 'debug', label: 'Debug', description: 'Inspect raw cognitive activity', icon: Bug, tone: '#fda4af', mode: 'panel' },
-  { id: 'usage', label: 'AI Usage', description: 'Analyze model usage and limits', icon: BarChart3, tone: '#7dd3fc', mode: 'dialog' },
-] as const;
+function relative(value?: string) {
+  if (!value) return '—'; const time = new Date(value).getTime(); if (!Number.isFinite(time)) return '—';
+  const seconds = Math.max(0, Math.floor((Date.now() - time) / 1000));
+  if (seconds < 60) return `${seconds}s ago`; if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`; if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`; return `${Math.floor(seconds / 86400)}d ago`;
+}
+function Metric({ label, value, detail, color = '#c4b5fd' }: { label: string; value: React.ReactNode; detail?: string; color?: string }) {
+  return <div className={`${panel} min-w-0 p-3`}><p className="text-[9px] uppercase tracking-[.16em] text-white/30">{label}</p><div className="mt-1 truncate text-xl font-medium tabular-nums" style={{ color }}>{value}</div>{detail && <p className="mt-1 truncate text-[9px] text-white/25">{detail}</p>}</div>;
+}
+function Empty({ text }: { text: string }) { return <div className="grid min-h-44 place-items-center text-center"><div><Sparkles className="mx-auto h-6 w-6 text-white/15" /><p className="mt-3 text-xs text-white/30">{text}</p></div></div>; }
+
+function AwarenessAnalysis({ sapienId }: { sapienId: string }) {
+  const [data, setData] = useState<AwarenessResponse | null>(null); const [loading, setLoading] = useState(true); const [search, setSearch] = useState(''); const [source, setSource] = useState('all'); const [selected, setSelected] = useState<AwarenessHistoryItem | null>(null);
+  const refresh = useCallback(() => { setLoading(true); sapiensService.getAwareness(sapienId, 100).then(setData).finally(() => setLoading(false)); }, [sapienId]); useEffect(refresh, [refresh]);
+  const history = data?.history ?? [];
+  const sources = useMemo(() => Object.entries(history.reduce<Record<string, number>>((a, i) => { a[i.source || 'unknown'] = (a[i.source || 'unknown'] ?? 0) + 1; return a; }, {})).map(([name, count]) => ({ name, count })), [history]);
+  const byDay = useMemo(() => Object.entries(history.reduce<Record<string, number>>((a, i) => { const day = new Date(i.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }); a[day] = (a[day] ?? 0) + 1; return a; }, {})).reverse().slice(-10).map(([day, changes]) => ({ day, changes })), [history]);
+  const filtered = history.filter(i => (source === 'all' || i.source === source) && i.focus.toLowerCase().includes(search.toLowerCase())); const recurring = Math.max(0, history.length - new Set(history.map(i => i.focus.trim().toLowerCase())).size);
+  return <div className="space-y-3"><div className="grid grid-cols-2 gap-2 xl:grid-cols-5"><Metric label="Current focus" value={data?.current ? 'Active' : 'None'} detail={data?.current?.focus} color="#67e8f9" /><Metric label="Focus changes" value={history.length} detail="returned history" /><Metric label="Sources" value={sources.length} detail="attention origins" color="#86efac" /><Metric label="Recurring" value={recurring} detail="repeated topics" color="#fcd34d" /><Metric label="Last change" value={relative(data?.current?.created_at)} detail={data?.current?.source} color="#f0abfc" /></div>
+    {data?.current && <section className={`${panel} grid gap-3 p-4 lg:grid-cols-[1fr_auto]`}><div><p className="text-[9px] uppercase tracking-[.16em] text-cyan-300/45">Current focus</p><p className="mt-2 max-w-4xl text-sm leading-6 text-white/75">{data.current.focus}</p><p className="mt-2 text-[10px] text-white/25">From {data.current.source} · {relative(data.current.created_at)}</p></div><div className="flex flex-wrap gap-2 lg:max-w-md">{data.current.also_on_mind?.map((i, n) => <span key={n} className="rounded-lg border border-violet-400/15 bg-violet-400/[.06] px-2 py-1.5 text-[9px] text-violet-100/55">{i.content}</span>)}</div></section>}
+    <div className="grid gap-3 xl:grid-cols-2"><section className={`${panel} p-4`}><h3 className="text-xs text-white/60">Focus changes over time</h3><ResponsiveContainer width="100%" height={190}><BarChart data={byDay}><CartesianGrid stroke="rgba(255,255,255,.05)" vertical={false} /><XAxis dataKey="day" tick={{ fill: 'rgba(255,255,255,.3)', fontSize: 9 }} axisLine={false} tickLine={false} /><YAxis tick={{ fill: 'rgba(255,255,255,.25)', fontSize: 9 }} axisLine={false} tickLine={false} allowDecimals={false} /><Tooltip contentStyle={tooltipStyle} /><Bar dataKey="changes" fill="#22d3ee" radius={[4,4,0,0]} /></BarChart></ResponsiveContainer></section><section className={`${panel} p-4`}><h3 className="text-xs text-white/60">Attention sources</h3><ResponsiveContainer width="100%" height={190}><PieChart><Pie data={sources} dataKey="count" nameKey="name" innerRadius={45} outerRadius={72} paddingAngle={3}>{sources.map((_, i) => <Cell key={i} fill={['#22d3ee','#8b5cf6','#34d399','#f59e0b','#f472b6'][i % 5]} />)}</Pie><Tooltip contentStyle={tooltipStyle} /></PieChart></ResponsiveContainer><div className="flex flex-wrap justify-center gap-2">{sources.map(s => <span key={s.name} className="text-[9px] text-white/35">{s.name} · {s.count}</span>)}</div></section></div>
+    <section className={`${panel} overflow-hidden`}><div className="flex flex-wrap items-center gap-2 border-b border-white/[.06] p-3"><div className="relative min-w-48 flex-1"><Search className="absolute left-2.5 top-2.5 h-3 w-3 text-white/25" /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search focus history" className="h-8 w-full rounded-lg border border-white/[.08] bg-black/20 pl-8 pr-3 text-[10px] outline-none" /></div><select value={source} onChange={e => setSource(e.target.value)} className="h-8 rounded-lg border border-white/[.08] bg-[#0c1220] px-3 text-[10px] text-white/55"><option value="all">All sources</option>{sources.map(s => <option key={s.name}>{s.name}</option>)}</select><button onClick={refresh} className="rounded-lg p-2 text-white/35"><RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} /></button></div><div className="max-h-72 overflow-y-auto"><table className="w-full text-left text-[10px]"><thead className="sticky top-0 bg-[#0b101c] text-white/25"><tr><th className="px-3 py-2 font-normal">Focus</th><th className="px-3 py-2 font-normal">Source</th><th className="px-3 py-2 font-normal">When</th></tr></thead><tbody>{filtered.map(i => <tr key={i.id} onClick={() => setSelected(i)} className="cursor-pointer border-t border-white/[.04] text-white/50 hover:bg-white/[.03]"><td className="max-w-xl truncate px-3 py-2.5">{i.focus}</td><td className="px-3 py-2.5">{i.source}</td><td className="whitespace-nowrap px-3 py-2.5">{relative(i.created_at)}</td></tr>)}</tbody></table>{!filtered.length && <Empty text="No focus events match these filters." />}</div></section>
+    {selected && <div className="fixed inset-0 z-50 flex justify-end bg-black/45" onClick={() => setSelected(null)}><aside className="h-full w-full max-w-md border-l border-cyan-400/15 bg-[#09101c] p-5" onClick={e => e.stopPropagation()}><button onClick={() => setSelected(null)} className="float-right p-2 text-white/35"><X className="h-4 w-4" /></button><p className="text-[9px] uppercase tracking-widest text-cyan-300/45">Awareness event</p><p className="mt-6 text-sm leading-6 text-white/75">{selected.focus}</p><p className="mt-6 text-xs text-white/35">{selected.source} · {new Date(selected.created_at).toLocaleString()}</p></aside></div>}
+  </div>;
+}
+
+const activation = (e: WMEntry) => Number(e.activation ?? e.score ?? 0);
+function WorkingMemoryAnalysis({ sapienId, openEngram }: { sapienId: number; openEngram: () => void }) {
+  const [data, setData] = useState<WMResponse | null>(null); const [loading, setLoading] = useState(true); const [search, setSearch] = useState(''); const [source, setSource] = useState('all'); const [sort, setSort] = useState<'activation'|'recent'>('activation'); const [selected, setSelected] = useState<WMEntry | null>(null);
+  const refresh = useCallback(() => { setLoading(true); engramService.getWorkingMemory(sapienId, { limit: 100, includeContent: true, includeMetadata: true }).then(setData).finally(() => setLoading(false)); }, [sapienId]); useEffect(refresh, [refresh]);
+  const entries = data?.wm.entries ?? []; const sourceData = useMemo(() => Object.entries(entries.reduce<Record<string, number>>((a,e) => { a[e.memory_source || 'unknown']=(a[e.memory_source || 'unknown']??0)+1; return a; }, {})).map(([name,count])=>({name,count})),[entries]);
+  const histogram = useMemo(() => Array.from({length:10},(_,i)=>({range:`${i*10}–${i*10+10}`,count:entries.filter(e=>activation(e)>=i/10 && activation(e)<=(i+1)/10).length})),[entries]);
+  const filtered = useMemo(() => entries.filter(e => (source==='all'||e.memory_source===source) && [e.content,e.id,e.memory_type].some(v=>String(v??'').toLowerCase().includes(search.toLowerCase()))).sort((a,b)=>sort==='activation'?activation(b)-activation(a):new Date(b.last_used_at??b.created_at??0).getTime()-new Date(a.last_used_at??a.created_at??0).getTime()),[entries,search,source,sort]);
+  const avg = entries.length ? entries.reduce((n,e)=>n+activation(e),0)/entries.length : 0;
+  return <div className="space-y-3"><div className="grid grid-cols-2 gap-2 xl:grid-cols-6"><Metric label="Entries" value={entries.length} /><Metric label="Capacity" value={data?.capacity?.global ?? '—'} /><Metric label="Avg activation" value={`${Math.round(avg*100)}%`} color="#67e8f9" /><Metric label="Focus" value={entries.filter(e=>e.is_focus||e.id===data?.wm.focus_id).length} color="#86efac" /><Metric label="Pending" value={entries.filter(e=>e.pending).length} color="#fcd34d" /><Metric label="Embedded" value={entries.filter(e=>e.has_embedding).length} color="#7dd3fc" /></div>
+    <div className="grid gap-3 xl:grid-cols-2"><section className={`${panel} p-4`}><h3 className="text-xs text-white/60">Activation distribution</h3><ResponsiveContainer width="100%" height={185}><BarChart data={histogram}><CartesianGrid stroke="rgba(255,255,255,.05)" vertical={false}/><XAxis dataKey="range" tick={{fill:'rgba(255,255,255,.25)',fontSize:8}} axisLine={false} tickLine={false}/><YAxis tick={{fill:'rgba(255,255,255,.25)',fontSize:9}} axisLine={false}/><Tooltip contentStyle={tooltipStyle}/><Bar dataKey="count" fill="#8b5cf6" radius={[3,3,0,0]}/></BarChart></ResponsiveContainer></section><section className={`${panel} p-4`}><h3 className="text-xs text-white/60">Entries by source</h3><ResponsiveContainer width="100%" height={185}><BarChart data={sourceData} layout="vertical"><XAxis type="number" tick={{fill:'rgba(255,255,255,.25)',fontSize:9}} axisLine={false}/><YAxis type="category" dataKey="name" width={100} tick={{fill:'rgba(255,255,255,.35)',fontSize:9}} axisLine={false}/><Tooltip contentStyle={tooltipStyle}/><Bar dataKey="count" fill="#22d3ee" radius={4}/></BarChart></ResponsiveContainer></section></div>
+    <section className={`${panel} overflow-hidden`}><div className="flex flex-wrap gap-2 border-b border-white/[.06] p-3"><div className="relative min-w-48 flex-1"><Search className="absolute left-2.5 top-2.5 h-3 w-3 text-white/25"/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search entries, IDs and types" className="h-8 w-full rounded-lg border border-white/[.08] bg-black/20 pl-8 pr-3 text-[10px] outline-none"/></div><select value={source} onChange={e=>setSource(e.target.value)} className="h-8 rounded-lg border border-white/[.08] bg-[#0c1220] px-3 text-[10px] text-white/55"><option value="all">All sources</option>{sourceData.map(s=><option key={s.name}>{s.name}</option>)}</select><select value={sort} onChange={e=>setSort(e.target.value as typeof sort)} className="h-8 rounded-lg border border-white/[.08] bg-[#0c1220] px-3 text-[10px] text-white/55"><option value="activation">Highest activation</option><option value="recent">Most recently used</option></select><button onClick={refresh} className="p-2 text-white/35"><RefreshCw className={`h-3.5 w-3.5 ${loading?'animate-spin':''}`}/></button></div><div className="max-h-[360px] overflow-auto"><table className="w-full min-w-[760px] text-left text-[10px]"><thead className="sticky top-0 bg-[#0b101c] text-white/25"><tr><th className="px-3 py-2 font-normal">Entry</th><th className="px-3 py-2 font-normal">Source</th><th className="px-3 py-2 font-normal">Type</th><th className="px-3 py-2 font-normal">Activation</th><th className="px-3 py-2 font-normal">Last used</th><th className="px-3 py-2 font-normal">Status</th></tr></thead><tbody>{filtered.map(e=><tr key={e.id} onClick={()=>setSelected(e)} className="cursor-pointer border-t border-white/[.04] text-white/48 hover:bg-violet-400/[.04]"><td className="max-w-sm truncate px-3 py-2.5">{e.content||e.id}</td><td className="px-3 py-2.5">{e.memory_source}</td><td className="px-3 py-2.5">{e.memory_type||'—'}</td><td className="px-3 py-2.5 font-mono text-violet-200/75">{Math.round(activation(e)*100)}%</td><td className="px-3 py-2.5">{relative(e.last_used_at??e.created_at)}</td><td className="px-3 py-2.5">{e.pending?'Pending':e.has_embedding?'Embedded':'Active'}</td></tr>)}</tbody></table>{!filtered.length&&<Empty text="No working-memory entries match these filters."/>}</div></section>
+    {selected&&<div className="fixed inset-0 z-50 flex justify-end bg-black/45" onClick={()=>setSelected(null)}><aside className="h-full w-full max-w-lg overflow-y-auto border-l border-violet-400/15 bg-[#09101c] p-5" onClick={e=>e.stopPropagation()}><button onClick={()=>setSelected(null)} className="float-right p-2 text-white/35"><X className="h-4 w-4"/></button><p className="text-[9px] uppercase tracking-widest text-violet-300/50">Working-memory entry</p><p className="mt-6 whitespace-pre-wrap text-sm leading-6 text-white/70">{selected.content||'Content unavailable'}</p><div className="mt-6 grid grid-cols-2 gap-3"><Metric label="Activation" value={`${Math.round(activation(selected)*100)}%`}/><Metric label="Frequency" value={selected.frequency??'—'}/><Metric label="Source" value={selected.memory_source}/><Metric label="Type" value={selected.memory_type??'—'}/></div><pre className="mt-4 overflow-auto rounded-xl border border-white/[.07] bg-black/20 p-3 text-[9px] text-white/35">{JSON.stringify(selected.metadata??selected.provenance??{},null,2)}</pre>{selected.memory_source==='memory_unit'&&<button onClick={openEngram} className="mt-4 w-full rounded-lg border border-indigo-400/25 bg-indigo-400/10 px-3 py-2 text-xs text-indigo-200">Open in Engram</button>}</aside></div>}
+  </div>;
+}
+
+function Overview({ go }: { go: (s: Section) => void }) { return <div><div className="mb-4 grid gap-3 lg:grid-cols-[1.5fr_1fr]"><section className={`${panel} p-5`}><p className="text-[9px] uppercase tracking-[.2em] text-indigo-300/45">Cognitive observatory</p><h2 className="mt-2 text-xl font-medium text-white/85">See how this Sapiens is thinking, remembering, and acting.</h2><p className="mt-2 max-w-2xl text-xs leading-5 text-white/35">Use focused analytical views and move between short-term cognition and durable memory without leaving Analyse.</p></section><section className={`${panel} grid grid-cols-2 gap-2 p-3`}><Metric label="Modules" value="8"/><Metric label="Mode" value="Live" color="#86efac"/></section></div><div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">{NAV.filter(n=>!['overview','usage'].includes(n.id)).map(n=>{const Icon=n.icon;return <button key={n.id} onClick={()=>go(n.id)} className={`${panel} group flex items-center gap-3 p-4 text-left transition hover:-translate-y-0.5 hover:bg-white/[.04]`}><span className="grid h-10 w-10 place-items-center rounded-xl" style={{background:`${n.color}12`,color:n.color}}><Icon className="h-4 w-4"/></span><span className="flex-1"><span className="block text-xs text-white/70">{n.label}</span><span className="mt-1 block text-[9px] text-white/25">Open analytical workspace</span></span><ChevronRight className="h-3.5 w-3.5 text-white/15"/></button>})}</div></div>; }
 
 export function AnalysePage() {
-  const navigate = useNavigate();
-  const currentSapiens = useSapiensStore(s => s.currentSapiens);
-  const setShowMemoryTimeline = useSapiensStore(s => s.setShowMemoryTimeline);
-  const showMemoryTimeline = useSapiensStore(s => s.showMemoryTimeline);
-  const [active, setActive] = useState<ModuleId>('awareness');
-  const [query, setQuery] = useState('');
-  const [sort, setSort] = useState<'recommended' | 'alphabetical'>('recommended');
-  const [usageOpen, setUsageOpen] = useState(false);
-  useOrchestratorStatus();
-
-  useEffect(() => {
-    if (!currentSapiens) navigate('/');
-  }, [currentSapiens, navigate]);
-
-  const visibleModules = useMemo(() => {
-    const filtered = modules.filter(item => `${item.label} ${item.description}`.toLowerCase().includes(query.toLowerCase()));
-    return sort === 'alphabetical' ? [...filtered].sort((a, b) => a.label.localeCompare(b.label)) : filtered;
-  }, [query, sort]);
-
-  if (!currentSapiens) return null;
-
-  const openModule = (id: typeof modules[number]['id'], mode: typeof modules[number]['mode']) => {
-    if (id === 'engine-bus') return navigate('/engine-bus');
-    if (id === 'engram') return navigate('/engram');
-    if (id === 'usage') return setUsageOpen(true);
-    if (id === 'timeline') setShowMemoryTimeline(true);
-    setActive(id as ModuleId);
-  };
-
-  return (
-    <main className="min-h-screen text-white" style={{ background: '#070b15' }}>
-      <div className="fixed inset-0 pointer-events-none" style={{ background: 'radial-gradient(circle at 20% 0%, rgba(124,58,237,.17), transparent 35%), radial-gradient(circle at 85% 15%, rgba(6,182,212,.1), transparent 28%)' }} />
-      <div className="relative mx-auto flex min-h-screen max-w-[1800px] flex-col p-4 lg:p-6">
-        <header className="mb-5 flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <button onClick={() => navigate('/workspace')} aria-label="Back to workspace" className="grid h-10 w-10 place-items-center rounded-xl border border-white/10 bg-white/[.04] text-white/55 hover:bg-white/[.08] hover:text-white">
-              <ArrowLeft className="h-4 w-4" />
-            </button>
-            <div>
-              <p className="mb-1 text-[10px] uppercase tracking-[.28em] text-cyan-300/50">{currentSapiens.name} · Cognitive intelligence</p>
-              <h1 className="text-2xl font-semibold tracking-tight">Analyse platform</h1>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 rounded-xl border border-white/[.08] bg-black/20 px-3 py-2 text-xs text-white/40">
-            <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,.8)]" /> Live cognitive data
-          </div>
-        </header>
-
-        <section className="mb-4 rounded-2xl border border-white/[.08] bg-white/[.025] p-4 backdrop-blur-xl">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h2 className="text-sm font-medium text-white/85">Choose what to analyse</h2>
-              <p className="mt-1 text-xs text-white/35">Switch between cognitive layers without crowding the main workspace.</p>
-            </div>
-            <div className="flex flex-1 items-center justify-end gap-2 sm:flex-none">
-              <label className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-white/10 bg-black/20 px-3 py-2 sm:w-56">
-                <Search className="h-3.5 w-3.5 text-white/30" />
-                <input value={query} onChange={e => setQuery(e.target.value)} className="min-w-0 flex-1 bg-transparent text-xs text-white outline-none placeholder:text-white/25" placeholder="Find an analysis view" />
-              </label>
-              <label className="flex items-center gap-2 rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-xs text-white/50">
-                <ListFilter className="h-3.5 w-3.5" />
-                <select value={sort} onChange={e => setSort(e.target.value as typeof sort)} className="bg-transparent outline-none">
-                  <option className="bg-slate-950" value="recommended">Recommended</option>
-                  <option className="bg-slate-950" value="alphabetical">A–Z</option>
-                </select>
-              </label>
-            </div>
-          </div>
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-            {visibleModules.map(item => {
-              const Icon = item.icon;
-              const selected = item.mode === 'panel' && active === item.id;
-              return (
-                <button key={item.id} onClick={() => openModule(item.id, item.mode)} className="group min-h-24 rounded-xl border p-3 text-left transition-all hover:-translate-y-0.5" style={{ background: selected ? `${item.tone}12` : 'rgba(255,255,255,.025)', borderColor: selected ? `${item.tone}55` : 'rgba(255,255,255,.07)' }}>
-                  <div className="mb-3 flex items-center justify-between">
-                    <span className="grid h-8 w-8 place-items-center rounded-lg" style={{ background: `${item.tone}14`, color: item.tone }}><Icon className="h-4 w-4" /></span>
-                    {selected && <span className="rounded-full px-2 py-0.5 text-[9px] uppercase tracking-wider" style={{ background: `${item.tone}18`, color: item.tone }}>Viewing</span>}
-                  </div>
-                  <div className="text-xs font-medium text-white/80">{item.label}</div>
-                  <div className="mt-1 text-[10px] leading-relaxed text-white/30">{item.description}</div>
-                </button>
-              );
-            })}
-          </div>
-        </section>
-
-        <section className="flex min-h-[600px] flex-1 flex-col overflow-hidden rounded-2xl border border-white/[.08] bg-black/20 p-2">
-          <div className="flex items-center justify-between border-b border-white/[.06] px-3 py-2">
-            <div className="flex items-center gap-2 text-xs text-white/45"><Filter className="h-3.5 w-3.5" /> Focused view · {modules.find(m => m.id === active)?.label}</div>
-            <span className="text-[10px] text-white/25">Live · newest first</span>
-          </div>
-          <div className="min-h-0 flex-1 p-2">
-            {active === 'awareness' && <AwarenessPanel />}
-            {active === 'working-memory' && <MemoryPanel />}
-            {(active === 'goals' || active === 'plans') && <GoalsPanel sapienId={parseInt(currentSapiens.id, 10)} />}
-            {active === 'timeline' && <div className="grid h-full place-items-center text-center"><div><Clock3 className="mx-auto mb-3 h-8 w-8 text-violet-300/60" /><p className="text-sm text-white/60">Timeline opened as a detailed overlay.</p><button onClick={() => setShowMemoryTimeline(true)} className="mt-3 rounded-lg border border-violet-400/25 bg-violet-400/10 px-3 py-2 text-xs text-violet-200">Open timeline again</button></div></div>}
-            {active === 'debug' && <DebugPanel onClose={() => setActive('awareness')} />}
-          </div>
-        </section>
-      </div>
-      {showMemoryTimeline && <MemoryTimeline />}
-      <LlmUsageDialog open={usageOpen} onOpenChange={setUsageOpen} sapienId={currentSapiens.id} sapienName={currentSapiens.name} />
-    </main>
-  );
+  const navigate=useNavigate(); const { section: rawSection }=useParams(); const currentSapiens=useSapiensStore(s=>s.currentSapiens); const setTimeline=useSapiensStore(s=>s.setShowMemoryTimeline); const showTimeline=useSapiensStore(s=>s.showMemoryTimeline); const [mobileNav,setMobileNav]=useState(false); const [usageOpen,setUsageOpen]=useState(false); useOrchestratorStatus();
+  const section=(NAV.some(n=>n.id===rawSection)?rawSection:'overview') as Section; const item=NAV.find(n=>n.id===section)!;
+  useEffect(()=>{if(!currentSapiens)navigate('/');},[currentSapiens,navigate]); useEffect(()=>{if(section==='usage')setUsageOpen(true);},[section]); if(!currentSapiens)return null;
+  const go=(id:Section)=>{setMobileNav(false);if(id==='usage'){setUsageOpen(true);return;}navigate(id==='overview'?'/admin/analyse':`/admin/analyse/${id}`);}; const ActiveIcon=item.icon;
+  return <div className="h-[100dvh] overflow-hidden bg-[#060a14] text-white"><div className="fixed inset-0 pointer-events-none" style={{background:'radial-gradient(circle at 10% 0%,rgba(99,102,241,.16),transparent 34%),radial-gradient(circle at 90% 10%,rgba(6,182,212,.08),transparent 28%)'}}/><div className="relative flex h-full"><aside className={`${mobileNav?'translate-x-0':'-translate-x-full'} fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-white/[.07] bg-[#080d18]/95 p-3 backdrop-blur-2xl transition-transform lg:static lg:w-56 lg:translate-x-0`}><div className="flex items-center gap-3 px-2 py-3"><span className="grid h-9 w-9 place-items-center rounded-xl bg-indigo-500/15 ring-1 ring-indigo-400/25"><Brain className="h-4 w-4 text-indigo-200"/></span><div className="min-w-0"><p className="text-xs text-white/75">Analyse</p><p className="truncate text-[9px] text-white/25">{currentSapiens.name}</p></div><button onClick={()=>setMobileNav(false)} className="ml-auto p-2 text-white/30 lg:hidden"><X className="h-4 w-4"/></button></div><nav className="mt-3 flex-1 space-y-1 overflow-y-auto">{NAV.map(n=>{const Icon=n.icon,active=n.id===section;return <button key={n.id} onClick={()=>go(n.id)} className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-[11px]" style={active?{background:`${n.color}12`,color:n.color,border:`1px solid ${n.color}25`}:{color:'rgba(255,255,255,.35)',border:'1px solid transparent'}}><Icon className="h-3.5 w-3.5"/><span className="flex-1">{n.label}</span></button>})}</nav><button onClick={()=>navigate('/workspace')} className="flex items-center gap-2 rounded-lg border border-white/[.07] px-3 py-2.5 text-[10px] text-white/40"><ArrowLeft className="h-3.5 w-3.5"/>Back to workspace</button></aside>{mobileNav&&<button className="fixed inset-0 z-30 bg-black/55 lg:hidden" onClick={()=>setMobileNav(false)}/>}<main className="flex min-w-0 flex-1 flex-col"><header className="flex h-16 flex-shrink-0 items-center gap-3 border-b border-white/[.07] bg-[#070c16]/80 px-4"><button onClick={()=>setMobileNav(true)} className="p-2 text-white/40 lg:hidden"><Menu className="h-4 w-4"/></button><div className="grid h-8 w-8 place-items-center rounded-lg" style={{background:`${item.color}12`,color:item.color}}><ActiveIcon className="h-4 w-4"/></div><div><p className="text-[9px] text-white/25">Analyse / {item.label}</p><h1 className="text-sm text-white/80">{item.label}</h1></div><button onClick={()=>navigate('/workspace')} className="ml-auto rounded-lg border border-white/[.07] px-3 py-2 text-[10px] text-white/40">Workspace</button></header><div className={`min-h-0 flex-1 ${section==='engram'||section==='engine-bus'?'overflow-hidden':'overflow-y-auto p-3 lg:p-4'}`}>{section==='overview'&&<Overview go={go}/>} {section==='awareness'&&<AwarenessAnalysis sapienId={currentSapiens.id}/>} {section==='working-memory'&&<WorkingMemoryAnalysis sapienId={Number(currentSapiens.id)} openEngram={()=>go('engram')}/>} {section==='goals'&&<div className="h-[calc(100dvh-6rem)] min-h-[620px]"><GoalsPanel sapienId={Number(currentSapiens.id)}/></div>} {section==='engram'&&<EngramPage embedded/>} {section==='engine-bus'&&<EngineBusPage embedded/>} {section==='timeline'&&<div className={`${panel} grid min-h-[520px] place-items-center text-center`}><div><Clock3 className="mx-auto h-8 w-8 text-violet-300/60"/><h2 className="mt-3 text-sm text-white/65">Unified cognitive timeline</h2><p className="mt-1 text-xs text-white/30">Inspect conversation and memory events chronologically.</p><button onClick={()=>setTimeline(true)} className="mt-4 rounded-lg border border-violet-400/25 bg-violet-400/10 px-4 py-2 text-xs text-violet-200">Open detailed timeline</button></div></div>} {section==='debug'&&<div className={`${panel} overflow-hidden p-2`}><DebugPanel onClose={()=>go('overview')}/></div>}</div></main></div>{showTimeline&&<MemoryTimeline/>}<LlmUsageDialog open={usageOpen} onOpenChange={open=>{setUsageOpen(open);if(!open&&section==='usage')go('overview');}} sapienId={currentSapiens.id} sapienName={currentSapiens.name}/></div>;
 }

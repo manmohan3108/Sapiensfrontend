@@ -56,7 +56,7 @@ function Meta({ label, value, mono = false }: { label: string; value: React.Reac
   return <div><dt className="text-[10px] uppercase tracking-wider text-white/28">{label}</dt><dd className={`mt-1 break-words text-xs text-white/68 ${mono ? 'font-mono' : ''}`}>{value}</dd></div>;
 }
 
-export function EngineBusPage() {
+export function EngineBusPage({ embedded = false }: { embedded?: boolean } = {}) {
   const navigate = useNavigate();
   const currentSapiens = useSapiensStore(state => state.currentSapiens);
   const [params, setParams] = useSearchParams();
@@ -131,11 +131,11 @@ export function EngineBusPage() {
   };
 
   if (!currentSapiens) return null;
-  return <div className="min-h-screen text-white" style={{ background: '#060a15' }}>
+  return <div className={embedded ? "h-full min-h-0 overflow-y-auto text-white" : "min-h-screen text-white"} style={{ background: '#060a15' }}>
     <div className="fixed inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 10% 0%, rgba(52,211,153,.12), transparent 34%), radial-gradient(circle at 90% 70%, rgba(6,182,212,.08), transparent 38%), radial-gradient(rgba(148,163,184,.13) 1px, transparent 1px)', backgroundSize: 'auto, auto, 32px 32px' }} />
-    <header className="sticky top-0 z-30 border-b border-white/[.07] bg-[#060a15]/90 backdrop-blur-xl"><div className="h-[2px]" style={{ background: `linear-gradient(90deg, transparent, ${accent}, transparent)` }} /><div className="mx-auto flex max-w-[1500px] items-center justify-between gap-4 px-4 py-3 sm:px-6"><div className="flex min-w-0 items-center gap-3"><div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-400/10 ring-1 ring-emerald-400/25"><Activity className="h-4 w-4 text-emerald-300" /></div><div><h1 className="text-sm font-semibold">Engine Bus monitor</h1><p className="text-[11px] text-white/35">{currentSapiens.name} · cognitive signal flow</p></div></div><button onClick={() => navigate('/workspace')} className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-white/45 hover:bg-white/5 hover:text-white/75"><ArrowLeft className="h-3.5 w-3.5" />Workspace</button></div></header>
+    {!embedded && <header className="sticky top-0 z-30 border-b border-white/[.07] bg-[#060a15]/90 backdrop-blur-xl"><div className="h-[2px]" style={{ background: `linear-gradient(90deg, transparent, ${accent}, transparent)` }} /><div className="mx-auto flex max-w-[1500px] items-center justify-between gap-4 px-4 py-3 sm:px-6"><div className="flex min-w-0 items-center gap-3"><div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-400/10 ring-1 ring-emerald-400/25"><Activity className="h-4 w-4 text-emerald-300" /></div><div><h1 className="text-sm font-semibold">Engine Bus monitor</h1><p className="text-[11px] text-white/35">{currentSapiens.name} · cognitive signal flow</p></div></div><button onClick={() => navigate('/workspace')} className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs text-white/45 hover:bg-white/5 hover:text-white/75"><ArrowLeft className="h-3.5 w-3.5" />Workspace</button></div></header>}
 
-    <main className="relative mx-auto max-w-[1500px] px-4 py-5 sm:px-6">
+    <main className={`relative mx-auto max-w-[1500px] ${embedded ? 'p-3' : 'px-4 py-5 sm:px-6'}`}>
       <section aria-label="Signal filters" className="rounded-2xl border border-white/[.08] bg-[#0a111f]/90 p-4">
         <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="flex items-center gap-2 text-xs font-medium text-white/75"><Filter className="h-3.5 w-3.5 text-emerald-300" />Filter activity</h2><p className="mt-1 text-[10px] text-white/30">Exact-match fields are sent to the server. The range start is applied to loaded results.</p></div><button onClick={() => void load(false)} disabled={loading} className="flex h-8 items-center gap-2 rounded-lg border border-white/10 px-3 text-xs text-white/55 hover:bg-white/5 disabled:opacity-50"><RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />Refresh</button></div>
         <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-6">

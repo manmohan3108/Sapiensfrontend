@@ -27,7 +27,7 @@ const TAB_ACCENT: Record<Tab, string> = {
   graph:     '#f97316',
 };
 
-export function EngramPage() {
+export function EngramPage({ embedded = false }: { embedded?: boolean } = {}) {
   const navigate           = useNavigate();
   const currentSapiens     = useSapiensStore(s => s.currentSapiens);
   const [tab, setTab]      = useState<Tab>('dashboard');
@@ -48,10 +48,10 @@ export function EngramPage() {
   const accent   = TAB_ACCENT[tab];
 
   return (
-    <div className="min-h-[100dvh] lg:h-screen flex flex-col lg:overflow-hidden" style={{ background: '#060a15' }}>
+    <div className={embedded ? "h-full min-h-0 flex flex-col overflow-hidden" : "min-h-[100dvh] lg:h-screen flex flex-col lg:overflow-hidden"} style={{ background: '#060a15' }}>
 
       {/* ── Ambient canvas ── */}
-      <div className="fixed inset-0 pointer-events-none select-none z-0">
+      {!embedded && <div className="fixed inset-0 pointer-events-none select-none z-0">
         <div className="absolute -top-60 -left-40 w-[700px] h-[700px] rounded-full"
           style={{ background: 'radial-gradient(circle, rgba(129,140,248,0.15) 0%, transparent 60%)' }} />
         <div className="absolute -bottom-60 -right-40 w-[600px] h-[600px] rounded-full"
@@ -62,10 +62,10 @@ export function EngramPage() {
             backgroundSize: '32px 32px',
             opacity: 0.15,
           }} />
-      </div>
+      </div>}
 
       {/* ── Header ── */}
-      <div className="relative z-30 flex-shrink-0">
+      {!embedded && <div className="relative z-30 flex-shrink-0">
         <div style={{ height: '2px', background: `linear-gradient(90deg, transparent, ${accent}, transparent)`, transition: 'background 0.3s' }} />
         <div
           className="min-h-13 px-3 py-2 flex flex-wrap items-center gap-2 sm:px-4 lg:flex-nowrap lg:gap-4"
@@ -129,7 +129,11 @@ export function EngramPage() {
             </button>
           </div>
         </div>
-      </div>
+      </div>}
+
+      {embedded && <nav className="flex flex-shrink-0 items-center gap-1 overflow-x-auto border-b border-white/[.07] bg-[#080d19] px-3 py-2">
+        {TABS.map(t => { const ac = TAB_ACCENT[t.id]; const active = tab === t.id; return <button key={t.id} onClick={() => setTab(t.id)} className="flex flex-shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px]" style={active ? { background: `${ac}18`, border: `1px solid ${ac}40`, color: ac } : { border: '1px solid transparent', color: 'rgba(255,255,255,.35)' }}>{t.icon}{t.label}</button>; })}
+      </nav>}
 
       {/* ── Body ── */}
       <div className="relative z-10 flex-1 min-h-0 flex flex-col gap-3 p-2 sm:p-3 lg:flex-row lg:overflow-hidden">

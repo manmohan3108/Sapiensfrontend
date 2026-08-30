@@ -1,9 +1,7 @@
-import { createBrowserRouter } from 'react-router';
+import { createBrowserRouter, Navigate } from 'react-router';
 import { LandingPage } from './pages/LandingPage';
 import { WorkspacePage } from './pages/WorkspacePage';
-import { EngramPage } from './pages/EngramPage';
 import { ConnectionsPage } from './pages/ConnectionsPage';
-import { EngineBusPage } from './pages/EngineBusPage';
 import { AnalysePage } from './pages/AnalysePage';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
@@ -20,7 +18,7 @@ export const router = createBrowserRouter([
   },
   {
     path: '/engram',
-    Component: EngramPage,
+    Component: () => <Navigate to="/admin/analyse/engram" replace />,
     ErrorBoundary,
   },
   {
@@ -30,11 +28,16 @@ export const router = createBrowserRouter([
   },
   {
     path: '/engine-bus',
-    Component: EngineBusPage,
+    Component: () => <Navigate to="/admin/analyse/engine-bus" replace />,
     ErrorBoundary,
   },
   {
     path: '/admin/analyse',
+    Component: AnalysePage,
+    ErrorBoundary,
+  },
+  {
+    path: '/admin/analyse/:section',
     Component: AnalysePage,
     ErrorBoundary,
   },
