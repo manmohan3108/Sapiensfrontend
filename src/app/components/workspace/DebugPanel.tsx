@@ -113,7 +113,7 @@ function EmptyHint({ text }: { text: string }) {
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
-export function DebugPanel() {
+export function DebugPanel({ onClose }: { onClose?: () => void } = {}) {
   const [tab, setTab] = useState<DebugTab>('flow');
   const lastDebugInfo = useSapiensStore((s) => s.lastDebugInfo);
   const setShowDebugPanel = useSapiensStore((s) => s.setShowDebugPanel);
@@ -214,7 +214,10 @@ export function DebugPanel() {
         {!totalMs && <div className="flex-1" />}
 
         <button
-          onClick={() => setShowDebugPanel(false)}
+          onClick={() => {
+            setShowDebugPanel(false);
+            onClose?.();
+          }}
           className="w-6 h-6 flex items-center justify-center rounded-lg transition-all flex-shrink-0"
           style={{ color: 'rgba(255,255,255,0.2)' }}
           onMouseEnter={e => {

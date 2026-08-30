@@ -1,22 +1,16 @@
-import { useState } from 'react';
-import { Brain, Home, Save, ChevronRight, Cpu, Wifi, Bug, Clock, DatabaseZap, Hourglass, PlugZap, BarChart3, Activity } from 'lucide-react';
+import { Brain, Home, Save, ChevronRight, Cpu, Wifi, Hourglass, PlugZap, ScanSearch } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { useSapiens } from '../../hooks/useSapiens';
 import { useSapiensStore } from '../../core/state/sapiensStore';
 import { ThemeToggle } from '../ThemeToggle';
 import { RunEngineButton } from './RunEngineButton';
-import { LlmUsageDialog } from './LlmUsageDialog';
 
 export function HeaderBar() {
-  const [showLlmUsage, setShowLlmUsage] = useState(false);
   const { currentSapiens } = useSapiensStore();
   const { saveSapiens, returnToHome } = useSapiens();
   const navigate = useNavigate();
   const status = useSapiensStore((s) => s.status);
   const isOverloaded = useSapiensStore((s) => s.isOverloaded);
-  const showDebugPanel = useSapiensStore((s) => s.showDebugPanel);
-  const toggleDebugPanel = useSapiensStore((s) => s.toggleDebugPanel);
-  const setShowMemoryTimeline = useSapiensStore((s) => s.setShowMemoryTimeline);
 
   if (!currentSapiens) return null;
 
@@ -154,17 +148,6 @@ export function HeaderBar() {
           <div className="w-px h-5 bg-white/10" />
 
           <button
-            onClick={() => setShowLlmUsage(true)}
-            title="View AI usage and global limits"
-            aria-haspopup="dialog"
-            className="flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs transition-all duration-150"
-            style={{ background: 'rgba(34,211,238,0.08)', border: '1px solid rgba(34,211,238,0.2)', color: 'rgba(103,232,249,0.75)' }}
-          >
-            <BarChart3 className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">AI usage</span>
-          </button>
-
-          <button
             onClick={() => navigate('/connections')}
             title="Manage external account connections"
             className="flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs transition-all duration-150"
@@ -175,88 +158,13 @@ export function HeaderBar() {
           </button>
 
           <button
-            onClick={() => navigate('/engine-bus')}
-            title="Monitor Engine Bus signals and delivery flows"
-            className="flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs transition-all duration-150"
-            style={{ background: 'rgba(52,211,153,0.08)', border: '1px solid rgba(52,211,153,0.2)', color: 'rgba(110,231,183,0.78)' }}
-          >
-            <Activity className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Engine Bus</span>
-          </button>
-
-          {/* Engram Explorer */}
-          <button
-            onClick={() => navigate('/engram')}
-            title="Open Engram Memory Explorer"
+            onClick={() => navigate('/admin/analyse')}
+            title="Open the analysis platform"
             className="flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs transition-all duration-150"
-            style={{
-              background: 'rgba(129,140,248,0.1)',
-              border: '1px solid rgba(129,140,248,0.25)',
-              color: 'rgba(165,180,252,0.8)',
-            }}
-            onMouseEnter={e => {
-              (e.currentTarget as HTMLElement).style.background = 'rgba(129,140,248,0.2)';
-              (e.currentTarget as HTMLElement).style.color = '#a5b4fc';
-            }}
-            onMouseLeave={e => {
-              (e.currentTarget as HTMLElement).style.background = 'rgba(129,140,248,0.1)';
-              (e.currentTarget as HTMLElement).style.color = 'rgba(165,180,252,0.8)';
-            }}
+            style={{ background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(139,92,246,0.3)', color: '#c4b5fd' }}
           >
-            <DatabaseZap className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Memory</span>
-          </button>
-
-          {/* Memory Timeline toggle */}
-          <button
-            onClick={() => setShowMemoryTimeline(true)}
-            title="Open Memory Timeline"
-            className="flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs transition-all duration-150"
-            style={{
-              background: 'rgba(124,58,237,0.08)',
-              border: '1px solid rgba(124,58,237,0.2)',
-              color: 'rgba(196,181,253,0.7)',
-            }}
-            onMouseEnter={e => {
-              (e.currentTarget as HTMLElement).style.background = 'rgba(124,58,237,0.18)';
-              (e.currentTarget as HTMLElement).style.color = '#c4b5fd';
-            }}
-            onMouseLeave={e => {
-              (e.currentTarget as HTMLElement).style.background = 'rgba(124,58,237,0.08)';
-              (e.currentTarget as HTMLElement).style.color = 'rgba(196,181,253,0.7)';
-            }}
-          >
-            <Clock className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Timeline</span>
-          </button>
-
-          {/* Debug Panel toggle */}
-          <button
-            onClick={toggleDebugPanel}
-            title="Toggle Debug Panel"
-            className="flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs transition-all duration-150"
-            style={
-              showDebugPanel
-                ? { background: 'rgba(6,182,212,0.15)', border: '1px solid rgba(6,182,212,0.35)', color: '#67e8f9' }
-                : { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.4)' }
-            }
-            onMouseEnter={e => {
-              if (!showDebugPanel) {
-                (e.currentTarget as HTMLElement).style.background = 'rgba(6,182,212,0.1)';
-                (e.currentTarget as HTMLElement).style.borderColor = 'rgba(6,182,212,0.25)';
-                (e.currentTarget as HTMLElement).style.color = '#a5f3fc';
-              }
-            }}
-            onMouseLeave={e => {
-              if (!showDebugPanel) {
-                (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)';
-                (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)';
-                (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.4)';
-              }
-            }}
-          >
-            <Bug className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Debug</span>
+            <ScanSearch className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Analyse</span>
           </button>
 
           <div className="w-px h-5 bg-white/10" />
@@ -296,12 +204,6 @@ export function HeaderBar() {
           </button>
         </div>
       </div>
-      <LlmUsageDialog
-        open={showLlmUsage}
-        onOpenChange={setShowLlmUsage}
-        sapienId={currentSapiens.id}
-        sapienName={currentSapiens.name}
-      />
     </header>
   );
 }

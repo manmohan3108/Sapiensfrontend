@@ -6,8 +6,6 @@ import { AwarenessPanel } from '../components/workspace/AwarenessPanel';
 import { ChatWindow } from '../components/workspace/ChatWindow';
 import { MemoryPanel } from '../components/workspace/MemoryPanel';
 import { GoalsPanel } from '../components/workspace/GoalsPanel';
-import { DebugPanel } from '../components/workspace/DebugPanel';
-import { MemoryTimeline } from '../components/workspace/MemoryTimeline';
 import { useSapiensStore } from '../core/state/sapiensStore';
 import { useOrchestratorStatus } from '../hooks/useOrchestratorStatus';
 
@@ -62,8 +60,6 @@ export function WorkspacePage() {
   const [rightTab, setRightTab] = useState<RightTab>('awareness');
 
   const currentSapiens = useSapiensStore((state) => state.currentSapiens);
-  const showDebugPanel = useSapiensStore((s) => s.showDebugPanel);
-  const showMemoryTimeline = useSapiensStore((s) => s.showMemoryTimeline);
 
   // Poll /api/orchestrator/status every 10 s while this tab is visible
   useOrchestratorStatus();
@@ -121,11 +117,6 @@ export function WorkspacePage() {
         </div>
       </div>
 
-      {/* ── Debug Panel strip ── */}
-      {showDebugPanel && <DebugPanel />}
-
-      {/* ── Memory Timeline modal ── */}
-      {showMemoryTimeline && <MemoryTimeline />}
     </div>
   );
 }

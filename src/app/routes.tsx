@@ -4,6 +4,7 @@ import { WorkspacePage } from './pages/WorkspacePage';
 import { EngramPage } from './pages/EngramPage';
 import { ConnectionsPage } from './pages/ConnectionsPage';
 import { EngineBusPage } from './pages/EngineBusPage';
+import { AnalysePage } from './pages/AnalysePage';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
 export const router = createBrowserRouter([
@@ -30,6 +31,11 @@ export const router = createBrowserRouter([
   {
     path: '/engine-bus',
     Component: EngineBusPage,
+    ErrorBoundary,
+  },
+  {
+    path: '/admin/analyse',
+    Component: AnalysePage,
     ErrorBoundary,
   },
   {
