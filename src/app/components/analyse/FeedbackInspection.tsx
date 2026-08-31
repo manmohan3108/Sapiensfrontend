@@ -16,14 +16,43 @@ function timestamp(value: string | null | undefined) {
   return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
 }
 
+function MetadataValue({ value }: { value: unknown }) {
+  // React text children escape stored evidence; never render HTML or execute it.
+  const text = typeof value === 'string' ? value : JSON.stringify(value, null, 2) ?? 'Not recorded';
+  return <pre className="max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-md bg-black/20 p-2 font-mono text-[11px] leading-5 text-white/65">{text}</pre>;
+}
+
 function Reference({ label, value }: { label: string; value: FeedbackReference }) {
+  const details = value?.details;
+  const metadata = details?.available ? Object.entries(details.metadata ?? {}) : [];
+  const priority = ['server', 'tool', 'is_error', 'arguments'];
+  const orderedMetadata = [...metadata].sort(([a], [b]) => {
+    const rank = (key: string) => priority.includes(key) ? priority.indexOf(key) : priority.length;
+    return rank(a) - rank(b);
+  });
   return <div className="min-w-0 rounded-lg border border-white/[.07] bg-black/10 p-3">
-    <h4 className="text-[10px] uppercase tracking-wider text-cyan-200/60">{label} reference</h4>
+    <h4 className="text-xs font-medium text-cyan-200/80">{label}</h4>
     <dl className="mt-2 space-y-2 text-xs">
-      <div><dt className="text-white/35">ID</dt><dd className="break-all font-mono text-white/65">{value?.id || 'Not recorded'}</dd></div>
       <div><dt className="text-white/35">Source</dt><dd className="break-words text-white/65">{value?.source || 'Not recorded'}</dd></div>
       <div><dt className="text-white/35">Occurred at</dt><dd className="text-white/65">{timestamp(value?.occurred_at)}</dd></div>
     </dl>
+    {details?.available ? <>
+      <p className="mt-3 max-h-80 overflow-auto whitespace-pre-wrap break-words text-xs leading-5 text-white/75">{details.content || 'No stored event text.'}</p>
+      {details.truncated && <p className="mt-2 text-[11px] text-amber-200/75">Stored evidence is truncated; this is not the full original event.</p>}
+      {details.metadata?._truncated === true && <p className="mt-2 text-[11px] text-amber-200/75">Metadata is truncated. The preview below is only a partial stored snapshot.</p>}
+      <p className="mt-3 text-[11px] text-white/40">Observed at: {timestamp(details.observed_at)}</p>
+      <details className="mt-3" open={orderedMetadata.length > 0}>
+        <summary className="cursor-pointer text-xs text-cyan-100/65">Stored metadata ({orderedMetadata.length} fields)</summary>
+        {orderedMetadata.length ? <dl className="mt-2 space-y-2">{orderedMetadata.map(([key, entry]) => <div key={key}>
+          <dt className="mb-1 break-words font-mono text-[11px] text-white/45">{key}</dt>
+          <dd><MetadataValue value={entry} /></dd>
+        </div>)}</dl> : <p className="mt-2 text-xs text-white/40">No stored metadata available.</p>}
+      </details>
+    </> : <p className="mt-3 rounded-lg border border-white/[.07] p-3 text-xs text-white/45">Original details unavailable</p>}
+    <details className="mt-3 border-t border-white/[.07] pt-2">
+      <summary className="cursor-pointer text-[11px] text-white/40">Raw reference ID</summary>
+      <p className="mt-2 break-all font-mono text-[11px] text-white/55">{value?.id || 'Not recorded'}</p>
+    </details>
   </div>;
 }
 
@@ -58,6 +87,7 @@ export function FeedbackInspection({ sapienId }: { sapienId: string }) {
         {(data || error?.status === 503) && <span className="text-xs text-white/45">Mode: {data?.mode ?? 'off'}</span>}
       </div>
       <p className="mt-2 max-w-3xl text-xs leading-5 text-white/45">Inspect interpreted FeedbackFinding records linking experiences and activities. These are not SignalFeedback usage reports and do not indicate that learning or a behavior change occurred.</p>
+      <p className="mt-2 max-w-3xl text-xs leading-5 text-white/45">Linked events are stored, redacted evidence snapshots—not complete live tool output or a new fetch or execution of the original action. They do not prove that the interpretation is correct. Event text and metadata may be bounded by the backend.</p>
     </section>
 
     <section className={`${panel} p-4`} aria-label="Feedback filters">
@@ -91,14 +121,17 @@ export function FeedbackInspection({ sapienId }: { sapienId: string }) {
           <span className="text-xs text-white/45">Confidence: {Number.isFinite(finding.confidence) ? finding.confidence : 'Not recorded'}</span>
         </div>
         <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-6 text-white/75">{finding.meaning || 'No meaning recorded.'}</p>
+        <div className="mt-4 grid gap-3 lg:grid-cols-2">
+          <Reference label="Earlier action" value={finding.activity} />
+          <Reference label="New evidence" value={finding.experience} />
+        </div>
         <details className="mt-4 border-t border-white/[.07] pt-3">
-          <summary className="cursor-pointer text-xs text-cyan-100/65">Inspect references and timestamps</summary>
+          <summary className="cursor-pointer text-xs text-cyan-100/65">Finding IDs and timestamps</summary>
           <dl className="mt-3 grid gap-3 text-xs sm:grid-cols-2">
             <div><dt className="text-white/35">Finding ID</dt><dd className="break-all font-mono text-white/65">{finding._id}</dd></div>
             <div><dt className="text-white/35">Sapiens ID</dt><dd className="text-white/65">{finding.sapien_id}</dd></div>
             {(['created_at', 'updated_at', 'last_surfaced_at', 'acknowledged_at'] as const).map(field => <div key={field}><dt className="capitalize text-white/35">{field.replaceAll('_', ' ')}</dt><dd className="text-white/65">{timestamp(finding[field])}</dd></div>)}
           </dl>
-          <div className="mt-4 grid gap-3 md:grid-cols-2"><Reference label="Experience" value={finding.experience} /><Reference label="Activity" value={finding.activity} /></div>
         </details>
       </article>)}
     </section>}

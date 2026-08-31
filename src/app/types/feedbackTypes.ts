@@ -1,10 +1,19 @@
 export const FEEDBACK_STATES = ['unrelated', 'ambiguous', 'interpreted', 'superseded'] as const;
 export type FeedbackState = typeof FEEDBACK_STATES[number];
 
+export type FeedbackEventDetails = { available: false } | {
+  available: true;
+  content: string;
+  metadata: Record<string, unknown>;
+  observed_at: string | null;
+  truncated: boolean;
+};
+
 export interface FeedbackReference {
   id: string;
   source: string;
   occurred_at: string | null;
+  details?: FeedbackEventDetails;
 }
 
 export interface FeedbackFinding {
