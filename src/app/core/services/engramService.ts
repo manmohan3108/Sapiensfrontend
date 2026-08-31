@@ -176,14 +176,9 @@ export const engramService = {
   },
 
   // ── Entity episodes ───────────────────────────────────────────────────────
-  // Try the convenience GET /entities/<id> endpoint first (same payload),
-  // fall back to GET /entities/<id>/episodes if the former isn't available.
-  async getEpisodes(entityId: string): Promise<EntityEpisodesResponse> {
-    try {
-      return await engramFetch<EntityEpisodesResponse>(ENGRAM_ENDPOINTS.entityDetail(entityId));
-    } catch {
-      return engramFetch<EntityEpisodesResponse>(ENGRAM_ENDPOINTS.episodes(entityId));
-    }
+  // No alias fallback: 404 can mean lost ownership, not an unavailable endpoint.
+  getEpisodes(entityId: string): Promise<EntityEpisodesResponse> {
+    return engramFetch<EntityEpisodesResponse>(ENGRAM_ENDPOINTS.entityDetail(entityId));
   },
 
   // ── Read-only recall research ─────────────────────────────────────────────

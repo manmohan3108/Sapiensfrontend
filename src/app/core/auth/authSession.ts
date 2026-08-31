@@ -4,6 +4,14 @@ import type { TokenPair } from '../../types/authTypes';
 const STORAGE_KEY = 'sapiens.auth.tokens';
 const AUTH_EXPIRED_EVENT = 'sapiens:auth-expired';
 let sessionVersion = 0;
+// Selection lifetime is independent of JWT rotation. It invalidates old work
+// when switching Sapiens or returning to the picker without ending the login.
+export const resourceSession = {
+  version: 0,
+  selectedId: null as string | null,
+  unavailableEvent: 'sapiens:resource-unavailable',
+  select(id: string | null) { this.selectedId = id; this.version += 1; },
+};
 
 function authUrl(path: string) {
   const apiUrl = new URL(apiConfig.baseUrl, window.location.origin);
@@ -86,19 +94,37 @@ async function getRefreshedAccessToken() {
 
 export async function authenticatedFetch(input: RequestInfo | URL, init: RequestInit = {}, retry = true): Promise<Response> {
   const version = sessionVersion;
+  const selectionVersion = resourceSession.version;
+  const selectedId = resourceSession.selectedId;
+  const finish = async (response: Response) => {
+    // Buffer JSON responses before releasing them so late body reads cannot
+    // repopulate state after logout, selection changes, or loss of access.
+    const body = response.status === 204 ? null : await response.arrayBuffer();
+    if (version !== sessionVersion || selectionVersion !== resourceSession.version) {
+      throw new HttpError('The active account or Sapiens changed. Please try again.', 409);
+    }
+    const path = new URL(typeof input === 'string' ? input : input instanceof URL ? input.href : input.url, window.location.origin).pathname;
+    const scoped = /\/api\/(sapien\/|engram\/(?!sapiens$)|sapiens\/|chat$|query$|run-engines$|load-sapien$|\d+\/save\/)/.test(path);
+    if (response.status === 404 && selectedId && scoped) {
+      resourceSession.select(null);
+      window.dispatchEvent(new Event(resourceSession.unavailableEvent));
+      throw new HttpError('This Sapiens or resource is no longer available. Choose an accessible Sapiens.', 404);
+    }
+    return new Response(body, { status: response.status, statusText: response.statusText, headers: response.headers });
+  };
   const headers = new Headers(init.headers);
   const access = authSession.tokens?.access;
   if (access) headers.set('Authorization', `Bearer ${access}`);
   const response = await fetch(input, { ...init, credentials: 'omit', headers });
   if (sessionVersion !== version) throw new HttpError('Session changed. Please try again.', 401);
-  if (response.status !== 401 || !retry) return response;
+  if (response.status !== 401 || !retry) return finish(response);
   if (!authSession.tokens?.refresh) { authSession.clear(true); return response; }
   const nextAccess = await getRefreshedAccessToken();
   headers.set('Authorization', `Bearer ${nextAccess}`);
   const retried = await fetch(input, { ...init, credentials: 'omit', headers });
   if (sessionVersion !== version) throw new HttpError('Session changed. Please try again.', 401);
   if (retried.status === 401) authSession.clear(true);
-  return retried;
+  return retried.status === 401 ? retried : finish(retried);
 }
 
 export async function parseAuthResponse<T>(response: Response): Promise<T> {

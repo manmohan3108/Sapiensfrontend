@@ -82,7 +82,7 @@ export function CreateSapiensForm({ onNameChange }: CreateSapiensFormProps) {
 
           <div className="space-y-2">
             <Label htmlFor="role">
-              Its role <span className="font-normal text-muted-foreground">(optional)</span>
+              Descriptive role <span className="font-normal text-muted-foreground">(optional, not account permissions)</span>
             </Label>
             <Input
               id="role"

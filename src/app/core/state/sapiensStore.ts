@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { resourceSession } from '../auth/authSession';
 import {
   Sapiens, ChatMessage,
   MemoryUnit, DebugInfo,
@@ -80,7 +81,12 @@ export const useSapiensStore = create<SapiensStore>((set) => ({
   jumpToMessageId: null,
 
   // ── Core actions ──────────────────────────────────────────────────────────
-  setCurrentSapiens: (sapiens) => set({ currentSapiens: sapiens }),
+  setCurrentSapiens: (sapiens) => {
+    resourceSession.select(sapiens?.id ?? null);
+    set({ currentSapiens: sapiens, chatMessages: [], chatSessionId: null,
+      lastMemoryUnits: [], lastDebugInfo: null, pinnedMemoryIds: [], ignoredMemoryIds: [],
+      isOverloaded: false, showDebugPanel: false, showMemoryTimeline: false, jumpToMessageId: null });
+  },
 
   setStatus: (status) => set({ status }),
 
@@ -131,7 +137,8 @@ export const useSapiensStore = create<SapiensStore>((set) => ({
   setShowMemoryTimeline: (show) => set({ showMemoryTimeline: show }),
   setJumpToMessageId: (id) => set({ jumpToMessageId: id }),
 
-  reset: () =>
+  reset: () => {
+    resourceSession.select(null);
     set({
       currentSapiens: null,
       chatMessages: [],
@@ -145,5 +152,6 @@ export const useSapiensStore = create<SapiensStore>((set) => ({
       showDebugPanel: false,
       showMemoryTimeline: false,
       jumpToMessageId: null,
-    }),
+    });
+  },
 }));

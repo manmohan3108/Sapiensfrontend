@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { authenticatedFetch, authSession, HttpError, parseAuthResponse } from '../core/auth/authSession';
+import { authenticatedFetch, authSession, HttpError, parseAuthResponse, resourceSession } from '../core/auth/authSession';
+import { toast } from 'sonner';
 import type { AuthCredentials, AuthUser, RegistrationCredentials, TokenPair } from '../types/authTypes';
 import { useSapiensStore } from '../core/state/sapiensStore';
 
@@ -21,6 +22,8 @@ async function loadMe() {
 }
 
 async function exchange(path: 'login/' | 'register/', credentials: AuthCredentials | RegistrationCredentials) {
+  authSession.clear();
+  useSapiensStore.getState().reset();
   const response = await fetch(authSession.url(path), {
     method: 'POST',
     credentials: 'omit',
@@ -56,6 +59,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setNotice('Your session could not be restored. Please sign in again.');
     });
   }, [clearSession]);
+
+  useEffect(() => {
+    const unavailable = () => {
+      useSapiensStore.getState().reset();
+      toast.error('Sapiens unavailable', { description: 'It may have been reassigned or deleted. Choose from your accessible Sapiens.' });
+    };
+    window.addEventListener(resourceSession.unavailableEvent, unavailable);
+    return () => window.removeEventListener(resourceSession.unavailableEvent, unavailable);
+  }, []);
 
   useEffect(() => {
     const expired = () => { clearSession(); setNotice('Your session has expired. Please sign in again.'); };

@@ -57,11 +57,32 @@ the analysis area. This app-admin flow is separate from Django's `/admin/` sessi
 login.
 
 Frontend role gates are only an interface boundary. Backend authorization remains
-authoritative. At present, the backend explicitly restricts only
-`PATCH /accounts/api/users/<user_id>/role/` to administrators; most `/api/` feature
-endpoints accept both authenticated roles. Product policy must decide whether
-customer data should be tenant-scoped and which analysis, engine, connection, and
-Sapiens-management endpoints should become admin-only or customer-only.
+authoritative. Customers receive server-filtered lists and can access only their
+own Sapiens and related resources. Customer creation sends name/descriptive role
+only; the backend assigns the authenticated owner. Admins see all Sapiens and
+create ownerless, admin-only records. Assignment/reassignment uses Django admin's
+Sapiens **Owner** field; there is no frontend ownership assignment API.
+
+Global heartbeat/dashboard state, orchestrator status, and LLM/embedding usage
+are admin-only. Customers do not poll orchestrator status or mount usage panels.
+Selection is revalidated against the server list on entry and window focus.
+A scoped resource 404 (including an inaccessible memory batch/child resource)
+clears the selection and private state and returns to the accessible picker.
+This intentionally conservative behavior does not disclose why access failed.
+Selection/account changes discard in-flight response bodies; no Sapiens selection,
+chat, or memory data is persisted to browser storage. Theme preference is shared.
+
+Deployment is NOT verified. Apply backend migration `0004_sapiensmodel_owner`
+before restarting, verifying the host includes `0003_enginejob_origin`; reconcile
+history differences rather than faking migrations. Existing records remain
+ownerless/admin-only until assigned. Do not release customer access against an
+older backend that does not enforce ownership.
+
+Contract audit: load uses `/api/load-sapien` with `sapiens_id`; save uses
+`/api/<id>/save/`. The existing feedback helper still refers to `/api/chat/signal`,
+which is absent from the current backend URL configuration. A payload mapping to
+the per-Sapiens feedback endpoint must be agreed separately; no alternative
+endpoint or ownership parameter is invented here.
 
 One legacy exception still exists in the backend: awareness beat diagnostics
 check Django `is_staff`, not the app `admin` role. An app-admin who is not Django

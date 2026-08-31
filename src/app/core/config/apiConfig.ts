@@ -25,8 +25,8 @@ export const apiConfig: ApiConfig = {
 // API Endpoints
 export const API_ENDPOINTS = {
   createSapiens: '/create-sapiens',
-  loadSapiens: '/load-sapiens',
-  saveSapiens: '/save_sapiens',
+  loadSapiens: '/load-sapien',
+  saveSapiens: (id: string) => `/${encodeURIComponent(id)}/save/`,
   learnFolder: '/sapiens/learn-folder',
   chat: '/chat',
   query: '/query',

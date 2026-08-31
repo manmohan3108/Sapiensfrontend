@@ -48,7 +48,7 @@ class SapiensService {
   async createSapiens(request: CreateSapiensRequest): Promise<CreateSapiensResponse> {
     const response = await apiClient.post<BackendCreateSapiensResponse>(
       API_ENDPOINTS.createSapiens,
-      request
+      { name: request.name, ...(request.role ? { role: request.role } : {}) }
     );
     const data = response.data;
 
@@ -63,13 +63,13 @@ class SapiensService {
   async loadSapiens(request: LoadSapiensRequest): Promise<Sapiens> {
     const response = await apiClient.post<Sapiens>(
       API_ENDPOINTS.loadSapiens,
-      { sapien_id: request.sapiensId }
+      { sapiens_id: request.sapiensId }
     );
     return response.data;
   }
 
   async saveSapiens(request: SaveSapiensRequest): Promise<void> {
-    await apiClient.post(API_ENDPOINTS.saveSapiens, request);
+    await apiClient.post(API_ENDPOINTS.saveSapiens(request.sapiensId));
   }
 
   async uploadFolder(request: LearnFolderRequest): Promise<void> {

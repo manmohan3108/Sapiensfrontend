@@ -15,7 +15,7 @@ globalThis.sessionStorage = {
 };
 const events = new EventTarget();
 globalThis.window = { location: { origin: 'https://app.example.test' }, dispatchEvent: event => events.dispatchEvent(event) };
-const { authSession, authenticatedFetch } = await import(`data:text/javascript;base64,${Buffer.from(compiled.code).toString('base64')}`);
+const { authSession, authenticatedFetch, resourceSession } = await import(`data:text/javascript;base64,${Buffer.from(compiled.code).toString('base64')}`);
 const pair = (access, refresh) => ({ access, refresh, token_type: 'Bearer', access_expires_in: 900 });
 const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 let expired = 0;
@@ -74,3 +74,27 @@ assert.equal((await authenticatedFetch('/api/example')).status, 401);
 assert.equal(refreshCalls, 1, 'a rejected retry does not loop');
 assert.equal(authSession.tokens, null, 'a rejected retry ends the session');
 console.log('Auth session checks passed: Bearer headers, cookie exclusion, shared refresh, rotation, revocation, logout race, and bounded retry.');
+
+authSession.save(pair('owned-access', 'owned-refresh'));
+resourceSession.select('12');
+let unavailable = 0;
+events.addEventListener(resourceSession.unavailableEvent, () => unavailable++);
+globalThis.fetch = async () => json({ error: 'Memory not found' }, 404);
+await assert.rejects(authenticatedFetch('https://api.example.test/api/engram/units/batch?ids=missing'), /no longer available/);
+assert.equal(resourceSession.selectedId, null);
+assert.equal(unavailable, 1, 'inaccessible batches clear selection rather than returning partial data');
+resourceSession.select('12');
+assert.equal((await authenticatedFetch('https://api.example.test/api/get-all-sapiens')).status, 404);
+assert.equal(resourceSession.selectedId, '12', 'missing discovery endpoint is not an ownership signal');
+
+let finishBody;
+globalThis.fetch = async () => new Response(new ReadableStream({ start(controller) {
+  finishBody = () => { controller.enqueue(new TextEncoder().encode('{"private":"old data"}')); controller.close(); };
+} }));
+const lateBody = authenticatedFetch('https://api.example.test/api/sapien/12/chats');
+await new Promise(resolve => setTimeout(resolve, 0));
+resourceSession.select('13');
+finishBody();
+await assert.rejects(lateBody, /account or Sapiens changed/);
+assert.equal(resourceSession.selectedId, '13');
+console.log('Ownership checks passed: scoped 404, inaccessible batch, discovery failure, and late response after selection change.');

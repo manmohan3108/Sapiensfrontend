@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useSapiensStore } from '../core/state/sapiensStore';
 import { apiConfig, API_ENDPOINTS } from '../core/config/apiConfig';
 import { authenticatedFetch } from '../core/auth/authSession';
+import { useAuth } from '../contexts/AuthContext';
 
 const POLL_INTERVAL_MS = 60_000; // 1 min
 
@@ -28,10 +29,12 @@ async function fetchStatus(baseUrl: string): Promise<OrchestratorStatusResponse 
  * Updates the store's isOverloaded flag. Safe to mount once in the workspace.
  */
 export function useOrchestratorStatus() {
+  const { user } = useAuth();
   const setOverloaded = useSapiensStore(s => s.setOverloaded);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
+    if (user?.role !== 'admin') return;
     const baseUrl = apiConfig.baseUrl;
 
     const poll = async () => {
@@ -56,5 +59,5 @@ export function useOrchestratorStatus() {
       if (timerRef.current) clearInterval(timerRef.current);
       document.removeEventListener('visibilitychange', onVisibilityChange);
     };
-  }, [setOverloaded]);
+  }, [setOverloaded, user?.role]);
 }

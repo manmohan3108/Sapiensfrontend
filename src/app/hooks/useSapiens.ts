@@ -63,7 +63,11 @@ export function useSapiens() {
     async (sapiens: Sapiens) => {
       try {
         setStatus('loading');
-        setCurrentSapiens(sapiens);
+        // Re-check the server-filtered list; a cached picker row is not authority.
+        const available = await sapiensService.listSapiens();
+        const selected = available.find(item => item.id === sapiens.id);
+        if (!selected) { reset(); throw new Error('This Sapiens is no longer available to your account. Refresh the list.'); }
+        setCurrentSapiens(selected);
         setStatus('idle');
         navigate(user?.role === 'admin' ? '/admin/analyse' : '/workspace');
         return sapiens;
@@ -73,7 +77,7 @@ export function useSapiens() {
         throw error;
       }
     },
-    [setStatus, setCurrentSapiens, navigate, user?.role]
+    [setStatus, setCurrentSapiens, navigate, user?.role, reset]
   );
 
   // ── Save ────────────────────────────────────────────────────────────────────

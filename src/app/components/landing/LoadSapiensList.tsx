@@ -8,8 +8,10 @@ import { Sapiens } from '../../types/sapiensTypes';
 import { sapiensService } from '../../core/services/sapiensService';
 import { useSapiens } from '../../hooks/useSapiens';
 import { formatDateTime } from '../../utils/formatters';
+import { useAuth } from '../../contexts/AuthContext';
 
 export function LoadSapiensList() {
+  const { user } = useAuth();
   const [sapiensList, setSapiensList] = useState<Sapiens[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -29,7 +31,8 @@ export function LoadSapiensList() {
         setError(null);
       } catch (error) {
         console.error('Failed to fetch Sapiens list:', error);
-        setError('Unable to connect to backend server. Please ensure the server is running.');
+        setSapiensList([]);
+        setError((error as { message?: string }).message || 'Unable to reach the server. Try again.');
       } finally {
         setIsLoading(false);
       }
@@ -42,7 +45,8 @@ export function LoadSapiensList() {
       setLoadingId(sapiens.id);
       await loadSapiens(sapiens);
     } catch (error) {
-      console.error('Failed to load Sapiens:', error);
+      setSapiensList([]);
+      setError((error as { message?: string }).message || 'This Sapiens is unavailable. Refresh the list.');
     } finally { setLoadingId(null); }
   };
 
@@ -68,7 +72,7 @@ export function LoadSapiensList() {
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>We couldn’t load your memories</AlertTitle>
             <AlertDescription>
-              Check your connection and try again.
+              {error}
             </AlertDescription>
           </Alert>
           <Button variant="outline" onClick={fetchList} className="mt-4 w-full"><RefreshCw className="mr-2 size-4" />Try again</Button>
@@ -83,8 +87,8 @@ export function LoadSapiensList() {
         <CardContent className="py-12">
           <div className="flex flex-col items-center justify-center text-muted-foreground">
             <FolderOpen className="w-12 h-12 mb-4 opacity-30" />
-            <p className="mb-1 text-lg font-medium text-foreground">No saved memories yet</p>
-            <p className="text-sm">Use the create action below to make the first one.</p>
+            <p className="mb-1 text-lg font-medium text-foreground">{user?.role === 'admin' ? 'No Sapiens available' : 'You don’t have a Sapiens yet'}</p>
+            <p className="text-sm">{user?.role === 'admin' ? 'Create an admin-only Sapiens below. Assign ownership later in Django admin.' : 'Create your first Sapiens below. It will automatically belong to your account.'}</p>
           </div>
         </CardContent>
       </Card>
