@@ -105,7 +105,10 @@ export async function authenticatedFetch(input: RequestInfo | URL, init: Request
     }
     const path = new URL(typeof input === 'string' ? input : input instanceof URL ? input.href : input.url, window.location.origin).pathname;
     const scoped = /\/api\/(sapien\/|engram\/(?!sapiens$)|sapiens\/|chat$|query$|run-engines$|load-sapien$|\d+\/save\/)/.test(path);
-    if (response.status === 404 && selectedId && scoped) {
+    // Read-only job inspection handles missing jobs/Sapiens locally. A missing
+    // parent job must not clear the active Sapien and close the inspector.
+    const jobInspection = /\/sapien\/[^/]+\/engine-jobs(?:\/[^/]+)?\/?$/.test(path);
+    if (response.status === 404 && selectedId && scoped && !jobInspection) {
       resourceSession.select(null);
       window.dispatchEvent(new Event(resourceSession.unavailableEvent));
       throw new HttpError('This Sapiens or resource is no longer available. Choose an accessible Sapiens.', 404);
