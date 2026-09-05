@@ -180,25 +180,30 @@ export interface AwarenessBeatsResponse {
 }
 
 export interface AwarenessBeatEvent {
-  type?: string;
-  kind?: string;
-  event_type?: string;
-  name?: string;
+  sequence: number;
+  stage: string;
+  at: string;
+  detail: AwarenessBeatEventDetail;
+}
+
+export interface AwarenessBeatEventDetail extends Record<string, unknown> {
   status?: string;
-  occurred_at?: string;
-  created_at?: string;
-  timestamp?: string;
   summary?: string;
   decision?: string;
   reason?: string;
-  thought?: string;
   outcome?: string;
   feedback?: string;
+  focus?: string;
+  selected_focus?: string;
+  focus_state?: string;
   capability?: string;
   argument_names?: string[];
   uncertainty?: number | string | boolean;
   activity_id?: string;
   action_id?: string;
+  response_present?: boolean;
+  route?: string;
+  channel?: string;
 }
 
 export interface AwarenessBeatCandidateSummary {
