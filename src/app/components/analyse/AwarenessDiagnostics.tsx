@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Activity, AlertCircle, Bot, BrainCircuit, CheckCircle2, ChevronRight, CircleDot,
-  Clock3, GitBranch, Hand, Loader2, MessageSquareReply, RefreshCw, Search, ShieldAlert,
+  Clock3, Loader2, RefreshCw, Search, ShieldAlert,
   Sparkles, Trophy, XCircle,
 } from 'lucide-react';
 import { sapiensService } from '../../core/services/sapiensService';
@@ -65,61 +65,58 @@ function detailFields(detail: AwarenessBeatEvent['detail']) {
   });
 }
 
-function EventIcon({ stage }: { stage: string }) {
-  const kind = stage.toLowerCase();
-  if (kind.includes('action') || kind.includes('outcome')) return <Activity className="h-3.5 w-3.5" />;
-  if (kind.includes('thought') || kind.includes('commit')) return <BrainCircuit className="h-3.5 w-3.5" />;
-  if (kind.includes('hold') || kind.includes('defer')) return <Hand className="h-3.5 w-3.5" />;
-  if (kind.includes('feedback')) return <MessageSquareReply className="h-3.5 w-3.5" />;
-  return <GitBranch className="h-3.5 w-3.5" />;
+function publicTechnicalDetails(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(publicTechnicalDetails);
+  if (!value || typeof value !== 'object') return value;
+  return Object.fromEntries(Object.entries(value as Record<string, unknown>)
+    .filter(([key]) => !/(credential|secret|token|password|argument|\bargs?\b|payload|result)/i.test(key))
+    .map(([key, item]) => [key, publicTechnicalDetails(item)]));
+}
+
+function EventIcon({ status }: { status?: string }) {
+  const state = status?.toLowerCase() ?? '';
+  if (/fail|error|blocked/.test(state)) return <XCircle className="h-3.5 w-3.5" />;
+  if (/success|complete|resolved|delivered/.test(state)) return <CheckCircle2 className="h-3.5 w-3.5" />;
+  return <Activity className="h-3.5 w-3.5" />;
+}
+
+function displayEvent(event: AwarenessBeatEvent, index: number) {
+  const detail = event.detail ?? {};
+  const stageTitle = event.stage?.replaceAll('_', ' ').replaceAll('.', ' → ');
+  return {
+    title: event.title || stageTitle || 'Awareness event',
+    summary: event.summary || text(detail.response) || text(detail.thought) || text(detail.summary) || text(detail.reason) || 'This event was observed, but no public summary was returned.',
+    status: event.status || text(detail.status) || text(detail.move) || 'observed',
+    consequence: event.consequence || '',
+    when: event.occurred_at || event.at,
+    step: index + 1,
+  };
 }
 
 function EventTimeline({ events = [] }: { events?: AwarenessBeatEvent[] }) {
-  const ordered = [...events].sort((a, b) => a.sequence - b.sequence);
+  const ordered = [...events].sort((a, b) => (a.sequence ?? Number.MAX_SAFE_INTEGER) - (b.sequence ?? Number.MAX_SAFE_INTEGER));
   if (!ordered.length) return <p className="rounded-xl border border-dashed border-white/10 p-4 text-center text-[10px] text-white/25">No ordered events were returned for this beat.</p>;
   return <ol className="space-y-0">{ordered.map((event, index) => {
-    const stage = event.stage || 'unknown stage'; const kind = stage.toLowerCase(); const detail = event.detail ?? {}; const status = text(detail.status)?.toLowerCase();
+    const stage = event.stage || 'compatibility event'; const detail = event.detail ?? {}; const display = displayEvent(event, index); const status = display.status.toLowerCase();
     const failed = Boolean(status?.includes('fail') || status?.includes('error')); const succeeded = Boolean(status?.includes('success') || status === 'completed'); const fields = detailFields(detail);
-    return <li key={`${event.sequence}-${stage}-${index}`} className="flex gap-3"><div className="flex w-7 flex-col items-center"><span className={`grid h-7 w-7 flex-shrink-0 place-items-center rounded-lg border ${failed ? 'border-red-400/20 bg-red-400/[.07] text-red-200' : succeeded ? 'border-emerald-400/20 bg-emerald-400/[.07] text-emerald-200' : 'border-cyan-400/15 bg-cyan-400/[.06] text-cyan-200/65'}`}><EventIcon stage={stage} /></span>{index < ordered.length - 1 && <span className="min-h-5 w-px flex-1 bg-white/[.08]" />}</div><article className="min-w-0 flex-1 pb-4"><div className="flex flex-wrap items-center gap-2"><span className="font-mono text-[8px] text-white/22">#{event.sequence}</span><span className="text-[10px] font-medium text-white/65">{stage.replaceAll('_', ' ').replaceAll('.', ' → ')}</span>{status && <span className={`rounded-full px-2 py-0.5 text-[8px] ${failed ? 'bg-red-400/10 text-red-200' : succeeded ? 'bg-emerald-400/10 text-emerald-200' : 'bg-amber-400/10 text-amber-200'}`}>{status}</span>}<span className="ml-auto text-right text-[8px] text-white/22" title={absoluteTime(event.at)}>{absoluteTime(event.at)} · {relative(event.at)}</span></div>{fields.length > 0 && <dl className="mt-2 grid gap-x-4 gap-y-2 rounded-lg border border-white/[.05] bg-black/10 p-2 sm:grid-cols-2">{fields.map(field => <div key={field.key}><dt className="text-[8px] uppercase tracking-wide text-white/20">{field.key.replaceAll('_', ' ')}</dt><dd className="mt-0.5 break-words text-[9px] leading-4 text-white/48">{field.value}</dd></div>)}</dl>}{(kind.includes('thought') || kind.includes('commit')) && <p className="mt-2 flex items-center gap-1.5 text-[8px] text-violet-200/45"><ShieldAlert className="h-3 w-3" />Internal thought only — external action is shown only when an action/outcome stage exists.</p>}</article></li>;
+    const technical = event.technical_details ? publicTechnicalDetails(event.technical_details) : null;
+    return <li key={`${event.sequence ?? index}-${display.title}`} className="flex gap-3"><div className="flex w-7 flex-col items-center"><span className={`grid h-7 w-7 flex-shrink-0 place-items-center rounded-lg border ${failed ? 'border-red-400/20 bg-red-400/[.07] text-red-200' : succeeded ? 'border-emerald-400/20 bg-emerald-400/[.07] text-emerald-200' : 'border-cyan-400/15 bg-cyan-400/[.06] text-cyan-200/65'}`}><EventIcon status={status} /></span>{index < ordered.length - 1 && <span className="min-h-5 w-px flex-1 bg-white/[.08]" />}</div><article className="min-w-0 flex-1 pb-4"><div className="flex flex-wrap items-center gap-2"><span className="text-[8px] text-white/22">Step {display.step}</span><span className="text-[10px] font-medium text-white/70">{display.title}</span>{event.actor && <span className="rounded-full bg-indigo-400/[.07] px-2 py-0.5 text-[8px] text-indigo-100/50">{event.actor}</span>}<span className={`rounded-full px-2 py-0.5 text-[8px] ${failed ? 'bg-red-400/10 text-red-200' : succeeded ? 'bg-emerald-400/10 text-emerald-200' : 'bg-amber-400/10 text-amber-200'}`}>{status}</span><span className="ml-auto text-right text-[8px] text-white/22" title={absoluteTime(display.when)}>{absoluteTime(display.when)} · {relative(display.when)}</span></div><p className="mt-1 text-[10px] leading-5 text-white/55">{display.summary}</p>{display.consequence && <p className="mt-1 text-[9px] leading-4 text-emerald-100/45"><span className="text-white/25">Consequence: </span>{display.consequence}</p>}{(event.correlation_id || event.reference_id) && <p className="mt-1 font-mono text-[8px] text-white/20">{event.correlation_id && `correlation ${event.correlation_id}`}{event.correlation_id && event.reference_id && ' · '}{event.reference_id && `reference ${event.reference_id}`}</p>} {(fields.length > 0 || technical || event.stage || event.sequence !== undefined) && <details className="mt-2 rounded-lg border border-white/[.05] bg-black/10"><summary className="cursor-pointer px-2 py-1.5 text-[8px] text-white/30">Technical and compatibility details</summary><div className="border-t border-white/[.05] p-2">{fields.length > 0 && <dl className="grid gap-x-4 gap-y-2 sm:grid-cols-2">{fields.map(field => <div key={field.key}><dt className="text-[8px] uppercase tracking-wide text-white/20">{field.key.replaceAll('_', ' ')}</dt><dd className="mt-0.5 break-words text-[9px] leading-4 text-white/48">{field.value}</dd></div>)}</dl>}{technical && <pre className="mt-2 max-h-52 overflow-auto whitespace-pre-wrap break-words text-[8px] leading-4 text-white/35">{JSON.stringify(technical, null, 2)}</pre>}<p className="mt-2 text-[8px] text-white/18">Sequence: {event.sequence ?? 'unavailable'} · Compatibility stage: {stage}</p></div></details>}</article></li>;
   })}</ol>;
 }
 
-function firstDetailValue(events: AwarenessBeatEvent[], keys: string[], stageNeedle?: string) {
-  for (const event of [...events].sort((a, b) => a.sequence - b.sequence)) {
-    if (stageNeedle && !event.stage.toLowerCase().includes(stageNeedle)) continue;
-    for (const key of keys) {
-      const value = text(event.detail?.[key]);
-      if (value !== null) return value;
-    }
-  }
-  return null;
-}
-
 function BeatSummary({ beat }: { beat: AwarenessBeat }) {
-  const events = beat.events ?? [];
-  const actionAttempts = events.filter(event => { const stage = event.stage.toLowerCase(); return (stage.includes('action') || stage.includes('tool')) && !stage.includes('outcome') && !stage.includes('result'); });
-  const actionOutcomes = events.filter(event => { const stage = event.stage.toLowerCase(); return stage.includes('outcome') || stage.includes('result'); });
-  const successful = actionOutcomes.filter(event => { const state = `${text(event.detail?.status) ?? ''} ${text(event.detail?.outcome) ?? ''}`.toLowerCase(); return state.includes('success') || state.includes('completed'); }).length;
-  const failed = actionOutcomes.filter(event => { const state = `${text(event.detail?.status) ?? ''} ${text(event.detail?.outcome) ?? ''}`.toLowerCase(); return state.includes('fail') || state.includes('error'); }).length;
-  const holds = events.filter(event => /hold|defer/i.test(event.stage)).length;
-  const feedback = events.filter(event => /feedback/i.test(event.stage)).length;
-  const thoughtCommitted = events.some(event => /thought.*commit|commit.*thought/i.test(event.stage));
-  const responsePresence = firstDetailValue(events, ['response_present'], 'response');
-  const selectedFocus = firstDetailValue(events, ['selected_focus', 'focus'], 'focus') || safeFields(beat.winner).find(field => ['selected_focus', 'focus', 'label', 'summary', 'handle'].includes(field.key))?.value || text(beat.winner);
-  const finalFields = safeFields(beat.final); const finalState = finalFields.find(field => ['final_decision', 'decision', 'focus_state', 'focus', 'resolution', 'status'].includes(field.key))?.value;
-  const deliveryFields = safeFields(beat.delivery); const route = deliveryFields.find(field => ['route', 'channel', 'destination'].includes(field.key))?.value;
-  const metrics = [
-    ['Trigger / mode', `${beat.trigger_source || 'unknown'} · ${beat.mode || 'unknown'}`],
-    ['Selected focus', selectedFocus || 'Not returned'],
-    ['Final decision / state', finalState || 'Not returned'],
-    ['Action attempts', String(actionAttempts.length)],
-    ['Succeeded / failed', `${successful} / ${failed}`],
-    ['Hold / Feedback', `${holds} / ${feedback}`],
-    ['Thought commit', thoughtCommitted ? 'Present' : 'Not present'],
-    ['Response present', responsePresence ?? 'Not reported'],
-    ['Delivery route', route || 'Not returned'],
-  ];
-  return <section className={`${panel} p-4`}><div className="mb-3 flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-300/65"/><h4 className="text-[11px] font-medium text-white/65">Beat summary</h4></div><dl className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">{metrics.map(([label, value]) => <div key={label} className="rounded-lg border border-white/[.05] bg-black/10 px-3 py-2"><dt className="text-[8px] uppercase tracking-wide text-white/22">{label}</dt><dd className="mt-1 break-words text-[10px] text-white/58">{value}</dd></div>)}</dl>{thoughtCommitted && actionAttempts.length === 0 && actionOutcomes.length === 0 && <p className="mt-3 flex items-center gap-1.5 text-[8px] text-amber-200/55"><ShieldAlert className="h-3 w-3"/>A thought was committed, but no action event was recorded; this summary does not claim an external action occurred.</p>}</section>;
+  const events = [...(beat.events ?? [])].sort((a, b) => (a.sequence ?? Number.MAX_SAFE_INTEGER) - (b.sequence ?? Number.MAX_SAFE_INTEGER));
+  const normalized = events.map(displayEvent);
+  const firstSummary = normalized[0]?.summary;
+  const consequences = events.map(event => event.consequence).filter((value): value is string => Boolean(value));
+  const unfinished = normalized.filter(event => /pending|failed|error|blocked|held|deferred|unfinished|uncertain|in.progress/i.test(event.status));
+  const fallbackWhatHappened = firstSummary || `A ${beat.mode || 'cognitive'} awareness cycle ran${beat.trigger_source ? ` after ${beat.trigger_source}` : ''}.`;
+  const fallbackChanged = consequences.length ? consequences.join(' · ') : 'No explicit change was reported.';
+  const fallbackUnfinished = unfinished.length ? unfinished.map(event => event.title || event.summary || event.status).filter(Boolean).join(' · ') : 'No unfinished work was reported.';
+  const happened = beat.conclusion?.summary || fallbackWhatHappened;
+  const changed = beat.conclusion ? (beat.conclusion.changed ? fallbackChanged : 'The beat reported no state change.') : fallbackChanged;
+  const remains = beat.conclusion?.unfinished || fallbackUnfinished;
+  return <section className={`${panel} p-4`}><div className="mb-3 flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-300/65"/><h4 className="text-[11px] font-medium text-white/65">Beat conclusion</h4>{beat.conclusion && <span className="rounded-full bg-emerald-400/[.07] px-2 py-0.5 text-[8px] text-emerald-100/45">Backend-derived</span>}</div><dl className="grid gap-3 lg:grid-cols-3"><div className="rounded-lg border border-cyan-400/10 bg-cyan-400/[.035] p-3"><dt className="text-[9px] font-medium text-cyan-100/55">What happened?</dt><dd className="mt-1 text-[10px] leading-5 text-white/58">{happened}</dd></div><div className="rounded-lg border border-emerald-400/10 bg-emerald-400/[.035] p-3"><dt className="text-[9px] font-medium text-emerald-100/55">What changed?</dt><dd className="mt-1 text-[10px] leading-5 text-white/58">{changed}</dd></div><div className="rounded-lg border border-amber-400/10 bg-amber-400/[.035] p-3"><dt className="text-[9px] font-medium text-amber-100/55">What remains unfinished?</dt><dd className="mt-1 text-[10px] leading-5 text-white/58">{remains}</dd></div></dl>{beat.events_truncated && <p className="mt-3 text-[8px] text-amber-200/55">The event list was truncated by the backend; this conclusion may cover events not shown below.</p>}</section>;
 }
 
 function CandidateFlow({ beat }: { beat: AwarenessBeat }) {
@@ -132,8 +129,8 @@ function CandidateFlow({ beat }: { beat: AwarenessBeat }) {
 
 function BeatDetails({ beat, latest = false }: { beat: AwarenessBeat; latest?: boolean }) {
   const deliveryFields = safeFields(beat.delivery); const deliveryStatus = deliveryFields.find(field => field.key === 'status')?.value;
-  const focusFormation = beat.events?.find(event => /focus.*form|form.*focus/i.test(event.stage))?.detail;
-  return <div className="space-y-3"><section className={`${panel} p-4`}><div className="flex flex-wrap items-start gap-3"><span className={`grid h-10 w-10 place-items-center rounded-xl border ${beat.mode === 'autonomous' ? 'border-violet-400/20 bg-violet-400/[.08] text-violet-200' : 'border-cyan-400/20 bg-cyan-400/[.08] text-cyan-200'}`}>{beat.mode === 'autonomous' ? <Bot className="h-4 w-4" /> : <CircleDot className="h-4 w-4" />}</span><div><div className="flex flex-wrap items-center gap-2"><h3 className="text-sm font-medium text-white/75">{latest ? 'Latest awareness beat' : 'Awareness beat'}</h3><span className="rounded-full bg-white/[.05] px-2 py-0.5 text-[8px] capitalize text-white/45">{beat.mode || 'mode unavailable'}</span></div><p className="mt-1 text-[10px] text-white/30">Triggered by {beat.trigger_source || 'unknown source'} · {absoluteTime(beat.started_at)} ({relative(beat.started_at)}) · {duration(beat)}</p>{beat.occurrence_id && <p className="mt-1 text-[8px] text-white/22">Occurrence <span className="font-mono text-white/35">{beat.occurrence_id}</span> · continuing beats may share this ID</p>}</div><span className="ml-auto font-mono text-[8px] text-white/20">{beat._id}</span></div></section><BeatSummary beat={beat}/><CandidateFlow beat={beat}/><div className="grid gap-3 md:grid-cols-3"><SummaryBlock title="Preparation" value={beat.preparation} color="#67e8f9"/><SummaryBlock title="Focus formation" value={focusFormation} color="#86efac"/><SummaryBlock title="Curation" value={beat.curation} color="#c4b5fd"/></div><section className={`${panel} p-4`}><p className="mb-4 text-[9px] uppercase tracking-[.16em] text-white/35">Ordered event flow</p><EventTimeline events={beat.events}/></section><div className="grid gap-3 md:grid-cols-2"><SummaryBlock title="Final resolution" value={beat.final} color="#86efac"/><SummaryBlock title="Delivery route" value={beat.delivery} color={deliveryStatus?.includes('fail') ? '#fca5a5' : '#7dd3fc'}/></div></div>;
+  const focusFormation = beat.focus_formation ?? beat.events?.find(event => /focus.*form|form.*focus/i.test(event.stage ?? ''))?.detail;
+  return <div className="space-y-3"><section className={`${panel} p-4`}><div className="flex flex-wrap items-start gap-3"><span className={`grid h-10 w-10 place-items-center rounded-xl border ${beat.mode === 'autonomous' ? 'border-violet-400/20 bg-violet-400/[.08] text-violet-200' : 'border-cyan-400/20 bg-cyan-400/[.08] text-cyan-200'}`}>{beat.mode === 'autonomous' ? <Bot className="h-4 w-4" /> : <CircleDot className="h-4 w-4" />}</span><div><div className="flex flex-wrap items-center gap-2"><h3 className="text-sm font-medium text-white/75">{latest ? 'Latest awareness beat' : 'Awareness beat'}</h3><span className="rounded-full bg-white/[.05] px-2 py-0.5 text-[8px] capitalize text-white/45">{beat.mode || 'mode unavailable'}</span></div><p className="mt-1 text-[10px] text-white/30">Triggered by {beat.trigger_source || 'unknown source'} · {absoluteTime(beat.started_at)} ({relative(beat.started_at)}) · {duration(beat)}</p>{beat.occurrence_id && <p className="mt-1 text-[8px] text-white/22">Occurrence <span className="font-mono text-white/35">{beat.occurrence_id}</span> · continuing beats may share this ID</p>}</div><span className="ml-auto font-mono text-[8px] text-white/20">{beat._id}</span></div></section><BeatSummary beat={beat}/><CandidateFlow beat={beat}/><div className="grid gap-3 md:grid-cols-3"><SummaryBlock title="Preparation" value={beat.preparation} color="#67e8f9"/><SummaryBlock title="Focus formation" value={focusFormation} color="#86efac"/><SummaryBlock title="Curation" value={beat.curation} color="#c4b5fd"/></div><section className={`${panel} p-4`}><p className="mb-4 text-[9px] uppercase tracking-[.16em] text-white/35">What happened during this cycle</p><EventTimeline events={beat.events}/></section><div className="grid gap-3 md:grid-cols-2"><SummaryBlock title="Final resolution" value={beat.final} color="#86efac"/><SummaryBlock title="Delivery route" value={beat.delivery} color={deliveryStatus?.includes('fail') ? '#fca5a5' : '#7dd3fc'}/></div></div>;
 }
 
 export function AwarenessDiagnostics({ sapienId }: { sapienId: string }) {

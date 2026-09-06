@@ -180,10 +180,20 @@ export interface AwarenessBeatsResponse {
 }
 
 export interface AwarenessBeatEvent {
-  sequence: number;
-  stage: string;
-  at: string;
-  detail: AwarenessBeatEventDetail;
+  sequence?: number;
+  actor?: string;
+  title?: string;
+  summary?: string;
+  status?: string;
+  consequence?: string;
+  occurred_at?: string;
+  correlation_id?: string;
+  reference_id?: string;
+  technical_details?: Record<string, unknown> | null;
+  /** Compatibility fields retained for historical/current readers. */
+  stage?: string;
+  at?: string;
+  detail?: AwarenessBeatEventDetail;
 }
 
 export interface AwarenessBeatEventDetail extends Record<string, unknown> {
@@ -230,15 +240,26 @@ export interface AwarenessBeat {
   _id: string;
   sapien_id: number;
   occurrence_id?: string;
+  correlation_id?: string;
+  causation_id?: string;
+  reference_ids?: string[];
   mode: 'reactive' | 'autonomous' | string;
   trigger_source?: string;
   started_at?: string;
   completed_at?: string;
+  created_at?: string;
   winner?: string | Record<string, unknown> | null;
   candidate_summary?: AwarenessBeatCandidateSummary | null;
   attention?: AwarenessBeatAttention[];
   preparation?: Record<string, unknown> | string | null;
+  focus_formation?: Record<string, unknown> | string | null;
   curation?: Record<string, unknown> | string | null;
+  events_truncated?: boolean;
+  conclusion?: {
+    summary: string;
+    changed: boolean;
+    unfinished: string;
+  } | null;
   events?: AwarenessBeatEvent[];
   final?: Record<string, unknown> | string | null;
   delivery?: Record<string, unknown> | string | null;
