@@ -17,8 +17,12 @@ function SelectionGuard() {
   useEffect(() => {
     if (!selectedId) return;
     let active = true;
+    // Verify only when the selected resource or protected route changes.
+    // Individual API responses remain authoritative if access later changes.
+    setVerified('');
+    setError(false);
     const check = async () => {
-      setVerified(''); setError(false);
+      setError(false);
       try {
         const list = await sapiensService.listSapiens();
         if (!active) return;
@@ -28,8 +32,7 @@ function SelectionGuard() {
       } catch { if (active) setError(true); }
     };
     void check();
-    window.addEventListener('focus', check);
-    return () => { active = false; window.removeEventListener('focus', check); };
+    return () => { active = false; };
   }, [selectedId, key, attempt]);
   if (selectedId && verified !== key) return <div className="grid min-h-screen place-items-center bg-background text-foreground"><div role="status" className="text-center"><p>{error ? 'Could not verify access to this Sapiens.' : 'Checking Sapiens access…'}</p>{error && <button className="mt-4 rounded-lg border px-4 py-2" onClick={() => setAttempt(value => value + 1)}>Retry</button>}</div></div>;
   return <Outlet key={selectedId ?? 'picker'} />;

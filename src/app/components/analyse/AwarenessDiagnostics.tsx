@@ -142,7 +142,7 @@ export function AwarenessDiagnostics({ sapienId }: { sapienId: string }) {
   }, [sapienId]);
   const loadStaffBeats = useCallback(async () => {
     setStaffSessionReady(true); setBeatsLoading(true); setBeatsError('');
-    try { setBeatData(await sapiensService.getAwarenessBeats(sapienId, 20, true)); }
+    try { setBeatData(await sapiensService.getAwarenessBeats(sapienId, 20)); }
     catch (caught) { const apiError = caught as ApiError; setBeatsError(apiError.status === 403 ? 'Your app account does not have permission to view beat diagnostics. Ask an administrator to review the backend permission policy.' : apiError.message || 'Could not load awareness beat diagnostics.'); }
     finally { setBeatsLoading(false); }
   }, [sapienId]);
