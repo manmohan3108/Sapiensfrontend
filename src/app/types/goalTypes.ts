@@ -1,7 +1,37 @@
-export type GoalStatus = 'pending' | 'active' | 'blocked' | 'done' | 'failed' | 'abandoned';
-export type GoalSource = 'user' | 'curiosity' | 'parent' | 'lesson' | 'external';
-export type StepStatus  = 'pending' | 'active' | 'done' | 'skipped' | 'blocked';
-export type PlanStatus  = 'active' | 'superseded' | 'abandoned' | 'done';
+export type GoalStatus = string;
+export type GoalSource = string;
+export type StepStatus = string;
+export type PlanStatus = string;
+
+export interface StateRules {
+  allowed: string[];
+  transitions: [string, string][];
+  restrict_transitions: boolean;
+}
+
+export interface WorkflowRecord {
+  id: string;
+  sapien_id: number;
+  description: string;
+  state: string;
+  state_rules: StateRules | null;
+  // Missing legacy flags are unknown, never inferred from state names.
+  finished: boolean | null;
+  retired: boolean | null;
+  revision: number | null;
+  creator: string;
+  owner: string;
+  requested_by: string | null;
+  review_enabled: boolean | null;
+  review_at: string | null;
+  review_interval_seconds: number | null;
+  review_version: number | null;
+  evidence_refs: string[];
+  progress: number | null;
+  metadata: Record<string, unknown>;
+  created_at: string | null;
+  updated_at: string | null;
+}
 
 export interface GoalRelation { type: string; target_id: string }
 export interface GoalEvidence { kind: string; ref: string }
@@ -9,31 +39,25 @@ export interface GoalEvidence { kind: string; ref: string }
 export interface PlanStep {
   id: string;
   description: string;
-  status: StepStatus;
-  attrs: Record<string, unknown>;
+  state: StepStatus;
+  finished: boolean | null;
+  result: string;
+  evidence_refs: string[];
 }
 
-export interface Plan {
-  id: string;
-  goal_id: string;
-  version: number;
-  status: PlanStatus;
-  steps: PlanStep[];
+export interface Plan extends WorkflowRecord {
+  goal_id: string | null;
+  tasks: PlanStep[];
+  task_rules: StateRules | null;
 }
 
-export interface Goal {
-  id: string;
-  sapien_id: number;
-  description: string;
+export interface Goal extends WorkflowRecord {
   motivation: string;
   source: GoalSource;
-  status: GoalStatus;
-  importance: number;
-  priority: number;
-  progress: number;
+  importance: number | null;
+  priority: number | null;
   relations: GoalRelation[];
   evidence: GoalEvidence[];
-  attrs: Record<string, unknown>;
   current_plan?: Plan | null;
 }
 
@@ -67,7 +91,7 @@ export interface ContextQuestion {
 
 export interface GoalContext {
   id: string;
-  goal_id: string;
+  goal_id: string | null;
   facts: ContextFact[];
   decisions: ContextDecision[];
   assumptions: ContextAssumption[];
@@ -83,5 +107,5 @@ export interface GoalDetail {
 
 export interface GoalsListResponse {
   goals: Goal[];
-  total?: number;
+  count: number;
 }

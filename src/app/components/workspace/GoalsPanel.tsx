@@ -3,12 +3,12 @@ import { toast } from 'sonner';
 import {
   ChevronLeft, ChevronDown, ChevronRight, RefreshCw, MessageSquare,
   Loader2, AlertCircle, RotateCcw, CheckCircle2, Circle,
-  MinusCircle, Zap, AlertTriangle, Send,
+  Send,
 } from 'lucide-react';
 import { goalsService, OverloadedError } from '../../core/services/goalsService';
 import { useSapiensStore } from '../../core/state/sapiensStore';
 import type {
-  Goal, GoalDetail, GoalStatus, GoalSource, StepStatus,
+  Goal, GoalDetail, GoalStatus, GoalSource, WorkflowRecord, StateRules,
   GoalContext, Plan, PlanStep, ContextQuestion, ContextDecision,
 } from '../../types/goalTypes';
 
@@ -31,54 +31,79 @@ const SOURCE_STYLE: Record<GoalSource, { label: string; color: string; bg: strin
   external:  { label: 'External',  color: '#94a3b8', bg: 'rgba(148,163,184,0.1)'  },
 };
 
-const STEP_ICON: Record<StepStatus, React.ReactNode> = {
-  pending: <Circle        className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#475569' }} />,
-  active:  <Zap           className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#60a5fa' }} />,
-  done:    <CheckCircle2  className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#34d399' }} />,
-  skipped: <MinusCircle   className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#475569' }} />,
-  blocked: <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#fbbf24' }} />,
-};
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function planProgress(plan: Plan | null | undefined) {
-  if (!plan?.steps?.length) return { done: 0, total: 0, pct: 0 };
-  const done = plan.steps.filter(s => s.status === 'done').length;
-  return { done, total: plan.steps.length, pct: done / plan.steps.length };
+  if (!plan?.tasks?.length) return { done: 0, total: 0 };
+  const done = plan.tasks.filter(s => s.finished === true).length;
+  return { done, total: plan.tasks.length };
 }
 
 function fmtDate(iso: string) {
-  try { return new Date(iso).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }); }
+  if (!iso) return 'Not specified';
+  try { return Number.isNaN(Date.parse(iso)) ? iso : new Date(iso).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }); }
   catch { return iso; }
 }
 
 // ── Shared primitives ─────────────────────────────────────────────────────────
 
 function StatusPill({ status }: { status: GoalStatus }) {
-  const s = STATUS_STYLE[status] ?? STATUS_STYLE.pending;
+  const s = Object.prototype.hasOwnProperty.call(STATUS_STYLE, status) ? STATUS_STYLE[status] : STATUS_STYLE.pending;
   return (
     <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium flex-shrink-0"
       style={{ color: s.color, background: s.bg, border: `1px solid ${s.border}` }}>
-      {s.label}
+      {status || 'State unspecified'}
     </span>
   );
 }
 
 function SourceBadge({ source }: { source: GoalSource }) {
-  const s = SOURCE_STYLE[source] ?? SOURCE_STYLE.external;
+  const s = Object.prototype.hasOwnProperty.call(SOURCE_STYLE, source) ? SOURCE_STYLE[source] : SOURCE_STYLE.external;
   return (
     <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] flex-shrink-0"
       style={{ color: s.color, background: s.bg }}>
-      {s.label}
+      {source || 'Source unspecified'}
     </span>
   );
 }
 
-function ThinMeter({ value, color = '#818cf8' }: { value: number; color?: string }) {
+function Lifecycle({ record }: { record: WorkflowRecord }) {
+  return <span className="text-[9px] text-white/45">
+    {record.finished === null ? 'Completion unknown' : record.finished ? 'Finished' : 'Unfinished'}
+    {' · '}{record.retired === null ? 'Retirement unknown' : record.retired ? 'Retired' : 'Not retired'}
+  </span>;
+}
+
+function RulesSummary({ rules, label }: { rules: StateRules | null; label: string }) {
+  if (!rules) return null;
+  return <div className="text-[10px] text-white/45 break-words">
+    <p>{label}: {rules.allowed.length ? rules.allowed.join(', ') : 'Any state allowed'}</p>
+    <p>Transitions: {rules.restrict_transitions ? 'Restricted' : 'Unrestricted'}
+      {rules.transitions.length > 0 && ` · ${rules.transitions.map(([from, to]) => `${from} → ${to}`).join(', ')}`}</p>
+  </div>;
+}
+
+function RecordDetails({ record }: { record: WorkflowRecord }) {
+  return <CollapsibleSection title="Ownership, review & rules">
+    <div className="flex flex-col gap-2 text-[10px] text-white/45 break-words">
+      <p>Creator: {record.creator || 'Not specified'} · Owner: {record.owner || 'Not specified'}
+        {' · '}Requested by: {record.requested_by || 'Not specified'}</p>
+      <p>Review: {record.review_enabled === null ? 'Unknown' : record.review_enabled ? 'Enabled' : 'Disabled'}
+        {' · '}Scheduled: {record.review_at ? fmtDate(record.review_at) : 'Not scheduled'}
+        {' · '}Interval: {record.review_interval_seconds === null ? 'Not specified' : record.review_interval_seconds === 0 ? 'No recurrence' : `${record.review_interval_seconds}s`}</p>
+      <p>Revision: {record.revision ?? 'Unknown'} · Review version: {record.review_version ?? 'Unknown'}</p>
+      <RulesSummary rules={record.state_rules} label="State rules" />
+      {record.evidence_refs.length > 0 && <p>Evidence references: {record.evidence_refs.join(', ')}</p>}
+    </div>
+  </CollapsibleSection>;
+}
+
+function ThinMeter({ value, color = '#818cf8' }: { value: number | null; color?: string }) {
   return (
     <div className="h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.07)' }}>
       <div className="h-full rounded-full transition-all duration-500"
-        style={{ width: `${Math.min(100, value * 100)}%`, background: color }} />
+        style={{ width: `${Math.max(0, Math.min(100, (value ?? 0) * 100))}%`, background: color }} />
     </div>
   );
 }
@@ -157,14 +182,14 @@ function CommentPopover({
     setInlineError(null);
     const submittedAt = Date.now();
     try {
-      await goalsService.comment(sapienId, goalId, {
+      const response = await goalsService.comment(sapienId, goalId, {
         comment: text.trim(),
         scope,
         ...(stepId ? { step_id: stepId } : {}),
       });
       setText('');
       setOpen(false);
-      toast.success('Got it — Sapien is updating.');
+      toast.success(response?.queued ? 'Note queued for background processing.' : 'Note request received; completion is not confirmed.');
       onSuccess?.(submittedAt);
     } catch (e) {
       if (e instanceof OverloadedError) {
@@ -365,7 +390,7 @@ function ContextBlock({ ctx, label, highlightAfter }: {
 // ── Goal Card ─────────────────────────────────────────────────────────────────
 
 function GoalCard({ goal, sapienId, onClick }: { goal: Goal; sapienId: number; onClick: () => void }) {
-  const { done, total, pct } = planProgress(goal.current_plan);
+  const { done, total } = planProgress(goal.current_plan);
   const isOverloaded = useSapiensStore(s => s.isOverloaded);
 
   return (
@@ -378,9 +403,10 @@ function GoalCard({ goal, sapienId, onClick }: { goal: Goal; sapienId: number; o
       <button onClick={onClick} className="w-full text-left p-3 flex flex-col gap-2">
         <div className="flex items-center gap-1.5 flex-wrap">
           <SourceBadge source={goal.source} />
-          <StatusPill  status={goal.status} />
+          <StatusPill  status={goal.state} />
+          <Lifecycle record={goal} />
           <span className="ml-auto text-[8px] font-mono text-white/20">
-            {total > 0 ? `${done}/${total} steps` : 'no plan yet'}
+            {goal.current_plan ? `${done}/${total} tasks finished` : 'No plan created'}
           </span>
         </div>
         <p className="text-[12px] text-white/80 leading-snug line-clamp-2">{goal.description}</p>
@@ -389,10 +415,10 @@ function GoalCard({ goal, sapienId, onClick }: { goal: Goal; sapienId: number; o
             <span className="text-[8px] text-white/25 w-14 flex-shrink-0">Importance</span>
             <div className="flex-1"><ThinMeter value={goal.importance} color="#818cf8" /></div>
           </div>
-          {total > 0 && (
+          {goal.progress !== null && (
             <div className="flex items-center gap-2">
               <span className="text-[8px] text-white/25 w-14 flex-shrink-0">Progress</span>
-              <div className="flex-1"><ThinMeter value={pct} color="#34d399" /></div>
+              <div className="flex-1"><ThinMeter value={goal.progress} color="#34d399" /></div>
             </div>
           )}
         </div>
@@ -438,18 +464,24 @@ function GoalDetailPane({
 
   const normalTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const fastTimerRef   = useRef<ReturnType<typeof setInterval> | null>(null);
+  const detailRequestRef = useRef(0);
+  const delayedFetchesRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   const fetchDetail = useCallback(async (showSpinner = false) => {
     if (document.visibilityState !== 'visible') return; // don't poll hidden tabs
+    const request = ++detailRequestRef.current;
     if (showSpinner) setLoading(true);
     setError(null);
     try {
       const d = await goalsService.getGoal(sapienId, goalId);
-      setDetail(d);
+      if (request === detailRequestRef.current) setDetail(d);
     } catch (e) {
-      setError((e as Error).message);
+      if (request === detailRequestRef.current) {
+        setDetail(null);
+        setError((e as Error).message);
+      }
     } finally {
-      setLoading(false);
+      if (request === detailRequestRef.current) setLoading(false);
     }
   }, [sapienId, goalId]);
 
@@ -476,10 +508,14 @@ function GoalDetailPane({
       fetchDetail(false);
     }, 30_000);
     // One fetch ~10s after submit
-    setTimeout(() => fetchDetail(false), 10_000);
+    delayedFetchesRef.current.push(setTimeout(() => fetchDetail(false), 10_000));
   }, [fetchDetail]);
 
-  useEffect(() => () => { if (fastTimerRef.current) clearInterval(fastTimerRef.current); }, []);
+  useEffect(() => () => {
+    detailRequestRef.current++;
+    if (fastTimerRef.current) clearInterval(fastTimerRef.current);
+    delayedFetchesRef.current.forEach(clearTimeout);
+  }, []);
 
   const handleReplan = async () => {
     if (!replanReason.trim()) return;
@@ -488,8 +524,8 @@ function GoalDetailPane({
       await goalsService.replan(sapienId, goalId, replanReason.trim());
       setReplanReason('');
       setReplanOpen(false);
-      toast.success('Replan requested — new plan appears within ~60s.');
-      setTimeout(() => fetchDetail(false), 30_000); // replan check after 30s
+      toast.success('Replan request accepted for background processing.');
+      delayedFetchesRef.current.push(setTimeout(() => fetchDetail(false), 30_000));
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -531,7 +567,8 @@ function GoalDetailPane({
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-1.5 flex-wrap">
               <SourceBadge source={goal.source} />
-              <StatusPill  status={goal.status} />
+              <StatusPill  status={goal.state} />
+              <Lifecycle record={goal} />
             </div>
             <CommentPopover
               sapienId={sapienId} goalId={goalId} scope="goal"
@@ -542,6 +579,8 @@ function GoalDetailPane({
           <p className="text-[13px] text-white/88 leading-snug">{goal.description}</p>
           {goal.motivation && <p className="text-[11px] text-white/40 leading-relaxed">{goal.motivation}</p>}
           <div className="flex flex-col gap-1.5">
+            <p className="text-[10px] text-white/40">Goal progress: {goal.progress === null ? 'Not reported' : `${Math.round(goal.progress * 100)}%`}</p>
+            <ThinMeter value={goal.progress} color="#34d399" />
             <div className="flex items-center gap-2">
               <span className="text-[9px] text-white/30 w-14">Importance</span>
               <div className="flex-1"><ThinMeter value={goal.importance} color="#818cf8" /></div>
@@ -553,6 +592,9 @@ function GoalDetailPane({
           </div>
         </div>
 
+        {error && <p role="alert" className="text-[11px] text-red-300">{error}</p>}
+        <RecordDetails record={goal} />
+
         {/* Plan */}
         <div className="rounded-2xl flex flex-col gap-0"
           style={{ border: '1px solid rgba(255,255,255,0.07)', overflow: 'hidden' }}>
@@ -562,46 +604,55 @@ function GoalDetailPane({
             style={{ background: 'rgba(255,255,255,0.03)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
             <div className="flex items-center gap-2">
               <span className="text-[11px] font-medium text-white/60">Plan</span>
-              {total > 0 && (
-                <span className="text-[9px] font-mono text-white/30">{done}/{total}</span>
+              {current_plan && (
+                <span className="text-[9px] font-mono text-white/30">{done}/{total} tasks finished</span>
               )}
             </div>
             <div className="flex items-center gap-2">
-              <CommentPopover
+              {current_plan && <CommentPopover
                 sapienId={sapienId} goalId={goalId} scope="plan"
                 examples={PLAN_EXAMPLES} label="Comment on plan" overloaded={isOverloaded}
                 triggerVariant="pill" onSuccess={startFastPoll}
-              />
+              />}
             </div>
           </div>
 
           {/* Steps */}
           {current_plan === null ? (
             <div className="px-4 py-4 flex items-center gap-2">
-              <Loader2 className="w-3.5 h-3.5 animate-spin text-white/25" />
-              <span className="text-[11px] text-white/30">Sapien is still planning…</span>
+              <Circle className="w-3.5 h-3.5 text-white/25" />
+              <span className="text-[11px] text-white/30">No plan created</span>
             </div>
           ) : (
             <div className="px-4 py-3 flex flex-col gap-2">
-              {current_plan.steps.map((step: PlanStep, i) => (
-                <div key={step.id} className="flex items-start gap-2.5 group">
-                  <span className="mt-0.5">{STEP_ICON[step.status]}</span>
-                  <p className={`flex-1 text-[11px] leading-snug min-w-0 ${step.status === 'done' ? 'text-white/35 line-through' : step.status === 'skipped' ? 'text-white/25 line-through' : 'text-white/70'}`}>
-                    {step.description}
-                  </p>
+              <p className="text-[11px] text-white/70">{current_plan.description}</p>
+              <div className="flex flex-wrap gap-2"><StatusPill status={current_plan.state} /><Lifecycle record={current_plan} /></div>
+              <p className="text-[10px] text-white/40">Plan progress: {current_plan.progress === null ? 'Not reported' : `${Math.round(current_plan.progress * 100)}%`}</p>
+              <RecordDetails record={current_plan} />
+              <RulesSummary rules={current_plan.task_rules} label="Task state rules" />
+              {current_plan.tasks.map((step: PlanStep, i) => (
+                <div key={step.id || i} className="flex items-start gap-2.5 group">
+                  <span className="mt-0.5">{step.finished === true ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> : <Circle className="w-3.5 h-3.5 text-white/30" />}</span>
+                  <div className="flex-1 min-w-0 text-[11px] text-white/70 break-words">
+                    <p className={step.finished === true ? 'text-white/35 line-through' : ''}>{step.description}</p>
+                    <StatusPill status={step.state} />
+                    <span className="ml-2 text-[9px] text-white/40">{step.finished === null ? 'Completion unknown' : step.finished ? 'Finished' : 'Unfinished'}</span>
+                    {step.result && <p className="mt-1 text-white/50">Result: {step.result}</p>}
+                    {step.evidence_refs.length > 0 && <p className="mt-1 text-white/40">Evidence references: {step.evidence_refs.join(', ')}</p>}
+                  </div>
                   {/* Per-step comment */}
                   <div className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-                    <CommentPopover
+                    {step.id && <CommentPopover
                       sapienId={sapienId} goalId={goalId} scope="step" stepId={step.id}
                       examples={STEP_EXAMPLES} overloaded={isOverloaded}
                       triggerVariant="icon" onSuccess={startFastPoll} openUp
-                    />
+                    />}
                   </div>
                   <span className="text-[8px] text-white/15 font-mono mt-0.5 flex-shrink-0">{i + 1}</span>
                 </div>
               ))}
-              {current_plan.steps.length === 0 && (
-                <p className="text-[10px] text-white/30 italic">No steps yet.</p>
+              {current_plan.tasks.length === 0 && (
+                <p className="text-[10px] text-white/30 italic">No tasks.</p>
               )}
             </div>
           )}
@@ -628,7 +679,7 @@ function GoalDetailPane({
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] disabled:opacity-40 transition-all"
                     style={{ background: 'rgba(124,58,237,0.2)', border: '1px solid rgba(124,58,237,0.35)', color: '#c4b5fd' }}>
                     {replanning ? <Loader2 className="w-3 h-3 animate-spin" /> : <RotateCcw className="w-3 h-3" />}
-                    {replanning ? 'Replanning…' : 'Submit'}
+                    {replanning ? 'Submitting…' : 'Submit'}
                   </button>
                   <button onClick={() => { setReplanOpen(false); setReplanReason(''); }}
                     className="px-3 py-1.5 rounded-lg text-[10px] text-white/30 hover:text-white/60 transition-colors">
@@ -659,14 +710,7 @@ function BackBtn({ onClick }: { onClick: () => void }) {
 
 // ── Main GoalsPanel ───────────────────────────────────────────────────────────
 
-type StatusFilter = 'all' | 'active' | 'done' | 'failed' | 'abandoned';
-const SOURCE_OPTIONS: { key: GoalSource; label: string }[] = [
-  { key: 'user',      label: 'You'       },
-  { key: 'curiosity', label: 'Curiosity' },
-  { key: 'parent',    label: 'Parent'    },
-  { key: 'lesson',    label: 'Lesson'    },
-  { key: 'external',  label: 'External'  },
-];
+type StatusFilter = 'unfinished' | 'finished' | 'retired';
 
 export function GoalsPanel({ sapienId }: { sapienId: number }) {
   const isOverloaded = useSapiensStore(s => s.isOverloaded);
@@ -674,34 +718,34 @@ export function GoalsPanel({ sapienId }: { sapienId: number }) {
   const [goals, setGoals]         = useState<Goal[]>([]);
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState<string | null>(null);
-  const [statusFilter, setStatusFilter]   = useState<StatusFilter>('active');
+  const [statusFilter, setStatusFilter]   = useState<StatusFilter>('unfinished');
   const [sourceFilters, setSourceFilters] = useState<Set<GoalSource>>(new Set());
   const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
   const [lastFetch, setLastFetch] = useState<Date | null>(null);
+  const requestRef = useRef(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fetchGoals = useCallback(async (showSpinner = false) => {
     if (document.visibilityState !== 'visible') return;
+    const request = ++requestRef.current;
     if (showSpinner) setLoading(true);
     setError(null);
     try {
-      const statusIn: string[] =
-        statusFilter === 'all'    ? ['pending', 'active', 'blocked', 'done', 'failed', 'abandoned'] :
-        statusFilter === 'active' ? ['pending', 'active', 'blocked'] : [statusFilter];
       const res = await goalsService.listGoals(sapienId, {
         activeOnly: false,
-        statusIn,
-        sourceIn: sourceFilters.size > 0 ? [...sourceFilters] : undefined,
+        finished: statusFilter === 'retired' ? undefined : statusFilter === 'finished',
+        retired: statusFilter === 'retired',
         topK: 30, orderBy: 'priority', includePlan: true,
       });
-      setGoals(res.goals ?? []);
+      if (request !== requestRef.current) return;
+      setGoals(res.goals);
       setLastFetch(new Date());
     } catch (e) {
-      setError((e as Error).message);
+      if (request === requestRef.current) setError((e as Error).message);
     } finally {
-      setLoading(false);
+      if (request === requestRef.current) setLoading(false);
     }
-  }, [sapienId, statusFilter, sourceFilters]);
+  }, [sapienId, statusFilter]);
 
   useEffect(() => {
     fetchGoals(true);
@@ -709,6 +753,7 @@ export function GoalsPanel({ sapienId }: { sapienId: number }) {
     const onVis = () => { if (document.visibilityState === 'visible') fetchGoals(false); };
     document.addEventListener('visibilitychange', onVis);
     return () => {
+      requestRef.current++;
       if (timerRef.current) clearInterval(timerRef.current);
       document.removeEventListener('visibilitychange', onVis);
     };
@@ -716,12 +761,15 @@ export function GoalsPanel({ sapienId }: { sapienId: number }) {
 
   const toggleSource = (s: GoalSource) =>
     setSourceFilters(prev => { const n = new Set(prev); n.has(s) ? n.delete(s) : n.add(s); return n; });
+  const sourceOptions = [...new Set([...goals.map(g => g.source), ...sourceFilters])];
+  const visibleGoals = goals.filter(g => !sourceFilters.size || sourceFilters.has(g.source));
 
   if (selectedGoalId) {
     return (
       <div className="h-full rounded-2xl flex flex-col p-4"
         style={{ background: 'rgba(8,12,22,0.85)', border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(20px)', overflow: 'hidden' }}>
         <GoalDetailPane
+          key={`${sapienId}:${selectedGoalId}`}
           sapienId={sapienId} goalId={selectedGoalId}
           onBack={() => setSelectedGoalId(null)}
         />
@@ -757,29 +805,34 @@ export function GoalsPanel({ sapienId }: { sapienId: number }) {
 
         {/* Status filter */}
         <div className="flex gap-1 flex-wrap">
-          {(['all', 'active', 'done', 'failed', 'abandoned'] as StatusFilter[]).map(f => (
-            <button key={f} onClick={() => setStatusFilter(f)}
+          {(['unfinished', 'finished', 'retired'] as StatusFilter[]).map(f => (
+            <button key={f} onClick={() => {
+              if (f === statusFilter) return;
+              requestRef.current++;
+              setGoals([]); setLoading(true); setSourceFilters(new Set()); setStatusFilter(f);
+            }}
               className="px-2.5 py-1 rounded-lg text-[10px] transition-all capitalize"
               style={statusFilter === f
                 ? { background: 'rgba(129,140,248,0.18)', border: '1px solid rgba(129,140,248,0.35)', color: '#a5b4fc' }
                 : { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.35)' }}>
-              {f === 'active' ? 'Active' : f.charAt(0).toUpperCase() + f.slice(1)}
+              {f.charAt(0).toUpperCase() + f.slice(1)}
             </button>
           ))}
         </div>
 
         {/* Source chips */}
+        <p className="text-[9px] text-white/25 mt-2">Up to 30 matching goals · Sources below filter this loaded set</p>
         <div className="flex gap-1 flex-wrap mt-2">
-          {SOURCE_OPTIONS.map(({ key, label }) => {
+          {sourceOptions.map(key => {
             const on = sourceFilters.has(key);
-            const s  = SOURCE_STYLE[key];
+            const s = Object.prototype.hasOwnProperty.call(SOURCE_STYLE, key) ? SOURCE_STYLE[key] : SOURCE_STYLE.external;
             return (
               <button key={key} onClick={() => toggleSource(key)}
                 className="px-2 py-0.5 rounded text-[9px] transition-all"
                 style={on
                   ? { background: s.bg, border: `1px solid ${s.color}40`, color: s.color }
                   : { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.25)' }}>
-                {label}
+                {key || 'Source unspecified'}
               </button>
             );
           })}
@@ -797,20 +850,19 @@ export function GoalsPanel({ sapienId }: { sapienId: number }) {
             style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
             <AlertCircle className="w-4 h-4 flex-shrink-0" />{error}
           </div>
-        ) : goals.length === 0 ? (
+        ) : visibleGoals.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-40 gap-3 text-center px-4">
             <Circle className="w-8 h-8 text-white/10" />
             <div>
-              <p className="text-[12px] text-white/35 mb-1">No active goals yet.</p>
+              <p className="text-[12px] text-white/35 mb-1">No matching goals in this view.</p>
               <p className="text-[10px] text-white/20 leading-relaxed">
-                Mention something you want help with and Sapien will track it.
+                Refresh or choose another filter.
               </p>
-              <p className="text-[9px] text-white/15 mt-2">Extracted intents take ~10 min to commit.</p>
             </div>
           </div>
         ) : (
           <div className="flex flex-col gap-2">
-            {goals.map(g => (
+            {visibleGoals.map(g => (
               <GoalCard key={g.id} goal={g} sapienId={sapienId} onClick={() => setSelectedGoalId(g.id)} />
             ))}
           </div>
@@ -819,3 +871,4 @@ export function GoalsPanel({ sapienId }: { sapienId: number }) {
     </div>
   );
 }
+
