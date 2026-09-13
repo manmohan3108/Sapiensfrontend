@@ -75,6 +75,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener(authSession.expiredEvent, expired);
   }, [clearSession]);
 
+  useEffect(() => {
+    const syncSession = async (event: StorageEvent) => {
+      if (event.key !== authSession.storageKey) return;
+      if (!event.newValue) {
+        useSapiensStore.getState().reset();
+        setUser(null);
+        setStatus('unauthenticated');
+        setNotice('You were signed out in another tab.');
+        return;
+      }
+      setStatus('loading');
+      try {
+        const nextUser = await loadMe();
+        if (nextUser.user_id !== user?.user_id) useSapiensStore.getState().reset();
+        setUser(nextUser);
+        setNotice('');
+        setStatus('authenticated');
+      } catch {
+        clearSession();
+        setNotice('The session changed in another tab. Please sign in again.');
+      }
+    };
+    window.addEventListener('storage', syncSession);
+    return () => window.removeEventListener('storage', syncSession);
+  }, [clearSession, user?.user_id]);
+
   const complete = useCallback(async (request: Promise<AuthUser>) => {
     setNotice('');
     try {

@@ -35,12 +35,13 @@ for the complete VM, Nginx, TLS, update, verification, and rollback procedure.
 ## Authentication and roles
 
 The SPA signs in customers and app administrators through the JWT endpoints under
-`/accounts/api/`. Tokens are kept in tab-scoped `sessionStorage`; authenticated API
+`/accounts/api/`. Tokens are kept in origin-scoped `localStorage`; authenticated API
 requests attach the access token and perform one rotation-aware refresh and retry
-after a `401`. Closing the tab ends local persistence, while signing out also asks
-the backend to revoke the refresh token.
+after a `401`. Frontend login, logout, account changes, and rotated tokens synchronize
+across tabs. Signing out also asks the backend to revoke the refresh token. This JWT
+session remains independent from Django's `/admin/` cookie session.
 
-`sessionStorage` is still readable by scripts running on this origin: it is not
+`localStorage` is readable by scripts running on this origin: it is not
 an XSS-proof credential store. Keep TLS and a restrictive deployment CSP, and do
 not add untrusted scripts. An HttpOnly-cookie/BFF design would require backend
 changes if stronger token isolation is desired.

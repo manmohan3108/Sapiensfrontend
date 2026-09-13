@@ -21,24 +21,25 @@ function authUrl(path: string) {
 
 function readTokens(): TokenPair | null {
   try {
-    const value = sessionStorage.getItem(STORAGE_KEY);
+    const value = localStorage.getItem(STORAGE_KEY);
     const tokens = value ? JSON.parse(value) as TokenPair : null;
     return tokens && typeof tokens.access === 'string' && typeof tokens.refresh === 'string' ? tokens : null;
   } catch {
-    try { sessionStorage.removeItem(STORAGE_KEY); } catch { /* Storage is unavailable. */ }
+    try { localStorage.removeItem(STORAGE_KEY); } catch { /* Storage is unavailable. */ }
     return null;
   }
 }
 
 export const authSession = {
   get tokens() { return readTokens(); },
-  save(tokens: TokenPair) { sessionStorage.setItem(STORAGE_KEY, JSON.stringify(tokens)); },
+  save(tokens: TokenPair) { localStorage.setItem(STORAGE_KEY, JSON.stringify(tokens)); },
   clear(notify = false) {
     sessionVersion += 1;
-    try { sessionStorage.removeItem(STORAGE_KEY); } catch { /* Already inaccessible. */ }
+    try { localStorage.removeItem(STORAGE_KEY); } catch { /* Already inaccessible. */ }
     if (notify) window.dispatchEvent(new Event(AUTH_EXPIRED_EVENT));
   },
   expiredEvent: AUTH_EXPIRED_EVENT,
+  storageKey: STORAGE_KEY,
   url: authUrl,
 };
 
