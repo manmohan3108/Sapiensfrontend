@@ -7,6 +7,7 @@ import {
 import { sapiensService } from '../../core/services/sapiensService';
 import type { AwarenessBeat, AwarenessBeatEvent, AwarenessBeatsResponse, AwarenessHistoryItem, AwarenessResponse } from '../../types/sapiensTypes';
 import type { ApiError } from '../../types/apiTypes';
+import { AwarenessFlowGraph } from './AwarenessFlowGraph';
 
 const panel = 'rounded-xl border border-white/[.07] bg-white/[.025]';
 const sensitiveKey = /(credential|secret|token|password|argument|\bargs?\b|payload|result|prompt|raw_response)/i;
@@ -142,11 +143,8 @@ function BeatDetails({ beat, latest = false }: { beat: AwarenessBeat; latest?: b
   return <div className="space-y-3">
     <section className={`${panel} p-4`}><div className="flex flex-wrap items-start gap-3"><span className={`grid h-10 w-10 place-items-center rounded-xl border ${beat.mode === 'autonomous' ? 'border-violet-400/20 bg-violet-400/[.08] text-violet-200' : 'border-cyan-400/20 bg-cyan-400/[.08] text-cyan-200'}`}>{beat.mode === 'autonomous' ? <Bot className="h-4 w-4" /> : <CircleDot className="h-4 w-4" />}</span><div><div className="flex flex-wrap items-center gap-2"><h3 className="text-sm font-medium text-white/75">{latest ? 'Latest awareness beat' : 'Awareness beat'}</h3><span className="rounded-full bg-white/[.05] px-2 py-0.5 text-[8px] capitalize text-white/45">{beat.mode || 'mode unavailable'}</span></div><p className="mt-1 text-[10px] text-white/30">Triggered by {beat.trigger_source || 'unknown source'} · {absoluteTime(beat.started_at)} ({relative(beat.started_at)}) · {duration(beat)}</p>{beat.occurrence_id && <p className="mt-1 text-[8px] text-white/22">Occurrence <span className="font-mono text-white/35">{beat.occurrence_id}</span> · continuing beats may share this ID</p>}</div><span className="ml-auto font-mono text-[8px] text-white/20">{beat._id}</span></div></section>
     <BeatSummary beat={beat}/>
-    <div><p className="mb-2 text-[9px] uppercase tracking-[.16em] text-white/30">1 · Attended subject and selected focus</p><CandidateFlow beat={beat}/></div>
-    <div><p className="mb-2 text-[9px] uppercase tracking-[.16em] text-white/30">2 · Prepared and curated context</p><div className="grid gap-3 md:grid-cols-3"><SummaryBlock title="Preparation" value={beat.preparation} color="#67e8f9"/><SummaryBlock title="Focus formation" value={focusFormation} color="#86efac"/><SummaryBlock title="Curated context" value={beat.curation} color="#c4b5fd"/></div></div>
-    <section className={`${panel} p-4`}><p className="mb-4 text-[9px] uppercase tracking-[.16em] text-white/35">3 · Controller, tool, and external-action events</p><EventTimeline events={beat.events}/></section>
-    <div><p className="mb-2 text-[9px] uppercase tracking-[.16em] text-white/30">4 · Outcome assessment</p><AssessmentSummary beat={beat}/>{!beat.assessment && <p className={`${panel} p-3 text-[10px] italic text-white/25`}>No outcome assessment was stored for this beat.</p>}</div>
-    <div><p className="mb-2 text-[9px] uppercase tracking-[.16em] text-white/30">5 · Retained understanding and delivery</p><div className="grid gap-3 md:grid-cols-3"><SummaryBlock title="Internal retained understanding" value={beat.assessment?.understanding ?? null} color="#c4b5fd"/><SummaryBlock title="Generated response / final resolution" value={beat.final} color="#86efac"/><SummaryBlock title="Delivery route" value={beat.delivery} color={deliveryStatus?.includes('fail') ? '#fca5a5' : '#7dd3fc'}/></div></div>
+    <AwarenessFlowGraph beat={beat}/>
+    <details className={`${panel} p-3`}><summary className="cursor-pointer text-[10px] text-white/40">Supporting diagnostic summaries</summary><div className="mt-3 grid gap-3 md:grid-cols-3"><SummaryBlock title="Preparation" value={beat.preparation} color="#67e8f9"/><SummaryBlock title="Focus formation" value={focusFormation} color="#86efac"/><SummaryBlock title="Curated context" value={beat.curation} color="#c4b5fd"/><AssessmentSummary beat={beat}/><SummaryBlock title="Generated response / final resolution" value={beat.final} color="#86efac"/><SummaryBlock title="Delivery route" value={beat.delivery} color={deliveryStatus?.includes('fail') ? '#fca5a5' : '#7dd3fc'}/></div></details>
   </div>;
 }
 

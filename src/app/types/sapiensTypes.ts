@@ -239,6 +239,7 @@ export interface AwarenessBeatCandidateSummary {
   sources?: Record<string, number>;
   bounded_candidates?: Array<Record<string, unknown>>;
   candidates?: Array<Record<string, unknown>>;
+  held_candidates?: Array<Record<string, unknown>>;
   truncated?: boolean;
   was_truncated?: boolean;
 }
