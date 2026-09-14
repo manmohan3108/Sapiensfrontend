@@ -149,7 +149,7 @@ export function HeaderBar() {
 
           <div className="w-px h-5 bg-white/10" />
 
-          {user?.role === 'customer' && <button
+          {(user?.role === 'customer' || user?.role === 'admin') && <button
             onClick={() => navigate('/connections')}
             title="Manage external account connections"
             className="flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs transition-all duration-150"

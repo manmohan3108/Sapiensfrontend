@@ -19,6 +19,7 @@ export const router = createBrowserRouter([
     Component: ProtectedRoute,
     children: [
       { path: '/workspace', Component: WorkspacePage, ErrorBoundary },
+      { path: '/connections', Component: ConnectionsPage, ErrorBoundary },
       { path: '/access-denied', Component: AccessDeniedPage, ErrorBoundary },
     ],
   },
@@ -26,7 +27,6 @@ export const router = createBrowserRouter([
     Component: () => <ProtectedRoute roles={['customer']} />,
     children: [
       { path: '/', Component: LandingPage, ErrorBoundary },
-      { path: '/connections', Component: ConnectionsPage, ErrorBoundary },
     ],
   },
   {
