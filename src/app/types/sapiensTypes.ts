@@ -154,8 +154,21 @@ export interface ChatMessage {
 export interface AwarenessHistoryItem {
   id: string;
   focus: string;
+  understanding?: string;
   source: string;
+  state?: string;
+  remaining?: string;
+  reason?: string;
+  confidence?: number;
+  assessed_at?: string;
+  subject?: AwarenessSubject | null;
   created_at: string;
+}
+
+export interface AwarenessSubject {
+  content: string;
+  source: string;
+  event_at?: string;
 }
 
 export interface AwarenessAlsoOnMindItem {
@@ -164,7 +177,7 @@ export interface AwarenessAlsoOnMindItem {
 }
 
 export interface AwarenessCurrent extends AwarenessHistoryItem {
-  also_on_mind: AwarenessAlsoOnMindItem[];
+  also_on_mind?: AwarenessAlsoOnMindItem[];
 }
 
 export interface AwarenessResponse {
@@ -214,6 +227,9 @@ export interface AwarenessBeatEventDetail extends Record<string, unknown> {
   response_present?: boolean;
   route?: string;
   channel?: string;
+  understanding?: string;
+  remaining?: string;
+  confidence?: number;
 }
 
 export interface AwarenessBeatCandidateSummary {
@@ -255,6 +271,16 @@ export interface AwarenessBeat {
   focus_formation?: Record<string, unknown> | string | null;
   curation?: Record<string, unknown> | string | null;
   events_truncated?: boolean;
+  assessment?: {
+    assessed?: boolean;
+    state?: string;
+    understanding?: string;
+    reason?: string;
+    remaining?: string;
+    confidence?: number;
+    evidence_refs?: string[];
+    review_at?: string;
+  } | null;
   conclusion?: {
     summary: string;
     changed: boolean;
