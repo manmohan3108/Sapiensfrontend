@@ -73,6 +73,17 @@ This intentionally conservative behavior does not disclose why access failed.
 Selection/account changes discard in-flight response bodies; no Sapiens selection,
 chat, or memory data is persisted to browser storage. Theme preference is shared.
 
+The admin-only Simulation Lab at `/admin/simulations` currently drives the
+standalone simulation environment API: retained-run lifecycle, accelerated clock,
+scenario events, evidence, and evaluation. Runs are process-local rather than
+durable history and require the `/api/simulations/` prefix to remain pinned to one
+long-lived backend worker. Existing- and fresh-Sapiens execution is explicitly
+pending backend integration. Before that can be enabled, the backend must create an
+isolated snapshot/copy of the selected Sapiens, attach its engine and approved
+MCP/LLM adapters to the simulated world, and guarantee that live memories,
+conversations, and issue trackers cannot be mutated. The current frontend does not
+send an unsupported `sapien_id`; workspace shortcuts carry display context only.
+
 Deployment is NOT verified. Apply backend migration `0004_sapiensmodel_owner`
 before restarting, verifying the host includes `0003_enginejob_origin`; reconcile
 history differences rather than faking migrations. Existing records remain

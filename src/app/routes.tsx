@@ -3,6 +3,7 @@ import { LandingPage } from './pages/LandingPage';
 import { WorkspacePage } from './pages/WorkspacePage';
 import { ConnectionsPage } from './pages/ConnectionsPage';
 import { AnalysePage } from './pages/AnalysePage';
+import { SimulationLabPage } from './pages/SimulationLabPage';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AuthPage } from './pages/AuthPage';
 import { AccessDeniedPage, GuestRoute, ProtectedRoute } from './components/auth/RouteGuards';
@@ -36,6 +37,7 @@ export const router = createBrowserRouter([
       { path: '/admin', Component: LandingPage, ErrorBoundary },
       { path: '/admin/analyse', Component: AnalysePage, ErrorBoundary },
       { path: '/admin/analyse/:section', Component: AnalysePage, ErrorBoundary },
+      { path: '/admin/simulations', Component: SimulationLabPage, ErrorBoundary },
       { path: '/engram', Component: () => <Navigate to="/admin/analyse/engram" replace />, ErrorBoundary },
       { path: '/engine-bus', Component: () => <Navigate to="/admin/analyse/engine-bus" replace />, ErrorBoundary },
     ],

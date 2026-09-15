@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
-import { Brain, Heart, Plus, Sparkles, ArrowRight, LogOut, ShieldCheck, UserRound } from 'lucide-react';
+import { Brain, Heart, Plus, Sparkles, ArrowRight, LogOut, ShieldCheck, UserRound, Beaker, ScanSearch } from 'lucide-react';
+import { Link } from 'react-router';
 import { LoadSapiensList } from '../components/landing/LoadSapiensList';
 import { CreateSapiensForm } from '../components/landing/CreateSapiensForm';
 import { ThemeToggle } from '../components/ThemeToggle';
@@ -30,6 +31,8 @@ export function LandingPage() {
           <div className="flex items-center gap-2">
             <span className="hidden items-center gap-2 rounded-full border border-border bg-muted/40 px-3 py-1.5 text-xs text-muted-foreground sm:flex">{isAdmin ? <ShieldCheck className="size-3.5 text-violet-500" /> : <UserRound className="size-3.5 text-violet-500" />}<span className="max-w-28 truncate">{user?.username}</span><span className="capitalize text-foreground/70">· {user?.role}</span></span>
             <ThemeToggle className="rounded-full" />
+            {isAdmin && <Button variant="ghost" size="sm" asChild className="rounded-full px-3"><Link to="/admin/analyse"><ScanSearch className="mr-1.5 size-4" />Analyse</Link></Button>}
+            {isAdmin && <Button variant="outline" size="sm" asChild className="rounded-full px-3"><Link to="/admin/simulations"><Beaker className="mr-1.5 size-4" />Simulation Lab</Link></Button>}
             <Button variant="ghost" size="sm" onClick={openCreate} className="rounded-full px-4">
               <Plus className="mr-1.5 size-4" /> Create new
             </Button>
