@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
-import { Activity, AlertTriangle, ArrowLeft, Beaker, ChevronDown, Clock3, Loader2, Pause, Play, Plus, RefreshCw, Square, Trash2 } from 'lucide-react';
+import { Activity, AlertTriangle, ArrowLeft, Beaker, ChevronDown, Clock3, Loader2, Pause, Play, Plus, RefreshCw, Square, Trash2, UserPlus, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
@@ -11,7 +11,9 @@ import { Textarea } from '../components/ui/textarea';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { simulationService } from '../core/services/simulationService';
 import { HttpError } from '../core/auth/authSession';
+import { sapiensService } from '../core/services/sapiensService';
 import type { SimulationCreateRequest, SimulationEvent, SimulationResult, SimulationRun, SimulationStatus } from '../types/simulationTypes';
+import type { Sapiens } from '../types/sapiensTypes';
 
 const terminal = new Set<SimulationStatus>(['completed', 'stopped', 'limit_reached', 'failed']);
 const inactive = new Set<SimulationStatus>(['created', 'completed', 'stopped', 'limit_reached', 'failed']);
@@ -48,7 +50,16 @@ function statusTone(status: SimulationStatus) {
 export function SimulationLabPage() {
   const [params] = useSearchParams();
   const sapienId = params.get('sapienId');
-  const sapienName = params.get('sapienName');
+  const [targetMode, setTargetMode] = useState<'existing' | 'fresh'>('existing');
+  const [sapiens, setSapiens] = useState<Sapiens[]>([]);
+  const [sapiensLoading, setSapiensLoading] = useState(true);
+  const [sapiensError, setSapiensError] = useState('');
+  const [selectedSapienId, setSelectedSapienId] = useState(sapienId ?? '');
+  const [freshName, setFreshName] = useState('New test Sapiens');
+  const [freshRole, setFreshRole] = useState('Project collaborator');
+  const [durationMinutes, setDurationMinutes] = useState('30');
+  const [scenarioBrief, setScenarioBrief] = useState('A developer is blocked and asks for clarification before continuing the project.');
+  const [successGoal, setSuccessGoal] = useState('The blocker is acknowledged and the developer receives a useful response.');
   const [runs, setRuns] = useState<SimulationRun[]>([]);
   const [selectedId, setSelectedId] = useState('');
   const [detail, setDetail] = useState<SimulationRun | null>(null);
@@ -106,6 +117,25 @@ export function SimulationLabPage() {
     refreshList(controller.signal).catch(value => setError(message(value))).finally(() => setLoading(false));
     return () => controller.abort();
   }, [refreshList]);
+
+  useEffect(() => {
+    let active = true;
+    setSapiensLoading(true);
+    sapiensService.listSapiens().then(list => {
+      if (!active) return;
+      setSapiens(list);
+      setSelectedSapienId(current => current || list[0]?.id || '');
+      setSapiensError('');
+    }).catch(value => { if (active) setSapiensError(message(value)); })
+      .finally(() => { if (active) setSapiensLoading(false); });
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    const minutes = Number(durationMinutes);
+    const start = new Date(startAt);
+    if (Number.isFinite(minutes) && minutes > 0 && !Number.isNaN(start.getTime())) setEndAt(new Date(start.getTime() + minutes * 60_000).toISOString());
+  }, [durationMinutes, startAt]);
 
   useEffect(() => {
     cursor.current = 0;
@@ -210,19 +240,28 @@ export function SimulationLabPage() {
   return <div className="min-h-screen bg-background text-foreground">
     <header className="sticky top-0 z-20 border-b border-border/70 bg-background/90 backdrop-blur">
       <div className="mx-auto flex min-h-16 max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
-        <div className="flex items-center gap-3"><Link to="/admin" className="rounded-lg p-2 hover:bg-muted" aria-label="Back to admin home"><ArrowLeft className="size-4" /></Link><span className="grid size-9 place-items-center rounded-xl bg-violet-600 text-white"><Beaker className="size-5" /></span><div><h1 className="font-semibold">Simulation Lab</h1><p className="text-xs text-muted-foreground">Admin-only isolated environment runner</p></div></div>
-        <div className="flex items-center gap-2"><Badge variant="outline">Worker {workerId ?? '—'}</Badge><ThemeToggle /><Button variant="outline" size="sm" onClick={() => void refreshList().catch(value => setError(message(value)))}><RefreshCw className="mr-2 size-4" />Refresh</Button></div>
+        <div className="flex items-center gap-3"><Link to="/admin" className="rounded-lg p-2 hover:bg-muted" aria-label="Back to admin home"><ArrowLeft className="size-4" /></Link><span className="grid size-9 place-items-center rounded-xl bg-violet-600 text-white"><Beaker className="size-5" /></span><div><h1 className="font-semibold">Simulation Lab</h1><p className="text-xs text-muted-foreground">Explore how a Sapiens responds to a scenario</p></div></div>
+        <div className="flex items-center gap-2"><ThemeToggle /><Button variant="outline" size="sm" onClick={() => void refreshList().catch(value => setError(message(value)))}><RefreshCw className="mr-2 size-4" />Refresh</Button></div>
       </div>
     </header>
     <main className="mx-auto max-w-7xl space-y-5 px-4 py-6 sm:px-6">
-      <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm leading-6">
-        <p className="font-medium text-amber-800 dark:text-amber-200">Environment-only simulation</p>
-        <p className="text-muted-foreground">Existing-Sapiens and fresh-Sapiens execution are backend integration pending. No real Sapiens, cloned memory, engine, MCP tool, or LLM is attached yet. Fictional people in the world seed are not Sapiens. A completed environment run does not prove an actual Sapiens succeeded.</p>
-        {sapienId && <p className="mt-2 font-medium">Context from workspace: {sapienName || 'Selected Sapiens'} ({sapienId}). Integration pending; this run will not read or mutate it.</p>}
-      </div>
-      {error && <div role="alert" className="flex gap-3 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-700 dark:text-red-300"><AlertTriangle className="mt-0.5 size-4 shrink-0" /><span>{error}</span></div>}
+      <div className="rounded-lg border border-blue-500/20 bg-blue-500/[.06] px-4 py-2.5 text-xs text-muted-foreground">Sapiens execution is being connected to the simulation engine. You can configure a simulation now; starting it will become available with that integration.</div>
 
-      <div className="grid gap-5 xl:grid-cols-[320px_minmax(0,1fr)]">
+      <section className="space-y-5" aria-labelledby="setup-heading">
+        <div><p className="text-sm font-medium text-violet-600">Set up a simulation</p><h2 id="setup-heading" className="mt-1 text-2xl font-semibold tracking-tight">Who would you like to simulate?</h2><p className="mt-1 text-sm text-muted-foreground">Choose a Sapiens, give it a situation to navigate, and set how much simulated time should pass.</p></div>
+        <div className="grid gap-5 lg:grid-cols-3">
+          <Card className="lg:col-span-2"><CardHeader><CardTitle className="text-base">1. Choose a Sapiens</CardTitle></CardHeader><CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-2"><button onClick={() => setTargetMode('existing')} className={`rounded-xl border p-4 text-left transition ${targetMode === 'existing' ? 'border-violet-500 bg-violet-500/[.07]' : 'hover:bg-muted/50'}`}><Users className="mb-2 size-5 text-violet-500" /><strong className="block text-sm">Existing Sapiens</strong><span className="mt-1 block text-xs text-muted-foreground">Use an isolated copy of its experience</span></button><button onClick={() => setTargetMode('fresh')} className={`rounded-xl border p-4 text-left transition ${targetMode === 'fresh' ? 'border-violet-500 bg-violet-500/[.07]' : 'hover:bg-muted/50'}`}><UserPlus className="mb-2 size-5 text-violet-500" /><strong className="block text-sm">Fresh Sapiens</strong><span className="mt-1 block text-xs text-muted-foreground">Start without prior memories</span></button></div>
+            {targetMode === 'existing' ? <div>{sapiensLoading ? <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" />Loading Sapiens…</p> : sapiensError ? <p className="text-sm text-red-600">{sapiensError}</p> : sapiens.length ? <div className="grid max-h-64 gap-2 overflow-auto sm:grid-cols-2">{sapiens.map(item => <button key={item.id} onClick={() => setSelectedSapienId(item.id)} className={`rounded-xl border p-3 text-left ${selectedSapienId === item.id ? 'border-violet-500 bg-violet-500/[.07]' : 'hover:bg-muted/50'}`}><span className="block truncate text-sm font-medium">{item.name}</span><span className="mt-1 block truncate text-xs text-muted-foreground">{item.role || 'No descriptive role'}</span></button>)}</div> : <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">No Sapiens are available. You can still configure a fresh-Sapiens simulation.</p>}</div> : <div className="grid gap-3 sm:grid-cols-2"><Field label="Name"><Input value={freshName} onChange={event => setFreshName(event.target.value)} /></Field><Field label="Role in the scenario"><Input value={freshRole} onChange={event => setFreshRole(event.target.value)} /></Field></div>}
+          </CardContent></Card>
+          <Card><CardHeader><CardTitle className="text-base">2. Choose a scenario</CardTitle></CardHeader><CardContent className="space-y-3"><div className="rounded-xl border border-violet-500 bg-violet-500/[.07] p-4"><Badge variant="secondary">Example</Badge><strong className="mt-3 block">Resolve a project blocker</strong></div><Field label="Situation"><Textarea className="min-h-20" value={scenarioBrief} onChange={event => setScenarioBrief(event.target.value)} /></Field><Field label="What a good outcome looks like"><Textarea className="min-h-20" value={successGoal} onChange={event => setSuccessGoal(event.target.value)} /></Field><p className="text-xs text-muted-foreground">This is an editable setup for the bundled example. Its supported event payload can be inspected in Developer preview.</p></CardContent></Card>
+        </div>
+        <Card><CardHeader><CardTitle className="text-base">3. Set the pace</CardTitle></CardHeader><CardContent><div className="grid gap-4 md:grid-cols-3"><Field label="Starts"><Input type="datetime-local" value={startAt.replace('Z', '').slice(0, 16)} onChange={event => setStartAt(`${event.target.value}:00Z`)} /></Field><Field label="Simulated duration"><select value={durationMinutes} onChange={event => setDurationMinutes(event.target.value)} className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"><option value="15">15 minutes</option><option value="30">30 minutes</option><option value="60">1 hour</option><option value="240">4 hours</option><option value="1440">1 day</option></select></Field><Field label="Simulation speed"><select value={speed} onChange={event => setSpeed(event.target.value)} className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"><option value="1">Real time</option><option value="10">10× faster</option><option value="60">60× faster</option><option value="600">600× faster</option></select></Field></div><div className="mt-5 flex flex-wrap items-center gap-3"><Button disabled title="Connecting Sapiens to simulations is not available yet"><Play className="mr-2 size-4" />Start simulation</Button><span className="text-sm text-muted-foreground">Connecting Sapiens to simulations is not available yet.</span></div></CardContent></Card>
+        <Card><CardHeader><CardTitle className="text-base">Progress and results</CardTitle></CardHeader><CardContent><div className="grid place-items-center rounded-xl border border-dashed py-10 text-center"><Activity className="mb-3 size-7 text-muted-foreground/50" /><p className="font-medium">Your simulation results will appear here</p><p className="mt-1 max-w-md text-sm text-muted-foreground">Once execution is connected, this area will show the simulation timeline, key decisions, and expectation outcomes.</p></div></CardContent></Card>
+      </section>
+      <details className="rounded-xl border bg-muted/20 p-4"><summary className="cursor-pointer font-medium">Developer preview <span className="ml-2 text-sm font-normal text-muted-foreground">Run the standalone example environment without a Sapiens</span></summary><div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-muted-foreground"><Badge variant="outline">Worker {workerId ?? '—'}</Badge><span>Process-local diagnostic tools and raw scenario controls</span></div>
+      {error && <div role="alert" className="mt-4 flex gap-3 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-700 dark:text-red-300"><AlertTriangle className="mt-0.5 size-4 shrink-0" /><span>{error}</span></div>}
+      <div className="mt-4 grid gap-5 xl:grid-cols-[320px_minmax(0,1fr)]">
         <Card className="h-fit"><CardHeader className="pb-3"><CardTitle className="flex items-center justify-between text-base">Retained runs <Badge variant="secondary">{runs.length}/8</Badge></CardTitle><p className="text-xs leading-5 text-muted-foreground">Process memory only; terminal runs expire after about one hour and all runs disappear on worker restart.</p></CardHeader><CardContent className="space-y-2">
           {loading && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" />Loading runs…</p>}
           {!loading && !runs.length && <p className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">No retained runs on this worker.</p>}
@@ -243,7 +282,7 @@ export function SimulationLabPage() {
             <Card><CardHeader><CardTitle className="text-base">Evaluation result</CardTitle></CardHeader><CardContent>{!terminal.has(selected.status) && <p className="text-sm text-muted-foreground">Results become available after the run reaches a terminal state.</p>}{terminal.has(selected.status) && !result && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" />Draining final evidence and result…</p>}{result && <div className="space-y-3"><div className="flex flex-wrap gap-3 text-sm"><Badge className={statusTone(result.status)}>{result.status}</Badge><span>Pass rate: <strong>{result.pass_rate === null ? 'Not scored' : `${Math.round(result.pass_rate * 100)}%`}</strong></span></div>{result.pass_rate === null && <p className="text-sm text-muted-foreground">No score is not zero and does not indicate success; expectations may be absent or lack evidence.</p>}{!result.report.metrics.length && <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">No expectations were configured.</p>}{result.report.metrics.map(metric => <div key={metric.expectation_id} className="rounded-lg border p-3 text-sm"><div className="flex flex-wrap items-center gap-2"><strong>{metric.expectation_id}</strong><Badge className={metric.verdict === 'pass' ? statusTone('completed') : metric.verdict === 'fail' ? statusTone('failed') : statusTone('paused')}>{metric.verdict.replace('_', ' ')}</Badge></div><p className="mt-2 text-muted-foreground">{metric.explanation}</p>{metric.evidence_ids.length > 0 && <p className="mt-2 text-xs">Evidence: {metric.evidence_ids.map((id, index) => <span key={id}>{index > 0 && ', '}<a className="text-violet-600 hover:underline" href={evidenceById.has(id) ? `#evidence-${evidenceById.get(id)}` : undefined}>{id}</a></span>)}</p>}</div>)}</div>}</CardContent></Card>
           </> : <Card><CardContent className="py-12 text-center text-sm text-muted-foreground">Select a retained run or create a new one to inspect it.</CardContent></Card>}
         </div>
-      </div>
+      </div></details>
     </main>
   </div>;
 }
