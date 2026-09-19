@@ -1,292 +1,213 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
-import { Activity, AlertTriangle, ArrowLeft, Beaker, ChevronDown, Clock3, Loader2, Pause, Play, Plus, RefreshCw, Square, Trash2, UserPlus, Users } from 'lucide-react';
-import { toast } from 'sonner';
+import { AlertTriangle, ArrowLeft, Beaker, Download, RefreshCw } from 'lucide-react';
 import { Button } from '../components/ui/button';
-import { Badge } from '../components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
+import { Badge } from '../components/ui/badge';
 import { ThemeToggle } from '../components/ThemeToggle';
-import { simulationService } from '../core/services/simulationService';
 import { HttpError } from '../core/auth/authSession';
+import { simulationService } from '../core/services/simulationService';
 import { sapiensService } from '../core/services/sapiensService';
-import type { SimulationCreateRequest, SimulationEvent, SimulationResult, SimulationRun, SimulationStatus } from '../types/simulationTypes';
+import type { CaseCatalog, CaseCreateRequest, DebugGuide, EventPage, ParticipantOutcome, SimulationEvent, SimulationResult, SimulationRun, SimulationStatus } from '../types/simulationTypes';
 import type { Sapiens } from '../types/sapiensTypes';
 
-const terminal = new Set<SimulationStatus>(['completed', 'stopped', 'limit_reached', 'failed']);
-const inactive = new Set<SimulationStatus>(['created', 'completed', 'stopped', 'limit_reached', 'failed']);
-const initialWorld = JSON.stringify({ people: [{ person_id: 'developer', name: 'Developer' }, { person_id: 'ranu', name: 'Ranu' }], issues: [] }, null, 2);
-const initialEvents = JSON.stringify([{ event_id: 'blocked', at: '2026-09-15T09:01:00Z', event: { type: 'send_message', sender_id: 'developer', recipient_id: 'ranu', text: 'I need clarification before continuing.' } }], null, 2);
-const initialExpectations = JSON.stringify([], null, 2);
-
-function message(error: unknown) {
-  if (error instanceof HttpError) {
-    if (error.status === 401) return 'Your session expired. Sign in again.';
-    if (error.status === 403) return 'Admin permission is required for Simulation Lab.';
-    if (error.status === 404) return `${error.message}. The run may have expired or landed on a different worker.`;
-    if (error.status === 409) return `Conflict: ${error.message}`;
-    return error.message;
-  }
-  if (error instanceof DOMException && error.name === 'AbortError') return '';
-  return error instanceof Error ? error.message : 'Something went wrong.';
-}
-
-function stamp(value: string | null | undefined) {
-  if (!value) return '—';
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
-}
-
-function statusTone(status: SimulationStatus) {
-  if (status === 'completed') return 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-300';
-  if (status === 'failed' || status === 'limit_reached') return 'bg-red-500/15 text-red-600 dark:text-red-300';
-  if (status === 'running' || status === 'starting') return 'bg-blue-500/15 text-blue-600 dark:text-blue-300';
-  if (status === 'paused') return 'bg-amber-500/15 text-amber-700 dark:text-amber-300';
-  return 'bg-muted text-muted-foreground';
-}
+const terminal = new Set<SimulationStatus>(['completed', 'blocked', 'stopped', 'limit_reached', 'failed']);
+const stamp = (value?: string | null) => value ? new Date(value).toLocaleString(undefined, { timeZone: 'UTC', dateStyle: 'medium', timeStyle: 'short' }) + ' UTC' : '—';
+const message = (error: unknown) => error instanceof HttpError ? `${error.status === 404 ? 'Run or evidence unavailable on this worker (expired, restarted or wrong worker): ' : error.status === 409 ? 'Run changed; refresh and try again: ' : error.status === 403 ? 'Admin access required: ' : error.status === 401 ? 'Session expired: ' : ''}${error.message}` : error instanceof Error ? error.message : 'Request failed';
+const json = (value: unknown) => JSON.stringify(value, null, 2);
+const newId = () => crypto.randomUUID();
+function saveJson(name: string, value: unknown) { const url = URL.createObjectURL(new Blob([json(value)], { type: 'application/json' })); const link = document.createElement('a'); link.href = url; link.download = name; link.click(); window.setTimeout(() => URL.revokeObjectURL(url), 1000); }
+function merge(current: SimulationEvent[], incoming: SimulationEvent[]) { const map = new Map(current.map(item => [item.record_id, item])); incoming.forEach(item => map.set(item.record_id, item)); return [...map.values()].sort((a, b) => a.sequence - b.sequence); }
+function Field({ label, children }: { label: string; children: React.ReactNode }) { return <Label className="flex flex-col items-stretch gap-1.5"><span>{label}</span>{children}</Label>; }
+function EventFeed({ title, events }: { title: string; events: SimulationEvent[] }) { return <div><h4 className="mb-2 text-sm font-semibold">{title} <span className="text-muted-foreground">({events.length})</span></h4>{!events.length && <p className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">Nothing yet.</p>}<div className="max-h-96 space-y-2 overflow-auto">{events.map(event => <details key={event.record_id} id={`evidence-${event.sequence}`} className="rounded-lg border p-3 text-sm"><summary className="cursor-pointer"><span className="font-medium">{String(event.payload.type ?? event.source)}</span><span className="ml-2 text-xs text-muted-foreground">#{event.sequence} · {stamp(event.occurred_at)}</span>{typeof event.payload.text === 'string' && <span className="mt-1 block whitespace-pre-wrap">{event.payload.text}</span>}{event.payload.type === 'BehaviorDecision' && <span className="mt-1 block text-xs">Expected: {String(event.payload.expected)} · Actual: {String(event.payload.actual)} · {String(event.payload.disposition)}</span>}</summary><p className="mt-2 text-xs text-muted-foreground">Observed {stamp(event.observed_at)} · Scheduled {stamp(event.scheduled_at)}</p><pre className="mt-2 overflow-auto rounded bg-muted p-2 text-xs">{json(event.payload)}</pre></details>)}</div></div>; }
 
 export function SimulationLabPage() {
   const [params] = useSearchParams();
-  const sapienId = params.get('sapienId');
-  const [targetMode, setTargetMode] = useState<'existing' | 'fresh'>('existing');
+  const shortcutId = params.get('sapienId');
+  const [catalog, setCatalog] = useState<CaseCatalog | null>(null);
+  const [allSapiens, setAllSapiens] = useState<Sapiens[]>([]);
   const [sapiens, setSapiens] = useState<Sapiens[]>([]);
   const [sapiensLoading, setSapiensLoading] = useState(true);
   const [sapiensError, setSapiensError] = useState('');
-  const [selectedSapienId, setSelectedSapienId] = useState(sapienId ?? '');
-  const [freshName, setFreshName] = useState('New test Sapiens');
-  const [freshRole, setFreshRole] = useState('Project collaborator');
-  const [durationMinutes, setDurationMinutes] = useState('30');
-  const [scenarioBrief, setScenarioBrief] = useState('A developer is blocked and asks for clarification before continuing the project.');
-  const [successGoal, setSuccessGoal] = useState('The blocker is acknowledged and the developer receives a useful response.');
+  const [selectedSapienId, setSelectedSapienId] = useState(shortcutId ?? '');
+  const [caseIndex, setCaseIndex] = useState(0);
   const [runs, setRuns] = useState<SimulationRun[]>([]);
   const [selectedId, setSelectedId] = useState('');
-  const [detail, setDetail] = useState<SimulationRun | null>(null);
-  const [events, setEvents] = useState<SimulationEvent[]>([]);
+  const [run, setRun] = useState<SimulationRun | null>(null);
   const [result, setResult] = useState<SimulationResult | null>(null);
-  const [workerId, setWorkerId] = useState<number | null>(null);
+  const [guide, setGuide] = useState<DebugGuide | null>(null);
+  const guideLoaded = useRef(false);
+  const [messages, setMessages] = useState<SimulationEvent[]>([]);
+  const [tools, setTools] = useState<SimulationEvent[]>([]);
+  const [diagnostics, setDiagnostics] = useState<SimulationEvent[]>([]);
+  const [evidence, setEvidence] = useState<SimulationEvent[]>([]);
+  const cursors = useRef({ messages: 0, tools: 0, diagnostics: 0, evidence: 0 });
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState('');
-  const [speedEdit, setSpeedEdit] = useState('60');
-  const cursor = useRef(0);
-  const failures = useRef(0);
-  const [runId, setRunId] = useState(`simulation-${new Date().toISOString().slice(0, 10)}`);
-  const [scenarioId, setScenarioId] = useState('blocker');
-  const [scenarioVersion, setScenarioVersion] = useState('1');
-  const [startAt, setStartAt] = useState('2026-09-15T09:00:00Z');
-  const [endAt, setEndAt] = useState('2026-09-15T09:30:00Z');
-  const [speed, setSpeed] = useState('60');
-  const [maxWall, setMaxWall] = useState('300');
-  const [maxRecords, setMaxRecords] = useState('10000');
-  const [worldJson, setWorldJson] = useState(initialWorld);
-  const [eventsJson, setEventsJson] = useState(initialEvents);
-  const [expectationsJson, setExpectationsJson] = useState(initialExpectations);
+  const [participantName, setParticipantName] = useState('Scrum Master');
+  const [participantId, setParticipantId] = useState('scrum-master');
+  const [startAt, setStartAt] = useState('');
+  const [speed, setSpeed] = useState('');
+  const [wall, setWall] = useState('3600');
+  const [records, setRecords] = useState('100000');
+  const [newSpeed, setNewSpeed] = useState('');
+  const [actionKind, setActionKind] = useState<'message' | 'post'>('message');
+  const [target, setTarget] = useState('priya');
+  // The authored Sentinel Desk catalog uses delivery, not a generic project channel.
+  useEffect(() => { if (actionKind === 'post' && target === 'project') setTarget('delivery'); }, [actionKind, target]);
+  const [body, setBody] = useState('');
+  const [replyTo, setReplyTo] = useState('');
+  const [toolName, setToolName] = useState('jira_get_issue');
+  const [issueKey, setIssueKey] = useState('SD-1');
+  const [transitionId, setTransitionId] = useState('');
+  const [summary, setSummary] = useState('');
+  const [description, setDescription] = useState('');
+  const [lastOutcome, setLastOutcome] = useState<ParticipantOutcome | null>(null);
+  const [pendingAction, setPendingAction] = useState<Record<string, unknown> | null>(null);
+  const pendingCreate = useRef<CaseCreateRequest | null>(null);
+  useEffect(() => { pendingCreate.current = null; }, [caseIndex, participantId, participantName, selectedSapienId, startAt, speed, wall, records]);
 
-  const selected = detail?.run_id === selectedId ? detail : runs.find(run => run.run_id === selectedId) ?? null;
-
-  const refreshList = useCallback(async (signal?: AbortSignal) => {
-    const value = await simulationService.list(signal);
-    setRuns(value.runs);
-    setWorkerId(value.worker_id);
-    setSelectedId(current => current || value.runs[0]?.run_id || '');
-    setError('');
+  const selectedCase = catalog?.cases[caseIndex];
+  const refresh = useCallback(async (signal?: AbortSignal, clearError = true) => {
+    const [cases, list] = await Promise.all([simulationService.cases(signal), simulationService.list(signal)]);
+    setCatalog(cases); setRuns(list.runs); setSelectedId(id => id && list.runs.some(item => item.run_id === id) ? id : list.runs[0]?.run_id ?? '');
+    setStartAt(value => value || cases.cases[0]?.suggested_start_at || '');
+    setWall(value => String(Math.min(Number(value), cases.limits.max_wall_seconds)));
+    setRecords(value => String(Math.min(Number(value), cases.limits.max_records)));
+    if (clearError) setError('');
   }, []);
+  useEffect(() => { const controller = new AbortController(); refresh(controller.signal).catch(error => { if (!controller.signal.aborted) setError(message(error)); }); return () => controller.abort(); }, [refresh]);
+  const loadSapiens = useCallback(async () => {
+    setSapiensLoading(true);
+    try {
+      const items = await sapiensService.listSapiens(); setAllSapiens(items);
+      // Disabled Sapiens are intentionally absent from this selector. Missing metadata
+      // remains visible but unavailable so older deployments fail closed with context.
+      const choices = items.filter(item => item.simulationEnabled === true || item.simulationEnabled === undefined);
+      setSapiens(choices);
+      setSapiensError(items.length > 0 && choices.length === 0 ? 'No simulation-enabled Sapiens are available. Enable one in Django admin, then refresh.' : '');
+      setSelectedSapienId(current => current && choices.some(item => item.id === current && item.simulationEnabled === true && item.simulationAvailable === true) ? current : '');
+    } catch (problem) { setSapiens([]); setSapiensError(message(problem)); }
+    finally { setSapiensLoading(false); }
+  }, []);
+  useEffect(() => { void loadSapiens(); }, [loadSapiens]);
 
-  const drainEvents = useCallback(async (runIdValue: string, signal?: AbortSignal) => {
-    let after = cursor.current;
-    for (let pageCount = 0; pageCount < 20; pageCount += 1) {
-      const page = await simulationService.events(runIdValue, after, signal);
-      if (page.events.length) {
-        setEvents(current => {
-          const merged = new Map(current.map(item => [`${item.run_id}:${item.sequence}`, item]));
-          page.events.forEach(item => merged.set(`${item.run_id}:${item.sequence}`, item));
-          return [...merged.values()].sort((a, b) => a.sequence - b.sequence);
-        });
-      }
-      after = page.next_after;
-      cursor.current = after;
+  const drain = useCallback(async (id: string, kind: keyof typeof cursors.current, signal?: AbortSignal) => {
+    let after = cursors.current[kind];
+    for (let pageNumber = 0; pageNumber < 30; pageNumber++) {
+      const page: EventPage = kind === 'messages' || kind === 'tools' ? await simulationService.participant(id, kind, after, signal) : await simulationService.events(id, after, kind === 'diagnostics' ? 'diagnostics' : undefined, signal);
+      if (kind === 'messages') setMessages(current => merge(current, page.events));
+      if (kind === 'tools') setTools(current => merge(current, page.events));
+      if (kind === 'diagnostics') setDiagnostics(current => merge(current, page.events));
+      if (kind === 'evidence') setEvidence(current => merge(current, page.events));
+      after = page.next_after; cursors.current[kind] = after;
       if (!page.has_more) return;
     }
   }, []);
-
   useEffect(() => {
-    const controller = new AbortController();
-    setLoading(true);
-    refreshList(controller.signal).catch(value => setError(message(value))).finally(() => setLoading(false));
-    return () => controller.abort();
-  }, [refreshList]);
-
-  useEffect(() => {
-    let active = true;
-    setSapiensLoading(true);
-    sapiensService.listSapiens().then(list => {
-      if (!active) return;
-      setSapiens(list);
-      setSelectedSapienId(current => current || list[0]?.id || '');
-      setSapiensError('');
-    }).catch(value => { if (active) setSapiensError(message(value)); })
-      .finally(() => { if (active) setSapiensLoading(false); });
-    return () => { active = false; };
-  }, []);
-
-  useEffect(() => {
-    const minutes = Number(durationMinutes);
-    const start = new Date(startAt);
-    if (Number.isFinite(minutes) && minutes > 0 && !Number.isNaN(start.getTime())) setEndAt(new Date(start.getTime() + minutes * 60_000).toISOString());
-  }, [durationMinutes, startAt]);
-
-  useEffect(() => {
-    cursor.current = 0;
-    setEvents([]);
-    setResult(null);
-    setDetail(null);
-    setError('');
-    failures.current = 0;
+    cursors.current = { messages: 0, tools: 0, diagnostics: 0, evidence: 0 };
+    guideLoaded.current = false;
+    setMessages([]); setTools([]); setDiagnostics([]); setEvidence([]); setResult(null); setGuide(null); setRun(null); setLastOutcome(null); setPendingAction(null);
     if (!selectedId) return;
-    const controller = new AbortController();
-    let timer = 0;
-    let closed = false;
+    const controller = new AbortController(); let timer = 0; let failed = 0;
     const poll = async () => {
       try {
-        const next = await simulationService.get(selectedId, controller.signal);
-        if (closed) return;
-        setDetail(next);
-        setSpeedEdit(String(next.speed));
-        setRuns(current => current.map(item => item.run_id === next.run_id ? next : item));
-        await drainEvents(selectedId, controller.signal);
-        if (terminal.has(next.status)) {
-          try { setResult(await simulationService.result(selectedId, controller.signal)); }
-          catch (value) { if (!(value instanceof DOMException && value.name === 'AbortError')) setError(message(value)); }
-          return;
+        const next = await simulationService.get(selectedId, controller.signal); if (controller.signal.aborted) return;
+        setRun(next); setRuns(current => current.map(item => item.run_id === next.run_id ? next : item));
+        if (next.participant_mode !== 'environment_only') {
+          await Promise.all([drain(selectedId, 'messages', controller.signal), drain(selectedId, 'tools', controller.signal), drain(selectedId, 'diagnostics', controller.signal)]);
+          if (!guideLoaded.current) { setGuide(await simulationService.debug(selectedId, controller.signal)); guideLoaded.current = true; }
         }
-        failures.current = 0;
-        timer = window.setTimeout(poll, 1500);
-      } catch (value) {
-        if (closed || (value instanceof DOMException && value.name === 'AbortError')) return;
-        failures.current += 1;
-        setError(message(value));
-        timer = window.setTimeout(poll, Math.min(15_000, 1500 * (2 ** failures.current)));
+        await drain(selectedId, 'evidence', controller.signal);
+        if (terminal.has(next.status)) {
+          const response = await simulationService.result(selectedId, controller.signal);
+          if ('report' in response) { setResult(response); return; }
+        }
+        failed = 0; timer = window.setTimeout(poll, 1500);
+      } catch (problem) {
+        if (controller.signal.aborted) return;
+        setError(message(problem));
+        if (problem instanceof HttpError && problem.status === 404) return;
+        failed++; timer = window.setTimeout(poll, Math.min(15000, 1500 * 2 ** Math.min(failed, 4)));
       }
     };
-    void poll();
-    return () => { closed = true; controller.abort(); window.clearTimeout(timer); };
-  }, [selectedId, drainEvents]);
+    void poll(); return () => { controller.abort(); window.clearTimeout(timer); };
+  }, [selectedId, drain]);
 
-  const createPayload = (): SimulationCreateRequest => {
-    const numeric = { speed: Number(speed), wall: Number(maxWall), records: Number(maxRecords) };
-    if (!runId.trim()) throw new Error('Run ID is required.');
-    if (!Number.isFinite(numeric.speed) || numeric.speed <= 0 || numeric.speed > 1_000_000) throw new Error('Speed must be greater than 0 and at most 1,000,000.');
-    if (!Number.isFinite(numeric.wall) || numeric.wall <= 0 || numeric.wall > 3600) throw new Error('Wall-time limit must be greater than 0 and at most 3,600 seconds.');
-    if (!Number.isInteger(numeric.records) || numeric.records < 1 || numeric.records > 100_000) throw new Error('Evidence limit must be an integer from 1 to 100,000.');
-    const start = new Date(startAt); const end = new Date(endAt);
-    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || !/(Z|[+-]\d\d:\d\d)$/.test(startAt) || !/(Z|[+-]\d\d:\d\d)$/.test(endAt)) throw new Error('Start and end must be valid ISO-8601 timestamps with timezones.');
-    if (end <= start) throw new Error('Simulation end must follow its start.');
-    let world: unknown, scheduled: unknown, expectations: unknown;
-    try { world = JSON.parse(worldJson); } catch { throw new Error('Initial world is not valid JSON.'); }
-    try { scheduled = JSON.parse(eventsJson); } catch { throw new Error('Scheduled events are not valid JSON.'); }
-    try { expectations = JSON.parse(expectationsJson); } catch { throw new Error('Expectations are not valid JSON.'); }
-    if (!world || Array.isArray(world) || typeof world !== 'object') throw new Error('Initial world must be a JSON object.');
-    if (!Array.isArray(scheduled)) throw new Error('Scheduled events must be a JSON array.');
-    if (!Array.isArray(expectations)) throw new Error('Expectations must be a JSON array.');
-    if (!scenarioId.trim() || !scenarioVersion.trim()) throw new Error('Scenario ID and version are required.');
-    return { config: { run_id: runId.trim(), speed: numeric.speed, max_wall_seconds: numeric.wall, max_records: numeric.records }, scenario: { scenario_id: scenarioId.trim(), version: scenarioVersion.trim(), start_at: startAt, end_at: endAt, initial_world: world, events: scheduled }, expectations };
-  };
-
-  const create = async (andStart: boolean) => {
-    setBusy(andStart ? 'create-start' : 'create'); setError('');
+  async function mutate(label: string, operation: () => Promise<SimulationRun | void>) {
+    if (busy) return; setBusy(label); setError('');
+    try { const next = await operation(); if (next) setRun(next); await refresh(); }
+    catch (problem) {
+      const detail = `${label === 'start' ? 'Prepare run failed' : label === 'resume' ? 'Start / resume failed' : label === 'pause' ? 'Pause failed' : label === 'stop' ? 'Stop failed' : label === 'speed' ? 'Speed change failed' : 'Operation failed'}: ${message(problem)}`;
+      if (problem instanceof HttpError && problem.status === 409) await Promise.all([refresh(undefined, false).catch(() => undefined), loadSapiens()]);
+      setError(detail);
+    }
+    finally { setBusy(''); }
+  }
+  async function create() {
+    if (!selectedCase || busy) return;
+    const speedNumber = speed.trim() ? Number(speed) : undefined, wallNumber = Number(wall), recordNumber = Number(records);
+    const selectedSapien = sapiens.find(item => item.id === selectedSapienId);
+    if (!selectedSapien || selectedSapien.simulationEnabled !== true || selectedSapien.simulationAvailable !== true) { setError('Select a server-confirmed eligible Sapiens. Eligibility may have changed; refresh the Sapiens list.'); return; }
+    if (!participantId.match(/^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$/) || !participantName.trim()) { setError('Provide a valid simulated participant ID and name.'); return; }
+    const start = new Date(startAt);
+    if (Number.isNaN(start.getTime()) || (selectedCase.case_id === 'sentinel-desk' && (start.getUTCDay() !== 4 || start.getUTCHours() !== 9 || start.getUTCMinutes() !== 0 || start.getUTCSeconds() !== 0))) { setError(`Start must satisfy ${selectedCase.start_constraint}.`); return; }
+    if ((speedNumber !== undefined && (!(speedNumber > 0) || speedNumber > (catalog?.limits.max_speed ?? 0))) || !(wallNumber > 0 && wallNumber <= (catalog?.limits.max_wall_seconds ?? 0)) || !Number.isInteger(recordNumber) || recordNumber < 1 || recordNumber > (catalog?.limits.max_records ?? 0)) { setError('Speed, wall-time and evidence limits must be within the server-advertised bounds.'); return; }
+    const request: CaseCreateRequest = pendingCreate.current ?? { case: { case_id: selectedCase.case_id, version: selectedCase.version, start_at: startAt, participant_id: participantId, participant_name: participantName.trim() }, config: { run_id: `run-${newId()}`, ...(speedNumber !== undefined ? { speed: speedNumber } : {}), max_wall_seconds: wallNumber, max_records: recordNumber }, sapien_id: Number(selectedSapien.id) };
+    pendingCreate.current = request; setBusy('prepare'); setError('');
     try {
-      const created = await simulationService.create(createPayload());
-      const next = andStart ? await simulationService.control(created.run_id, 'start') : created;
-      await refreshList(); setSelectedId(next.run_id); setDetail(next);
-      toast.success(andStart ? 'Run created and start requested' : 'Run created');
-    } catch (value) { setError(message(value)); }
+      const created = await simulationService.create(request);
+      pendingCreate.current = null; setSelectedId(created.run_id); setRun(created);
+      const prepared = await simulationService.control(created.run_id, 'start'); setRun(prepared);
+      await refresh();
+    } catch (problem) {
+      const detail = `Prepare run failed: ${message(problem)}`;
+      if (problem instanceof HttpError && problem.status === 409) await Promise.all([refresh(undefined, false).catch(() => undefined), loadSapiens()]);
+      else await refresh(undefined, false).catch(() => undefined);
+      setError(`${detail} If the run was created, select it from Retained runs and retry Prepare run.`);
+    } finally { setBusy(''); }
+  }
+  async function control(action: 'start' | 'pause' | 'resume' | 'stop') { if (run) await mutate(action, () => simulationService.control(run.run_id, action)); }
+  async function remove() { if (!run || !window.confirm(`Delete run ${run.run_id}? This removes its in-memory evidence.`)) return; await mutate('delete', async () => { await simulationService.remove(run.run_id); setSelectedId(''); }); }
+  async function submitAction(payload: Record<string, unknown>) {
+    if (!run || busy || !run.participant_actions_available) return;
+    const withId = { ...payload, operation_id: `manual:${newId()}` }; setPendingAction(withId); await sendAction(withId);
+  }
+  async function sendAction(payload: Record<string, unknown>) {
+    if (!run) return; setBusy('action'); setError('');
+    try { const response = await simulationService.act(run.run_id, payload); setLastOutcome(response); setPendingAction(null); if (response.outcome.success === false || response.outcome.is_error) setError(`Action rejected: ${response.outcome.reason ?? response.outcome.content ?? 'See result below.'}`); await Promise.all([drain(run.run_id, 'messages'), drain(run.run_id, 'tools')]); }
+    catch (problem) { setError(`${message(problem)} The action may have completed; retry the exact same action ID only if needed.`); }
     finally { setBusy(''); }
+  }
+  async function download() {
+    if (!run) return; setBusy('download'); setError('');
+    try { let after = 0; let all: SimulationEvent[] = []; for (let i = 0; i < 1000; i++) { const page = await simulationService.events(run.run_id, after); all = merge(all, page.events); after = page.next_after; if (!page.has_more) break; if (i === 999) throw new Error('Export page limit reached.'); } saveJson(`${run.run_id}-evidence.json`, { run, evidence: all, result, note: 'Downloaded from process memory; not a durable backend archive.' }); }
+    catch (problem) { setError(message(problem)); } finally { setBusy(''); }
+  }
+  const allowed = (name: string) => !!run?.allowed_controls.includes(name);
+  const sapienForRun = (item: SimulationRun) => item.sapien_id == null ? null : allSapiens.find(sapien => Number(sapien.id) === item.sapien_id);
+  const participantPhase = run?.participant?.phase ? ({ idle: 'Waiting to attach', reserving: 'Reserving Sapiens', draining: 'Finishing normal work', starting: 'Starting cognitive engines', running: 'Running', stopping: 'Draining outstanding work', stopped: 'Stopped', failed: 'Attachment failed' }[run.participant.phase] ?? run.participant.phase.replaceAll('_', ' ')) : null;
+  const resumeLabel = run && (run.participant?.cycles || new Date(run.simulated_time) > new Date(run.start_at)) ? 'Resume simulation' : '3. Start simulation';
+  const speedOverrideValid = Number.isFinite(Number(newSpeed)) && Number(newSpeed) > 0 && Number(newSpeed) <= (catalog?.limits.max_speed ?? 0);
+  const toolArguments = () => {
+    if (toolName === 'jira_get_metadata') return { resource: 'edit_fields', issue_key: issueKey };
+    if (toolName === 'jira_transition_issue') return { issue_key: issueKey, transition_id: transitionId };
+    if (toolName === 'jira_update_issue') return { issue_key: issueKey, fields: { ...(summary ? { summary } : {}), ...(description ? { description } : {}) } };
+    return { issue_key: issueKey };
   };
-
-  const control = async (action: 'start' | 'pause' | 'resume' | 'stop') => {
-    if (!selected) return;
-    setBusy(action); setError('');
-    try { setDetail(await simulationService.control(selected.run_id, action)); }
-    catch (value) { setError(message(value)); }
-    finally { setBusy(''); }
-  };
-
-  const changeSpeed = async () => {
-    if (!selected) return;
-    const value = Number(speedEdit);
-    if (!Number.isFinite(value) || value <= 0 || value > 1_000_000) { setError('Speed must be greater than 0 and at most 1,000,000.'); return; }
-    setBusy('speed'); setError('');
-    try { setDetail(await simulationService.setSpeed(selected.run_id, value)); }
-    catch (reason) { setError(message(reason)); }
-    finally { setBusy(''); }
-  };
-
-  const remove = async (run: SimulationRun) => {
-    if (!inactive.has(run.status) || !window.confirm(`Delete retained run “${run.run_id}”? This cannot be undone.`)) return;
-    setBusy(`delete:${run.run_id}`); setError('');
-    try { await simulationService.remove(run.run_id); if (selectedId === run.run_id) setSelectedId(''); await refreshList(); }
-    catch (value) { setError(message(value)); }
-    finally { setBusy(''); }
-  };
-
-  const evidenceById = useMemo(() => {
-    const links = new Map<string, number>();
-    events.forEach(item => { links.set(`${item.run_id}:${item.sequence}`, item.sequence); if (item.operation_id) links.set(item.operation_id, item.sequence); });
-    return links;
-  }, [events]);
-
-  return <div className="min-h-screen bg-background text-foreground">
-    <header className="sticky top-0 z-20 border-b border-border/70 bg-background/90 backdrop-blur">
-      <div className="mx-auto flex min-h-16 max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
-        <div className="flex items-center gap-3"><Link to="/admin" className="rounded-lg p-2 hover:bg-muted" aria-label="Back to admin home"><ArrowLeft className="size-4" /></Link><span className="grid size-9 place-items-center rounded-xl bg-violet-600 text-white"><Beaker className="size-5" /></span><div><h1 className="font-semibold">Simulation Lab</h1><p className="text-xs text-muted-foreground">Explore how a Sapiens responds to a scenario</p></div></div>
-        <div className="flex items-center gap-2"><ThemeToggle /><Button variant="outline" size="sm" onClick={() => void refreshList().catch(value => setError(message(value)))}><RefreshCw className="mr-2 size-4" />Refresh</Button></div>
-      </div>
-    </header>
-    <main className="mx-auto max-w-7xl space-y-5 px-4 py-6 sm:px-6">
-      <div className="rounded-lg border border-blue-500/20 bg-blue-500/[.06] px-4 py-2.5 text-xs text-muted-foreground">Sapiens execution is being connected to the simulation engine. You can configure a simulation now; starting it will become available with that integration.</div>
-
-      <section className="space-y-5" aria-labelledby="setup-heading">
-        <div><p className="text-sm font-medium text-violet-600">Set up a simulation</p><h2 id="setup-heading" className="mt-1 text-2xl font-semibold tracking-tight">Who would you like to simulate?</h2><p className="mt-1 text-sm text-muted-foreground">Choose a Sapiens, give it a situation to navigate, and set how much simulated time should pass.</p></div>
-        <div className="grid gap-5 lg:grid-cols-3">
-          <Card className="lg:col-span-2"><CardHeader><CardTitle className="text-base">1. Choose a Sapiens</CardTitle></CardHeader><CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-2"><button onClick={() => setTargetMode('existing')} className={`rounded-xl border p-4 text-left transition ${targetMode === 'existing' ? 'border-violet-500 bg-violet-500/[.07]' : 'hover:bg-muted/50'}`}><Users className="mb-2 size-5 text-violet-500" /><strong className="block text-sm">Existing Sapiens</strong><span className="mt-1 block text-xs text-muted-foreground">Use an isolated copy of its experience</span></button><button onClick={() => setTargetMode('fresh')} className={`rounded-xl border p-4 text-left transition ${targetMode === 'fresh' ? 'border-violet-500 bg-violet-500/[.07]' : 'hover:bg-muted/50'}`}><UserPlus className="mb-2 size-5 text-violet-500" /><strong className="block text-sm">Fresh Sapiens</strong><span className="mt-1 block text-xs text-muted-foreground">Start without prior memories</span></button></div>
-            {targetMode === 'existing' ? <div>{sapiensLoading ? <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" />Loading Sapiens…</p> : sapiensError ? <p className="text-sm text-red-600">{sapiensError}</p> : sapiens.length ? <div className="grid max-h-64 gap-2 overflow-auto sm:grid-cols-2">{sapiens.map(item => <button key={item.id} onClick={() => setSelectedSapienId(item.id)} className={`rounded-xl border p-3 text-left ${selectedSapienId === item.id ? 'border-violet-500 bg-violet-500/[.07]' : 'hover:bg-muted/50'}`}><span className="block truncate text-sm font-medium">{item.name}</span><span className="mt-1 block truncate text-xs text-muted-foreground">{item.role || 'No descriptive role'}</span></button>)}</div> : <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">No Sapiens are available. You can still configure a fresh-Sapiens simulation.</p>}</div> : <div className="grid gap-3 sm:grid-cols-2"><Field label="Name"><Input value={freshName} onChange={event => setFreshName(event.target.value)} /></Field><Field label="Role in the scenario"><Input value={freshRole} onChange={event => setFreshRole(event.target.value)} /></Field></div>}
-          </CardContent></Card>
-          <Card><CardHeader><CardTitle className="text-base">2. Choose a scenario</CardTitle></CardHeader><CardContent className="space-y-3"><div className="rounded-xl border border-violet-500 bg-violet-500/[.07] p-4"><Badge variant="secondary">Example</Badge><strong className="mt-3 block">Resolve a project blocker</strong></div><Field label="Situation"><Textarea className="min-h-20" value={scenarioBrief} onChange={event => setScenarioBrief(event.target.value)} /></Field><Field label="What a good outcome looks like"><Textarea className="min-h-20" value={successGoal} onChange={event => setSuccessGoal(event.target.value)} /></Field><p className="text-xs text-muted-foreground">This is an editable setup for the bundled example. Its supported event payload can be inspected in Developer preview.</p></CardContent></Card>
-        </div>
-        <Card><CardHeader><CardTitle className="text-base">3. Set the pace</CardTitle></CardHeader><CardContent><div className="grid gap-4 md:grid-cols-3"><Field label="Starts"><Input type="datetime-local" value={startAt.replace('Z', '').slice(0, 16)} onChange={event => setStartAt(`${event.target.value}:00Z`)} /></Field><Field label="Simulated duration"><select value={durationMinutes} onChange={event => setDurationMinutes(event.target.value)} className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"><option value="15">15 minutes</option><option value="30">30 minutes</option><option value="60">1 hour</option><option value="240">4 hours</option><option value="1440">1 day</option></select></Field><Field label="Simulation speed"><select value={speed} onChange={event => setSpeed(event.target.value)} className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"><option value="1">Real time</option><option value="10">10× faster</option><option value="60">60× faster</option><option value="600">600× faster</option></select></Field></div><div className="mt-5 flex flex-wrap items-center gap-3"><Button disabled title="Connecting Sapiens to simulations is not available yet"><Play className="mr-2 size-4" />Start simulation</Button><span className="text-sm text-muted-foreground">Connecting Sapiens to simulations is not available yet.</span></div></CardContent></Card>
-        <Card><CardHeader><CardTitle className="text-base">Progress and results</CardTitle></CardHeader><CardContent><div className="grid place-items-center rounded-xl border border-dashed py-10 text-center"><Activity className="mb-3 size-7 text-muted-foreground/50" /><p className="font-medium">Your simulation results will appear here</p><p className="mt-1 max-w-md text-sm text-muted-foreground">Once execution is connected, this area will show the simulation timeline, key decisions, and expectation outcomes.</p></div></CardContent></Card>
-      </section>
-      <details className="rounded-xl border bg-muted/20 p-4"><summary className="cursor-pointer font-medium">Developer preview <span className="ml-2 text-sm font-normal text-muted-foreground">Run the standalone example environment without a Sapiens</span></summary><div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-muted-foreground"><Badge variant="outline">Worker {workerId ?? '—'}</Badge><span>Process-local diagnostic tools and raw scenario controls</span></div>
-      {error && <div role="alert" className="mt-4 flex gap-3 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-700 dark:text-red-300"><AlertTriangle className="mt-0.5 size-4 shrink-0" /><span>{error}</span></div>}
-      <div className="mt-4 grid gap-5 xl:grid-cols-[320px_minmax(0,1fr)]">
-        <Card className="h-fit"><CardHeader className="pb-3"><CardTitle className="flex items-center justify-between text-base">Retained runs <Badge variant="secondary">{runs.length}/8</Badge></CardTitle><p className="text-xs leading-5 text-muted-foreground">Process memory only; terminal runs expire after about one hour and all runs disappear on worker restart.</p></CardHeader><CardContent className="space-y-2">
-          {loading && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" />Loading runs…</p>}
-          {!loading && !runs.length && <p className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">No retained runs on this worker.</p>}
-          {runs.map(run => <div key={run.run_id} className={`rounded-lg border p-3 ${selectedId === run.run_id ? 'border-violet-500 bg-violet-500/5' : 'border-border'}`}><button className="w-full text-left" onClick={() => setSelectedId(run.run_id)}><span className="block truncate text-sm font-medium">{run.run_id}</span><span className="mt-2 flex items-center justify-between"><Badge className={statusTone(run.status)}>{run.status}</Badge><span className="text-xs text-muted-foreground">{run.speed}×</span></span></button>{inactive.has(run.status) && <Button variant="ghost" size="sm" className="mt-2 w-full text-muted-foreground hover:text-red-600" disabled={busy === `delete:${run.run_id}`} onClick={() => void remove(run)}><Trash2 className="mr-2 size-3.5" />Delete inactive run</Button>}</div>)}
-        </CardContent></Card>
-
-        <div className="space-y-5">
-          <Card><CardHeader><CardTitle className="text-base">Create environment run</CardTitle><p className="text-sm text-muted-foreground">Create and start are distinct lifecycle actions. Strict server validation remains authoritative.</p></CardHeader><CardContent className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5"><Field label="Run ID"><Input value={runId} onChange={e => setRunId(e.target.value)} /></Field><Field label="Speed"><Input type="number" min="0.000001" max="1000000" value={speed} onChange={e => setSpeed(e.target.value)} /></Field><Field label="Wall limit (seconds)"><Input type="number" min="1" max="3600" value={maxWall} onChange={e => setMaxWall(e.target.value)} /></Field><Field label="Evidence limit"><Input type="number" min="1" max="100000" value={maxRecords} onChange={e => setMaxRecords(e.target.value)} /></Field><div className="rounded-lg bg-muted/50 p-3 text-xs leading-5 text-muted-foreground"><Clock3 className="mb-1 size-4" />Accelerated time does not accelerate real computation. Paused runs still consume wall time.</div></div>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"><Field label="Scenario ID"><Input value={scenarioId} onChange={e => setScenarioId(e.target.value)} /></Field><Field label="Scenario version"><Input value={scenarioVersion} onChange={e => setScenarioVersion(e.target.value)} /></Field><Field label="Simulation start (ISO-8601 + timezone)"><Input value={startAt} onChange={e => setStartAt(e.target.value)} /></Field><Field label="Simulation end (ISO-8601 + timezone)"><Input value={endAt} onChange={e => setEndAt(e.target.value)} /></Field></div>
-            <details className="rounded-lg border p-4"><summary className="cursor-pointer text-sm font-medium">Advanced scenario JSON <ChevronDown className="ml-1 inline size-4" /></summary><div className="mt-4 grid gap-4"><JsonField label="Initial world" value={worldJson} onChange={setWorldJson} /><JsonField label="Scheduled events" value={eventsJson} onChange={setEventsJson} /><JsonField label="Expectations" value={expectationsJson} onChange={setExpectationsJson} /><p className="text-xs leading-5 text-muted-foreground">Input type tags: send_message, set_issue_status, set_knowledge, set_availability; issue_reached, message_received, rejection_limit. Unknown fields, wrong types, non-finite numbers, and timezone-naive dates are rejected.</p></div></details>
-            <div className="flex flex-wrap gap-2"><Button disabled={!!busy} onClick={() => void create(false)}><Plus className="mr-2 size-4" />{busy === 'create' ? 'Creating…' : 'Create'}</Button><Button variant="secondary" disabled={!!busy} onClick={() => void create(true)}><Play className="mr-2 size-4" />{busy === 'create-start' ? 'Creating and starting…' : 'Create and start'}</Button></div>
-          </CardContent></Card>
-
-          {selected ? <>
-            <Card><CardHeader><CardTitle className="flex flex-wrap items-center gap-3 text-base"><span className="break-all">{selected.run_id}</span><Badge className={statusTone(selected.status)}>{selected.status}</Badge></CardTitle></CardHeader><CardContent className="space-y-4"><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><Stat label="Simulated time" value={stamp(selected.simulated_time)} /><Stat label="Speed" value={`${selected.speed}×`} /><Stat label="Pending scenario events" value={selected.pending_scenario_events ?? 'Not initialized'} /><Stat label="Pending replies" value={selected.pending_replies ?? 'Not initialized'} /></div>{selected.detail && <p className="rounded-lg bg-muted/50 p-3 text-sm">{selected.detail}</p>}<div className="flex flex-wrap gap-2"><Button size="sm" disabled={!!busy || selected.status !== 'created'} onClick={() => void control('start')}><Play className="mr-2 size-4" />Start</Button><Button size="sm" variant="outline" disabled={!!busy || selected.status !== 'running'} onClick={() => void control('pause')}><Pause className="mr-2 size-4" />Pause</Button><Button size="sm" variant="outline" disabled={!!busy || selected.status !== 'paused'} onClick={() => void control('resume')}><Play className="mr-2 size-4" />Resume</Button><Button size="sm" variant="outline" disabled={!!busy || !['starting','running','paused','stopping'].includes(selected.status)} onClick={() => void control('stop')}><Square className="mr-2 size-4" />Stop</Button><div className="flex gap-2"><Input className="h-9 w-28" type="number" min="0.000001" max="1000000" aria-label="New speed" value={speedEdit} onChange={e => setSpeedEdit(e.target.value)} /><Button size="sm" variant="outline" disabled={!!busy || terminal.has(selected.status)} onClick={() => void changeSpeed()}>Set speed</Button></div></div></CardContent></Card>
-            <Card><CardHeader><CardTitle className="flex items-center justify-between text-base"><span className="flex items-center gap-2"><Activity className="size-4" />Evidence timeline</span><Badge variant="secondary">{events.length}</Badge></CardTitle></CardHeader><CardContent><div className="space-y-2">{!events.length && <p className="rounded-lg border border-dashed p-5 text-center text-sm text-muted-foreground">No evidence observed yet.</p>}{events.map(event => <details key={`${event.run_id}:${event.sequence}`} id={`evidence-${event.sequence}`} className="rounded-lg border p-3"><summary className="cursor-pointer"><span className="flex flex-wrap items-center gap-2 text-sm"><Badge variant="outline">#{event.sequence}</Badge><strong>{event.source}</strong><span className="text-muted-foreground">sim {stamp(event.occurred_at)}</span><span className="text-muted-foreground">observed {stamp(event.observed_at)}</span></span></summary><div className="mt-3 space-y-2 text-xs text-muted-foreground"><p>Operation: {event.operation_id ?? '—'} · Scheduled: {stamp(event.scheduled_at)}</p><pre className="max-h-72 overflow-auto rounded bg-muted p-3 text-foreground">{JSON.stringify(event.payload, null, 2)}</pre></div></details>)}</div></CardContent></Card>
-            <Card><CardHeader><CardTitle className="text-base">Evaluation result</CardTitle></CardHeader><CardContent>{!terminal.has(selected.status) && <p className="text-sm text-muted-foreground">Results become available after the run reaches a terminal state.</p>}{terminal.has(selected.status) && !result && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" />Draining final evidence and result…</p>}{result && <div className="space-y-3"><div className="flex flex-wrap gap-3 text-sm"><Badge className={statusTone(result.status)}>{result.status}</Badge><span>Pass rate: <strong>{result.pass_rate === null ? 'Not scored' : `${Math.round(result.pass_rate * 100)}%`}</strong></span></div>{result.pass_rate === null && <p className="text-sm text-muted-foreground">No score is not zero and does not indicate success; expectations may be absent or lack evidence.</p>}{!result.report.metrics.length && <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">No expectations were configured.</p>}{result.report.metrics.map(metric => <div key={metric.expectation_id} className="rounded-lg border p-3 text-sm"><div className="flex flex-wrap items-center gap-2"><strong>{metric.expectation_id}</strong><Badge className={metric.verdict === 'pass' ? statusTone('completed') : metric.verdict === 'fail' ? statusTone('failed') : statusTone('paused')}>{metric.verdict.replace('_', ' ')}</Badge></div><p className="mt-2 text-muted-foreground">{metric.explanation}</p>{metric.evidence_ids.length > 0 && <p className="mt-2 text-xs">Evidence: {metric.evidence_ids.map((id, index) => <span key={id}>{index > 0 && ', '}<a className="text-violet-600 hover:underline" href={evidenceById.has(id) ? `#evidence-${evidenceById.get(id)}` : undefined}>{id}</a></span>)}</p>}</div>)}</div>}</CardContent></Card>
-          </> : <Card><CardContent className="py-12 text-center text-sm text-muted-foreground">Select a retained run or create a new one to inspect it.</CardContent></Card>}
-        </div>
-      </div></details>
-    </main>
-  </div>;
+  return <div className="min-h-screen bg-background text-foreground"><header className="border-b"><div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-4"><div className="flex items-center gap-3"><Link to="/admin" aria-label="Admin home"><ArrowLeft className="size-5" /></Link><Beaker className="size-6 text-violet-500" /><div><h1 className="font-semibold">Simulation Lab</h1><p className="text-xs text-muted-foreground">Authored cases · simulated workplace</p></div></div><div className="flex gap-2"><ThemeToggle /><Button variant="outline" size="sm" onClick={() => void Promise.all([refresh(), loadSapiens()]).catch(problem => setError(message(problem)))}><RefreshCw className="mr-2 size-4" />Refresh</Button></div></div></header>
+    <main className="mx-auto max-w-7xl space-y-5 px-4 py-6"><div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm"><strong>Real-memory safety notice:</strong> Jira and Teams are simulated, but the selected Sapiens uses and modifies its real cognitive memories. Nothing is cloned or reset, and the Sapiens remains inactive after shutdown. A dedicated test Sapiens is recommended, but not required.</div>{error && <div role="alert" className="flex gap-2 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-700 dark:text-red-300"><AlertTriangle className="size-4 shrink-0" />{error}</div>}
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px]"><Card><CardHeader><CardTitle>1. Select a Sapiens</CardTitle></CardHeader><CardContent className="space-y-4">{!catalog && <p className="text-sm text-muted-foreground">Loading case defaults and server limits…</p>}{catalog && !catalog.cases.length && <p>No authored cases are available.</p>}{selectedCase && <><div className="rounded-lg bg-muted/50 p-3"><p className="font-medium">{selectedCase.title}</p><p className="text-sm text-muted-foreground">{selectedCase.description}</p></div><div className="space-y-2"><Label>Eligible Sapiens</Label>{sapiensLoading && <p className="text-sm text-muted-foreground">Loading eligibility…</p>}{sapiensError && <p className="text-sm text-red-600">{sapiensError}</p>}{!sapiensLoading && !sapiensError && !sapiens.length && <p className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">No simulation-enabled Sapiens are available. Create one normally or enable an existing one in Django admin.</p>}{!sapiensLoading && sapiens.length > 0 && sapiens.every(item => item.simulationEnabled === undefined || item.simulationAvailable === undefined) && <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm">Eligibility metadata is missing from the Sapiens list response. Selection is disabled until the deployment is updated.</p>}<div role="radiogroup" aria-label="Eligible Sapiens" className="grid max-h-64 gap-2 overflow-auto sm:grid-cols-2">{sapiens.map(item => { const available = item.simulationEnabled === true && item.simulationAvailable === true; const reason = item.simulationUnavailableReason || (item.simulationAvailable === false ? 'Currently reserved or otherwise unavailable.' : 'Eligibility metadata is unavailable.'); return <button type="button" role="radio" aria-checked={selectedSapienId === item.id} key={item.id} disabled={!available} onClick={() => setSelectedSapienId(item.id)} className={`rounded-lg border p-3 text-left disabled:cursor-not-allowed disabled:opacity-55 ${selectedSapienId === item.id ? 'border-violet-500 bg-violet-500/5' : ''}`}><span className="font-medium">{item.name}</span><span className="block text-xs text-muted-foreground">ID {item.id} · {item.role || 'No role'} · {available ? 'Ready' : reason}</span></button>; })}</div><p className="text-xs text-muted-foreground">Existing and newly created Sapiens use the same rules. This page cannot change eligibility.</p></div><details className="rounded-lg border p-3"><summary className="cursor-pointer text-sm font-medium">Advanced settings</summary><div className="mt-3 grid gap-3 sm:grid-cols-2"><Field label="Authored case"><select className="h-9 w-full rounded-md border bg-background px-3 text-sm" value={caseIndex} onChange={e => { const index = Number(e.target.value); setCaseIndex(index); setStartAt(catalog?.cases[index]?.suggested_start_at ?? ''); }}>{catalog?.cases.map((item, index) => <option key={`${item.case_id}:${item.version}`} value={index}>{item.title} v{item.version}</option>)}</select></Field><Field label="Case participant identity"><Input value={participantId} onChange={e => setParticipantId(e.target.value)} /></Field><Field label="Participant display name"><Input value={participantName} onChange={e => setParticipantName(e.target.value)} /></Field><Field label={`Case start (${selectedCase.start_constraint})`}><Input type="datetime-local" value={startAt ? new Date(startAt).toISOString().slice(0, 16) : ''} onChange={e => { if (e.target.value) setStartAt(`${e.target.value}:00Z`); }} /><p className="text-xs text-muted-foreground">Interpreted as UTC. Default: {stamp(selectedCase.suggested_start_at)}.</p></Field><Field label="Initial speed override"><Input type="number" min="0.01" max={catalog?.limits.max_speed} value={speed} placeholder="Backend default" onChange={e => setSpeed(e.target.value)} /></Field><Field label={`Wall-time budget (≤ ${catalog?.limits.max_wall_seconds}s)`}><Input type="number" value={wall} onChange={e => setWall(e.target.value)} /></Field><Field label={`Evidence limit (≤ ${catalog?.limits.max_records})`}><Input type="number" value={records} onChange={e => setRecords(e.target.value)} /></Field></div><p className="mt-2 text-xs text-muted-foreground">The case identity is separate from the production Sapiens ID. Leave speed blank for the backend default. Clock speed does not accelerate inference.</p></details><div className="flex items-center gap-3"><Button disabled={!!busy || !selectedSapienId} onClick={() => void create()}>{busy === 'prepare' ? 'Preparing…' : '2. Prepare selected Sapiens'}</Button><span className="text-xs text-muted-foreground">Creates the run and begins reservation; it will stop paused.</span></div></>}</CardContent></Card>
+      <Card><CardHeader><CardTitle className="text-base">Retained runs</CardTitle></CardHeader><CardContent className="space-y-2">{!runs.length && <p className="text-sm text-muted-foreground">No runs on this worker.</p>}{runs.map(item => { const bound = sapienForRun(item); const identity = item.participant_mode === 'sapien' ? `${bound?.name ?? 'Sapiens'} (ID ${item.sapien_id})` : item.participant_mode === 'manual' ? `Manual participant: ${item.participant_id}` : 'Environment-only run'; return <button key={item.run_id} aria-pressed={selectedId === item.run_id} onClick={() => setSelectedId(item.run_id)} className={`w-full rounded-lg border p-3 text-left text-sm ${selectedId === item.run_id ? 'border-violet-500 bg-violet-500/5' : ''}`}><span className="block truncate font-medium">{identity}</span><span className="block truncate text-xs text-muted-foreground">{item.case_id}</span><span className="mt-1 flex items-center justify-between"><Badge variant="secondary">{item.status}</Badge><span className="text-xs text-muted-foreground">{item.run_id.slice(0, 12)}…</span></span></button>; })}<details className="text-xs text-muted-foreground"><summary>Storage and worker diagnostics</summary><p>Worker {catalog?.worker_id ?? '—'} · {catalog?.storage ?? 'unknown'} · up to {catalog?.limits.max_runs ?? '—'} retained / {catalog?.limits.max_active ?? '—'} active · terminal retention {catalog?.limits.retention_seconds ?? '—'}s. All admins share runs. This API requires one long-lived worker.</p></details></CardContent></Card></div>
+      {run && <><Card><CardHeader><CardTitle className="flex flex-wrap items-center gap-2">Run console <Badge variant="secondary">{run.status}</Badge><Badge variant="outline">{run.participant_mode === 'sapien' ? 'Sapiens AI' : run.participant_mode === 'manual' ? 'Manual operator' : 'Environment only'}</Badge></CardTitle><p className="text-sm text-muted-foreground">{run.participant_mode === 'sapien' ? `${sapienForRun(run)?.name ?? 'Sapiens'} (ID ${run.sapien_id})` : run.participant_mode === 'manual' ? `Manual participant ${run.participant_id}` : 'No bound participant'}</p></CardHeader><CardContent className="space-y-4"><div className="grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4"><p><span className="text-muted-foreground">Simulated time</span><br />{stamp(run.simulated_time)}</p><p><span className="text-muted-foreground">Window ends</span><br />{stamp(run.end_at)}</p><p><span className="text-muted-foreground">Wall budget left</span><br />{Math.round(run.wall_remaining_seconds)}s</p><p><span className="text-muted-foreground">Pending world work</span><br />{run.pending_world_work ?? '—'}</p></div>{run.start_blocked_reason && <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm">Prepare unavailable: {run.start_blocked_reason}</p>}{run.detail && <p className="text-sm">{run.detail}</p>}{run.participant && <div className="grid gap-2 rounded-lg bg-muted/50 p-3 text-xs sm:grid-cols-3"><p>Runtime status: <strong className="capitalize">{participantPhase}</strong></p><p>Thinking cycles / incoming turns: {run.participant.cycles} / {run.participant.incoming_turns}</p><p>Messages waiting: {run.participant.pending_messages}</p><p>Last simulated tick: {stamp(run.participant.last_tick_at)}</p><p>Last cycle: {run.participant.last_cycle_wall_seconds ?? '—'}s wall / {run.participant.last_cycle_simulated_seconds ?? '—'}s simulated</p><p>Failure: {run.participant.failure_type ?? 'None reported'}</p></div>}{run.status === 'starting' && <p className="text-xs text-blue-700 dark:text-blue-300">Preparing reserves the Sapiens, finishes already-admitted normal work, and starts its cognitive engines. Wait for paused.</p>}{run.status === 'paused' && <p className="text-xs text-amber-700 dark:text-amber-300">The simulated clock and new scheduled work wait while paused. An LLM or provider call already in progress may still finish. Paused time still uses the wall budget.</p>}{run.status === 'stopping' && <p className="text-xs text-muted-foreground">Stopping rejects new actions and drains outstanding provider work; it is not an instant cancellation.</p>}{terminal.has(run.status) && <p className="text-xs text-muted-foreground">Finished attempts cannot restart. The bound Sapiens remains inactive; create a new run for another attempt.</p>}<div className="flex flex-wrap gap-2"><Button disabled={!!busy || !allowed('start')} onClick={() => void control('start')}>Prepare run</Button><Button disabled={!!busy || !allowed('resume')} onClick={() => void control('resume')}>{resumeLabel}</Button><Button variant="outline" disabled={!!busy || !allowed('pause')} onClick={() => void control('pause')}>Pause simulation</Button><Button variant="outline" disabled={!!busy || !allowed('stop')} onClick={() => void control('stop')}>Stop and drain</Button><Input className="w-36" type="number" aria-label="New simulation speed" placeholder="New speed" value={newSpeed} onChange={e => setNewSpeed(e.target.value)} /><Button variant="outline" disabled={!!busy || !allowed('speed') || !speedOverrideValid} onClick={() => void mutate('speed', () => simulationService.setSpeed(run.run_id, Number(newSpeed)))}>Set speed</Button><Button variant="destructive" disabled={!!busy || !allowed('delete')} onClick={() => void remove()}>Delete run</Button></div><p className="text-xs text-muted-foreground">Actual current speed: {run.speed}×; original configured speed: {run.config.speed}×. Clock speed does not accelerate inference.</p>{run.participant_mode === 'sapien' && <div className="grid gap-5 border-t pt-4 lg:grid-cols-2"><EventFeed title="Live messages" events={messages} /><EventFeed title="Live tool activity" events={tools} /></div>}</CardContent></Card>
+      {run.participant_mode === 'manual' && <Card><CardHeader><CardTitle>Participant console</CardTitle><p className="text-sm text-muted-foreground">You act only as {run.participant_id}. Messages and Jira tools are simulated; no real Teams or Jira account is touched.</p></CardHeader><CardContent className="space-y-5"><div className="grid gap-5 lg:grid-cols-2"><EventFeed title="Messages" events={messages} /><EventFeed title="Your tool activity" events={tools} /></div><div className="grid gap-5 border-t pt-5 lg:grid-cols-2"><div className="space-y-3"><h3 className="font-medium">Send a message</h3><div className="flex gap-2"><Button size="sm" variant={actionKind === 'message' ? 'default' : 'outline'} onClick={() => { setActionKind('message'); setTarget('priya'); }}>Direct</Button><Button size="sm" variant={actionKind === 'post' ? 'default' : 'outline'} onClick={() => { setActionKind('post'); setTarget('project'); }}>Channel post</Button></div><Field label={actionKind === 'post' ? 'Channel ID' : 'Recipient ID'}><Input value={target} onChange={e => setTarget(e.target.value)} /></Field><Field label="Message"><Textarea value={body} onChange={e => setBody(e.target.value)} placeholder="Type a message or an explicit employee command" /></Field><Field label="Reply to message ID (optional)"><Input value={replyTo} onChange={e => setReplyTo(e.target.value)} /></Field><Button disabled={!!busy || !run.participant_actions_available || !target.trim() || !body.trim()} onClick={() => void submitAction({ action: actionKind, target: target.trim(), text: body, ...(replyTo.trim() ? { in_reply_to: replyTo.trim() } : {}) })}>Send</Button><p className="text-xs text-muted-foreground">Employee free text is not interpreted by an LLM. Explicit commands are listed in Admin debug.</p></div><div className="space-y-3"><h3 className="font-medium">Simulated Jira</h3><Field label="Tool"><select className="h-9 w-full rounded-md border bg-background px-3 text-sm" value={toolName} onChange={e => setToolName(e.target.value)}>{['jira_get_issue','jira_list_transitions','jira_transition_issue','jira_update_issue','jira_get_metadata'].map(name => <option key={name}>{name}</option>)}</select></Field><Field label="Issue key"><Input value={issueKey} onChange={e => setIssueKey(e.target.value)} /></Field>{toolName === 'jira_transition_issue' && <Field label="Transition ID (from list_transitions)"><Input value={transitionId} onChange={e => setTransitionId(e.target.value)} /></Field>}{toolName === 'jira_update_issue' && <><Field label="Summary"><Input value={summary} onChange={e => setSummary(e.target.value)} /></Field><Field label="Description"><Textarea value={description} onChange={e => setDescription(e.target.value)} /></Field></>}<Button disabled={!!busy || !run.participant_actions_available || !issueKey.trim() || (toolName === 'jira_transition_issue' && !transitionId.trim())} onClick={() => void submitAction({ action: 'tool', connection: 'jira', tool: toolName, arguments: toolArguments() })}>Call tool</Button><p className="text-xs text-muted-foreground">Tool reads are explicit participant actions and may count toward grading. No automatic Jira reads.</p></div></div>{pendingAction && <Button variant="outline" disabled={!!busy} onClick={() => void sendAction(pendingAction)}>Retry exact action ID</Button>}{lastOutcome && <div className="rounded-lg border p-3 text-sm"><p>Last action: {lastOutcome.outcome.success === false || lastOutcome.outcome.is_error ? 'Rejected' : 'Completed'} · {lastOutcome.operation_id}</p><pre className="mt-2 overflow-auto rounded bg-muted p-2 text-xs">{json(lastOutcome.outcome)}</pre></div>}</CardContent></Card>}
+      <Card><CardHeader><CardTitle>Result</CardTitle></CardHeader><CardContent className="space-y-3">
+        {!result ? <p className="text-sm text-muted-foreground">{terminal.has(run.status) ? 'Final evidence and report are loading…' : 'The report appears when the run finishes.'}</p> : <><p className="text-sm">{result.detail} · Pass rate: {result.pass_rate === null ? 'Not gradeable' : `${Math.round(result.pass_rate * 100)}%`}</p><p className="text-xs text-muted-foreground">Participation checks measure authored-case participation, not full Scrum quality. Employees use explicit commands rather than general natural-language understanding.{run.participant_mode === 'sapien' ? run.participant && (run.participant.cycles > 0 || run.participant.incoming_turns > 0 || run.participant.last_tick_at) ? ' Runtime diagnostics confirm participant activity.' : ' The run selected a Sapiens, but available diagnostics do not prove attachment or execution completed.' : ' This was a manual participant run.'}</p>{result.report.metrics.map(metric => <div key={metric.expectation_id} className="rounded-lg border p-3 text-sm"><strong>{metric.expectation_id}</strong> · {metric.verdict}<p>{metric.explanation}</p><p className="text-xs">Evidence: {metric.evidence_ids.map(id => { const sequence = Number(id.slice(id.lastIndexOf(':') + 1)); return <button key={id} className="mr-2 text-violet-600 underline" onClick={() => void simulationService.event(run.run_id, sequence).then(event => { setEvidence(current => merge(current, [event])); document.getElementById(`evidence-${sequence}`)?.scrollIntoView(); }).catch(problem => setError(message(problem)))}>{id}</button>; })}</p></div>)}<Button size="sm" variant="outline" onClick={() => saveJson(`${run.run_id}-report.json`, result)}>Download report</Button></>}
+        <Button size="sm" variant="outline" disabled={!!busy} onClick={() => void download()}><Download className="mr-2 size-4" />Download all evidence</Button><p className="text-xs text-muted-foreground">Downloads are local copies. Backend runs and evidence are process-memory only and expire or disappear on restart.</p>
+      </CardContent></Card>
+      <details className="rounded-xl border p-4"><summary className="cursor-pointer font-semibold">Admin debug <span className="text-xs font-normal text-muted-foreground">Private authored guide, diagnostics and all evidence</span></summary><div className="mt-4 space-y-5"><p className="text-xs text-muted-foreground">Never give hidden future rules or expectations to a participant or future AI. Diagnostic counts are historical records, not unresolved work.</p>{guide ? <><div className="grid gap-3 text-sm sm:grid-cols-2"><p>People: {guide.people.map(person => `${person.name} (${person.person_id})`).join(', ')}</p><p>Connections: {guide.connections.join(', ')}</p></div><details><summary>Employee explicit commands</summary><pre className="overflow-auto rounded bg-muted p-3 text-xs">{json(guide.employee_commands)}</pre></details><details><summary>Authored channels, expectations and future rules</summary><pre className="overflow-auto rounded bg-muted p-3 text-xs">{json({ channels: guide.channels, expectations: guide.expectations, rules: guide.rules })}</pre></details></> : <p className="text-sm text-muted-foreground">No authored guide for this run.</p>}<div className="grid gap-4 lg:grid-cols-2"><EventFeed title="Behavior diagnostics" events={diagnostics} /><EventFeed title="All evidence" events={evidence} /></div><pre className="overflow-auto rounded bg-muted p-3 text-xs">{json({ run_id: run.run_id, worker_id: catalog?.worker_id, event_count: run.event_count, diagnostic_counts: run.diagnostic_counts, expires_in_seconds: run.expires_in_seconds })}</pre></div></details></>}
+    </main></div>;
 }
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) { return <div className="space-y-2"><Label>{label}</Label>{children}</div>; }
-function JsonField({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) { return <Field label={label}><Textarea className="min-h-36 font-mono text-xs" spellCheck={false} value={value} onChange={event => onChange(event.target.value)} /></Field>; }
-function Stat({ label, value }: { label: string; value: React.ReactNode }) { return <div className="rounded-lg bg-muted/50 p-3"><p className="text-xs text-muted-foreground">{label}</p><p className="mt-1 break-words text-sm font-medium">{value}</p></div>; }

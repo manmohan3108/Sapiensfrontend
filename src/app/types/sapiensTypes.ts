@@ -4,6 +4,10 @@ export interface Sapiens {
   role?: string;
   createdAt: string;
   lastModified: string;
+  /** Additive admin-list metadata. Missing values must fail closed in Simulation Lab. */
+  simulationEnabled?: boolean;
+  simulationAvailable?: boolean;
+  simulationUnavailableReason?: string | null;
 }
 
 export interface CreateSapiensRequest {

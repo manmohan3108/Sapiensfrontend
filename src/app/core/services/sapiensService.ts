@@ -25,6 +25,9 @@ interface BackendSapiens {
   name: string;
   role?: string;
   created_at: string;
+  simulation_enabled?: boolean;
+  simulation_available?: boolean;
+  simulation_unavailable_reason?: 'simulation_disabled' | 'runtime_reserved' | null;
 }
 
 interface BackendCreateSapiensResponse {
@@ -41,6 +44,13 @@ function transformSapiens(backendSapiens: BackendSapiens): Sapiens {
     role: backendSapiens.role,
     createdAt: backendSapiens.created_at,
     lastModified: backendSapiens.created_at,
+    simulationEnabled: backendSapiens.simulation_enabled,
+    simulationAvailable: backendSapiens.simulation_available,
+    simulationUnavailableReason: backendSapiens.simulation_unavailable_reason === 'runtime_reserved'
+      ? 'Busy, reserved, or awaiting review.'
+      : backendSapiens.simulation_unavailable_reason === 'simulation_disabled'
+        ? 'Simulation is not enabled in Django admin.'
+        : backendSapiens.simulation_unavailable_reason,
   };
 }
 

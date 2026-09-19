@@ -1,50 +1,13 @@
-export type SimulationStatus =
-  | 'created' | 'starting' | 'running' | 'paused' | 'stopping'
-  | 'completed' | 'stopped' | 'limit_reached' | 'failed';
-
-export interface SimulationRun {
-  run_id: string;
-  status: SimulationStatus;
-  simulated_time: string;
-  speed: number;
-  paused: boolean;
-  pending_scenario_events: number | null;
-  pending_replies: number | null;
-  detail: string | null;
-}
-
-export interface SimulationEvent {
-  run_id: string;
-  sequence: number;
-  source: string;
-  occurred_at: string;
-  observed_at: string;
-  payload: Record<string, unknown>;
-  operation_id: string | null;
-  scheduled_at: string | null;
-}
-
-export interface SimulationMetric {
-  expectation_id: string;
-  verdict: 'pass' | 'fail' | 'insufficient_evidence';
-  explanation: string;
-  evidence_ids: string[];
-}
-
-export interface SimulationResult {
-  run_id: string;
-  status: SimulationStatus;
-  detail: string;
-  report: { run_id: string | null; run_status: string | null; metrics: SimulationMetric[] };
-  pass_rate: number | null;
-}
-
-export interface SimulationCreateRequest {
-  config: { run_id: string; speed: number; max_wall_seconds: number; max_records: number };
-  scenario: Record<string, unknown>;
-  expectations: unknown[];
-}
-
+export type SimulationStatus = 'created' | 'starting' | 'paused' | 'running' | 'stopping' | 'completed' | 'blocked' | 'stopped' | 'limit_reached' | 'failed';
+export interface CaseInfo { case_id: string; version: string; title: string; description: string; suggested_start_at: string; start_constraint: string; participant_mode: string; sapien_integration_available: boolean; interpreter_mode: string; limitations: string }
+export interface CaseCatalog { cases: CaseInfo[]; limits: { max_speed: number; max_wall_seconds: number; max_records: number; max_runs: number; max_active: number; retention_seconds: number }; worker_id: number; storage: string; single_worker_required: boolean }
+export interface ParticipantState { phase: string; cycles: number; incoming_turns: number; last_tick_at: string | null; last_cycle_wall_seconds: number | null; last_cycle_simulated_seconds: number | null; pending_messages: number; failure_type: string | null }
+export interface SimulationRun { run_id: string; status: SimulationStatus; case_id: string; case_version: string; participant_id: string | null; sapien_id: number | null; start_blocked_reason: string | null; participant_mode: 'sapien' | 'manual' | 'environment_only'; interpreter_mode: string; sapien_integration_available: boolean; start_at: string; end_at: string; simulated_time: string; speed: number; paused: boolean; config: { run_id: string; speed: number; max_wall_seconds: number; max_records: number }; participant: ParticipantState | null; wall_elapsed_seconds: number; wall_remaining_seconds: number; expires_in_seconds: number | null; event_count: number; diagnostic_counts: Record<string, number>; pending_world_work: number | null; detail: string | null; allowed_controls: string[]; participant_actions_available: boolean }
+export interface SimulationEvent { record_id: string; run_id: string; sequence: number; source: string; occurred_at: string; observed_at: string; scheduled_at: string | null; operation_id: string | null; payload: Record<string, unknown> }
+export interface EventPage { events: SimulationEvent[]; next_after: number; has_more: boolean }
+export interface SimulationMetric { expectation_id: string; verdict: 'pass' | 'fail' | 'insufficient_evidence'; explanation: string; evidence_ids: string[] }
+export interface SimulationResult { run_id: string; status: SimulationStatus; detail: string; report: { metrics: SimulationMetric[]; diagnostics: SimulationEvent[] }; pass_rate: number | null }
 export interface SimulationList { worker_id: number; runs: SimulationRun[] }
-export interface SimulationEventPage { events: SimulationEvent[]; next_after: number; has_more: boolean }
-
+export interface CaseCreateRequest { case: { case_id: string; version: string; start_at: string; participant_id: string; participant_name: string }; config: { run_id: string; speed?: number; max_wall_seconds: number; max_records: number }; sapien_id: number }
+export interface ParticipantOutcome { participant_id: string; operation_id: string; outcome: { success?: boolean; is_error?: boolean; content?: string; reason?: string; [key: string]: unknown } }
+export interface DebugGuide { run_id: string; visibility: 'admin_only'; people: { person_id: string; name: string }[]; channels: unknown[]; connections: string[]; expectations: unknown[]; rules: unknown[]; employee_commands: { person_id: string; options: { command: string; description: string }[] }[] }

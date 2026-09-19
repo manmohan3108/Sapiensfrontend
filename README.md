@@ -73,16 +73,20 @@ This intentionally conservative behavior does not disclose why access failed.
 Selection/account changes discard in-flight response bodies; no Sapiens selection,
 chat, or memory data is persisted to browser storage. Theme preference is shared.
 
-The admin-only Simulation Lab at `/admin/simulations` currently drives the
-standalone simulation environment API: retained-run lifecycle, accelerated clock,
-scenario events, evidence, and evaluation. Runs are process-local rather than
-durable history and require the `/api/simulations/` prefix to remain pinned to one
-long-lived backend worker. Existing- and fresh-Sapiens execution is explicitly
-pending backend integration. Before that can be enabled, the backend must create an
-isolated snapshot/copy of the selected Sapiens, attach its engine and approved
-MCP/LLM adapters to the simulated world, and guarantee that live memories,
-conversations, and issue trackers cannot be mutated. The current frontend does not
-send an unsupported `sapien_id`; workspace shortcuts carry display context only.
+The admin-only Simulation Lab at `/admin/simulations` uses the backend-authored
+case catalog and can bind an eligible, normally created Sapiens to Sentinel Desk.
+It prepares the runtime paused, then exposes resume/pause/stop controls, read-only
+participant activity, runtime diagnostics, evidence and participation checks.
+Simulated Jira and Teams never use production credentials, and a finished Sapiens
+remains inactive. The selected Sapiens does use and modify its real cognitive
+memories; simulation does not clone or reset them, so a dedicated test Sapiens is
+recommended but not required. The raw scenario editor is not part of the normal interface.
+Runs are process-local rather than durable history and require
+`/api/simulations/` to be pinned to one long-lived worker. The picker consumes the
+authoritative simulation enablement, current availability and unavailable-reason
+fields added to the existing admin Sapiens-list response. Older deployments that
+omit those fields fail closed; no numeric-ID fallback is provided. Eligibility
+remains controlled only through Django admin.
 
 Deployment is NOT verified. Apply backend migration `0004_sapiensmodel_owner`
 before restarting, verifying the host includes `0003_enginejob_origin`; reconcile
