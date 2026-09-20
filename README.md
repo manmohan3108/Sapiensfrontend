@@ -75,14 +75,21 @@ chat, or memory data is persisted to browser storage. Theme preference is shared
 
 The admin-only Simulation Lab at `/admin/simulations` uses the backend-authored
 case catalog and can bind an eligible, normally created Sapiens to Sentinel Desk.
-It prepares the runtime paused, then exposes resume/pause/stop controls, read-only
+It prepares the runtime immediately and schedules execution for the next real
+whole-hour appointment, then exposes only server-authorized controls, read-only
 participant activity, runtime diagnostics, evidence and participation checks.
 Simulated Jira and Teams never use production credentials, and a finished Sapiens
 remains inactive. The selected Sapiens does use and modify its real cognitive
 memories; simulation does not clone or reset them, so a dedicated test Sapiens is
 recommended but not required. The raw scenario editor is not part of the normal interface.
-Runs are process-local rather than durable history and require
-`/api/simulations/` to be pinned to one long-lived worker. The picker consumes the
+Live runtime and controls remain process-local and require `/api/simulations/`
+to be pinned to one long-lived worker. Run history, evidence and final reports
+are persisted in the database and remain inspectable after live cleanup or a
+restart, but automatic runtime recovery and continuation are not implemented.
+Unfinished archived runs require manual recovery review. Explicit deletion
+permanently removes the saved run archive and evidence, not cognitive memories.
+Deploy the backend simulation-history migration before enabling this storage
+mode. The picker consumes the
 authoritative simulation enablement, current availability and unavailable-reason
 fields added to the existing admin Sapiens-list response. Older deployments that
 omit those fields fail closed; no numeric-ID fallback is provided. Eligibility
