@@ -18,11 +18,12 @@ const terminal = new Set<SimulationStatus>(['completed', 'blocked', 'stopped', '
 const stamp = (value?: string | null) => value ? new Date(value).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium', timeStyle: 'short' }) + ' IST' : '—';
 const countdown = (value?: string | null) => { if (!value) return '—'; const seconds = Math.max(0, Math.ceil((new Date(value).getTime() - Date.now()) / 1000)); const hours = Math.floor(seconds / 3600), minutes = Math.floor((seconds % 3600) / 60), remainder = seconds % 60; return hours ? `${hours}h ${minutes}m ${remainder}s` : `${minutes}m ${remainder}s`; };
 const statusLabel = (status: SimulationStatus) => ({ starting: 'Preparing', scheduled: 'Ready', running: 'Running', paused: 'Paused', stopping: 'Stopping', completed: 'Completed', blocked: 'Blocked', stopped: 'Stopped', limit_reached: 'Limit reached', failed: 'Failed', created: 'Created', recovery_required: 'Recovery needs review' }[status]);
+const pollDelay = (status: SimulationStatus) => status === 'scheduled' || status === 'paused' ? 30_000 : status === 'starting' || status === 'stopping' ? 10_000 : 15_000;
 const message = (error: unknown) => error instanceof HttpError ? `${error.status === 404 ? 'Run or evidence not found in live runtime or saved history: ' : error.status === 409 ? 'Run changed; refresh and try again: ' : error.status === 403 ? 'Admin access required: ' : error.status === 401 ? 'Session expired: ' : ''}${error.message}` : error instanceof Error ? error.message : 'Request failed';
 const json = (value: unknown) => JSON.stringify(value, null, 2);
 const newId = () => crypto.randomUUID();
 function saveJson(name: string, value: unknown) { const url = URL.createObjectURL(new Blob([json(value)], { type: 'application/json' })); const link = document.createElement('a'); link.href = url; link.download = name; link.click(); window.setTimeout(() => URL.revokeObjectURL(url), 1000); }
-function merge(current: SimulationEvent[], incoming: SimulationEvent[]) { const map = new Map(current.map(item => [item.record_id, item])); incoming.forEach(item => map.set(item.record_id, item)); return [...map.values()].sort((a, b) => a.sequence - b.sequence); }
+function merge(current: SimulationEvent[], incoming: SimulationEvent[]) { if (!incoming.length) return current; const map = new Map(current.map(item => [item.record_id, item])); incoming.forEach(item => map.set(item.record_id, item)); return [...map.values()].sort((a, b) => a.sequence - b.sequence); }
 const helpFor = (label: string) => label.startsWith('Wall-time') ? 'The maximum real elapsed execution time this run may use. The standard default is six real hours, but the catalog value shown here is authoritative and may be lower. Preparation and scheduled waiting use no budget. Pauses after execution starts still count, and resuming never resets it.' : label.startsWith('Evidence') ? 'The maximum number of recorded events, including messages, tool activity, and diagnostics. It is not a token limit. Reaching it ends the run with limit_reached.' : label.includes('speed') ? 'How quickly simulated time advances relative to real time after execution starts. It does not make LLM or provider calls compute faster.' : null;
 function InfoHelp({ text, label = 'More information' }: { text: string; label?: string }) { return <details className="group relative inline-flex"><summary aria-label={label} className="list-none rounded-full text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-violet-500 [&::-webkit-details-marker]:hidden"><CircleHelp className="size-3.5" /></summary><span role="tooltip" className="absolute left-0 top-5 z-30 hidden w-72 rounded-md bg-slate-950 p-2 text-xs font-normal leading-5 text-white shadow-xl group-open:block group-hover:block group-focus-within:block">{text}</span></details>; }
 function Field({ label, children }: { label: string; children: React.ReactNode }) { const id = useId(); const help = helpFor(label); const items = Children.toArray(children); const first = items[0]; const control = isValidElement<{ id?: string }>(first) ? cloneElement(first, { id: first.props.id ?? id }) : first; return <div className="flex flex-col items-stretch gap-1.5"><span className="flex items-center gap-1.5"><Label htmlFor={id}>{label}</Label>{help && <InfoHelp text={help} label={`About ${label}`} />}</span>{control}{items.slice(1)}</div>; }
@@ -122,11 +123,12 @@ export function SimulationLabPage() {
         const next = await simulationService.get(selectedId, controller.signal); if (controller.signal.aborted) return;
         if (next.delete_requested) acknowledgedDeletes.current.add(next.run_id);
         setRun(next); setRuns(current => current.map(item => item.run_id === next.run_id ? next : item));
-        if (next.participant_mode !== 'environment_only') {
+        const activityAvailable = next.status !== 'created' && next.status !== 'starting' && next.status !== 'scheduled';
+        if (activityAvailable && next.participant_mode !== 'environment_only') {
           await Promise.all([drain(selectedId, 'messages', controller.signal), drain(selectedId, 'tools', controller.signal), drain(selectedId, 'diagnostics', controller.signal)]);
           if (!guideLoaded.current) { setGuide(await simulationService.debug(selectedId, controller.signal)); guideLoaded.current = true; }
         }
-        await drain(selectedId, 'evidence', controller.signal);
+        if (activityAvailable) await drain(selectedId, 'evidence', controller.signal);
         if (next.status === 'recovery_required') return;
         if (terminal.has(next.status)) {
           try {
@@ -137,7 +139,7 @@ export function SimulationLabPage() {
             throw problem;
           }
         }
-        failed = 0; timer = window.setTimeout(poll, 1500);
+        failed = 0; timer = window.setTimeout(poll, pollDelay(next.status));
       } catch (problem) {
         if (controller.signal.aborted) return;
         if (problem instanceof HttpError && problem.status === 404 && acknowledgedDeletes.current.has(selectedId)) {
@@ -146,7 +148,7 @@ export function SimulationLabPage() {
         }
         setError(message(problem));
         if (problem instanceof HttpError && problem.status === 404) return;
-        failed++; timer = window.setTimeout(poll, Math.min(15000, 1500 * 2 ** Math.min(failed, 4)));
+        failed++; timer = window.setTimeout(poll, Math.min(300_000, 60_000 * 2 ** Math.min(failed - 1, 3)));
       }
     };
     void poll(); return () => { controller.abort(); window.clearTimeout(timer); };
