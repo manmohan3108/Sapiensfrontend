@@ -171,12 +171,12 @@ export function HeaderBar() {
 
           {user?.role === 'admin' && <button
             onClick={() => navigate(`/admin/simulations?sapienId=${encodeURIComponent(currentSapiens.id)}&sapienName=${encodeURIComponent(currentSapiens.name)}`)}
-            title="Open Simulation Lab with this Sapiens as pending context"
+            title={`Open simulations for ${currentSapiens.name}`}
             className="flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs transition-all duration-150"
             style={{ background: 'rgba(245,158,11,0.10)', border: '1px solid rgba(245,158,11,0.28)', color: '#fcd34d' }}
           >
             <Beaker className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Simulate</span>
+            <span className="hidden sm:inline">Simulation</span>
           </button>}
 
           <div className="w-px h-5 bg-white/10" />
