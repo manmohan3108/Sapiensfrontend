@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router';
 import type { ReactNode } from 'react';
 import { Activity, ArrowLeft, Copy, Loader2, RefreshCw } from 'lucide-react';
 import { engineJobsService } from '../../core/services/engineJobsService';
@@ -76,7 +77,7 @@ function Failure({ error, detail = false, retry }: { error: ApiError; detail?: b
 }
 
 // IDs are presented exactly as stored. No record type or destination is inferred
-// from a generic reference_id; current record inspectors have no ID-based route.
+// from a generic reference_id without an explicit record kind and run scope.
 function storedIdentifiers(value: unknown, path = 'payload'): Array<{ path: string; value: unknown }> {
   if (Array.isArray(value)) return value.flatMap((item, index) => storedIdentifiers(item, `${path}[${index}]`));
   if (!value || typeof value !== 'object') return [];
@@ -116,6 +117,7 @@ function Detail({ sapienId, jobId, onOpen }: { sapienId: string; jobId: string; 
         <dl className="grid gap-4 sm:grid-cols-2">
           <Fact label="Engine">{job.engine_name}</Fact><Fact label="Stored action">{text(job.action)}</Fact>
           <Fact label="Source">{text(origin.source)}</Fact><Fact label="Trigger">{text(origin.trigger)}</Fact>
+          <Fact label="Simulation run origin">{text(origin.simulation_run_id)}</Fact>
           <Fact label="Created by">{text(origin.created_by)}</Fact><Fact label="Origin reference"><Identifier value={origin.reference_id} /></Fact>
           <Fact label="Workflow ID"><Identifier value={job.workflow_id} /></Fact><Fact label="Payload parent job"><Identifier value={job.parent_job_id} onOpen={onOpen} /></Fact>
           <Fact label="Origin parent job"><Identifier value={origin.parent_job_id} onOpen={onOpen} /></Fact>
@@ -128,7 +130,7 @@ function Detail({ sapienId, jobId, onOpen }: { sapienId: string; jobId: string; 
           {(['retryable', 'will_retry', 'timed_out'] as const).map(flag => <Fact key={flag} label={`Recorded error flag: ${flag}`}>{text(job.error_flags?.[flag])}</Fact>)}
         </dl>
         <p className="mt-3 text-xs leading-5 text-white/50">Retries counts stored failures, not executions or a complete attempt history. Error flags are stored facts, not a guarantee of future execution. Eligibility is calculated by the backend at the read time.</p>
-        <p className="mt-2 text-xs leading-5 text-white/50">Pending jobs are due or delayed; running jobs are leased or lease_expired. Missing scheduling or lease timestamps yield unknown. Terminal jobs are not queued for scheduling.</p>
+        <p className="mt-2 text-xs leading-5 text-white/50">Normal pending jobs are due or delayed. Simulation pending jobs require the run’s cognitive clock (simulation_clock_required); this read does not infer their due status from real time. Running jobs are leased or lease_expired. Missing scheduling or lease timestamps yield unknown. Terminal jobs are not queued for scheduling.</p>
         {job.eligibility === 'lease_expired' && <p className="mt-3 text-xs text-amber-200">An expired lease does not prove that execution stopped.</p>}
       </section>
       <section className={`${panel} p-4`}><h3 className="mb-3 text-sm text-cyan-100">Timing and lease</h3>
@@ -136,18 +138,18 @@ function Detail({ sapienId, jobId, onOpen }: { sapienId: string; jobId: string; 
           {(['created_at', 'updated_at', 'available_at', 'run_started_at', 'lease_until'] as const).map(field => <Fact key={field} label={field}>{timestamp(job[field])}</Fact>)}
           <Fact label="Age at read time">{duration(job.age_seconds)}</Fact><Fact label="Current running elapsed time">{job.status === 'running' ? duration(job.running_seconds) : 'Not applicable (not running)'}</Fact>
         </dl>
-        <p className="mt-3 text-xs leading-5 text-white/50">Updated time is not a completion timestamp. Historical duration is not recorded here. Lease ownership tokens are never exposed.</p>
+        <p className="mt-3 text-xs leading-5 text-white/50">Created, updated, execution, lease, and retry audit times use real time. Simulation available_at is a cognitive due time; do not compare it with the browser clock or real as_of. Updated time is not a completion timestamp. Historical duration is not recorded here. Lease ownership tokens are never exposed.</p>
       </section>
       <section className={`${panel} p-4`}><h3 className="mb-2 text-sm text-cyan-100">Identifiers in the stored payload</h3>
-        <p className="mb-3 text-xs leading-5 text-white/45">Producer-recorded references may no longer exist. Record and workflow IDs have no direct inspection route in this frontend; copy them for lookup. No target records are inferred.</p>
+        <p className="mb-3 text-xs leading-5 text-white/45">Producer-recorded references may no longer exist. Generic record and workflow IDs do not identify a record kind and run scope; copy them for lookup. No target records are inferred.</p>
         <dl className="grid gap-4 sm:grid-cols-2">{identifiers.map(item => <Fact key={item.path} label={item.path}><Identifier value={item.value} onOpen={item.path.endsWith('.parent_job_id') ? onOpen : undefined} /></Fact>)}</dl>
         {!identifiers.length && <p className="text-xs text-white/50">No ID fields recorded in the payload. Inspect the full payload below for other stored values.</p>}
       </section>
       <Raw label="Full stored payload" value={job.payload} />
       <Raw label="Full stored origin" value={job.origin} />
       <Raw label="Recorded error" value={job.error} note="Stored error content, including messages or tracebacks when available. Null means no error value was recorded." />
-      <Raw label="Legacy progress" value={job.progress} note="Progress is an inert legacy field and can be empty. It is not an execution result." />
-      <Raw label="Complete returned job facts" value={job} note="The model has no separate execution-result or attempt-history field. No missing outcomes or attempts are reconstructed." />
+      <Raw label="Derived-result checkpoint (progress)" value={job.progress} note="Retained checkpoint used to resume derived-result processing. It can be absent on older jobs and is not a complete execution or attempt history. Completion does not prove question resolution or recipient delivery." />
+      <Raw label="Complete returned job facts" value={job} note="No missing outcomes or attempts are reconstructed." />
     </>}
   </div>;
 }
@@ -155,16 +157,19 @@ function Detail({ sapienId, jobId, onOpen }: { sapienId: string; jobId: string; 
 // The keyed inner view discards filters, cursors and sensitive in-memory content
 // immediately when the selected Sapien changes.
 export function EngineJobsInspection({ sapienId }: { sapienId: string }) {
-  return <JobList key={sapienId} sapienId={sapienId} />;
+  const [params] = useSearchParams();
+  const engineName = params.get('engine_name') || '';
+  const jobId = params.get('job_id') || '';
+  return <JobList key={`${sapienId}:${engineName}:${jobId}`} sapienId={sapienId} initialEngine={engineName} initialJob={jobId} />;
 }
 
-function JobList({ sapienId }: { sapienId: string }) {
-  const [draft, setDraft] = useState(defaults);
-  const [request, setRequest] = useState<{ filters: EngineJobFilters; cursors: Array<string | null>; revision: number }>({ filters: defaults, cursors: [null], revision: 0 });
+function JobList({ sapienId, initialEngine, initialJob }: { sapienId: string; initialEngine: string; initialJob: string }) {
+  const [draft, setDraft] = useState({ ...defaults, engine_name: initialEngine });
+  const [request, setRequest] = useState<{ filters: EngineJobFilters; cursors: Array<string | null>; revision: number }>({ filters: { ...defaults, engine_name: initialEngine }, cursors: [null], revision: 0 });
   const [data, setData] = useState<EngineJobPage | null>(null);
   const [error, setError] = useState<ApiError | null>(null);
   const [loading, setLoading] = useState(true);
-  const [jobTrail, setJobTrail] = useState<string[]>([]);
+  const [jobTrail, setJobTrail] = useState<string[]>(initialJob ? [initialJob] : []);
   const selected = jobTrail[jobTrail.length - 1];
   useEffect(() => {
     let active = true;
@@ -206,17 +211,17 @@ function JobList({ sapienId }: { sapienId: string }) {
         <p className="text-xs text-white/50">Applied: {data.filters.days} days · Engine: {data.filters.engine_name || 'all'} · Status: {data.filters.status || 'all'} · Limit: {data.limit}</p>
         <p className="text-[11px] leading-5 text-white/40">Created from {timestamp(data.since)} through {timestamp(data.until)} (inclusive). Read as of {timestamp(data.as_of)}.</p>
         <p className="text-[11px] leading-5 text-white/40">Live reads, not a transactional snapshot: statuses can change between pages or between summary and list queries. Later pages preserve the original creation window.</p>
-        <div className="overflow-x-auto"><table className="w-full min-w-[660px] text-left text-xs"><caption className="sr-only">Engine and status totals across the entire filtered window</caption><thead className="text-white/40"><tr>{['Engine', 'Status', 'Jobs', 'Due', 'Delayed', 'Expired leases', 'With failures'].map(label => <th key={label} className="px-3 py-2 font-normal">{label}</th>)}</tr></thead>
-          <tbody>{data.summary.map(row => <tr key={`${row.engine_name}:${row.status}`} className="border-t border-white/[.06] text-white/70"><td className="max-w-64 break-words px-3 py-2">{row.engine_name}</td><td className="px-3 py-2">{row.status}</td>{[row.count, row.due, row.delayed, row.expired_leases, row.retried].map((value, index) => <td key={index} className="px-3 py-2 tabular-nums">{value}</td>)}</tr>)}</tbody>
+        <div className="overflow-x-auto"><table className="w-full min-w-[660px] text-left text-xs"><caption className="sr-only">Engine and status totals across the entire filtered window</caption><thead className="text-white/40"><tr>{['Engine', 'Status', 'Jobs', 'Due', 'Delayed', 'Simulation pending', 'Expired leases', 'With failures'].map(label => <th key={label} className="px-3 py-2 font-normal">{label}</th>)}</tr></thead>
+          <tbody>{data.summary.map(row => <tr key={`${row.engine_name}:${row.status}`} className="border-t border-white/[.06] text-white/70"><td className="max-w-64 break-words px-3 py-2">{row.engine_name}</td><td className="px-3 py-2">{row.status}</td>{[row.count, row.due, row.delayed, row.simulation_pending ?? 'Unavailable', row.expired_leases, row.retried].map((value, index) => <td key={index} className="px-3 py-2 tabular-nums">{value}</td>)}</tr>)}</tbody>
         </table></div>
         {!data.summary.length && <p className="text-xs text-white/50">No jobs match this creation window and these filters.</p>}
-        <p className="text-[11px] text-white/40">“With failures” means retries &gt; 0; it does not prove another execution occurred. Expired leases do not prove execution stopped.</p>
+        <p className="text-[11px] text-white/40">Simulation pending requires the run’s cognitive clock and is not classified as due or delayed by real read time. “With failures” means retries &gt; 0; it does not prove another execution occurred. Expired leases do not prove execution stopped.</p>
       </section>
       <section className={`${panel} overflow-hidden`}>
         <div className="overflow-x-auto"><table className="w-full min-w-[940px] text-left text-xs"><caption className="p-3 text-left text-white/50">Page {request.cursors.length} · {data.jobs.length} returned jobs · newest creation time first. List metadata can be truncated; open details for full stored values.</caption>
           <thead className="bg-[#0b101c] text-white/40"><tr>{['Job / engine', 'Stored action / source', 'Status / eligibility', 'Failures / budget', 'Created', 'Error'].map(label => <th key={label} className="px-3 py-2 font-normal">{label}</th>)}</tr></thead>
           <tbody>{data.jobs.map(job => <tr key={job.id} className="border-t border-white/[.05] text-white/70 hover:bg-white/[.025]">
-            <td className="max-w-64 px-3 py-3"><button type="button" onClick={() => setJobTrail([job.id])} className="break-all text-left font-mono text-cyan-200 underline underline-offset-2">{job.id}</button><p className="mt-1 break-words">{job.engine_name}</p></td>
+            <td className="max-w-64 px-3 py-3"><button type="button" onClick={() => setJobTrail([job.id])} className="break-all text-left font-mono text-cyan-200 underline underline-offset-2">{job.id}</button><p className="mt-1 break-words">{job.engine_name}</p><p className="mt-1 break-all text-[10px] text-white/40">Simulation run origin: {text(job.origin && typeof job.origin === 'object' ? (job.origin as Record<string, unknown>).simulation_run_id : null)}</p></td>
             <td className="max-w-64 break-words px-3 py-3"><p>{text(job.action)}</p><p className="mt-1 text-white/40">{text(job.origin && typeof job.origin === 'object' ? (job.origin as Record<string, unknown>).source : null)}</p></td>
             <td className="px-3 py-3"><p>{job.status}</p><p className={`mt-1 ${job.eligibility === 'lease_expired' ? 'text-amber-200' : 'text-white/40'}`}>{job.eligibility}</p></td>
             <td className="px-3 py-3 tabular-nums">{job.retries} / {job.max_retries}</td><td className="max-w-52 px-3 py-3 text-[11px]">{timestamp(job.created_at)}</td><td className="px-3 py-3">{job.has_error ? 'Recorded' : 'None recorded'}</td>

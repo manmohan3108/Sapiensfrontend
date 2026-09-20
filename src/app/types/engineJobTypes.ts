@@ -13,6 +13,7 @@ export interface EngineJobSummary {
   count: number;
   due: number;
   delayed: number;
+  simulation_pending?: number;
   expired_leases: number;
   retried: number;
 }
@@ -33,7 +34,7 @@ export interface EngineJob {
   available_at: string | null;
   run_started_at: string | null;
   lease_until: string | null;
-  eligibility: 'due' | 'delayed' | 'leased' | 'lease_expired' | 'terminal' | 'unknown';
+  eligibility: 'due' | 'delayed' | 'simulation_clock_required' | 'leased' | 'lease_expired' | 'terminal' | 'unknown';
   age_seconds: number;
   running_seconds: number | null;
   has_error: boolean;
