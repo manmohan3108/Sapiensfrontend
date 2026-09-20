@@ -44,6 +44,7 @@ export function useSapiens() {
           role: response.role,
           createdAt: response.createdAt,
           lastModified: response.createdAt,
+          simulationEnabled: response.simulationEnabled,
         };
         setCurrentSapiens(newSapiens);
         setStatus('idle');

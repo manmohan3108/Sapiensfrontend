@@ -35,6 +35,7 @@ interface BackendCreateSapiensResponse {
   name: string;
   role?: string;
   created_at?: string;
+  simulation_enabled?: boolean;
 }
 
 function transformSapiens(backendSapiens: BackendSapiens): Sapiens {
@@ -58,7 +59,13 @@ class SapiensService {
   async createSapiens(request: CreateSapiensRequest): Promise<CreateSapiensResponse> {
     const response = await apiClient.post<BackendCreateSapiensResponse>(
       API_ENDPOINTS.createSapiens,
-      { name: request.name, ...(request.role ? { role: request.role } : {}) }
+      {
+        name: request.name,
+        ...(request.role ? { role: request.role } : {}),
+        ...(request.simulation_enabled !== undefined
+          ? { simulation_enabled: request.simulation_enabled }
+          : {}),
+      }
     );
     const data = response.data;
 
@@ -67,6 +74,7 @@ class SapiensService {
       name: data.name,
       role: data.role,
       createdAt: data.created_at ?? new Date().toISOString(),
+      simulationEnabled: data.simulation_enabled,
     };
   }
 

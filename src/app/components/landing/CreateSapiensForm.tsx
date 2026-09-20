@@ -3,9 +3,11 @@ import { ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
+import { Checkbox } from '../ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { useSapiens } from '../../hooks/useSapiens';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface CreateSapiensFormProps {
   onNameChange?: (name: string) => void;
@@ -14,9 +16,12 @@ interface CreateSapiensFormProps {
 export function CreateSapiensForm({ onNameChange }: CreateSapiensFormProps) {
   const [name, setName] = useState('');
   const [role, setRole] = useState('');
+  const [simulationEnabled, setSimulationEnabled] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { createSapiens } = useSapiens();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,15 +36,17 @@ export function CreateSapiensForm({ onNameChange }: CreateSapiensFormProps) {
       await createSapiens({
         name: name.trim(),
         ...(role.trim() ? { role: role.trim() } : {}),
+        ...(isAdmin ? { simulation_enabled: simulationEnabled } : {}),
       });
       
       // Reset form
       setName('');
       setRole('');
+      setSimulationEnabled(false);
       onNameChange?.('');
     } catch (error) {
       console.error('Failed to create Sapiens:', error);
-      setError('Unable to connect to the backend server. Please try again shortly.');
+      setError((error as { message?: string }).message || 'Unable to connect to the backend server. Please try again shortly.');
     } finally {
       setIsCreating(false);
     }
@@ -93,6 +100,23 @@ export function CreateSapiensForm({ onNameChange }: CreateSapiensFormProps) {
               disabled={isCreating}
             />
           </div>
+
+          {isAdmin && (
+            <div className="flex items-start gap-3 rounded-lg border bg-muted/30 p-3">
+              <Checkbox
+                id="simulation-enabled"
+                checked={simulationEnabled}
+                onCheckedChange={(checked) => setSimulationEnabled(checked === true)}
+                disabled={isCreating}
+              />
+              <div className="space-y-1">
+                <Label htmlFor="simulation-enabled">Enable simulation</Label>
+                <p className="text-xs text-muted-foreground">
+                  Allow this Sapien to be selected in Simulation Lab. This does not start a simulation or reset its memories.
+                </p>
+              </div>
+            </div>
+          )}
           
           <Button
             type="submit"

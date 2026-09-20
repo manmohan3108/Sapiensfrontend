@@ -13,6 +13,7 @@ export interface Sapiens {
 export interface CreateSapiensRequest {
   name: string;
   role?: string;
+  simulation_enabled?: boolean;
 }
 
 export interface CreateSapiensResponse {
@@ -20,6 +21,7 @@ export interface CreateSapiensResponse {
   name: string;
   role?: string;
   createdAt: string;
+  simulationEnabled?: boolean;
 }
 
 export interface LoadSapiensRequest {
