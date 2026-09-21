@@ -16,7 +16,7 @@ async function request<T>(path: string, init: RequestInit = {}, accepted: number
 }
 export const simulationService = {
   cases: (signal?: AbortSignal) => request<CaseCatalog>('cases/', { signal }),
-  list: (signal?: AbortSignal) => request<SimulationList>('runs/', { signal }),
+  list: (signal?: AbortSignal) => request<SimulationList>('runs/', { signal, cache: 'no-store' }),
   get: (id: string, signal?: AbortSignal) => request<SimulationRun>(runPath(id), { signal }),
   create: (body: CaseCreateRequest) => request<SimulationRun>('runs/', { method: 'POST', body: JSON.stringify(body) }),
   control: (id: string, action: 'start' | 'pause' | 'resume' | 'stop') => request<SimulationRun>(`${runPath(id)}${action}/`, { method: 'POST', body: '{}' }),
