@@ -11,3 +11,15 @@ export interface SimulationList { worker_id: number; history_limit: number; runs
 export interface CaseCreateRequest { case: { case_id: string; version: string; start_at: string; participant_id: string; participant_name: string }; config: { run_id: string; speed?: number; max_wall_seconds?: number; max_records?: number }; sapien_id: number }
 export interface ParticipantOutcome { participant_id: string; operation_id: string; outcome: { success?: boolean; is_error?: boolean; content?: string; reason?: string; [key: string]: unknown } }
 export interface DebugGuide { run_id: string; visibility: 'admin_only'; people: { person_id: string; name: string }[]; channels: unknown[]; connections: string[]; expectations: unknown[]; rules: unknown[]; employee_commands: { person_id: string; options: { command: string; description: string }[] }[] }
+
+export interface WorldBase { run_id: string; visibility: 'admin_only'; archived: boolean; through: number; state_basis: 'recorded_evidence'; directory_available: boolean; participant_id: string | null }
+export interface WorldOverview extends WorldBase { counts: { employees: number; channels: number; connections: number; tickets: number } }
+export interface WorldEmployee { person_id: string; name: string; sent: number; received: number; tool_calls: number; last_activity_at: string | null }
+export interface WorldChannel { channel_id: string; title: string; members: string[]; posts: number }
+export interface WorldConnection { connection: string; tool_calls: number; errors: number }
+export interface WorldTicket { connection: string; issue_key: string; summary: string | null; description: string | null; status: string | null; last_recorded_at: string | null; evidence_id: string | null; has_snapshot: boolean }
+export interface WorldCollection<T> extends WorldBase { items: T[]; total: number; next_offset: number; has_more: boolean }
+export type WorldActivityCategory = 'messages' | 'tools' | 'changes' | 'rejections';
+export interface WorldActivityItem { category: WorldActivityCategory; actor_id: string | null; connection: string; issue_key: string | null; event: SimulationEvent; recipient_ids?: string[]; delivery_evidence_ids?: string[] }
+export interface WorldActivityPage extends WorldBase { items: WorldActivityItem[]; next_after: number; has_more: boolean }
+export interface WorldQuery { through?: number; offset?: number; after?: number; limit?: number; person_id?: string; channel_id?: string; connection?: string; issue_key?: string; kind?: WorldActivityCategory; direction?: 'sent' | 'received'; search?: string; status?: string }
