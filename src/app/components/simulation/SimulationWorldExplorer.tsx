@@ -60,6 +60,8 @@ export function SimulationWorldExplorer({ runId, eventCount, archived }: { runId
   const overviewRequest = useRef<Promise<WorldOverview> | null>(null);
 
   useEffect(() => { const timer = window.setTimeout(() => setDebouncedSearch(search.trim()), 300); return () => window.clearTimeout(timer); }, [search]);
+  useEffect(() => { setSection(requestedSection === 'channels' || requestedSection === 'tools' ? requestedSection : 'employees'); }, [requestedSection]);
+  useEffect(() => { const requested = params.get('personId') || params.get('channelId') || params.get('connection') || ''; if (requested) setSelected(requested); }, [params]);
   useEffect(() => { const next = new URLSearchParams(params); next.set('section', section); next.delete('personId'); next.delete('channelId'); next.delete('connection'); if (selected) next.set(section === 'employees' ? 'personId' : section === 'channels' ? 'channelId' : 'connection', selected); setParams(next, { replace: true }); }, [section, selected]);
   useEffect(() => { if (eventCount !== previousEventCount.current) { previousEventCount.current = eventCount; setRefreshNonce(value => value + 1); } }, [eventCount]);
   useEffect(() => { runRef.current = runId; setOverview(null); setCollection(null); setSelected(''); setSearch(''); previousEventCount.current = eventCount; setRefreshNonce(0); }, [runId]);
