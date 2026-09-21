@@ -3,7 +3,6 @@ export interface InquiryFilters {
   limit: number;
   state: '' | 'open' | 'answered' | 'stale';
   source: string;
-  simulation_run_id: string;
   channel: '' | 'user' | 'source' | 'experiment';
   delivery_state: '' | 'proposed' | 'attention_requested' | 'reviewed';
 }
@@ -15,7 +14,7 @@ export interface InquiryRecord {
   source_handle: unknown;
   state: 'open' | 'answered' | 'stale' | null;
   created_at: string | null;
-  simulation_run_id: string | null;
+  simulation_run_id?: string | null;
   job_id: string | null;
   request_id?: string | null;
   workflow_id: string | null;
@@ -38,7 +37,6 @@ export interface InquiryRecord {
 }
 export interface InquiryPage {
   sapien_id: number;
-  simulation_run_id: string | null;
   as_of: string;
   count: number;
   limit: number;
@@ -51,7 +49,6 @@ export interface InquiryPage {
 }
 export interface InquiryDetail {
   sapien_id: number;
-  simulation_run_id: string | null;
   as_of: string;
   item: InquiryRecord & { context: unknown; outcome: unknown; question_record_id?: string | null };
 }
