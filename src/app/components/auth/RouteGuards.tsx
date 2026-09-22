@@ -6,9 +6,12 @@ import { useEffect, useState } from 'react';
 import { useSapiensStore } from '../../core/state/sapiensStore';
 import { sapiensService } from '../../core/services/sapiensService';
 import { resourceSession } from '../../core/auth/authSession';
+import { selectionStorage } from '../../core/auth/selectionStorage';
 
 function SelectionGuard() {
-  const selectedId = useSapiensStore(state => state.currentSapiens?.id);
+  const currentId = useSapiensStore(state => state.currentSapiens?.id);
+  const [savedId, setSavedId] = useState(() => selectionStorage.read());
+  const selectedId = currentId ?? savedId;
   const { pathname } = useLocation();
   const [verified, setVerified] = useState('');
   const [error, setError] = useState(false);
@@ -26,9 +29,17 @@ function SelectionGuard() {
       try {
         const list = await sapiensService.listSapiens();
         if (!active) return;
-        if (!list.some(item => item.id === selectedId)) {
+        const selected = list.find(item => item.id === selectedId);
+        if (!selected) {
+          setSavedId(null);
           window.dispatchEvent(new Event(resourceSession.unavailableEvent));
-        } else setVerified(key);
+        } else {
+          if (!useSapiensStore.getState().currentSapiens) {
+            useSapiensStore.getState().setCurrentSapiens(selected);
+          }
+          setSavedId(null);
+          setVerified(key);
+        }
       } catch { if (active) setError(true); }
     };
     void check();

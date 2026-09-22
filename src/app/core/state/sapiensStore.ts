@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { selectionStorage } from '../auth/selectionStorage';
 import { resourceSession } from '../auth/authSession';
 import {
   Sapiens, ChatMessage,
@@ -83,6 +84,7 @@ export const useSapiensStore = create<SapiensStore>((set) => ({
   // ── Core actions ──────────────────────────────────────────────────────────
   setCurrentSapiens: (sapiens) => {
     resourceSession.select(sapiens?.id ?? null);
+    selectionStorage.save(sapiens?.id ?? null);
     set({ currentSapiens: sapiens, chatMessages: [], chatSessionId: null,
       lastMemoryUnits: [], lastDebugInfo: null, pinnedMemoryIds: [], ignoredMemoryIds: [],
       isOverloaded: false, showDebugPanel: false, showMemoryTimeline: false, jumpToMessageId: null });
@@ -139,6 +141,7 @@ export const useSapiensStore = create<SapiensStore>((set) => ({
 
   reset: () => {
     resourceSession.select(null);
+    selectionStorage.save(null);
     set({
       currentSapiens: null,
       chatMessages: [],

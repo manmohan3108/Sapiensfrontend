@@ -7,6 +7,7 @@
   "scripts": {
     "build": "vite build",
     "test:auth": "node scripts/test-auth-session.mjs",
+    "test:selection": "node scripts/test-selection.mjs",
     "dev": "vite"
   },
   "dependencies": {

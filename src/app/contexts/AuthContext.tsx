@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { authenticatedFetch, authSession, HttpError, parseAuthResponse, resourceSession } from '../core/auth/authSession';
 import { toast } from 'sonner';
+import { selectionStorage } from '../core/auth/selectionStorage';
 import type { AuthCredentials, AuthUser, RegistrationCredentials, TokenPair } from '../types/authTypes';
 import { useSapiensStore } from '../core/state/sapiensStore';
 
@@ -54,7 +55,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (restored.current) return;
     restored.current = true;
     if (!authSession.tokens) { setStatus('unauthenticated'); return; }
-    loadMe().then(value => { setUser(value); setStatus('authenticated'); }).catch(() => {
+    loadMe().then(value => { selectionStorage.setOwner(value.user_id); setUser(value); setStatus('authenticated'); }).catch(() => {
       clearSession();
       setNotice('Your session could not be restored. Please sign in again.');
     });
@@ -89,6 +90,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const nextUser = await loadMe();
         if (nextUser.user_id !== user?.user_id) useSapiensStore.getState().reset();
+        selectionStorage.setOwner(nextUser.user_id);
         setUser(nextUser);
         setNotice('');
         setStatus('authenticated');
@@ -105,6 +107,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setNotice('');
     try {
       const value = await request;
+      selectionStorage.setOwner(value.user_id);
       setUser(value); setStatus('authenticated');
       return value;
     } catch (error) {
