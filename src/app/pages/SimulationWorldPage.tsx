@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { NavLink, useLocation, useNavigate, useParams, useSearchParams } from 'react-router';
-import { Activity, ArrowLeft, Beaker, Bot, CheckCircle2, FolderKanban, LayoutDashboard, MessageSquare, PlugZap, RefreshCw, Search, Users } from 'lucide-react';
+import { Activity, ArrowLeft, Beaker, Bot, CheckCircle2, ChevronDown, CircleDot, Clock3, FolderKanban, LayoutDashboard, ListFilter, MessageSquare, MoreHorizontal, PlugZap, RefreshCw, Search, Star, Users } from 'lucide-react';
 import { SimulationWorldExplorer } from '../components/simulation/SimulationWorldExplorer';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
@@ -26,14 +26,216 @@ function JiraPortal({ runId, eventCount }: { runId: string; eventCount: number }
   const [error, setError] = useState('');
   const [refresh, setRefresh] = useState(0);
   const previousEventCount = useRef(eventCount);
-  useEffect(() => { const timer = window.setTimeout(() => setDebounced(search.trim()), 300); return () => window.clearTimeout(timer); }, [search]);
-  useEffect(() => { if (eventCount !== previousEventCount.current) { previousEventCount.current = eventCount; setRefresh(value => value + 1); } }, [eventCount]);
-  useEffect(() => { const controller = new AbortController(); setError(''); simulationService.worldOverview(runId, undefined, controller.signal).then(setOverview).catch(problem => { if (!controller.signal.aborted) setError(message(problem)); }); return () => controller.abort(); }, [runId, refresh]);
-  useEffect(() => { if (!overview) return; const controller = new AbortController(); simulationService.worldTickets(runId, { through: overview.through, connection: 'jira', limit: 50, ...(debounced ? { search: debounced } : {}) }, controller.signal).then(page => { setTickets(page); setSelected(current => current && page.items.some(ticket => ticket.issue_key === current) ? current : page.items[0]?.issue_key ?? ''); }).catch(problem => { if (!controller.signal.aborted) setError(message(problem)); }); return () => controller.abort(); }, [runId, overview?.through, debounced]);
-  useEffect(() => { if (!overview || !selected) { setHistory(null); return; } const controller = new AbortController(); simulationService.worldActivity(runId, { through: overview.through, connection: 'jira', issue_key: selected, limit: 50 }, controller.signal).then(page => setHistory({ events: page.items.map(item => item.event), next_after: page.next_after, has_more: page.has_more })).catch(problem => { if (!controller.signal.aborted) setError(message(problem)); }); return () => controller.abort(); }, [runId, overview?.through, selected]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebounced(search.trim()), 300);
+    return () => window.clearTimeout(timer);
+  }, [search]);
+
+  useEffect(() => {
+    if (eventCount !== previousEventCount.current) {
+      previousEventCount.current = eventCount;
+      setRefresh(current => current + 1);
+    }
+  }, [eventCount]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setError('');
+    simulationService.worldOverview(runId, undefined, controller.signal)
+      .then(setOverview)
+      .catch(problem => { if (!controller.signal.aborted) setError(message(problem)); });
+    return () => controller.abort();
+  }, [runId, refresh]);
+
+  useEffect(() => {
+    if (!overview) return;
+    const controller = new AbortController();
+    simulationService.worldTickets(runId, {
+      through: overview.through,
+      connection: 'jira',
+      limit: 50,
+      ...(debounced ? { search: debounced } : {}),
+    }, controller.signal)
+      .then(page => {
+        setTickets(page);
+        setSelected(current => current && page.items.some(ticket => ticket.issue_key === current)
+          ? current
+          : page.items[0]?.issue_key ?? '');
+      })
+      .catch(problem => { if (!controller.signal.aborted) setError(message(problem)); });
+    return () => controller.abort();
+  }, [runId, overview?.through, debounced]);
+
+  useEffect(() => {
+    if (!overview || !selected) {
+      setHistory(null);
+      return;
+    }
+    const controller = new AbortController();
+    simulationService.worldActivity(runId, {
+      through: overview.through,
+      connection: 'jira',
+      issue_key: selected,
+      limit: 50,
+    }, controller.signal)
+      .then(page => setHistory({
+        events: page.items.map(item => item.event),
+        next_after: page.next_after,
+        has_more: page.has_more,
+      }))
+      .catch(problem => { if (!controller.signal.aborted) setError(message(problem)); });
+    return () => controller.abort();
+  }, [runId, overview?.through, selected]);
+
   const ticket = tickets?.items.find(item => item.issue_key === selected);
-  const loadMore = async () => { if (!overview || !tickets?.has_more) return; const next = await simulationService.worldTickets(runId, { through: overview.through, connection: 'jira', offset: tickets.next_offset, limit: 50, ...(debounced ? { search: debounced } : {}) }); setTickets(current => current ? { ...next, items: [...current.items, ...next.items] } : next); };
-  return <div className="flex min-h-0 flex-1 flex-col bg-[#f7f8fa] text-slate-900 dark:bg-[#0b1020] dark:text-slate-100"><div className="border-b bg-white px-5 py-4 dark:bg-[#10172a]"><div className="flex flex-wrap items-center justify-between gap-3"><div><div className="flex items-center gap-2"><span className="grid size-9 place-items-center rounded bg-[#1868db] text-white"><FolderKanban className="size-5" /></span><div><h2 className="font-semibold">Simulated Jira</h2><p className="text-xs text-slate-500">Sentinel Desk project · recorded state through evidence #{overview?.through ?? '—'}</p></div></div></div><Button variant="outline" size="sm" onClick={() => setRefresh(current => current + 1)}><RefreshCw className="mr-2 size-4" />Refresh Jira view</Button></div></div>{error && <div className="m-4 rounded border border-red-300 bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950/30 dark:text-red-300">{error}</div>}<div className="grid min-h-0 flex-1 lg:grid-cols-[360px_minmax(0,1fr)]"><aside className="border-r bg-white p-4 dark:bg-[#10172a]"><div className="relative mb-4"><Search className="absolute left-3 top-2.5 size-4 text-slate-400" /><Input className="pl-9" placeholder="Search issues" value={search} onChange={event => setSearch(event.target.value)} /></div><div className="space-y-1">{tickets?.items.map(item => <button key={item.issue_key} onClick={() => setSelected(item.issue_key)} className={`w-full rounded px-3 py-3 text-left transition ${selected === item.issue_key ? 'bg-blue-50 ring-1 ring-blue-200 dark:bg-blue-950/30' : 'hover:bg-slate-50 dark:hover:bg-white/5'}`}><div className="flex items-center justify-between gap-2"><span className="text-xs font-semibold text-[#1868db]">{item.issue_key}</span><Badge variant="outline">{item.status || 'Unknown'}</Badge></div><p className="mt-1 truncate text-sm font-medium">{item.summary || 'Referenced issue — snapshot unavailable'}</p><p className="mt-1 text-xs text-slate-500">Last recorded {time(item.last_recorded_at)}</p></button>)}{tickets?.has_more && <Button className="mt-3 w-full" variant="outline" onClick={() => void loadMore()}>Load more issues ({tickets.items.length} of {tickets.total})</Button>}{tickets && !tickets.items.length && <p className="rounded border border-dashed p-6 text-center text-sm text-slate-500">No matching Jira tickets were recorded.</p>}</div></aside><main className="min-w-0 overflow-y-auto p-5">{ticket ? <div className="mx-auto max-w-4xl space-y-5"><div className="rounded-lg border bg-white p-5 shadow-sm dark:bg-[#10172a]"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-xs font-semibold text-[#1868db]">SENTINEL DESK / {ticket.issue_key}</p><h1 className="mt-2 text-2xl font-semibold">{ticket.summary || 'Unknown summary'}</h1></div><Badge>{ticket.status || 'Unknown state'}</Badge></div><div className="mt-6"><h3 className="text-sm font-semibold">Description</h3><p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-600 dark:text-slate-300">{ticket.description || 'No recorded description.'}</p></div><div className="mt-6 grid gap-3 border-t pt-4 text-xs sm:grid-cols-3"><p><span className="text-slate-500">State basis</span><br />Recorded evidence</p><p><span className="text-slate-500">Snapshot</span><br />{ticket.has_snapshot ? 'Full recorded snapshot' : 'Partial observed reference'}</p><p><span className="text-slate-500">Evidence</span><br />{ticket.evidence_id || 'No state evidence ID'}</p></div></div><div className="rounded-lg border bg-white p-5 shadow-sm dark:bg-[#10172a]"><h3 className="font-semibold">Activity</h3><div className="mt-4 space-y-4">{history?.events.map(event => { const body = payload(event); return <details key={event.record_id} className="group"><summary className="flex cursor-pointer list-none gap-3"><span className="mt-1 grid size-7 shrink-0 place-items-center rounded-full bg-blue-50 text-[#1868db] dark:bg-blue-950"><Activity className="size-3.5" /></span><span className="min-w-0"><strong className="text-sm">{value(body.actor_id || body.type || event.source)}</strong><span className="ml-2 text-xs text-slate-500">{time(event.occurred_at)}</span><span className="mt-1 block text-sm text-slate-600 dark:text-slate-300">{value(body.tool || body.status || body.type)}</span></span></summary><pre className="ml-10 mt-2 max-h-72 overflow-auto rounded bg-slate-100 p-3 text-xs dark:bg-black/30">{JSON.stringify(body, null, 2)}</pre></details>; })}{history && !history.events.length && <p className="text-sm text-slate-500">No issue activity was recorded.</p>}</div></div></div> : <div className="grid h-full place-items-center text-center text-slate-500"><div><FolderKanban className="mx-auto size-10 opacity-30" /><p className="mt-3">Select an issue to inspect its recorded state.</p></div></div>}</main></div></div>;
+  const recordedFields = useMemo(() => {
+    const result: Record<string, string> = {};
+    for (const event of history?.events ?? []) {
+      const body = payload(event);
+      const fields = body.fields && typeof body.fields === 'object' ? body.fields as Record<string, unknown> : {};
+      for (const key of ['assignee', 'reporter', 'priority', 'issue_type', 'labels']) {
+        const candidate = fields[key] ?? body[key];
+        if (candidate != null && candidate !== '') result[key] = value(candidate);
+      }
+    }
+    return result;
+  }, [history]);
+
+  const loadMore = async () => {
+    if (!overview || !tickets?.has_more) return;
+    const next = await simulationService.worldTickets(runId, {
+      through: overview.through,
+      connection: 'jira',
+      offset: tickets.next_offset,
+      limit: 50,
+      ...(debounced ? { search: debounced } : {}),
+    });
+    setTickets(current => current ? { ...next, items: [...current.items, ...next.items] } : next);
+  };
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-[#f4f5f7] text-[#172b4d] dark:bg-[#0b1020] dark:text-slate-100">
+      <header className="flex h-14 shrink-0 items-center gap-3 bg-[#0747a6] px-4 text-white shadow-sm">
+        <span className="grid size-8 place-items-center rounded bg-white/15"><FolderKanban className="size-5" /></span>
+        <strong className="text-lg tracking-tight">Jira Software</strong>
+        <nav className="hidden items-center gap-1 text-sm md:flex">
+          <button className="flex items-center gap-1 rounded px-3 py-2 hover:bg-white/10">Projects <ChevronDown className="size-3.5" /></button>
+          <button className="flex items-center gap-1 rounded px-3 py-2 hover:bg-white/10">Filters <ChevronDown className="size-3.5" /></button>
+          <button className="flex items-center gap-1 rounded px-3 py-2 hover:bg-white/10">Dashboards <ChevronDown className="size-3.5" /></button>
+        </nav>
+        <div className="ml-auto flex items-center gap-2">
+          <span className="hidden rounded bg-white/10 px-3 py-1.5 text-xs sm:inline">Read-only simulation</span>
+          <Button className="border-white/25 bg-transparent text-white hover:bg-white/10" variant="outline" size="sm" onClick={() => setRefresh(current => current + 1)}>
+            <RefreshCw className="mr-2 size-4" />Refresh
+          </Button>
+        </div>
+      </header>
+
+      {error && <div className="border-b border-red-300 bg-red-50 px-4 py-2 text-sm text-red-700 dark:bg-red-950/30 dark:text-red-300">{error}</div>}
+
+      <div className="grid min-h-0 flex-1 lg:grid-cols-[220px_340px_minmax(0,1fr)]">
+        <aside className="hidden border-r border-[#dfe1e6] bg-[#f4f5f7] p-4 dark:border-white/10 dark:bg-[#10172a] lg:block">
+          <div className="flex items-center gap-3 border-b border-[#dfe1e6] pb-4 dark:border-white/10">
+            <span className="grid size-10 place-items-center rounded bg-[#0052cc] font-bold text-white">SD</span>
+            <div className="min-w-0"><p className="truncate font-semibold">Sentinel Desk</p><p className="text-xs text-slate-500">Software project</p></div>
+            <Star className="ml-auto size-4 text-slate-400" />
+          </div>
+          <nav className="mt-4 space-y-1 text-sm">
+            <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500">Planning</p>
+            <button className="flex w-full items-center gap-3 rounded px-3 py-2 text-left text-slate-600 hover:bg-[#ebecf0] dark:text-slate-300 dark:hover:bg-white/5"><LayoutDashboard className="size-4" />Board</button>
+            <button className="flex w-full items-center gap-3 rounded bg-[#deebff] px-3 py-2 text-left font-medium text-[#0052cc] dark:bg-blue-950/40 dark:text-blue-300"><ListFilter className="size-4" />Issues</button>
+            <button className="flex w-full items-center gap-3 rounded px-3 py-2 text-left text-slate-600 hover:bg-[#ebecf0] dark:text-slate-300 dark:hover:bg-white/5"><Clock3 className="size-4" />Timeline</button>
+          </nav>
+          <div className="mt-6 rounded border border-[#dfe1e6] bg-white p-3 text-xs text-slate-500 dark:border-white/10 dark:bg-black/20">
+            <p className="font-semibold text-slate-700 dark:text-slate-200">Recorded snapshot</p>
+            <p className="mt-1">Evidence through #{overview?.through ?? '—'}</p>
+            <p>{tickets?.total ?? overview?.counts.tickets ?? 0} observed issues</p>
+          </div>
+        </aside>
+
+        <aside className="min-h-0 overflow-y-auto border-r border-[#dfe1e6] bg-white dark:border-white/10 dark:bg-[#10172a]">
+          <div className="sticky top-0 z-10 border-b border-[#dfe1e6] bg-white p-4 dark:border-white/10 dark:bg-[#10172a]">
+            <div className="flex items-center justify-between"><div><p className="text-xs text-slate-500">Sentinel Desk</p><h2 className="text-lg font-semibold">Issues</h2></div><MoreHorizontal className="size-5 text-slate-400" /></div>
+            <div className="relative mt-3">
+              <Search className="absolute left-3 top-2.5 size-4 text-slate-400" />
+              <Input className="border-[#dfe1e6] bg-white pl-9 dark:bg-black/20" placeholder="Search issues" value={search} onChange={event => setSearch(event.target.value)} />
+            </div>
+            <div className="mt-3 flex items-center justify-between text-xs text-slate-500"><span>{tickets?.total ?? 0} issues</span><span>Updated</span></div>
+          </div>
+          <div>
+            {tickets?.items.map(item => (
+              <button key={item.issue_key} onClick={() => setSelected(item.issue_key)} className={`w-full border-b border-[#ebecf0] px-4 py-3 text-left transition dark:border-white/5 ${selected === item.issue_key ? 'border-l-4 border-l-[#0052cc] bg-[#deebff] pl-3 dark:bg-blue-950/35' : 'hover:bg-[#f4f5f7] dark:hover:bg-white/5'}`}>
+                <div className="flex items-center gap-2 text-xs"><CircleDot className="size-3.5 text-[#0052cc]" /><span className="font-semibold text-[#0052cc]">{item.issue_key}</span><span className="ml-auto text-slate-400">{item.status || 'Unknown'}</span></div>
+                <p className="mt-1 line-clamp-2 text-sm font-medium">{item.summary || 'Referenced issue — snapshot unavailable'}</p>
+                <p className="mt-2 truncate text-[11px] text-slate-500">Updated {time(item.last_recorded_at)}</p>
+              </button>
+            ))}
+            {tickets?.has_more && <Button className="m-3 w-[calc(100%-1.5rem)]" variant="outline" onClick={() => void loadMore()}>Load more ({tickets.items.length} of {tickets.total})</Button>}
+            {tickets && !tickets.items.length && <p className="m-4 rounded border border-dashed p-6 text-center text-sm text-slate-500">No matching issues were recorded.</p>}
+          </div>
+        </aside>
+
+        <main className="min-w-0 overflow-y-auto bg-white dark:bg-[#0f1628]">
+          {ticket ? (
+            <div className="mx-auto max-w-6xl px-5 py-5 lg:px-8">
+              <div className="flex flex-wrap items-center gap-2 text-xs text-[#0052cc]">
+                <span>Projects</span><span>/</span><span>Sentinel Desk</span><span>/</span><strong>{ticket.issue_key}</strong>
+                <span className="ml-auto rounded bg-[#f4f5f7] px-2 py-1 text-slate-500 dark:bg-white/5">Recorded evidence</span>
+              </div>
+
+              <div className="mt-5 flex flex-wrap items-start gap-4">
+                <span className="mt-1 grid size-8 place-items-center rounded bg-[#0052cc] text-white"><CheckCircle2 className="size-4" /></span>
+                <div className="min-w-0 flex-1"><p className="text-sm text-slate-500">{ticket.issue_key}</p><h1 className="mt-1 text-2xl font-semibold leading-tight">{ticket.summary || 'Unknown summary'}</h1></div>
+                <button className="flex items-center gap-2 rounded bg-[#deebff] px-3 py-2 text-sm font-semibold text-[#0052cc] dark:bg-blue-950/40 dark:text-blue-300">{ticket.status || 'Unknown state'}<ChevronDown className="size-4" /></button>
+                <button className="rounded p-2 hover:bg-[#f4f5f7] dark:hover:bg-white/5"><MoreHorizontal className="size-5" /></button>
+              </div>
+
+              <div className="mt-8 grid gap-8 xl:grid-cols-[minmax(0,1fr)_300px]">
+                <div className="min-w-0 space-y-8">
+                  <section><h2 className="text-sm font-semibold">Description</h2><div className="mt-3 min-h-28 rounded border border-transparent p-2 text-sm leading-6 text-slate-700 hover:border-[#dfe1e6] dark:text-slate-300">{ticket.description ? <p className="whitespace-pre-wrap">{ticket.description}</p> : <p className="italic text-slate-400">No description was present in the recorded snapshot.</p>}</div></section>
+                  <section>
+                    <div className="flex items-center gap-4 border-b border-[#dfe1e6] dark:border-white/10"><h2 className="border-b-2 border-[#0052cc] pb-3 text-sm font-semibold">Activity</h2><span className="pb-3 text-sm text-slate-500">All</span></div>
+                    <div className="mt-5 space-y-5">
+                      {history?.events.map(event => {
+                        const body = payload(event);
+                        return <details key={event.record_id} className="group"><summary className="flex cursor-pointer list-none gap-3"><span className="grid size-8 shrink-0 place-items-center rounded-full bg-[#deebff] text-xs font-bold text-[#0052cc] dark:bg-blue-950">A</span><span className="min-w-0 flex-1"><span className="flex flex-wrap items-baseline gap-2"><strong className="text-sm">{value(body.actor_id || body.sender_id || 'Simulation actor')}</strong><span className="text-xs text-slate-500">{time(event.occurred_at)}</span></span><span className="mt-1 block text-sm text-slate-600 dark:text-slate-300">{value(body.tool || body.action || body.status || body.type || event.source)}</span></span></summary><pre className="ml-11 mt-2 max-h-72 overflow-auto rounded bg-[#f4f5f7] p-3 text-xs dark:bg-black/30">{JSON.stringify(body, null, 2)}</pre></details>;
+                      })}
+                      {history && !history.events.length && <p className="text-sm text-slate-500">No activity was recorded for this issue.</p>}
+                    </div>
+                  </section>
+                </div>
+
+                <aside>
+                  <div className="rounded border border-[#dfe1e6] p-4 dark:border-white/10">
+                    <h2 className="text-sm font-semibold">Details</h2>
+                    <dl className="mt-4 grid grid-cols-[100px_minmax(0,1fr)] gap-x-3 gap-y-4 text-sm">
+                      <dt className="text-slate-500">Status</dt><dd><Badge variant="secondary">{ticket.status || 'Not recorded'}</Badge></dd>
+                      <dt className="text-slate-500">Assignee</dt><dd>{recordedFields.assignee || 'Not recorded'}</dd>
+                      <dt className="text-slate-500">Reporter</dt><dd>{recordedFields.reporter || 'Not recorded'}</dd>
+                      <dt className="text-slate-500">Priority</dt><dd>{recordedFields.priority || 'Not recorded'}</dd>
+                      <dt className="text-slate-500">Issue type</dt><dd>{recordedFields.issue_type || 'Not recorded'}</dd>
+                      <dt className="text-slate-500">Labels</dt><dd className="break-words">{recordedFields.labels || 'None recorded'}</dd>
+                    </dl>
+                  </div>
+                  <div className="mt-4 rounded border border-[#dfe1e6] p-4 text-xs dark:border-white/10">
+                    <h2 className="font-semibold">Simulation provenance</h2>
+                    <dl className="mt-3 space-y-3 text-slate-500">
+                      <div><dt>Snapshot quality</dt><dd className="mt-0.5 text-slate-700 dark:text-slate-300">{ticket.has_snapshot ? 'Full recorded snapshot' : 'Partial observed reference'}</dd></div>
+                      <div><dt>Evidence ID</dt><dd className="mt-0.5 break-all font-mono text-slate-700 dark:text-slate-300">{ticket.evidence_id || 'Not recorded'}</dd></div>
+                      <div><dt>Last observed</dt><dd className="mt-0.5 text-slate-700 dark:text-slate-300">{time(ticket.last_recorded_at)}</dd></div>
+                    </dl>
+                  </div>
+                </aside>
+              </div>
+            </div>
+          ) : (
+            <div className="grid h-full place-items-center text-center text-slate-500"><div><FolderKanban className="mx-auto size-10 opacity-30" /><p className="mt-3">Select an issue to inspect its recorded Jira state.</p></div></div>
+          )}
+        </main>
+      </div>
+    </div>
+  );
 }
 
 function ChatPortal({ runId, eventCount }: { runId: string; eventCount: number }) {
