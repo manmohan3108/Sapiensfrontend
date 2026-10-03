@@ -1,10 +1,11 @@
 import { authenticatedFetch, HttpError } from '../auth/authSession';
 import { apiConfig } from '../config/apiConfig';
-import type { CaseCatalog, CaseCreateRequest, DebugGuide, EventPage, ParticipantOutcome, SimulationEvent, SimulationList, SimulationResult, SimulationRun, WorldActivityPage, WorldChannel, WorldCollection, WorldConnection, WorldEmployee, WorldOverview, WorldQuery, WorldTicket } from '../../types/simulationTypes';
+import type { CaseCatalog, CaseCreateRequest, DebugGuide, EventPage, InspectionActivityPage, InspectionCollection, InspectionOverview, InspectionPerson, InspectionProgressItem, InspectionQuery, InspectionResults, InspectionSpecificationResponse, ParticipantOutcome, SimulationEvent, SimulationList, SimulationResult, SimulationRun, WorldActivityPage, WorldChannel, WorldCollection, WorldConnection, WorldEmployee, WorldOverview, WorldQuery, WorldTicket } from '../../types/simulationTypes';
 
 const base = `${apiConfig.baseUrl}/simulations/`;
 const runPath = (id: string) => `runs/${encodeURIComponent(id)}/`;
 const query = (values: WorldQuery = {}) => { const params = new URLSearchParams(); Object.entries(values).forEach(([key, value]) => { if (value !== undefined && value !== '') params.set(key, String(value)); }); const suffix = params.toString(); return suffix ? `?${suffix}` : ''; };
+const inspectionQuery = (values: InspectionQuery = {}) => { const params = new URLSearchParams(); Object.entries(values).forEach(([key, value]) => { if (value !== undefined && value !== '') params.set(key, String(value)); }); const suffix = params.toString(); return suffix ? `?${suffix}` : ''; };
 async function request<T>(path: string, init: RequestInit = {}, accepted: number[] = []): Promise<T> {
   let response: Response;
   try { response = await authenticatedFetch(`${base}${path}`, { ...init, headers: { 'Content-Type': 'application/json', ...init.headers }, signal: init.signal ?? AbortSignal.timeout(30_000) }); }
@@ -35,4 +36,11 @@ export const simulationService = {
   worldConnections: (id: string, values?: WorldQuery, signal?: AbortSignal) => request<WorldCollection<WorldConnection>>(`${runPath(id)}world/connections/${query(values)}`, { signal }),
   worldTickets: (id: string, values?: WorldQuery, signal?: AbortSignal) => request<WorldCollection<WorldTicket>>(`${runPath(id)}world/tickets/${query(values)}`, { signal }),
   worldActivity: (id: string, values?: WorldQuery, signal?: AbortSignal) => request<WorldActivityPage>(`${runPath(id)}world/activity/${query(values)}`, { signal }),
+  inspectionSpecification: (id: string, values?: Pick<InspectionQuery, 'through'>, signal?: AbortSignal) => request<InspectionSpecificationResponse>(`${runPath(id)}inspection/specification/${inspectionQuery(values)}`, { signal }),
+  inspectionOverview: (id: string, values?: Pick<InspectionQuery, 'through'>, signal?: AbortSignal) => request<InspectionOverview>(`${runPath(id)}inspection/overview/${inspectionQuery(values)}`, { signal }),
+  inspectionTimeline: (id: string, values?: InspectionQuery, signal?: AbortSignal) => request<InspectionActivityPage>(`${runPath(id)}inspection/timeline/${inspectionQuery(values)}`, { signal }),
+  inspectionJourney: (id: string, values?: InspectionQuery, signal?: AbortSignal) => request<InspectionActivityPage>(`${runPath(id)}inspection/journey/${inspectionQuery(values)}`, { signal }),
+  inspectionPeople: (id: string, values?: Pick<InspectionQuery, 'through' | 'offset' | 'limit'>, signal?: AbortSignal) => request<InspectionCollection<InspectionPerson>>(`${runPath(id)}inspection/people/${inspectionQuery(values)}`, { signal }),
+  inspectionProgress: (id: string, values?: Pick<InspectionQuery, 'through' | 'offset' | 'limit'>, signal?: AbortSignal) => request<InspectionCollection<InspectionProgressItem>>(`${runPath(id)}inspection/progress/${inspectionQuery(values)}`, { signal }),
+  inspectionResults: (id: string, values?: Pick<InspectionQuery, 'through' | 'offset' | 'limit'>, signal?: AbortSignal) => request<InspectionResults>(`${runPath(id)}inspection/results/${inspectionQuery(values)}`, { signal }),
 };
