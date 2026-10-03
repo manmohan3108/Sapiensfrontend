@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { NavLink, useLocation, useNavigate, useParams, useSearchParams } from 'react-router';
-import { Activity, ArrowLeft, Beaker, BookOpen, Bot, CalendarDays, CheckCircle2, ChevronDown, CircleDot, Clock3, FolderKanban, Gauge, Hash, LayoutDashboard, ListFilter, MessageSquare, MoreHorizontal, Phone, PlugZap, RefreshCw, Search, ShieldCheck, Star, Target, Timer, UserRound, Users, Video } from 'lucide-react';
+import { Activity, ArrowLeft, Beaker, BookOpen, Bot, CheckCircle2, ChevronDown, CircleDot, Clock3, FolderKanban, Hash, LayoutDashboard, ListFilter, MessageSquare, MoreHorizontal, Phone, PlugZap, RefreshCw, Search, ShieldCheck, Star, Target, UserRound, Users, Video } from 'lucide-react';
 import { SimulationWorldExplorer } from '../components/simulation/SimulationWorldExplorer';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
@@ -450,15 +450,19 @@ function TestCasePortal({ run }: { run: SimulationRun }) {
     return () => controller.abort();
   }, [run.run_id, run.case_id, run.case_version]);
 
-  const simulatedDuration = Math.max(0, new Date(run.end_at).getTime() - new Date(run.start_at).getTime());
-  const durationHours = simulatedDuration / 3_600_000;
-  const expectationLabel = (item: unknown, index: number) => {
-    const record = item && typeof item === 'object' ? item as Record<string, unknown> : {};
-    return value(record.title || record.name || record.expectation_id || record.id) || `Expectation ${index + 1}`;
+  const recordOf = (item: unknown) => item && typeof item === 'object' ? item as Record<string, unknown> : {};
+  const titleOf = (item: unknown, fallback: string) => {
+    const record = recordOf(item);
+    return value(record.title || record.name || record.summary || record.expectation_id || record.rule_id || record.channel_id || record.id || record.type) || fallback;
   };
-  const expectationDescription = (item: unknown) => {
-    const record = item && typeof item === 'object' ? item as Record<string, unknown> : {};
-    return value(record.description || record.explanation || record.criteria || record.expected) || 'Evaluation criteria are available in the authored specification.';
+  const descriptionOf = (item: unknown) => {
+    const record = recordOf(item);
+    return value(record.description || record.explanation || record.criteria || record.expected || record.text || record.purpose || record.action || record.command);
+  };
+  const remainingFields = (item: unknown) => {
+    const record = recordOf(item);
+    const hidden = new Set(['title', 'name', 'summary', 'description', 'explanation', 'criteria', 'expected', 'text', 'purpose']);
+    return Object.entries(record).filter(([key, field]) => !hidden.has(key) && field != null && field !== '');
   };
 
   return (
@@ -466,87 +470,96 @@ function TestCasePortal({ run }: { run: SimulationRun }) {
       <div className="mx-auto max-w-6xl space-y-6">
         {error && <p className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-700 dark:text-red-300">{error}</p>}
 
-        <section className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-[#10172a] via-[#172554] to-[#312e81] p-6 text-white shadow-xl sm:p-8">
-          <div className="absolute -right-20 -top-24 size-64 rounded-full bg-violet-400/15 blur-3xl" />
-          <div className="relative">
-            <div className="flex flex-wrap items-center gap-2 text-xs text-white/65">
-              <Badge className="border-white/20 bg-white/10 text-white">Test case</Badge>
-              <span>{run.case_id}</span><span>•</span><span>Version {run.case_version}</span>
-            </div>
-            <div className="mt-5 flex flex-wrap items-start gap-5">
-              <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-white/10"><BookOpen className="size-7 text-violet-200" /></span>
+        <section className="overflow-hidden rounded-2xl border bg-card shadow-sm">
+          <div className="border-b bg-gradient-to-r from-violet-600 to-indigo-700 px-6 py-3 text-xs font-medium uppercase tracking-[0.18em] text-white/75">Test case specification</div>
+          <div className="p-6 sm:p-8">
+            <div className="flex flex-wrap items-start gap-5">
+              <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-violet-500/10 text-violet-600"><BookOpen className="size-7" /></span>
               <div className="min-w-0 flex-1">
-                <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{caseInfo?.title || statusName(run.case_id)}</h1>
-                <p className="mt-3 max-w-3xl text-sm leading-6 text-white/70">{caseInfo?.description || 'The authored description is unavailable for this retained run.'}</p>
+                <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground"><span>{run.case_id}</span><span>•</span><span>Version {run.case_version}</span><Badge variant="outline">Admin view</Badge></div>
+                <h1 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">{caseInfo?.title || statusName(run.case_id)}</h1>
+                <p className="mt-3 max-w-4xl whitespace-pre-wrap text-sm leading-7 text-muted-foreground">{caseInfo?.description || 'The authored case description is unavailable for this retained run.'}</p>
               </div>
-              <Badge className="bg-emerald-400/15 text-emerald-100">{statusName(run.status)}</Badge>
-            </div>
-            <div className="mt-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <div className="rounded-xl bg-white/8 p-3"><span className="flex items-center gap-2 text-xs text-white/50"><CalendarDays className="size-3.5" />Simulated start</span><strong className="mt-1 block text-sm">{time(run.start_at)}</strong></div>
-              <div className="rounded-xl bg-white/8 p-3"><span className="flex items-center gap-2 text-xs text-white/50"><Timer className="size-3.5" />Scenario window</span><strong className="mt-1 block text-sm">{Number.isInteger(durationHours) ? durationHours : durationHours.toFixed(1)} simulated hours</strong></div>
-              <div className="rounded-xl bg-white/8 p-3"><span className="flex items-center gap-2 text-xs text-white/50"><Gauge className="size-3.5" />Clock speed</span><strong className="mt-1 block text-sm">{run.speed}× current · {run.config.speed}× configured</strong></div>
-              <div className="rounded-xl bg-white/8 p-3"><span className="flex items-center gap-2 text-xs text-white/50"><Activity className="size-3.5" />Evidence</span><strong className="mt-1 block text-sm">{run.event_count} recorded events</strong></div>
             </div>
           </div>
         </section>
 
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(280px,0.7fr)]">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.55fr)_minmax(280px,0.65fr)]">
           <div className="space-y-6">
             <section className="rounded-2xl border bg-card p-6 shadow-sm">
-              <div className="flex items-center gap-3"><span className="grid size-9 place-items-center rounded-lg bg-violet-500/10 text-violet-600"><Target className="size-4" /></span><div><h2 className="font-semibold">Scenario brief</h2><p className="text-xs text-muted-foreground">What the test places the participant into</p></div></div>
-              <p className="mt-5 whitespace-pre-wrap text-sm leading-7 text-muted-foreground">{caseInfo?.description || 'No authored scenario brief was returned.'}</p>
-              {caseInfo?.start_constraint && <div className="mt-5 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4"><p className="text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300">Start condition</p><p className="mt-1 text-sm">{caseInfo.start_constraint}</p></div>}
+              <div className="flex items-center gap-3"><span className="grid size-9 place-items-center rounded-lg bg-violet-500/10 text-violet-600"><Target className="size-4" /></span><div><h2 className="font-semibold">Assignment</h2><p className="text-xs text-muted-foreground">The situation and responsibility being tested</p></div></div>
+              <div className="mt-5 rounded-xl bg-muted/45 p-5">
+                <p className="whitespace-pre-wrap text-sm leading-7">{caseInfo?.description || 'No participant-facing assignment was returned.'}</p>
+              </div>
+              {caseInfo?.start_constraint && <div className="mt-4 border-l-4 border-amber-400 pl-4"><p className="text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300">Starting condition</p><p className="mt-1 text-sm leading-6">{caseInfo.start_constraint}</p></div>}
             </section>
 
             <section className="rounded-2xl border bg-card p-6 shadow-sm">
-              <div className="flex items-center gap-3"><span className="grid size-9 place-items-center rounded-lg bg-blue-500/10 text-blue-600"><ShieldCheck className="size-4" /></span><div><h2 className="font-semibold">Evaluation design</h2><p className="text-xs text-muted-foreground">Authored checks used to interpret the completed simulation</p></div></div>
+              <div className="flex items-center gap-3"><span className="grid size-9 place-items-center rounded-lg bg-blue-500/10 text-blue-600"><Users className="size-4" /></span><div><h2 className="font-semibold">People in the scenario</h2><p className="text-xs text-muted-foreground">The participant and simulated coworkers involved in the case</p></div></div>
+              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                <article className="rounded-xl border border-violet-500/30 bg-violet-500/5 p-4"><div className="flex items-center gap-3"><span className="grid size-10 place-items-center rounded-full bg-violet-600 text-sm font-semibold text-white">{(run.participant_id || 'P').slice(0, 2).toUpperCase()}</span><div><p className="font-semibold">{run.participant_id || 'Participant'}</p><p className="text-xs text-muted-foreground">Subject under test · {run.participant_mode === 'sapien' ? `Sapiens ID ${run.sapien_id}` : statusName(run.participant_mode)}</p></div></div></article>
+                {guide?.people.filter(person => person.person_id !== run.participant_id).map(person => <article key={person.person_id} className="rounded-xl border p-4"><div className="flex items-center gap-3"><span className="grid size-10 place-items-center rounded-full bg-slate-200 text-sm font-semibold text-slate-600 dark:bg-white/10 dark:text-slate-200">{person.name.slice(0, 2).toUpperCase()}</span><div><p className="font-semibold">{person.name}</p><p className="text-xs text-muted-foreground">{person.person_id} · simulated coworker</p></div></div></article>)}
+                {guide && !guide.people.length && <p className="text-sm text-muted-foreground">No authored coworker directory was supplied.</p>}
+              </div>
+            </section>
+
+            <section className="rounded-2xl border bg-card p-6 shadow-sm">
+              <div className="flex items-center gap-3"><span className="grid size-9 place-items-center rounded-lg bg-indigo-500/10 text-indigo-600"><MessageSquare className="size-4" /></span><div><h2 className="font-semibold">Workplace available to the participant</h2><p className="text-xs text-muted-foreground">Authored communication spaces and connected systems</p></div></div>
+              <div className="mt-5 grid gap-5 md:grid-cols-2">
+                <div><h3 className="text-sm font-semibold">Channels</h3><div className="mt-3 space-y-2">{guide?.channels.map((item, index) => <article key={titleOf(item, `Channel ${index + 1}`)} className="rounded-lg border p-3"><div className="flex items-center gap-2"><Hash className="size-4 text-indigo-500" /><strong className="text-sm">{titleOf(item, `Channel ${index + 1}`)}</strong></div>{descriptionOf(item) && <p className="mt-2 text-xs leading-5 text-muted-foreground">{descriptionOf(item)}</p>}</article>)}{guide && !guide.channels.length && <p className="text-sm text-muted-foreground">No channels were authored.</p>}</div></div>
+                <div><h3 className="text-sm font-semibold">Connected tools</h3><div className="mt-3 flex flex-wrap gap-2">{guide?.connections.map(connection => <span key={connection} className="inline-flex items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2 text-sm"><PlugZap className="size-4 text-emerald-600" />{connection}</span>)}{guide && !guide.connections.length && <p className="text-sm text-muted-foreground">No external tools were authored.</p>}</div></div>
+              </div>
+            </section>
+
+            <section className="rounded-2xl border bg-card p-6 shadow-sm">
+              <div className="flex items-center gap-3"><span className="grid size-9 place-items-center rounded-lg bg-emerald-500/10 text-emerald-600"><ShieldCheck className="size-4" /></span><div><h2 className="font-semibold">What success looks like</h2><p className="text-xs text-muted-foreground">The authored behaviors this test evaluates</p></div></div>
               <div className="mt-5 space-y-3">
-                {guide?.expectations.map((item, index) => <article key={expectationLabel(item, index)} className="rounded-xl border p-4"><div className="flex items-start gap-3"><span className="grid size-7 shrink-0 place-items-center rounded-full bg-blue-500/10 text-xs font-semibold text-blue-600">{index + 1}</span><div><h3 className="text-sm font-semibold">{expectationLabel(item, index)}</h3><p className="mt-1 text-sm leading-6 text-muted-foreground">{expectationDescription(item)}</p></div></div></article>)}
-                {guide && !guide.expectations.length && <p className="rounded-xl border border-dashed p-5 text-sm text-muted-foreground">This case has no authored evaluation expectations.</p>}
-                {!guide && <p className="rounded-xl border border-dashed p-5 text-sm text-muted-foreground">Loading authored evaluation design…</p>}
+                {guide?.expectations.map((item, index) => <article key={titleOf(item, `Expectation ${index + 1}`)} className="rounded-xl border p-4"><div className="flex gap-3"><span className="grid size-7 shrink-0 place-items-center rounded-full bg-emerald-500/10 text-xs font-semibold text-emerald-700 dark:text-emerald-300">{index + 1}</span><div className="min-w-0 flex-1"><h3 className="text-sm font-semibold">{titleOf(item, `Expectation ${index + 1}`)}</h3>{descriptionOf(item) && <p className="mt-1 text-sm leading-6 text-muted-foreground">{descriptionOf(item)}</p>}<dl className="mt-3 grid gap-2 text-xs sm:grid-cols-2">{remainingFields(item).map(([key, field]) => <div key={key} className="rounded bg-muted/50 p-2"><dt className="capitalize text-muted-foreground">{key.replaceAll('_', ' ')}</dt><dd className="mt-0.5 break-words">{value(field)}</dd></div>)}</dl></div></div></article>)}
+                {guide && !guide.expectations.length && <p className="rounded-xl border border-dashed p-5 text-sm text-muted-foreground">No evaluation expectations were authored.</p>}
+                {!guide && <p className="rounded-xl border border-dashed p-5 text-sm text-muted-foreground">Loading authored success criteria…</p>}
               </div>
             </section>
 
             <section className="rounded-2xl border bg-card p-6 shadow-sm">
-              <div className="flex items-center gap-3"><span className="grid size-9 place-items-center rounded-lg bg-emerald-500/10 text-emerald-600"><Users className="size-4" /></span><div><h2 className="font-semibold">World setup</h2><p className="text-xs text-muted-foreground">People, communication spaces, and connected systems</p></div></div>
-              <div className="mt-5 grid gap-4 md:grid-cols-3">
-                <div className="rounded-xl bg-muted/50 p-4"><span className="text-xs text-muted-foreground">People</span><strong className="mt-1 block text-2xl">{guide?.people.length ?? '—'}</strong><p className="mt-2 text-xs text-muted-foreground">{guide?.people.slice(0, 3).map(person => person.name).join(', ') || 'Directory loading'}{guide && guide.people.length > 3 ? ` +${guide.people.length - 3} more` : ''}</p></div>
-                <div className="rounded-xl bg-muted/50 p-4"><span className="text-xs text-muted-foreground">Channels</span><strong className="mt-1 block text-2xl">{guide?.channels.length ?? '—'}</strong><p className="mt-2 text-xs text-muted-foreground">Authored workplace conversations</p></div>
-                <div className="rounded-xl bg-muted/50 p-4"><span className="text-xs text-muted-foreground">Connections</span><strong className="mt-1 block text-2xl">{guide?.connections.length ?? '—'}</strong><p className="mt-2 text-xs text-muted-foreground">{guide?.connections.join(', ') || 'Connections loading'}</p></div>
+              <div className="flex items-center gap-3"><span className="grid size-9 place-items-center rounded-lg bg-amber-500/10 text-amber-600"><Activity className="size-4" /></span><div><h2 className="font-semibold">Scenario events and reactions</h2><p className="text-xs text-muted-foreground">Hidden case mechanics shown only to the human inspector</p></div></div>
+              <div className="mt-5 space-y-3">
+                {guide?.rules.map((item, index) => <details key={titleOf(item, `Rule ${index + 1}`)} className="rounded-xl border p-4"><summary className="cursor-pointer list-none"><div className="flex items-center gap-3"><span className="grid size-7 place-items-center rounded bg-amber-500/10 text-xs font-semibold text-amber-700 dark:text-amber-300">{index + 1}</span><div><h3 className="text-sm font-semibold">{titleOf(item, `Scenario rule ${index + 1}`)}</h3>{descriptionOf(item) && <p className="mt-1 text-sm text-muted-foreground">{descriptionOf(item)}</p>}</div><ChevronDown className="ml-auto size-4 text-muted-foreground" /></div></summary><dl className="mt-4 grid gap-2 border-t pt-4 text-xs sm:grid-cols-2">{remainingFields(item).map(([key, field]) => <div key={key} className="rounded bg-muted/50 p-2"><dt className="capitalize text-muted-foreground">{key.replaceAll('_', ' ')}</dt><dd className="mt-0.5 break-words whitespace-pre-wrap">{value(field)}</dd></div>)}</dl></details>)}
+                {guide && !guide.rules.length && <p className="rounded-xl border border-dashed p-5 text-sm text-muted-foreground">No timed events or reaction rules were authored.</p>}
               </div>
             </section>
+
+            {!!guide?.employee_commands.length && <section className="rounded-2xl border bg-card p-6 shadow-sm"><div className="flex items-center gap-3"><span className="grid size-9 place-items-center rounded-lg bg-rose-500/10 text-rose-600"><UserRound className="size-4" /></span><div><h2 className="font-semibold">Simulated coworker behavior</h2><p className="text-xs text-muted-foreground">Explicit behaviors available to the authored non-player employees</p></div></div><div className="mt-5 space-y-3">{guide.employee_commands.map(employee => <details key={employee.person_id} className="rounded-xl border p-4"><summary className="cursor-pointer font-semibold">{guide.people.find(person => person.person_id === employee.person_id)?.name || employee.person_id} <span className="font-normal text-muted-foreground">· {employee.options.length} behaviors</span></summary><div className="mt-3 space-y-2">{employee.options.map(option => <div key={option.command} className="rounded-lg bg-muted/50 p-3"><code className="text-xs font-semibold">{option.command}</code><p className="mt-1 text-xs text-muted-foreground">{option.description}</p></div>)}</div></details>)}</div></section>}
           </div>
 
           <aside className="space-y-6">
             <section className="rounded-2xl border bg-card p-5 shadow-sm">
-              <div className="flex items-center gap-3"><UserRound className="size-5 text-violet-600" /><h2 className="font-semibold">Participant</h2></div>
+              <h2 className="font-semibold">Test subject</h2>
               <dl className="mt-5 space-y-4 text-sm">
-                <div><dt className="text-xs text-muted-foreground">Mode</dt><dd className="mt-1 font-medium">{run.participant_mode === 'sapien' ? 'Sapiens AI' : run.participant_mode === 'manual' ? 'Manual operator' : 'Environment only'}</dd></div>
-                <div><dt className="text-xs text-muted-foreground">Simulated identity</dt><dd className="mt-1 font-medium">{run.participant_id || 'No participant'}</dd></div>
-                <div><dt className="text-xs text-muted-foreground">Production Sapiens</dt><dd className="mt-1 font-medium">{run.sapien_id ? `ID ${run.sapien_id}` : 'Not attached'}</dd></div>
+                <div><dt className="text-xs text-muted-foreground">Role in this run</dt><dd className="mt-1 font-medium">{run.participant_id || 'No participant'}</dd></div>
+                <div><dt className="text-xs text-muted-foreground">Participation mode</dt><dd className="mt-1 font-medium">{run.participant_mode === 'sapien' ? 'Sapiens AI' : run.participant_mode === 'manual' ? 'Manual operator' : 'Environment only'}</dd></div>
                 <div><dt className="text-xs text-muted-foreground">Interpreter</dt><dd className="mt-1 font-medium">{caseInfo?.interpreter_mode || run.interpreter_mode}</dd></div>
+                <div><dt className="text-xs text-muted-foreground">Sapiens integration</dt><dd className="mt-1 font-medium">{caseInfo?.sapien_integration_available ?? run.sapien_integration_available ? 'Supported' : 'Not supported'}</dd></div>
               </dl>
             </section>
 
             <section className="rounded-2xl border bg-card p-5 shadow-sm">
-              <h2 className="font-semibold">Execution limits</h2>
-              <dl className="mt-5 space-y-4 text-sm">
-                <div><dt className="text-xs text-muted-foreground">Wall-time budget</dt><dd className="mt-1 font-medium">{Math.round(run.config.max_wall_seconds / 60)} real minutes</dd></div>
-                <div><dt className="text-xs text-muted-foreground">Evidence capacity</dt><dd className="mt-1 font-medium">{run.config.max_records.toLocaleString()} records</dd></div>
-                <div><dt className="text-xs text-muted-foreground">Simulated end</dt><dd className="mt-1 font-medium">{time(run.end_at)}</dd></div>
-                <div><dt className="text-xs text-muted-foreground">Real execution began</dt><dd className="mt-1 font-medium">{time(run.execution_started_at)}</dd></div>
-              </dl>
-            </section>
-
-            <section className="rounded-2xl border bg-card p-5 shadow-sm">
-              <h2 className="font-semibold">Known limitations</h2>
+              <h2 className="font-semibold">Case limitations</h2>
               <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-muted-foreground">{caseInfo?.limitations || 'No case-specific limitations were supplied.'}</p>
             </section>
 
+            <section className="rounded-2xl border bg-card p-5 shadow-sm">
+              <h2 className="font-semibold">Specification reference</h2>
+              <dl className="mt-4 space-y-3 text-xs">
+                <div><dt className="text-muted-foreground">Case ID</dt><dd className="mt-1 break-all font-mono">{run.case_id}</dd></div>
+                <div><dt className="text-muted-foreground">Version</dt><dd className="mt-1 font-mono">{run.case_version}</dd></div>
+                <div><dt className="text-muted-foreground">Run using this case</dt><dd className="mt-1 break-all font-mono">{run.run_id}</dd></div>
+              </dl>
+            </section>
+
             <details className="rounded-2xl border bg-card p-5 text-sm shadow-sm">
-              <summary className="cursor-pointer font-semibold">Authored specification</summary>
-              <p className="mt-2 text-xs text-muted-foreground">Administrative source data for deeper inspection.</p>
-              <pre className="mt-4 max-h-96 overflow-auto rounded-lg bg-muted p-3 text-xs">{JSON.stringify({ case: caseInfo, expectations: guide?.expectations, rules: guide?.rules }, null, 2)}</pre>
+              <summary className="cursor-pointer font-semibold">Raw authored definition</summary>
+              <p className="mt-2 text-xs text-muted-foreground">Full source-shaped data for troubleshooting only.</p>
+              <pre className="mt-4 max-h-[32rem] overflow-auto rounded-lg bg-muted p-3 text-xs">{JSON.stringify({ case: caseInfo, guide }, null, 2)}</pre>
             </details>
           </aside>
         </div>
