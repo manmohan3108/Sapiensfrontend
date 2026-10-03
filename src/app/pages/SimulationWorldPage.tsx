@@ -27,6 +27,7 @@ function JiraPortal({ runId, eventCount }: { runId: string; eventCount: number }
   const [error, setError] = useState('');
   const [refresh, setRefresh] = useState(0);
   const previousEventCount = useRef(eventCount);
+  const detailPaneRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setDebounced(search.trim()), 300);
@@ -90,6 +91,7 @@ function JiraPortal({ runId, eventCount }: { runId: string; eventCount: number }
   }, [runId, overview?.through, selected]);
 
   const ticket = tickets?.items.find(item => item.issue_key === selected);
+  useEffect(() => { detailPaneRef.current?.scrollTo({ top: 0 }); }, [selected]);
   const recordedFields = useMemo(() => {
     const result: Record<string, string> = {};
     for (const event of history?.events ?? []) {
@@ -116,7 +118,7 @@ function JiraPortal({ runId, eventCount }: { runId: string; eventCount: number }
   };
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-[#f4f5f7] text-[#172b4d] dark:bg-[#0b1020] dark:text-slate-100">
+    <div className="flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden bg-[#f4f5f7] text-[#172b4d] dark:bg-[#0b1020] dark:text-slate-100">
       <header className="flex h-14 shrink-0 items-center gap-3 bg-[#0747a6] px-4 text-white shadow-sm">
         <span className="grid size-8 place-items-center rounded bg-white/15"><FolderKanban className="size-5" /></span>
         <strong className="text-lg tracking-tight">Jira Software</strong>
@@ -177,7 +179,7 @@ function JiraPortal({ runId, eventCount }: { runId: string; eventCount: number }
           </div>
         </aside>
 
-        <main className="min-w-0 overflow-y-auto bg-white dark:bg-[#0f1628]">
+        <main ref={detailPaneRef} className="min-w-0 overflow-y-auto bg-white dark:bg-[#0f1628]">
           {ticket ? (
             <div className="mx-auto max-w-6xl px-5 py-5 lg:px-8">
               <div className="flex flex-wrap items-center gap-2 text-xs text-[#0052cc]">
@@ -250,6 +252,7 @@ function ChatPortal({ runId, eventCount }: { runId: string; eventCount: number }
   const [error, setError] = useState('');
   const previous = useRef(eventCount);
   const [refresh, setRefresh] = useState(0);
+  const conversationPaneRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (previous.current !== eventCount) {
@@ -328,8 +331,10 @@ function ChatPortal({ runId, eventCount }: { runId: string; eventCount: number }
     ? `${channel?.members.length ?? 0} members · ${channel?.posts ?? 0} recorded posts`
     : `${employee?.sent ?? 0} sent · ${employee?.received ?? 0} received`;
 
+  useEffect(() => { conversationPaneRef.current?.scrollTo({ top: 0 }); }, [selected]);
+
   return (
-    <div className="grid min-h-0 flex-1 overflow-hidden bg-[#f5f5f7] text-slate-900 dark:bg-[#090e19] dark:text-slate-100 lg:grid-cols-[320px_minmax(0,1fr)]">
+    <div className="grid h-full min-h-0 w-full flex-1 overflow-hidden bg-[#f5f5f7] text-slate-900 dark:bg-[#090e19] dark:text-slate-100 lg:grid-cols-[320px_minmax(0,1fr)]">
       <aside className="flex min-h-0 flex-col bg-[#201f1f] text-white">
         <div className="border-b border-white/10 px-4 py-3">
           <div className="flex items-center gap-3">
@@ -385,7 +390,7 @@ function ChatPortal({ runId, eventCount }: { runId: string; eventCount: number }
 
         {error && <p className="border-b border-red-300 bg-red-50 px-4 py-2 text-sm text-red-700 dark:bg-red-950/30 dark:text-red-300">{error}</p>}
 
-        <div className="min-h-0 flex-1 overflow-y-auto bg-white px-4 py-6 dark:bg-[#0f1628] sm:px-8">
+        <div ref={conversationPaneRef} className="min-h-0 flex-1 overflow-y-auto bg-white px-4 py-6 dark:bg-[#0f1628] sm:px-8">
           <div className="mx-auto max-w-4xl">
             <div className="mb-8 text-center">
               <span className={`mx-auto grid size-16 place-items-center ${selectedType === 'channel' ? 'rounded-xl bg-slate-100 text-slate-500 dark:bg-white/10' : 'rounded-full bg-gradient-to-br from-violet-500 to-blue-500 text-xl font-semibold text-white'}`}>
