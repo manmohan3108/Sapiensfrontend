@@ -7,7 +7,8 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { simulationService } from '../core/services/simulationService';
-import type { CaseInfo, DebugGuide, EventPage, SimulationEvent, SimulationResult, SimulationRun, WorldActivityItem, WorldChannel, WorldCollection, WorldEmployee, WorldOverview, WorldTicket } from '../types/simulationTypes';
+import { sentinelDeskCaseV1 } from '../data/sentinelDeskCase';
+import type { CaseInfo, EventPage, SimulationEvent, SimulationResult, SimulationRun, WorldActivityItem, WorldChannel, WorldCollection, WorldEmployee, WorldOverview, WorldTicket } from '../types/simulationTypes';
 
 const terminal = new Set(['completed', 'blocked', 'stopped', 'limit_reached', 'failed']);
 const time = (value?: string | null) => value ? new Date(value).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', second: '2-digit' }) + ' IST' : '—';
@@ -428,141 +429,110 @@ function ChatPortal({ runId, eventCount }: { runId: string; eventCount: number }
   );
 }
 
+type TestCaseTab = 'brief' | 'roadmap' | 'team' | 'backlog' | 'challenges' | 'evaluation';
+
 function TestCasePortal({ run }: { run: SimulationRun }) {
   const [caseInfo, setCaseInfo] = useState<CaseInfo | null>(null);
-  const [guide, setGuide] = useState<DebugGuide | null>(null);
+  const [tab, setTab] = useState<TestCaseTab>('brief');
+  const [search, setSearch] = useState('');
   const [error, setError] = useState('');
+  const spec = run.case_id === sentinelDeskCaseV1.caseId && run.case_version === sentinelDeskCaseV1.version ? sentinelDeskCaseV1 : null;
 
   useEffect(() => {
     const controller = new AbortController();
-    setError('');
-    Promise.all([
-      simulationService.cases(controller.signal),
-      simulationService.debug(run.run_id, controller.signal),
-    ]).then(([catalog, authoredGuide]) => {
-      setCaseInfo(catalog.cases.find(item => item.case_id === run.case_id && item.version === run.case_version)
-        ?? catalog.cases.find(item => item.case_id === run.case_id)
-        ?? null);
-      setGuide(authoredGuide);
-    }).catch(problem => {
-      if (!controller.signal.aborted) setError(message(problem));
-    });
+    simulationService.cases(controller.signal)
+      .then(catalog => setCaseInfo(catalog.cases.find(item => item.case_id === run.case_id && item.version === run.case_version) ?? null))
+      .catch(problem => { if (!controller.signal.aborted) setError(message(problem)); });
     return () => controller.abort();
-  }, [run.run_id, run.case_id, run.case_version]);
+  }, [run.case_id, run.case_version]);
 
-  const recordOf = (item: unknown) => item && typeof item === 'object' ? item as Record<string, unknown> : {};
-  const titleOf = (item: unknown, fallback: string) => {
-    const record = recordOf(item);
-    return value(record.title || record.name || record.summary || record.expectation_id || record.rule_id || record.channel_id || record.id || record.type) || fallback;
-  };
-  const descriptionOf = (item: unknown) => {
-    const record = recordOf(item);
-    return value(record.description || record.explanation || record.criteria || record.expected || record.text || record.purpose || record.action || record.command);
-  };
-  const remainingFields = (item: unknown) => {
-    const record = recordOf(item);
-    const hidden = new Set(['title', 'name', 'summary', 'description', 'explanation', 'criteria', 'expected', 'text', 'purpose']);
-    return Object.entries(record).filter(([key, field]) => !hidden.has(key) && field != null && field !== '');
-  };
+  if (!spec) return <div className="mx-auto max-w-4xl p-6"><div className="rounded-2xl border bg-card p-8"><BookOpen className="size-8 text-violet-600" /><h1 className="mt-4 text-2xl font-semibold">{caseInfo?.title || statusName(run.case_id)}</h1><p className="mt-3 leading-7 text-muted-foreground">{caseInfo?.description || 'No detailed presentation model is available for this case version.'}</p><p className="mt-5 text-sm text-muted-foreground">Case {run.case_id} · version {run.case_version}</p></div></div>;
+
+  const participantName = run.participant_id || 'Incoming participant';
+  const ownerName = (id: string) => spec.people.find(person => person.id === id)?.name || id;
+  const normalized = search.trim().toLowerCase();
+  const visibleBacklog = spec.backlog.filter(item => !normalized || item.id.toLowerCase().includes(normalized) || item.summary.toLowerCase().includes(normalized) || ownerName(item.owner).toLowerCase().includes(normalized));
+  const tabs: Array<[TestCaseTab, string, number | null]> = [
+    ['brief', 'Case brief', null],
+    ['roadmap', 'Project roadmap', spec.phases.length],
+    ['team', 'People & authority', spec.people.length],
+    ['backlog', 'Initial backlog', spec.backlog.length],
+    ['challenges', 'Scenario challenges', spec.challenges.length],
+    ['evaluation', 'Evaluation', spec.evaluation.length],
+  ];
 
   return (
-    <div className="min-h-full bg-slate-50 px-4 py-6 dark:bg-[#0b1020] lg:px-8">
-      <div className="mx-auto max-w-6xl space-y-6">
-        {error && <p className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-700 dark:text-red-300">{error}</p>}
-
-        <section className="overflow-hidden rounded-2xl border bg-card shadow-sm">
-          <div className="border-b bg-gradient-to-r from-violet-600 to-indigo-700 px-6 py-3 text-xs font-medium uppercase tracking-[0.18em] text-white/75">Test case specification</div>
-          <div className="p-6 sm:p-8">
-            <div className="flex flex-wrap items-start gap-5">
-              <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-violet-500/10 text-violet-600"><BookOpen className="size-7" /></span>
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground"><span>{run.case_id}</span><span>•</span><span>Version {run.case_version}</span><Badge variant="outline">Admin view</Badge></div>
-                <h1 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">{caseInfo?.title || statusName(run.case_id)}</h1>
-                <p className="mt-3 max-w-4xl whitespace-pre-wrap text-sm leading-7 text-muted-foreground">{caseInfo?.description || 'The authored case description is unavailable for this retained run.'}</p>
-              </div>
+    <div className="min-h-full bg-[#f6f7fb] text-slate-900 dark:bg-[#0b1020] dark:text-slate-100">
+      <div className="border-b bg-white dark:bg-[#10172a]">
+        <div className="mx-auto max-w-7xl px-4 py-7 lg:px-8">
+          {error && <p className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm">{error}</p>}
+          <div className="flex flex-wrap items-start gap-5">
+            <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-700 text-white shadow-lg"><BookOpen className="size-7" /></span>
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500"><Badge variant="outline">Authored test case</Badge><span>{spec.caseId}</span><span>•</span><span>Version {spec.version}</span></div>
+              <h1 className="mt-2 text-3xl font-semibold tracking-tight">{spec.product.name}</h1>
+              <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-600 dark:text-slate-300">{spec.product.summary}</p>
             </div>
+            <div className="rounded-xl border bg-slate-50 px-4 py-3 text-right dark:bg-white/5"><p className="text-xs text-slate-500">Subject under test</p><p className="mt-1 font-semibold">{participantName}</p><p className="text-xs text-slate-500">{run.participant_mode === 'sapien' ? `Sapiens ID ${run.sapien_id}` : statusName(run.participant_mode)}</p></div>
           </div>
-        </section>
+        </div>
+        <nav className="mx-auto flex max-w-7xl overflow-x-auto px-4 lg:px-8" aria-label="Test case sections">
+          {tabs.map(([id, label, count]) => <button key={id} onClick={() => setTab(id)} className={`whitespace-nowrap border-b-2 px-4 py-3 text-sm transition ${tab === id ? 'border-violet-600 font-medium text-violet-700 dark:text-violet-300' : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}>{label}{count != null && <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] text-slate-500 dark:bg-white/10">{count}</span>}</button>)}
+        </nav>
+      </div>
 
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.55fr)_minmax(280px,0.65fr)]">
+      <div className="mx-auto max-w-7xl p-4 lg:p-8">
+        {tab === 'brief' && <div className="grid gap-6 lg:grid-cols-[minmax(0,1.45fr)_minmax(300px,0.7fr)]">
           <div className="space-y-6">
-            <section className="rounded-2xl border bg-card p-6 shadow-sm">
-              <div className="flex items-center gap-3"><span className="grid size-9 place-items-center rounded-lg bg-violet-500/10 text-violet-600"><Target className="size-4" /></span><div><h2 className="font-semibold">Assignment</h2><p className="text-xs text-muted-foreground">The situation and responsibility being tested</p></div></div>
-              <div className="mt-5 rounded-xl bg-muted/45 p-5">
-                <p className="whitespace-pre-wrap text-sm leading-7">{caseInfo?.description || 'No participant-facing assignment was returned.'}</p>
-              </div>
-              {caseInfo?.start_constraint && <div className="mt-4 border-l-4 border-amber-400 pl-4"><p className="text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300">Starting condition</p><p className="mt-1 text-sm leading-6">{caseInfo.start_constraint}</p></div>}
+            <section className="rounded-2xl border bg-white p-6 shadow-sm dark:bg-[#10172a]">
+              <div className="flex items-center gap-3"><span className="grid size-9 place-items-center rounded-lg bg-violet-100 text-violet-700 dark:bg-violet-950"><Target className="size-4" /></span><div><h2 className="font-semibold">Participant mission</h2><p className="text-xs text-slate-500">What this case is actually testing</p></div></div>
+              <p className="mt-5 text-base leading-7">{spec.mission.objective}</p>
+              <div className="mt-5 grid gap-3 sm:grid-cols-2">{spec.mission.responsibilities.map((item, index) => <div key={item} className="flex gap-3 rounded-xl bg-slate-50 p-4 dark:bg-white/5"><span className="grid size-6 shrink-0 place-items-center rounded-full bg-violet-600 text-xs font-semibold text-white">{index + 1}</span><p className="text-sm leading-6">{item}</p></div>)}</div>
             </section>
 
-            <section className="rounded-2xl border bg-card p-6 shadow-sm">
-              <div className="flex items-center gap-3"><span className="grid size-9 place-items-center rounded-lg bg-blue-500/10 text-blue-600"><Users className="size-4" /></span><div><h2 className="font-semibold">People in the scenario</h2><p className="text-xs text-muted-foreground">The participant and simulated coworkers involved in the case</p></div></div>
-              <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                <article className="rounded-xl border border-violet-500/30 bg-violet-500/5 p-4"><div className="flex items-center gap-3"><span className="grid size-10 place-items-center rounded-full bg-violet-600 text-sm font-semibold text-white">{(run.participant_id || 'P').slice(0, 2).toUpperCase()}</span><div><p className="font-semibold">{run.participant_id || 'Participant'}</p><p className="text-xs text-muted-foreground">Subject under test · {run.participant_mode === 'sapien' ? `Sapiens ID ${run.sapien_id}` : statusName(run.participant_mode)}</p></div></div></article>
-                {guide?.people.filter(person => person.person_id !== run.participant_id).map(person => <article key={person.person_id} className="rounded-xl border p-4"><div className="flex items-center gap-3"><span className="grid size-10 place-items-center rounded-full bg-slate-200 text-sm font-semibold text-slate-600 dark:bg-white/10 dark:text-slate-200">{person.name.slice(0, 2).toUpperCase()}</span><div><p className="font-semibold">{person.name}</p><p className="text-xs text-muted-foreground">{person.person_id} · simulated coworker</p></div></div></article>)}
-                {guide && !guide.people.length && <p className="text-sm text-muted-foreground">No authored coworker directory was supplied.</p>}
-              </div>
+            <section className="rounded-2xl border border-amber-300/60 bg-amber-50 p-6 dark:border-amber-500/20 dark:bg-amber-950/15">
+              <h2 className="flex items-center gap-2 font-semibold text-amber-900 dark:text-amber-200"><ShieldCheck className="size-5" />Onboarding readiness gate</h2>
+              <p className="mt-3 text-sm leading-7 text-amber-900/80 dark:text-amber-100/70">{spec.mission.onboardingGate}</p>
             </section>
 
-            <section className="rounded-2xl border bg-card p-6 shadow-sm">
-              <div className="flex items-center gap-3"><span className="grid size-9 place-items-center rounded-lg bg-indigo-500/10 text-indigo-600"><MessageSquare className="size-4" /></span><div><h2 className="font-semibold">Workplace available to the participant</h2><p className="text-xs text-muted-foreground">Authored communication spaces and connected systems</p></div></div>
-              <div className="mt-5 grid gap-5 md:grid-cols-2">
-                <div><h3 className="text-sm font-semibold">Channels</h3><div className="mt-3 space-y-2">{guide?.channels.map((item, index) => <article key={titleOf(item, `Channel ${index + 1}`)} className="rounded-lg border p-3"><div className="flex items-center gap-2"><Hash className="size-4 text-indigo-500" /><strong className="text-sm">{titleOf(item, `Channel ${index + 1}`)}</strong></div>{descriptionOf(item) && <p className="mt-2 text-xs leading-5 text-muted-foreground">{descriptionOf(item)}</p>}</article>)}{guide && !guide.channels.length && <p className="text-sm text-muted-foreground">No channels were authored.</p>}</div></div>
-                <div><h3 className="text-sm font-semibold">Connected tools</h3><div className="mt-3 flex flex-wrap gap-2">{guide?.connections.map(connection => <span key={connection} className="inline-flex items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2 text-sm"><PlugZap className="size-4 text-emerald-600" />{connection}</span>)}{guide && !guide.connections.length && <p className="text-sm text-muted-foreground">No external tools were authored.</p>}</div></div>
-              </div>
+            <section className="rounded-2xl border bg-white p-6 shadow-sm dark:bg-[#10172a]">
+              <h2 className="font-semibold">Product boundaries</h2>
+              <p className="mt-1 text-xs text-slate-500">Core truths the participant must preserve throughout the case</p>
+              <div className="mt-5 space-y-3">{spec.product.boundaries.map(item => <div key={item} className="flex gap-3"><CheckCircle2 className="mt-0.5 size-5 shrink-0 text-emerald-600" /><p className="text-sm leading-6">{item}</p></div>)}</div>
             </section>
 
-            <section className="rounded-2xl border bg-card p-6 shadow-sm">
-              <div className="flex items-center gap-3"><span className="grid size-9 place-items-center rounded-lg bg-emerald-500/10 text-emerald-600"><ShieldCheck className="size-4" /></span><div><h2 className="font-semibold">What success looks like</h2><p className="text-xs text-muted-foreground">The authored behaviors this test evaluates</p></div></div>
-              <div className="mt-5 space-y-3">
-                {guide?.expectations.map((item, index) => <article key={titleOf(item, `Expectation ${index + 1}`)} className="rounded-xl border p-4"><div className="flex gap-3"><span className="grid size-7 shrink-0 place-items-center rounded-full bg-emerald-500/10 text-xs font-semibold text-emerald-700 dark:text-emerald-300">{index + 1}</span><div className="min-w-0 flex-1"><h3 className="text-sm font-semibold">{titleOf(item, `Expectation ${index + 1}`)}</h3>{descriptionOf(item) && <p className="mt-1 text-sm leading-6 text-muted-foreground">{descriptionOf(item)}</p>}<dl className="mt-3 grid gap-2 text-xs sm:grid-cols-2">{remainingFields(item).map(([key, field]) => <div key={key} className="rounded bg-muted/50 p-2"><dt className="capitalize text-muted-foreground">{key.replaceAll('_', ' ')}</dt><dd className="mt-0.5 break-words">{value(field)}</dd></div>)}</dl></div></div></article>)}
-                {guide && !guide.expectations.length && <p className="rounded-xl border border-dashed p-5 text-sm text-muted-foreground">No evaluation expectations were authored.</p>}
-                {!guide && <p className="rounded-xl border border-dashed p-5 text-sm text-muted-foreground">Loading authored success criteria…</p>}
-              </div>
+            <section className="rounded-2xl border bg-white p-6 shadow-sm dark:bg-[#10172a]">
+              <h2 className="font-semibold">Communication spaces</h2>
+              <div className="mt-5 grid gap-3 sm:grid-cols-2">{spec.channels.map(channel => <article key={channel.id} className="rounded-xl border p-4"><div className="flex items-center gap-2"><Hash className="size-4 text-indigo-600" /><strong>{channel.name}</strong><code className="ml-auto text-[10px] text-slate-400">{channel.id}</code></div><p className="mt-2 text-sm leading-6 text-slate-500">{channel.purpose}</p></article>)}</div>
             </section>
-
-            <section className="rounded-2xl border bg-card p-6 shadow-sm">
-              <div className="flex items-center gap-3"><span className="grid size-9 place-items-center rounded-lg bg-amber-500/10 text-amber-600"><Activity className="size-4" /></span><div><h2 className="font-semibold">Scenario events and reactions</h2><p className="text-xs text-muted-foreground">Hidden case mechanics shown only to the human inspector</p></div></div>
-              <div className="mt-5 space-y-3">
-                {guide?.rules.map((item, index) => <details key={titleOf(item, `Rule ${index + 1}`)} className="rounded-xl border p-4"><summary className="cursor-pointer list-none"><div className="flex items-center gap-3"><span className="grid size-7 place-items-center rounded bg-amber-500/10 text-xs font-semibold text-amber-700 dark:text-amber-300">{index + 1}</span><div><h3 className="text-sm font-semibold">{titleOf(item, `Scenario rule ${index + 1}`)}</h3>{descriptionOf(item) && <p className="mt-1 text-sm text-muted-foreground">{descriptionOf(item)}</p>}</div><ChevronDown className="ml-auto size-4 text-muted-foreground" /></div></summary><dl className="mt-4 grid gap-2 border-t pt-4 text-xs sm:grid-cols-2">{remainingFields(item).map(([key, field]) => <div key={key} className="rounded bg-muted/50 p-2"><dt className="capitalize text-muted-foreground">{key.replaceAll('_', ' ')}</dt><dd className="mt-0.5 break-words whitespace-pre-wrap">{value(field)}</dd></div>)}</dl></details>)}
-                {guide && !guide.rules.length && <p className="rounded-xl border border-dashed p-5 text-sm text-muted-foreground">No timed events or reaction rules were authored.</p>}
-              </div>
-            </section>
-
-            {!!guide?.employee_commands.length && <section className="rounded-2xl border bg-card p-6 shadow-sm"><div className="flex items-center gap-3"><span className="grid size-9 place-items-center rounded-lg bg-rose-500/10 text-rose-600"><UserRound className="size-4" /></span><div><h2 className="font-semibold">Simulated coworker behavior</h2><p className="text-xs text-muted-foreground">Explicit behaviors available to the authored non-player employees</p></div></div><div className="mt-5 space-y-3">{guide.employee_commands.map(employee => <details key={employee.person_id} className="rounded-xl border p-4"><summary className="cursor-pointer font-semibold">{guide.people.find(person => person.person_id === employee.person_id)?.name || employee.person_id} <span className="font-normal text-muted-foreground">· {employee.options.length} behaviors</span></summary><div className="mt-3 space-y-2">{employee.options.map(option => <div key={option.command} className="rounded-lg bg-muted/50 p-3"><code className="text-xs font-semibold">{option.command}</code><p className="mt-1 text-xs text-muted-foreground">{option.description}</p></div>)}</div></details>)}</div></section>}
           </div>
 
           <aside className="space-y-6">
-            <section className="rounded-2xl border bg-card p-5 shadow-sm">
-              <h2 className="font-semibold">Test subject</h2>
-              <dl className="mt-5 space-y-4 text-sm">
-                <div><dt className="text-xs text-muted-foreground">Role in this run</dt><dd className="mt-1 font-medium">{run.participant_id || 'No participant'}</dd></div>
-                <div><dt className="text-xs text-muted-foreground">Participation mode</dt><dd className="mt-1 font-medium">{run.participant_mode === 'sapien' ? 'Sapiens AI' : run.participant_mode === 'manual' ? 'Manual operator' : 'Environment only'}</dd></div>
-                <div><dt className="text-xs text-muted-foreground">Interpreter</dt><dd className="mt-1 font-medium">{caseInfo?.interpreter_mode || run.interpreter_mode}</dd></div>
-                <div><dt className="text-xs text-muted-foreground">Sapiens integration</dt><dd className="mt-1 font-medium">{caseInfo?.sapien_integration_available ?? run.sapien_integration_available ? 'Supported' : 'Not supported'}</dd></div>
-              </dl>
-            </section>
-
-            <section className="rounded-2xl border bg-card p-5 shadow-sm">
-              <h2 className="font-semibold">Case limitations</h2>
-              <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-muted-foreground">{caseInfo?.limitations || 'No case-specific limitations were supplied.'}</p>
-            </section>
-
-            <section className="rounded-2xl border bg-card p-5 shadow-sm">
-              <h2 className="font-semibold">Specification reference</h2>
-              <dl className="mt-4 space-y-3 text-xs">
-                <div><dt className="text-muted-foreground">Case ID</dt><dd className="mt-1 break-all font-mono">{run.case_id}</dd></div>
-                <div><dt className="text-muted-foreground">Version</dt><dd className="mt-1 font-mono">{run.case_version}</dd></div>
-                <div><dt className="text-muted-foreground">Run using this case</dt><dd className="mt-1 break-all font-mono">{run.run_id}</dd></div>
-              </dl>
-            </section>
-
-            <details className="rounded-2xl border bg-card p-5 text-sm shadow-sm">
-              <summary className="cursor-pointer font-semibold">Raw authored definition</summary>
-              <p className="mt-2 text-xs text-muted-foreground">Full source-shaped data for troubleshooting only.</p>
-              <pre className="mt-4 max-h-[32rem] overflow-auto rounded-lg bg-muted p-3 text-xs">{JSON.stringify({ case: caseInfo, guide }, null, 2)}</pre>
-            </details>
+            <section className="rounded-2xl border bg-white p-5 shadow-sm dark:bg-[#10172a]"><h2 className="font-semibold">Role under test</h2><p className="mt-3 text-lg font-semibold text-violet-700 dark:text-violet-300">{spec.mission.role}</p><p className="mt-2 text-sm leading-6 text-slate-500">Facilitate, expose impediments and escalate to the correct owner. Do not replace specialist or customer authority.</p></section>
+            <section className="rounded-2xl border bg-white p-5 shadow-sm dark:bg-[#10172a]"><h2 className="font-semibold">Connected workplace</h2><div className="mt-4 space-y-2"><div className="flex items-center gap-3 rounded-lg bg-slate-50 p-3 dark:bg-white/5"><MessageSquare className="size-4 text-[#5b5fc7]" /><span className="text-sm">Personal and channel messaging</span></div><div className="flex items-center gap-3 rounded-lg bg-slate-50 p-3 dark:bg-white/5"><FolderKanban className="size-4 text-[#0052cc]" /><span className="text-sm">Sentinel Desk Jira project</span></div></div></section>
+            <section className="rounded-2xl border bg-white p-5 shadow-sm dark:bg-[#10172a]"><h2 className="font-semibold">Case limitations</h2><p className="mt-3 text-sm leading-6 text-slate-500">{caseInfo?.limitations || 'Employee behavior follows authored response options. Evaluation measures participation rather than complete Scrum quality.'}</p></section>
           </aside>
-        </div>
+        </div>}
+
+        {tab === 'roadmap' && <section className="rounded-2xl border bg-white p-6 shadow-sm dark:bg-[#10172a]"><div><h2 className="text-xl font-semibold">Fifteen-week project journey</h2><p className="mt-1 text-sm text-slate-500">Each phase has a delivery goal and evidence required before the project can honestly proceed.</p></div><div className="mt-7 space-y-0">{spec.phases.map((phase, index) => <article key={phase.period} className="grid gap-4 sm:grid-cols-[44px_180px_minmax(0,1fr)]"><div className="flex flex-col items-center"><span className="grid size-9 place-items-center rounded-full bg-violet-600 text-sm font-semibold text-white">{index + 1}</span>{index < spec.phases.length - 1 && <span className="min-h-16 w-px flex-1 bg-violet-200 dark:bg-violet-900" />}</div><p className="pb-8 pt-2 text-sm font-semibold text-violet-700 dark:text-violet-300">{phase.period}</p><div className="pb-8 pt-1"><h3 className="font-semibold">{phase.goal}</h3><p className="mt-2 text-sm leading-6 text-slate-500"><strong className="font-medium text-slate-700 dark:text-slate-300">Evidence required:</strong> {phase.evidence}</p></div></article>)}</div></section>}
+
+        {tab === 'team' && <div className="space-y-6">
+          <section className="rounded-2xl border bg-white p-6 shadow-sm dark:bg-[#10172a]"><h2 className="text-xl font-semibold">Decision authority</h2><p className="mt-1 text-sm text-slate-500">The Scrum Master coordinates these decisions but does not inherit their authority.</p><div className="mt-5 overflow-hidden rounded-xl border"><table className="w-full text-left text-sm"><thead className="bg-slate-50 text-xs text-slate-500 dark:bg-white/5"><tr><th className="px-4 py-3 font-medium">Decision</th><th className="px-4 py-3 font-medium">Accountable authority</th></tr></thead><tbody>{spec.decisionRights.map(([decision, owner]) => <tr key={decision} className="border-t"><td className="px-4 py-3 font-medium">{decision}</td><td className="px-4 py-3 text-slate-500">{owner}</td></tr>)}</tbody></table></div></section>
+          <section><div className="mb-4"><h2 className="text-xl font-semibold">People and stakeholder context</h2><p className="mt-1 text-sm text-slate-500">What each person owns and the constraint the participant must understand.</p></div><div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{spec.people.map(person => <article key={person.id} className="rounded-2xl border bg-white p-5 shadow-sm dark:bg-[#10172a]"><div className="flex items-center gap-3"><span className="grid size-10 place-items-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 text-sm font-semibold text-white">{person.name.slice(0,2).toUpperCase()}</span><div><h3 className="font-semibold">{person.name}</h3><p className="text-xs text-slate-500">{person.role}</p></div><Badge className="ml-auto" variant="outline">{person.group}</Badge></div><p className="mt-4 text-sm leading-6 text-slate-500">{person.context}</p><p className="mt-3 font-mono text-[10px] text-slate-400">{person.id}</p></article>)}</div></section>
+        </div>}
+
+        {tab === 'backlog' && <section className="rounded-2xl border bg-white shadow-sm dark:bg-[#10172a]">
+          <div className="flex flex-wrap items-end justify-between gap-4 border-b p-6"><div><h2 className="text-xl font-semibold">Initial project backlog</h2><p className="mt-1 text-sm text-slate-500">All 32 authored issues begin in Proposed state. Dependencies matter more than isolated status labels.</p></div><div className="relative w-full sm:w-72"><Search className="absolute left-3 top-2.5 size-4 text-slate-400" /><Input className="pl-9" placeholder="Search issue, owner or title" value={search} onChange={event => setSearch(event.target.value)} /></div></div>
+          <div className="overflow-x-auto"><table className="w-full min-w-[760px] text-left text-sm"><thead className="bg-slate-50 text-xs text-slate-500 dark:bg-white/5"><tr><th className="px-5 py-3 font-medium">Issue</th><th className="px-5 py-3 font-medium">Outcome</th><th className="px-5 py-3 font-medium">Point of contact</th><th className="px-5 py-3 font-medium">Target</th><th className="px-5 py-3 font-medium">Dependencies</th></tr></thead><tbody>{visibleBacklog.map(item => <tr key={item.id} className="border-t hover:bg-slate-50 dark:hover:bg-white/[0.03]"><td className="px-5 py-4 font-semibold text-[#0052cc]">{item.id}</td><td className="px-5 py-4 font-medium">{item.summary}</td><td className="px-5 py-4 text-slate-500">{ownerName(item.owner)}</td><td className="px-5 py-4 text-slate-500">Week {item.week}</td><td className="px-5 py-4"><div className="flex flex-wrap gap-1">{item.dependencies.length ? item.dependencies.map(dependency => <span key={dependency} className="rounded bg-slate-100 px-2 py-1 font-mono text-[10px] dark:bg-white/10">{dependency}</span>) : <span className="text-slate-400">None</span>}</div></td></tr>)}</tbody></table></div>
+          {!visibleBacklog.length && <p className="p-8 text-center text-sm text-slate-500">No matching backlog item.</p>}
+        </section>}
+
+        {tab === 'challenges' && <section><div className="mb-5"><h2 className="text-xl font-semibold">Authored scenario challenges</h2><p className="mt-1 max-w-4xl text-sm leading-6 text-slate-500">These are pressures the case may introduce. The participant is expected to establish facts, respect authority, preserve uncertainty and coordinate a traceable response—not merely react to alerts.</p></div><div className="grid gap-4 lg:grid-cols-2">{spec.challenges.map(challenge => <article key={challenge.id} className="rounded-2xl border bg-white p-5 shadow-sm dark:bg-[#10172a]"><div className="flex items-center gap-2"><Badge variant="outline">{challenge.id}</Badge><span className="text-xs font-medium text-amber-700 dark:text-amber-300">{challenge.window}</span></div><h3 className="mt-4 text-sm font-semibold leading-6">{challenge.signal}</h3><div className="mt-4 rounded-xl bg-emerald-50 p-3 dark:bg-emerald-950/20"><p className="text-[10px] font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">Expected response</p><p className="mt-1 text-sm leading-6 text-emerald-900/80 dark:text-emerald-100/70">{challenge.response}</p></div></article>)}</div></section>}
+
+        {tab === 'evaluation' && <div className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_320px]">
+          <section className="rounded-2xl border bg-white p-6 shadow-sm dark:bg-[#10172a]"><div><h2 className="text-xl font-semibold">Observable evaluation checks</h2><p className="mt-1 text-sm text-slate-500">The executable backend currently grades these five participation signals.</p></div><div className="mt-6 space-y-4">{spec.evaluation.map((check, index) => <article key={check.id} className="rounded-xl border p-5"><div className="flex gap-4"><span className="grid size-8 shrink-0 place-items-center rounded-full bg-emerald-500/10 text-sm font-semibold text-emerald-700 dark:text-emerald-300">{index + 1}</span><div><div className="flex flex-wrap items-center gap-2"><h3 className="font-semibold">{check.objective}</h3><code className="rounded bg-slate-100 px-2 py-1 text-[10px] text-slate-500 dark:bg-white/10">{check.id}</code></div><p className="mt-2 text-sm leading-6 text-slate-500">{check.evidence}</p></div></div></article>)}</div></section>
+          <aside className="space-y-5"><section className="rounded-2xl border border-blue-300/50 bg-blue-50 p-5 dark:border-blue-500/20 dark:bg-blue-950/20"><h2 className="font-semibold text-blue-900 dark:text-blue-200">What the score means</h2><p className="mt-3 text-sm leading-6 text-blue-900/75 dark:text-blue-100/70">These checks prove that the participant performed important interactions at the relevant time. They do not prove complete Scrum competence or that every project decision was good.</p></section><section className="rounded-2xl border bg-white p-5 shadow-sm dark:bg-[#10172a]"><h2 className="font-semibold">Human review should also inspect</h2><ul className="mt-4 space-y-3 text-sm text-slate-500">{['Whether messages showed correct understanding','Whether the participant contacted the right authority','Whether uncertainty and unresolved dependencies remained visible','Whether Jira status was verified against real evidence','Whether customer, security and privacy boundaries were respected'].map(item => <li key={item} className="flex gap-2"><CheckCircle2 className="mt-0.5 size-4 shrink-0 text-violet-600" />{item}</li>)}</ul></section></aside>
+        </div>}
       </div>
     </div>
   );
