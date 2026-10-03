@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { NavLink, useLocation, useNavigate, useParams, useSearchParams } from 'react-router';
-import { Activity, ArrowLeft, Beaker, Bot, CheckCircle2, ChevronDown, CircleDot, Clock3, FolderKanban, LayoutDashboard, ListFilter, MessageSquare, MoreHorizontal, PlugZap, RefreshCw, Search, Star, Users } from 'lucide-react';
+import { Activity, ArrowLeft, Beaker, Bot, CheckCircle2, ChevronDown, CircleDot, Clock3, FolderKanban, Hash, LayoutDashboard, ListFilter, MessageSquare, MoreHorizontal, Phone, PlugZap, RefreshCw, Search, Star, Users, Video } from 'lucide-react';
 import { SimulationWorldExplorer } from '../components/simulation/SimulationWorldExplorer';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { simulationService } from '../core/services/simulationService';
-import type { EventPage, SimulationEvent, SimulationResult, SimulationRun, WorldCollection, WorldOverview, WorldTicket } from '../types/simulationTypes';
+import type { EventPage, SimulationEvent, SimulationResult, SimulationRun, WorldActivityItem, WorldChannel, WorldCollection, WorldEmployee, WorldOverview, WorldTicket } from '../types/simulationTypes';
 
 const terminal = new Set(['completed', 'blocked', 'stopped', 'limit_reached', 'failed']);
 const time = (value?: string | null) => value ? new Date(value).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', second: '2-digit' }) + ' IST' : '—';
@@ -240,20 +240,192 @@ function JiraPortal({ runId, eventCount }: { runId: string; eventCount: number }
 
 function ChatPortal({ runId, eventCount }: { runId: string; eventCount: number }) {
   const [overview, setOverview] = useState<WorldOverview | null>(null);
-  const [channels, setChannels] = useState<Array<{ channel_id: string; title: string; members: string[]; posts: number }>>([]);
+  const [employees, setEmployees] = useState<WorldEmployee[]>([]);
+  const [channels, setChannels] = useState<WorldChannel[]>([]);
   const [selected, setSelected] = useState('');
-  const [events, setEvents] = useState<SimulationEvent[]>([]);
+  const [items, setItems] = useState<WorldActivityItem[]>([]);
   const [cursor, setCursor] = useState<{ next: number; more: boolean }>({ next: 0, more: false });
+  const [search, setSearch] = useState('');
   const [error, setError] = useState('');
   const previous = useRef(eventCount);
   const [refresh, setRefresh] = useState(0);
-  useEffect(() => { if (previous.current !== eventCount) { previous.current = eventCount; setRefresh(value => value + 1); } }, [eventCount]);
-  useEffect(() => { const controller = new AbortController(); simulationService.worldOverview(runId, undefined, controller.signal).then(setOverview).catch(problem => { if (!controller.signal.aborted) setError(message(problem)); }); return () => controller.abort(); }, [runId, refresh]);
-  useEffect(() => { if (!overview) return; const controller = new AbortController(); simulationService.worldChannels(runId, { through: overview.through, limit: 200 }, controller.signal).then(page => { setChannels(page.items); setSelected(current => current && page.items.some(channel => channel.channel_id === current) ? current : page.items[0]?.channel_id ?? ''); }).catch(problem => { if (!controller.signal.aborted) setError(message(problem)); }); return () => controller.abort(); }, [runId, overview?.through]);
-  const load = useCallback(async (after = 0, append = false) => { if (!overview || !selected) return; try { const page = await simulationService.worldActivity(runId, { through: overview.through, channel_id: selected, kind: 'messages', after, limit: 50 }); setEvents(current => append ? [...current, ...page.items.map(item => item.event).filter(event => !current.some(existing => existing.record_id === event.record_id))] : page.items.map(item => item.event)); setCursor({ next: page.next_after, more: page.has_more }); } catch (problem) { setError(message(problem)); } }, [runId, overview?.through, selected]);
-  useEffect(() => { setEvents([]); void load(); }, [load]);
-  const channel = channels.find(item => item.channel_id === selected);
-  return <div className="grid min-h-0 flex-1 bg-[#f5f5f7] text-slate-900 dark:bg-[#090e19] dark:text-slate-100 lg:grid-cols-[300px_minmax(0,1fr)]"><aside className="border-r bg-[#201f1f] text-white"><div className="border-b border-white/10 p-4"><div className="flex items-center gap-3"><span className="grid size-9 place-items-center rounded bg-[#5b5fc7]"><MessageSquare className="size-5" /></span><div><h2 className="font-semibold">Simulated Messages</h2><p className="text-xs text-white/45">Recorded workplace channels</p></div></div></div><div className="p-3"><p className="px-2 pb-2 text-[11px] font-semibold uppercase tracking-wider text-white/35">Channels</p>{channels.map(item => <button key={item.channel_id} onClick={() => setSelected(item.channel_id)} className={`flex w-full items-center gap-2 rounded px-3 py-2 text-left text-sm ${selected === item.channel_id ? 'bg-white/12 text-white' : 'text-white/60 hover:bg-white/5'}`}><span className="text-white/35">#</span><span className="min-w-0 flex-1 truncate">{item.title}</span><span className="text-xs text-white/35">{item.posts}</span></button>)}</div></aside><main className="flex min-h-0 flex-col"><header className="flex items-center justify-between gap-3 border-b bg-white px-5 py-4 dark:bg-[#10172a]"><div><h2 className="font-semibold"># {channel?.title || selected || 'Select a channel'}</h2><p className="text-xs text-slate-500">{channel ? `${channel.members.length} declared members · ${channel.posts} recorded posts` : 'No channel selected'}</p></div><Button size="sm" variant="outline" onClick={() => setRefresh(value => value + 1)}><RefreshCw className="mr-2 size-4" />Refresh</Button></header>{error && <p className="border-b border-red-300 bg-red-50 px-4 py-2 text-sm text-red-700">{error}</p>}<div className="min-h-0 flex-1 overflow-y-auto p-5"><div className="mx-auto max-w-4xl space-y-5">{events.map(event => { const body = payload(event); return <article key={event.record_id} className="flex gap-3"><span className="grid size-10 shrink-0 place-items-center rounded bg-gradient-to-br from-violet-500 to-blue-500 text-sm font-semibold text-white">{value(body.sender_id).slice(0, 2).toUpperCase() || '?'}</span><div className="min-w-0 flex-1"><div className="flex flex-wrap items-baseline gap-2"><strong className="text-sm">{value(body.sender_id) || 'Unknown sender'}</strong><span className="text-xs text-slate-500">{time(event.occurred_at)}</span></div><p className="mt-1 whitespace-pre-wrap text-sm leading-6">{value(body.text)}</p><details className="mt-1"><summary className="cursor-pointer text-xs text-slate-400">Delivery details</summary><pre className="mt-2 max-h-64 overflow-auto rounded bg-slate-100 p-3 text-xs dark:bg-black/30">{JSON.stringify(body, null, 2)}</pre></details></div></article>; })}{!events.length && <div className="grid min-h-64 place-items-center text-center text-slate-500"><div><MessageSquare className="mx-auto size-9 opacity-30" /><p className="mt-3">No posts recorded in this channel yet.</p></div></div>}{cursor.more && <Button variant="outline" onClick={() => void load(cursor.next, true)}>Load earlier recorded posts</Button>}</div></div><footer className="border-t bg-white p-4 dark:bg-[#10172a]"><div className="rounded-lg border bg-slate-50 px-4 py-3 text-sm text-slate-400 dark:bg-black/20">Read-only simulation record — sending messages from this admin portal is disabled.</div></footer></main></div>;
+
+  useEffect(() => {
+    if (previous.current !== eventCount) {
+      previous.current = eventCount;
+      setRefresh(current => current + 1);
+    }
+  }, [eventCount]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setError('');
+    simulationService.worldOverview(runId, undefined, controller.signal)
+      .then(setOverview)
+      .catch(problem => { if (!controller.signal.aborted) setError(message(problem)); });
+    return () => controller.abort();
+  }, [runId, refresh]);
+
+  useEffect(() => {
+    if (!overview) return;
+    const controller = new AbortController();
+    Promise.all([
+      simulationService.worldEmployees(runId, { through: overview.through, limit: 100 }, controller.signal),
+      simulationService.worldChannels(runId, { through: overview.through, limit: 100 }, controller.signal),
+    ]).then(([peoplePage, channelPage]) => {
+      const people = peoplePage.items.filter(person => person.person_id !== overview.participant_id);
+      setEmployees(people);
+      setChannels(channelPage.items);
+      setSelected(current => {
+        const exists = current.startsWith('person:')
+          ? people.some(person => `person:${person.person_id}` === current)
+          : channelPage.items.some(channel => `channel:${channel.channel_id}` === current);
+        return exists ? current : people[0] ? `person:${people[0].person_id}` : channelPage.items[0] ? `channel:${channelPage.items[0].channel_id}` : '';
+      });
+    }).catch(problem => { if (!controller.signal.aborted) setError(message(problem)); });
+    return () => controller.abort();
+  }, [runId, overview?.through]);
+
+  const selectedType = selected.startsWith('channel:') ? 'channel' : 'person';
+  const selectedId = selected.slice(selected.indexOf(':') + 1);
+  const employee = employees.find(person => person.person_id === selectedId);
+  const channel = channels.find(item => item.channel_id === selectedId);
+
+  const load = useCallback(async (after = 0, append = false) => {
+    if (!overview || !selectedId) return;
+    try {
+      const page = await simulationService.worldActivity(runId, {
+        through: overview.through,
+        kind: 'messages',
+        after,
+        limit: 100,
+        ...(selectedType === 'channel' ? { channel_id: selectedId } : { person_id: selectedId }),
+      });
+      const visible = selectedType === 'person'
+        ? page.items.filter(item => !value(payload(item.event).channel_id))
+        : page.items;
+      setItems(current => append
+        ? [...current, ...visible.filter(item => !current.some(existing => existing.event.record_id === item.event.record_id))]
+        : visible);
+      setCursor({ next: page.next_after, more: page.has_more });
+    } catch (problem) {
+      setError(message(problem));
+    }
+  }, [runId, overview?.through, selected, selectedId, selectedType]);
+
+  useEffect(() => {
+    setItems([]);
+    setCursor({ next: 0, more: false });
+    void load();
+  }, [load]);
+
+  const normalizedSearch = search.trim().toLowerCase();
+  const visibleEmployees = employees.filter(person => !normalizedSearch || person.name.toLowerCase().includes(normalizedSearch) || person.person_id.toLowerCase().includes(normalizedSearch));
+  const visibleChannels = channels.filter(item => !normalizedSearch || item.title.toLowerCase().includes(normalizedSearch) || item.channel_id.toLowerCase().includes(normalizedSearch));
+  const conversationTitle = selectedType === 'channel' ? channel?.title || selectedId : employee?.name || selectedId;
+  const conversationDetail = selectedType === 'channel'
+    ? `${channel?.members.length ?? 0} members · ${channel?.posts ?? 0} recorded posts`
+    : `${employee?.sent ?? 0} sent · ${employee?.received ?? 0} received`;
+
+  return (
+    <div className="grid min-h-0 flex-1 overflow-hidden bg-[#f5f5f7] text-slate-900 dark:bg-[#090e19] dark:text-slate-100 lg:grid-cols-[320px_minmax(0,1fr)]">
+      <aside className="flex min-h-0 flex-col bg-[#201f1f] text-white">
+        <div className="border-b border-white/10 px-4 py-3">
+          <div className="flex items-center gap-3">
+            <span className="grid size-10 place-items-center rounded-lg bg-[#5b5fc7]"><MessageSquare className="size-5" /></span>
+            <div><h2 className="font-semibold">Messages</h2><p className="text-xs text-white/45">Simulation communication</p></div>
+            <Button className="ml-auto border-white/15 bg-transparent px-2 text-white hover:bg-white/10" variant="outline" size="sm" onClick={() => setRefresh(current => current + 1)} aria-label="Refresh messages"><RefreshCw className="size-4" /></Button>
+          </div>
+          <div className="relative mt-3">
+            <Search className="absolute left-3 top-2.5 size-4 text-white/35" />
+            <Input className="border-white/10 bg-white/10 pl-9 text-white placeholder:text-white/35" placeholder="Search chats and channels" value={search} onChange={event => setSearch(event.target.value)} />
+          </div>
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-y-auto p-3">
+          <section>
+            <div className="flex items-center justify-between px-2 py-2"><p className="text-[11px] font-semibold uppercase tracking-wider text-white/40">Chats</p><span className="text-[10px] text-white/30">{visibleEmployees.length}</span></div>
+            <div className="space-y-1">
+              {visibleEmployees.map(person => (
+                <button key={person.person_id} onClick={() => setSelected(`person:${person.person_id}`)} className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-left transition ${selected === `person:${person.person_id}` ? 'bg-white/15 text-white' : 'text-white/65 hover:bg-white/7 hover:text-white'}`}>
+                  <span className="grid size-8 shrink-0 place-items-center rounded-full bg-gradient-to-br from-violet-500 to-blue-500 text-xs font-semibold text-white">{person.name.slice(0, 2).toUpperCase()}</span>
+                  <span className="min-w-0 flex-1"><strong className="block truncate text-sm font-medium">{person.name}</strong><span className="block truncate text-xs text-white/35">{person.person_id} · {person.sent + person.received} messages</span></span>
+                </button>
+              ))}
+              {!visibleEmployees.length && <p className="px-3 py-2 text-xs text-white/35">No matching personal chats.</p>}
+            </div>
+          </section>
+
+          <section className="mt-5">
+            <div className="flex items-center justify-between px-2 py-2"><p className="text-[11px] font-semibold uppercase tracking-wider text-white/40">Channels</p><span className="text-[10px] text-white/30">{visibleChannels.length}</span></div>
+            <div className="space-y-1">
+              {visibleChannels.map(item => (
+                <button key={item.channel_id} onClick={() => setSelected(`channel:${item.channel_id}`)} className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-left transition ${selected === `channel:${item.channel_id}` ? 'bg-white/15 text-white' : 'text-white/65 hover:bg-white/7 hover:text-white'}`}>
+                  <Hash className="size-4 shrink-0 text-white/40" />
+                  <span className="min-w-0 flex-1"><strong className="block truncate text-sm font-medium">{item.title}</strong><span className="block truncate text-xs text-white/35">{item.posts} posts</span></span>
+                </button>
+              ))}
+              {!visibleChannels.length && <p className="px-3 py-2 text-xs text-white/35">No matching channels.</p>}
+            </div>
+          </section>
+        </div>
+
+        <div className="border-t border-white/10 px-4 py-3 text-xs text-white/35">Read-only · evidence through #{overview?.through ?? '—'}</div>
+      </aside>
+
+      <main className="flex min-h-0 min-w-0 flex-col">
+        <header className="flex min-h-16 items-center gap-3 border-b bg-white px-5 py-3 dark:bg-[#10172a]">
+          <span className={`grid size-10 shrink-0 place-items-center ${selectedType === 'channel' ? 'rounded-lg bg-slate-100 text-slate-500 dark:bg-white/10' : 'rounded-full bg-gradient-to-br from-violet-500 to-blue-500 text-sm font-semibold text-white'}`}>
+            {selectedType === 'channel' ? <Hash className="size-5" /> : (employee?.name || '?').slice(0, 2).toUpperCase()}
+          </span>
+          <div className="min-w-0 flex-1"><h2 className="truncate font-semibold">{conversationTitle || 'Select a conversation'}</h2><p className="truncate text-xs text-slate-500">{conversationDetail}</p></div>
+          <div className="hidden items-center gap-1 text-slate-500 sm:flex"><button className="rounded p-2 hover:bg-slate-100 dark:hover:bg-white/5" aria-label="Audio call unavailable in read-only view"><Phone className="size-4" /></button><button className="rounded p-2 hover:bg-slate-100 dark:hover:bg-white/5" aria-label="Video call unavailable in read-only view"><Video className="size-4" /></button><button className="rounded p-2 hover:bg-slate-100 dark:hover:bg-white/5" aria-label="Conversation options"><MoreHorizontal className="size-5" /></button></div>
+        </header>
+
+        {error && <p className="border-b border-red-300 bg-red-50 px-4 py-2 text-sm text-red-700 dark:bg-red-950/30 dark:text-red-300">{error}</p>}
+
+        <div className="min-h-0 flex-1 overflow-y-auto bg-white px-4 py-6 dark:bg-[#0f1628] sm:px-8">
+          <div className="mx-auto max-w-4xl">
+            <div className="mb-8 text-center">
+              <span className={`mx-auto grid size-16 place-items-center ${selectedType === 'channel' ? 'rounded-xl bg-slate-100 text-slate-500 dark:bg-white/10' : 'rounded-full bg-gradient-to-br from-violet-500 to-blue-500 text-xl font-semibold text-white'}`}>
+                {selectedType === 'channel' ? <Hash className="size-7" /> : (employee?.name || '?').slice(0, 2).toUpperCase()}
+              </span>
+              <h1 className="mt-3 text-xl font-semibold">{conversationTitle}</h1>
+              <p className="mt-1 text-sm text-slate-500">{selectedType === 'channel' ? `This is the beginning of the #${conversationTitle} channel record.` : `Recorded direct conversation involving ${conversationTitle}.`}</p>
+            </div>
+
+            <div className="space-y-1">
+              {items.map(item => {
+                const event = item.event;
+                const body = payload(event);
+                const senderId = value(body.sender_id || item.actor_id) || 'Unknown sender';
+                const isParticipant = !!overview?.participant_id && senderId === overview.participant_id;
+                const sender = employees.find(person => person.person_id === senderId);
+                const senderName = sender?.name || (isParticipant ? 'Simulation participant' : senderId);
+                return (
+                  <article key={event.record_id} className={`group flex gap-3 rounded-lg px-2 py-3 hover:bg-slate-50 dark:hover:bg-white/[0.03] ${isParticipant && selectedType === 'person' ? 'flex-row-reverse' : ''}`}>
+                    <span className="grid size-9 shrink-0 place-items-center rounded-full bg-gradient-to-br from-violet-500 to-blue-500 text-xs font-semibold text-white">{senderName.slice(0, 2).toUpperCase()}</span>
+                    <div className={`min-w-0 max-w-[80%] ${isParticipant && selectedType === 'person' ? 'text-right' : ''}`}>
+                      <div className={`flex flex-wrap items-baseline gap-2 ${isParticipant && selectedType === 'person' ? 'justify-end' : ''}`}><strong className="text-sm">{senderName}</strong><span className="text-[11px] text-slate-400">{time(event.occurred_at)}</span></div>
+                      <div className={`mt-1 rounded-2xl px-3 py-2 text-left text-sm leading-6 ${isParticipant && selectedType === 'person' ? 'rounded-tr-sm bg-[#5b5fc7] text-white' : 'rounded-tl-sm bg-slate-100 dark:bg-white/10'}`}><p className="whitespace-pre-wrap">{value(body.text) || 'Message body was not recorded.'}</p></div>
+                      <details className={`mt-1 ${isParticipant && selectedType === 'person' ? 'text-right' : ''}`}><summary className="cursor-pointer text-[11px] text-slate-400">Evidence details</summary><pre className="mt-2 max-h-64 overflow-auto rounded bg-slate-100 p-3 text-left text-xs dark:bg-black/30">{JSON.stringify(body, null, 2)}</pre></details>
+                    </div>
+                  </article>
+                );
+              })}
+              {!items.length && selected && <div className="grid min-h-40 place-items-center text-center text-slate-500"><div><MessageSquare className="mx-auto size-8 opacity-30" /><p className="mt-3">No recorded messages in this conversation.</p></div></div>}
+              {!selected && <div className="grid min-h-64 place-items-center text-center text-slate-500"><p>Select a chat or channel.</p></div>}
+            </div>
+            {cursor.more && <Button className="mt-5" variant="outline" onClick={() => void load(cursor.next, true)}>Load earlier messages</Button>}
+          </div>
+        </div>
+
+        <footer className="border-t bg-white p-4 dark:bg-[#10172a]">
+          <div className="mx-auto max-w-4xl rounded-lg border bg-slate-50 px-4 py-3 text-sm text-slate-400 dark:bg-black/20">Read-only simulation record — replies and calls are disabled in this inspection view.</div>
+        </footer>
+      </main>
+    </div>
+  );
 }
 
 function ParticipantPortal({ run }: { run: SimulationRun }) {
