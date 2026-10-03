@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { NavLink, useLocation, useNavigate, useParams, useSearchParams } from 'react-router';
-import { Activity, ArrowLeft, Beaker, Bot, CheckCircle2, ChevronDown, CircleDot, Clock3, FolderKanban, Hash, LayoutDashboard, ListFilter, MessageSquare, MoreHorizontal, Phone, PlugZap, RefreshCw, Search, Star, Users, Video } from 'lucide-react';
+import { Activity, ArrowLeft, Beaker, BookOpen, Bot, CalendarDays, CheckCircle2, ChevronDown, CircleDot, Clock3, FolderKanban, Gauge, Hash, LayoutDashboard, ListFilter, MessageSquare, MoreHorizontal, Phone, PlugZap, RefreshCw, Search, ShieldCheck, Star, Target, Timer, UserRound, Users, Video } from 'lucide-react';
 import { SimulationWorldExplorer } from '../components/simulation/SimulationWorldExplorer';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { simulationService } from '../core/services/simulationService';
-import type { EventPage, SimulationEvent, SimulationResult, SimulationRun, WorldActivityItem, WorldChannel, WorldCollection, WorldEmployee, WorldOverview, WorldTicket } from '../types/simulationTypes';
+import type { CaseInfo, DebugGuide, EventPage, SimulationEvent, SimulationResult, SimulationRun, WorldActivityItem, WorldChannel, WorldCollection, WorldEmployee, WorldOverview, WorldTicket } from '../types/simulationTypes';
 
 const terminal = new Set(['completed', 'blocked', 'stopped', 'limit_reached', 'failed']);
 const time = (value?: string | null) => value ? new Date(value).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', second: '2-digit' }) + ' IST' : '—';
@@ -428,6 +428,133 @@ function ChatPortal({ runId, eventCount }: { runId: string; eventCount: number }
   );
 }
 
+function TestCasePortal({ run }: { run: SimulationRun }) {
+  const [caseInfo, setCaseInfo] = useState<CaseInfo | null>(null);
+  const [guide, setGuide] = useState<DebugGuide | null>(null);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setError('');
+    Promise.all([
+      simulationService.cases(controller.signal),
+      simulationService.debug(run.run_id, controller.signal),
+    ]).then(([catalog, authoredGuide]) => {
+      setCaseInfo(catalog.cases.find(item => item.case_id === run.case_id && item.version === run.case_version)
+        ?? catalog.cases.find(item => item.case_id === run.case_id)
+        ?? null);
+      setGuide(authoredGuide);
+    }).catch(problem => {
+      if (!controller.signal.aborted) setError(message(problem));
+    });
+    return () => controller.abort();
+  }, [run.run_id, run.case_id, run.case_version]);
+
+  const simulatedDuration = Math.max(0, new Date(run.end_at).getTime() - new Date(run.start_at).getTime());
+  const durationHours = simulatedDuration / 3_600_000;
+  const expectationLabel = (item: unknown, index: number) => {
+    const record = item && typeof item === 'object' ? item as Record<string, unknown> : {};
+    return value(record.title || record.name || record.expectation_id || record.id) || `Expectation ${index + 1}`;
+  };
+  const expectationDescription = (item: unknown) => {
+    const record = item && typeof item === 'object' ? item as Record<string, unknown> : {};
+    return value(record.description || record.explanation || record.criteria || record.expected) || 'Evaluation criteria are available in the authored specification.';
+  };
+
+  return (
+    <div className="min-h-full bg-slate-50 px-4 py-6 dark:bg-[#0b1020] lg:px-8">
+      <div className="mx-auto max-w-6xl space-y-6">
+        {error && <p className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-700 dark:text-red-300">{error}</p>}
+
+        <section className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-[#10172a] via-[#172554] to-[#312e81] p-6 text-white shadow-xl sm:p-8">
+          <div className="absolute -right-20 -top-24 size-64 rounded-full bg-violet-400/15 blur-3xl" />
+          <div className="relative">
+            <div className="flex flex-wrap items-center gap-2 text-xs text-white/65">
+              <Badge className="border-white/20 bg-white/10 text-white">Test case</Badge>
+              <span>{run.case_id}</span><span>•</span><span>Version {run.case_version}</span>
+            </div>
+            <div className="mt-5 flex flex-wrap items-start gap-5">
+              <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-white/10"><BookOpen className="size-7 text-violet-200" /></span>
+              <div className="min-w-0 flex-1">
+                <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{caseInfo?.title || statusName(run.case_id)}</h1>
+                <p className="mt-3 max-w-3xl text-sm leading-6 text-white/70">{caseInfo?.description || 'The authored description is unavailable for this retained run.'}</p>
+              </div>
+              <Badge className="bg-emerald-400/15 text-emerald-100">{statusName(run.status)}</Badge>
+            </div>
+            <div className="mt-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="rounded-xl bg-white/8 p-3"><span className="flex items-center gap-2 text-xs text-white/50"><CalendarDays className="size-3.5" />Simulated start</span><strong className="mt-1 block text-sm">{time(run.start_at)}</strong></div>
+              <div className="rounded-xl bg-white/8 p-3"><span className="flex items-center gap-2 text-xs text-white/50"><Timer className="size-3.5" />Scenario window</span><strong className="mt-1 block text-sm">{Number.isInteger(durationHours) ? durationHours : durationHours.toFixed(1)} simulated hours</strong></div>
+              <div className="rounded-xl bg-white/8 p-3"><span className="flex items-center gap-2 text-xs text-white/50"><Gauge className="size-3.5" />Clock speed</span><strong className="mt-1 block text-sm">{run.speed}× current · {run.config.speed}× configured</strong></div>
+              <div className="rounded-xl bg-white/8 p-3"><span className="flex items-center gap-2 text-xs text-white/50"><Activity className="size-3.5" />Evidence</span><strong className="mt-1 block text-sm">{run.event_count} recorded events</strong></div>
+            </div>
+          </div>
+        </section>
+
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(280px,0.7fr)]">
+          <div className="space-y-6">
+            <section className="rounded-2xl border bg-card p-6 shadow-sm">
+              <div className="flex items-center gap-3"><span className="grid size-9 place-items-center rounded-lg bg-violet-500/10 text-violet-600"><Target className="size-4" /></span><div><h2 className="font-semibold">Scenario brief</h2><p className="text-xs text-muted-foreground">What the test places the participant into</p></div></div>
+              <p className="mt-5 whitespace-pre-wrap text-sm leading-7 text-muted-foreground">{caseInfo?.description || 'No authored scenario brief was returned.'}</p>
+              {caseInfo?.start_constraint && <div className="mt-5 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4"><p className="text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300">Start condition</p><p className="mt-1 text-sm">{caseInfo.start_constraint}</p></div>}
+            </section>
+
+            <section className="rounded-2xl border bg-card p-6 shadow-sm">
+              <div className="flex items-center gap-3"><span className="grid size-9 place-items-center rounded-lg bg-blue-500/10 text-blue-600"><ShieldCheck className="size-4" /></span><div><h2 className="font-semibold">Evaluation design</h2><p className="text-xs text-muted-foreground">Authored checks used to interpret the completed simulation</p></div></div>
+              <div className="mt-5 space-y-3">
+                {guide?.expectations.map((item, index) => <article key={expectationLabel(item, index)} className="rounded-xl border p-4"><div className="flex items-start gap-3"><span className="grid size-7 shrink-0 place-items-center rounded-full bg-blue-500/10 text-xs font-semibold text-blue-600">{index + 1}</span><div><h3 className="text-sm font-semibold">{expectationLabel(item, index)}</h3><p className="mt-1 text-sm leading-6 text-muted-foreground">{expectationDescription(item)}</p></div></div></article>)}
+                {guide && !guide.expectations.length && <p className="rounded-xl border border-dashed p-5 text-sm text-muted-foreground">This case has no authored evaluation expectations.</p>}
+                {!guide && <p className="rounded-xl border border-dashed p-5 text-sm text-muted-foreground">Loading authored evaluation design…</p>}
+              </div>
+            </section>
+
+            <section className="rounded-2xl border bg-card p-6 shadow-sm">
+              <div className="flex items-center gap-3"><span className="grid size-9 place-items-center rounded-lg bg-emerald-500/10 text-emerald-600"><Users className="size-4" /></span><div><h2 className="font-semibold">World setup</h2><p className="text-xs text-muted-foreground">People, communication spaces, and connected systems</p></div></div>
+              <div className="mt-5 grid gap-4 md:grid-cols-3">
+                <div className="rounded-xl bg-muted/50 p-4"><span className="text-xs text-muted-foreground">People</span><strong className="mt-1 block text-2xl">{guide?.people.length ?? '—'}</strong><p className="mt-2 text-xs text-muted-foreground">{guide?.people.slice(0, 3).map(person => person.name).join(', ') || 'Directory loading'}{guide && guide.people.length > 3 ? ` +${guide.people.length - 3} more` : ''}</p></div>
+                <div className="rounded-xl bg-muted/50 p-4"><span className="text-xs text-muted-foreground">Channels</span><strong className="mt-1 block text-2xl">{guide?.channels.length ?? '—'}</strong><p className="mt-2 text-xs text-muted-foreground">Authored workplace conversations</p></div>
+                <div className="rounded-xl bg-muted/50 p-4"><span className="text-xs text-muted-foreground">Connections</span><strong className="mt-1 block text-2xl">{guide?.connections.length ?? '—'}</strong><p className="mt-2 text-xs text-muted-foreground">{guide?.connections.join(', ') || 'Connections loading'}</p></div>
+              </div>
+            </section>
+          </div>
+
+          <aside className="space-y-6">
+            <section className="rounded-2xl border bg-card p-5 shadow-sm">
+              <div className="flex items-center gap-3"><UserRound className="size-5 text-violet-600" /><h2 className="font-semibold">Participant</h2></div>
+              <dl className="mt-5 space-y-4 text-sm">
+                <div><dt className="text-xs text-muted-foreground">Mode</dt><dd className="mt-1 font-medium">{run.participant_mode === 'sapien' ? 'Sapiens AI' : run.participant_mode === 'manual' ? 'Manual operator' : 'Environment only'}</dd></div>
+                <div><dt className="text-xs text-muted-foreground">Simulated identity</dt><dd className="mt-1 font-medium">{run.participant_id || 'No participant'}</dd></div>
+                <div><dt className="text-xs text-muted-foreground">Production Sapiens</dt><dd className="mt-1 font-medium">{run.sapien_id ? `ID ${run.sapien_id}` : 'Not attached'}</dd></div>
+                <div><dt className="text-xs text-muted-foreground">Interpreter</dt><dd className="mt-1 font-medium">{caseInfo?.interpreter_mode || run.interpreter_mode}</dd></div>
+              </dl>
+            </section>
+
+            <section className="rounded-2xl border bg-card p-5 shadow-sm">
+              <h2 className="font-semibold">Execution limits</h2>
+              <dl className="mt-5 space-y-4 text-sm">
+                <div><dt className="text-xs text-muted-foreground">Wall-time budget</dt><dd className="mt-1 font-medium">{Math.round(run.config.max_wall_seconds / 60)} real minutes</dd></div>
+                <div><dt className="text-xs text-muted-foreground">Evidence capacity</dt><dd className="mt-1 font-medium">{run.config.max_records.toLocaleString()} records</dd></div>
+                <div><dt className="text-xs text-muted-foreground">Simulated end</dt><dd className="mt-1 font-medium">{time(run.end_at)}</dd></div>
+                <div><dt className="text-xs text-muted-foreground">Real execution began</dt><dd className="mt-1 font-medium">{time(run.execution_started_at)}</dd></div>
+              </dl>
+            </section>
+
+            <section className="rounded-2xl border bg-card p-5 shadow-sm">
+              <h2 className="font-semibold">Known limitations</h2>
+              <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-muted-foreground">{caseInfo?.limitations || 'No case-specific limitations were supplied.'}</p>
+            </section>
+
+            <details className="rounded-2xl border bg-card p-5 text-sm shadow-sm">
+              <summary className="cursor-pointer font-semibold">Authored specification</summary>
+              <p className="mt-2 text-xs text-muted-foreground">Administrative source data for deeper inspection.</p>
+              <pre className="mt-4 max-h-96 overflow-auto rounded-lg bg-muted p-3 text-xs">{JSON.stringify({ case: caseInfo, expectations: guide?.expectations, rules: guide?.rules }, null, 2)}</pre>
+            </details>
+          </aside>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ParticipantPortal({ run }: { run: SimulationRun }) {
   const [kind, setKind] = useState<'messages' | 'tools'>('messages');
   const [events, setEvents] = useState<SimulationEvent[]>([]);
@@ -454,12 +581,12 @@ export function SimulationWorldPage() {
   const [run, setRun] = useState<SimulationRun | null>(null);
   const [error, setError] = useState('');
   const section = location.pathname.split('/').filter(Boolean).at(-1) || 'overview';
-  const valid = ['world','overview','people','messages','jira','connections','sapien','results'];
+  const valid = ['world','overview','test-case','people','messages','jira','connections','sapien','results'];
   useEffect(() => { if (!valid.includes(section)) navigate(`/admin/simulations/${encodeURIComponent(runId)}/world/overview`, { replace: true }); }, [section, runId, navigate]);
   useEffect(() => { const controller = new AbortController(); let timer = 0; let inFlight = false; const poll = async () => { if (document.hidden || inFlight) return; inFlight = true; try { const next = await simulationService.get(runId, controller.signal); setRun(next); setError(''); if (!(next.archived && terminal.has(next.status))) timer = window.setTimeout(poll, next.status === 'scheduled' || next.status === 'paused' ? 30_000 : 15_000); } catch (problem) { if (!controller.signal.aborted) { setError(message(problem)); timer = window.setTimeout(poll, 60_000); } } finally { inFlight = false; } }; const resume = () => { if (!document.hidden) void poll(); }; document.addEventListener('visibilitychange', resume); void poll(); return () => { controller.abort(); window.clearTimeout(timer); document.removeEventListener('visibilitychange', resume); }; }, [runId]);
   useEffect(() => { const next = new URLSearchParams(params); const desired = section === 'people' ? 'employees' : section === 'messages' ? 'channels' : section === 'jira' || section === 'connections' ? 'tools' : null; if (desired) next.set('section', desired); if (section === 'jira') next.set('connection', 'jira'); setParams(next, { replace: true }); }, [section]);
   const base = `/admin/simulations/${encodeURIComponent(runId)}/world`;
-  const links = useMemo(() => [{ to: `${base}/overview`, label: 'Overview', icon: LayoutDashboard }, { to: `${base}/people`, label: 'People', icon: Users }, { to: `${base}/messages`, label: 'Messages', icon: MessageSquare }, { to: `${base}/jira`, label: 'Jira', icon: FolderKanban }, { to: `${base}/connections`, label: 'Connections', icon: PlugZap }, { to: `${base}/sapien`, label: run?.participant_mode === 'manual' ? 'Participant' : 'Sapiens', icon: Bot }, { to: `${base}/results`, label: 'Results', icon: CheckCircle2 }], [base, run?.participant_mode]);
+  const links = useMemo(() => [{ to: `${base}/overview`, label: 'Overview', icon: LayoutDashboard }, { to: `${base}/test-case`, label: 'Test case', icon: BookOpen }, { to: `${base}/people`, label: 'People', icon: Users }, { to: `${base}/messages`, label: 'Messages', icon: MessageSquare }, { to: `${base}/jira`, label: 'Jira', icon: FolderKanban }, { to: `${base}/connections`, label: 'Connections', icon: PlugZap }, { to: `${base}/sapien`, label: run?.participant_mode === 'manual' ? 'Participant' : 'Sapiens', icon: Bot }, { to: `${base}/results`, label: 'Results', icon: CheckCircle2 }], [base, run?.participant_mode]);
   if (!run) return <div className="grid min-h-screen place-items-center bg-[#07101f] text-white"><div className="text-center"><Beaker className="mx-auto size-9 animate-pulse text-violet-300" /><p className="mt-3 text-sm text-white/60">{error || 'Opening simulation world…'}</p><Button className="mt-4" variant="outline" onClick={() => navigate('/admin/simulations')}>Back to Simulation Lab</Button></div></div>;
-  return <div className="flex h-[100dvh] overflow-hidden bg-background text-foreground"><aside className="hidden w-64 shrink-0 flex-col border-r bg-[#07101f] text-white lg:flex"><div className="border-b border-white/10 p-4"><div className="flex items-center gap-3"><span className="grid size-10 place-items-center rounded-xl bg-violet-500/20"><Beaker className="size-5 text-violet-200" /></span><div className="min-w-0"><p className="font-semibold">Simulation World</p><p className="truncate text-xs text-white/40">{run.case_id}</p></div></div></div><nav className="flex-1 space-y-1 p-3">{links.map(item => { const Icon = item.icon; return <NavLink key={item.to} to={item.to} className={({ isActive }) => `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition ${isActive ? 'bg-white/10 text-white' : 'text-white/55 hover:bg-white/5 hover:text-white'}`}><Icon className="size-4" />{item.label}</NavLink>; })}</nav><div className="border-t border-white/10 p-3"><button onClick={() => navigate(`/admin/simulations?runId=${encodeURIComponent(run.run_id)}`)} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-white/55 hover:bg-white/5"><ArrowLeft className="size-4" />Simulation Lab</button></div></aside><div className="flex min-w-0 flex-1 flex-col"><header className="border-b bg-card"><div className="flex flex-wrap items-center gap-3 px-4 py-3"><button onClick={() => navigate(`/admin/simulations?runId=${encodeURIComponent(run.run_id)}`)} className="p-2 lg:hidden"><ArrowLeft className="size-5" /></button><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><h1 className="truncate font-semibold">{run.case_id}</h1><Badge variant="secondary">{statusName(run.status)}</Badge>{run.archived && <Badge variant="outline">Archived</Badge>}</div><p className="truncate text-xs text-muted-foreground">{run.run_id} · {run.sapien_id ? `Sapiens ${run.sapien_id}` : 'No bound Sapiens'}</p></div><div className="hidden items-center gap-5 text-xs md:flex"><p><span className="text-muted-foreground">Simulated time</span><br />{time(run.simulated_time)}</p><p><span className="text-muted-foreground">Speed</span><br />{run.speed}×</p><p><span className="text-muted-foreground">Evidence</span><br />{run.event_count} records</p></div><ThemeToggle /></div><nav className="flex overflow-x-auto border-t px-2 lg:hidden">{links.map(item => <NavLink key={item.to} to={item.to} className={({ isActive }) => `whitespace-nowrap border-b-2 px-3 py-2 text-xs ${isActive ? 'border-violet-500' : 'border-transparent text-muted-foreground'}`}>{item.label}</NavLink>)}</nav></header>{error && <p className="border-b border-red-500/20 bg-red-500/10 px-4 py-2 text-sm text-red-600">{error}</p>}<main className="min-h-0 flex-1 overflow-y-auto">{section === 'jira' ? <JiraPortal runId={run.run_id} eventCount={run.event_count} /> : section === 'messages' ? <ChatPortal runId={run.run_id} eventCount={run.event_count} /> : section === 'sapien' ? <ParticipantPortal run={run} /> : section === 'results' ? <ResultsPortal run={run} /> : <div className="p-4 lg:p-6"><SimulationWorldExplorer key={`${run.run_id}:${section}`} runId={run.run_id} eventCount={run.event_count} archived={!!run.archived} /></div>}</main></div></div>;
+  return <div className="flex h-[100dvh] overflow-hidden bg-background text-foreground"><aside className="hidden w-64 shrink-0 flex-col border-r bg-[#07101f] text-white lg:flex"><div className="border-b border-white/10 p-4"><div className="flex items-center gap-3"><span className="grid size-10 place-items-center rounded-xl bg-violet-500/20"><Beaker className="size-5 text-violet-200" /></span><div className="min-w-0"><p className="font-semibold">Simulation World</p><p className="truncate text-xs text-white/40">{run.case_id}</p></div></div></div><nav className="flex-1 space-y-1 p-3">{links.map(item => { const Icon = item.icon; return <NavLink key={item.to} to={item.to} className={({ isActive }) => `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition ${isActive ? 'bg-white/10 text-white' : 'text-white/55 hover:bg-white/5 hover:text-white'}`}><Icon className="size-4" />{item.label}</NavLink>; })}</nav><div className="border-t border-white/10 p-3"><button onClick={() => navigate(`/admin/simulations?runId=${encodeURIComponent(run.run_id)}`)} className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-white/55 hover:bg-white/5"><ArrowLeft className="size-4" />Simulation Lab</button></div></aside><div className="flex min-w-0 flex-1 flex-col"><header className="border-b bg-card"><div className="flex flex-wrap items-center gap-3 px-4 py-3"><button onClick={() => navigate(`/admin/simulations?runId=${encodeURIComponent(run.run_id)}`)} className="p-2 lg:hidden"><ArrowLeft className="size-5" /></button><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><h1 className="truncate font-semibold">{run.case_id}</h1><Badge variant="secondary">{statusName(run.status)}</Badge>{run.archived && <Badge variant="outline">Archived</Badge>}</div><p className="truncate text-xs text-muted-foreground">{run.run_id} · {run.sapien_id ? `Sapiens ${run.sapien_id}` : 'No bound Sapiens'}</p></div><div className="hidden items-center gap-5 text-xs md:flex"><p><span className="text-muted-foreground">Simulated time</span><br />{time(run.simulated_time)}</p><p><span className="text-muted-foreground">Speed</span><br />{run.speed}×</p><p><span className="text-muted-foreground">Evidence</span><br />{run.event_count} records</p></div><ThemeToggle /></div><nav className="flex overflow-x-auto border-t px-2 lg:hidden">{links.map(item => <NavLink key={item.to} to={item.to} className={({ isActive }) => `whitespace-nowrap border-b-2 px-3 py-2 text-xs ${isActive ? 'border-violet-500' : 'border-transparent text-muted-foreground'}`}>{item.label}</NavLink>)}</nav></header>{error && <p className="border-b border-red-500/20 bg-red-500/10 px-4 py-2 text-sm text-red-600">{error}</p>}<main className="min-h-0 flex-1 overflow-y-auto">{section === 'test-case' ? <TestCasePortal run={run} /> : section === 'jira' ? <JiraPortal runId={run.run_id} eventCount={run.event_count} /> : section === 'messages' ? <ChatPortal runId={run.run_id} eventCount={run.event_count} /> : section === 'sapien' ? <ParticipantPortal run={run} /> : section === 'results' ? <ResultsPortal run={run} /> : <div className="p-4 lg:p-6"><SimulationWorldExplorer key={`${run.run_id}:${section}`} runId={run.run_id} eventCount={run.event_count} archived={!!run.archived} /></div>}</main></div></div>;
 }
