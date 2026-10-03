@@ -8,7 +8,7 @@ import { Input } from '../components/ui/input';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { simulationService } from '../core/services/simulationService';
 import { sentinelDeskCaseV1 } from '../data/sentinelDeskCase';
-import type { CaseInfo, EventPage, InspectionActivity, InspectionActivityPage, InspectionCollection, InspectionOverview, InspectionPerson, InspectionProgressItem, InspectionResults, InspectionSpecificationResponse, SimulationEvent, SimulationRun, WorldActivityItem, WorldChannel, WorldCollection, WorldEmployee, WorldOverview, WorldTicket } from '../types/simulationTypes';
+import type { CaseInfo, EventPage, InspectionActivity, InspectionActivityPage, InspectionCollection, InspectionOverview, InspectionPerson, InspectionProgressItem, InspectionResults, InspectionSpecificationResponse, SimulationEvent, SimulationRun, WorldActivityItem, WorldActivityPage, WorldChannel, WorldCollection, WorldCommentsPage, WorldEmployee, WorldOverview, WorldTicket } from '../types/simulationTypes';
 
 const terminal = new Set(['completed', 'blocked', 'stopped', 'limit_reached', 'failed']);
 const time = (value?: string | null) => value ? new Date(value).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', second: '2-digit' }) + ' IST' : '—';
@@ -16,6 +16,7 @@ const statusName = (status: string) => status.replaceAll('_', ' ').replace(/^./,
 const message = (error: unknown) => error instanceof Error ? error.message : (error as { message?: string })?.message || 'Request failed';
 const payload = (event: SimulationEvent) => event.payload as Record<string, unknown>;
 const value = (input: unknown) => typeof input === 'string' ? input : input == null ? '' : JSON.stringify(input);
+const jsonObject = (input: unknown) => { if (input && typeof input === 'object') return input as Record<string, unknown>; if (typeof input !== 'string') return {}; try { const parsed = JSON.parse(input); return parsed && typeof parsed === 'object' ? parsed as Record<string, unknown> : {}; } catch { return {}; } };
 
 function JiraPortal({ runId, eventCount }: { runId: string; eventCount: number }) {
   const [overview, setOverview] = useState<WorldOverview | null>(null);
@@ -28,6 +29,10 @@ function JiraPortal({ runId, eventCount }: { runId: string; eventCount: number }
   const [refresh, setRefresh] = useState(0);
   const previousEventCount = useRef(eventCount);
   const detailPaneRef = useRef<HTMLElement | null>(null);
+  const [detailTab, setDetailTab] = useState<'comments' | 'activity' | 'notifications'>('comments');
+  const [comments, setComments] = useState<WorldCommentsPage | null>(null);
+  const [notifications, setNotifications] = useState<WorldActivityPage | null>(null);
+  const [notificationItems, setNotificationItems] = useState<WorldActivityItem[]>([]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setDebounced(search.trim()), 300);
@@ -92,6 +97,27 @@ function JiraPortal({ runId, eventCount }: { runId: string; eventCount: number }
 
   const ticket = tickets?.items.find(item => item.issue_key === selected);
   useEffect(() => { detailPaneRef.current?.scrollTo({ top: 0 }); }, [selected]);
+
+  useEffect(() => {
+    if (!overview || !selected || detailTab !== 'comments') return;
+    const controller = new AbortController();
+    setComments(null);
+    simulationService.worldComments(runId, { through: overview.through, connection: 'jira', issue_key: selected, offset: 0, limit: 50 }, controller.signal)
+      .then(setComments)
+      .catch(problem => { if (!controller.signal.aborted) setError(message(problem)); });
+    return () => controller.abort();
+  }, [runId, overview?.through, selected, detailTab]);
+
+  useEffect(() => {
+    if (!overview || !selected || detailTab !== 'notifications') return;
+    const controller = new AbortController();
+    setNotifications(null);
+    setNotificationItems([]);
+    simulationService.worldActivity(runId, { through: overview.through, connection: 'jira', issue_key: selected, kind: 'notifications', after: 0, limit: 50 }, controller.signal)
+      .then(page => { setNotifications(page); setNotificationItems(page.items); })
+      .catch(problem => { if (!controller.signal.aborted) setError(message(problem)); });
+    return () => controller.abort();
+  }, [runId, overview?.through, selected, detailTab]);
   const recordedFields = useMemo(() => {
     const result: Record<string, string> = {};
     for (const event of history?.events ?? []) {
@@ -115,6 +141,19 @@ function JiraPortal({ runId, eventCount }: { runId: string; eventCount: number }
       ...(debounced ? { search: debounced } : {}),
     });
     setTickets(current => current ? { ...next, items: [...current.items, ...next.items] } : next);
+  };
+
+  const loadMoreComments = async () => {
+    if (!comments?.has_more) return;
+    const next = await simulationService.worldComments(runId, { through: comments.through, connection: 'jira', issue_key: selected, offset: comments.next_offset, limit: 50 });
+    setComments(current => current ? { ...next, items: [...current.items, ...next.items] } : next);
+  };
+
+  const loadMoreNotifications = async () => {
+    if (!notifications?.has_more) return;
+    const next = await simulationService.worldActivity(runId, { through: notifications.through, connection: 'jira', issue_key: selected, kind: 'notifications', after: notifications.next_after, limit: 50 });
+    setNotifications(next);
+    setNotificationItems(current => [...current, ...next.items.filter(item => !current.some(existing => existing.event.record_id === item.event.record_id))]);
   };
 
   return (
@@ -164,14 +203,14 @@ function JiraPortal({ runId, eventCount }: { runId: string; eventCount: number }
               <Search className="absolute left-3 top-2.5 size-4 text-slate-400" />
               <Input className="border-[#dfe1e6] bg-white pl-9 dark:bg-black/20" placeholder="Search issues" value={search} onChange={event => setSearch(event.target.value)} />
             </div>
-            <div className="mt-3 flex items-center justify-between text-xs text-slate-500"><span>{tickets?.total ?? 0} issues</span><span>Updated</span></div>
+            <div className="mt-3 flex items-center justify-between text-xs text-slate-500"><span>{tickets?.total ?? 0} issues</span><span>Last recorded</span></div>
           </div>
           <div>
             {tickets?.items.map(item => (
               <button key={item.issue_key} onClick={() => setSelected(item.issue_key)} className={`w-full border-b border-[#ebecf0] px-4 py-3 text-left transition dark:border-white/5 ${selected === item.issue_key ? 'border-l-4 border-l-[#0052cc] bg-[#deebff] pl-3 dark:bg-blue-950/35' : 'hover:bg-[#f4f5f7] dark:hover:bg-white/5'}`}>
                 <div className="flex items-center gap-2 text-xs"><CircleDot className="size-3.5 text-[#0052cc]" /><span className="font-semibold text-[#0052cc]">{item.issue_key}</span><span className="ml-auto text-slate-400">{item.status || 'Unknown'}</span></div>
                 <p className="mt-1 line-clamp-2 text-sm font-medium">{item.summary || 'Referenced issue — snapshot unavailable'}</p>
-                <p className="mt-2 truncate text-[11px] text-slate-500">Updated {time(item.last_recorded_at)}</p>
+                <p className="mt-2 truncate text-[11px] text-slate-500">Last recorded {time(item.last_recorded_at)}</p>
               </button>
             ))}
             {tickets?.has_more && <Button className="m-3 w-[calc(100%-1.5rem)]" variant="outline" onClick={() => void loadMore()}>Load more ({tickets.items.length} of {tickets.total})</Button>}
@@ -190,21 +229,29 @@ function JiraPortal({ runId, eventCount }: { runId: string; eventCount: number }
               <div className="mt-5 flex flex-wrap items-start gap-4">
                 <span className="mt-1 grid size-8 place-items-center rounded bg-[#0052cc] text-white"><CheckCircle2 className="size-4" /></span>
                 <div className="min-w-0 flex-1"><p className="text-sm text-slate-500">{ticket.issue_key}</p><h1 className="mt-1 text-2xl font-semibold leading-tight">{ticket.summary || 'Unknown summary'}</h1></div>
-                <button className="flex items-center gap-2 rounded bg-[#deebff] px-3 py-2 text-sm font-semibold text-[#0052cc] dark:bg-blue-950/40 dark:text-blue-300">{ticket.status || 'Unknown state'}<ChevronDown className="size-4" /></button>
-                <button className="rounded p-2 hover:bg-[#f4f5f7] dark:hover:bg-white/5"><MoreHorizontal className="size-5" /></button>
+                <span className="flex items-center gap-2 rounded bg-[#deebff] px-3 py-2 text-sm font-semibold text-[#0052cc] dark:bg-blue-950/40 dark:text-blue-300">{ticket.status || 'Unknown state'}</span>
+                <button disabled title="Actions are unavailable in read-only inspection" className="cursor-not-allowed rounded p-2 opacity-40"><MoreHorizontal className="size-5" /></button>
               </div>
 
               <div className="mt-8 grid gap-8 xl:grid-cols-[minmax(0,1fr)_300px]">
                 <div className="min-w-0 space-y-8">
                   <section><h2 className="text-sm font-semibold">Description</h2><div className="mt-3 min-h-28 rounded border border-transparent p-2 text-sm leading-6 text-slate-700 hover:border-[#dfe1e6] dark:text-slate-300">{ticket.description ? <p className="whitespace-pre-wrap">{ticket.description}</p> : <p className="italic text-slate-400">No description was present in the recorded snapshot.</p>}</div></section>
                   <section>
-                    <div className="flex items-center gap-4 border-b border-[#dfe1e6] dark:border-white/10"><h2 className="border-b-2 border-[#0052cc] pb-3 text-sm font-semibold">Activity</h2><span className="pb-3 text-sm text-slate-500">All</span></div>
+                    <div className="flex items-center gap-5 border-b border-[#dfe1e6] dark:border-white/10">{(['comments','activity','notifications'] as const).map(tab => <button key={tab} onClick={() => setDetailTab(tab)} className={`border-b-2 pb-3 text-sm font-semibold capitalize ${detailTab === tab ? 'border-[#0052cc] text-[#0052cc]' : 'border-transparent text-slate-500'}`}>{tab}</button>)}</div>
                     <div className="mt-5 space-y-5">
-                      {history?.events.map(event => {
+                      {detailTab === 'comments' && comments?.items.map(comment => <article key={comment.comment_id} className="flex gap-3"><span className={`grid size-9 shrink-0 place-items-center rounded-full text-xs font-bold ${comment.author_id === overview?.participant_id ? 'bg-violet-600 text-white' : 'bg-[#deebff] text-[#0052cc] dark:bg-blue-950'}`}>{(comment.author_name || comment.author_id || '?').slice(0,2).toUpperCase()}</span><div className="min-w-0 flex-1"><div className="flex flex-wrap items-baseline gap-2"><strong className="text-sm">{comment.author_name || comment.author_id || 'Unknown author'}</strong>{comment.author_id === overview?.participant_id && <Badge variant="secondary">Participant</Badge>}<span className="text-xs text-slate-500">{time(comment.occurred_at)}</span></div><p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-slate-700 dark:text-slate-300">{comment.text || (typeof comment.body === 'string' ? comment.body : 'Comment text was not recorded.')}</p><details className="mt-2 text-xs text-slate-500"><summary className="cursor-pointer">Evidence details</summary><dl className="mt-2 grid gap-1 rounded bg-[#f4f5f7] p-3 dark:bg-black/30"><div>Comment ID: {comment.comment_id}</div><div>Evidence: {comment.evidence_id}</div><div>Sequence: {comment.sequence}</div>{comment.operation_id && <div>Operation: {comment.operation_id}</div>}<div>Observed: {time(comment.observed_at)}</div></dl></details></div></article>)}
+                      {detailTab === 'comments' && comments?.has_more && <Button variant="outline" onClick={() => void loadMoreComments()}>Load more comments ({comments.items.length} of {comments.total})</Button>}
+                      {detailTab === 'comments' && comments && !comments.items.length && <div className="rounded border border-dashed p-5 text-sm text-slate-500">{comments.comment_support === 'unknown' ? 'Comment coverage is unavailable for this legacy record; no comments can be established from saved evidence.' : 'No comments were recorded for this issue.'}</div>}
+                      {detailTab === 'comments' && !comments && <p className="text-sm text-slate-500">Loading recorded comments…</p>}
+                      {detailTab === 'activity' && history?.events.map(event => {
                         const body = payload(event);
                         return <details key={event.record_id} className="group"><summary className="flex cursor-pointer list-none gap-3"><span className="grid size-8 shrink-0 place-items-center rounded-full bg-[#deebff] text-xs font-bold text-[#0052cc] dark:bg-blue-950">A</span><span className="min-w-0 flex-1"><span className="flex flex-wrap items-baseline gap-2"><strong className="text-sm">{value(body.actor_id || body.sender_id || 'Simulation actor')}</strong><span className="text-xs text-slate-500">{time(event.occurred_at)}</span></span><span className="mt-1 block text-sm text-slate-600 dark:text-slate-300">{value(body.tool || body.action || body.status || body.type || event.source)}</span></span></summary><pre className="ml-11 mt-2 max-h-72 overflow-auto rounded bg-[#f4f5f7] p-3 text-xs dark:bg-black/30">{JSON.stringify(body, null, 2)}</pre></details>;
                       })}
-                      {history && !history.events.length && <p className="text-sm text-slate-500">No activity was recorded for this issue.</p>}
+                      {detailTab === 'activity' && history && !history.events.length && <p className="text-sm text-slate-500">No activity was recorded for this issue.</p>}
+                      {detailTab === 'notifications' && notificationItems.filter(item => payload(item.event).type === 'ConnectionNotification').map(item => { const body = payload(item.event); const notificationId = value(body.notification_id); const delivery = notificationItems.find(candidate => payload(candidate.event).type === 'NotificationDelivery' && value(payload(candidate.event).notification_id) === notificationId); const deliveryBody = delivery ? payload(delivery.event) : null; const details = jsonObject(body.details_json); const recipient = value(body.recipient_id) || 'Unknown recipient'; const status = value(deliveryBody?.status); return <article key={item.event.record_id} className="rounded border border-[#dfe1e6] p-4 dark:border-white/10"><div className="flex flex-wrap items-center gap-2"><Badge variant="outline">{value(body.event_kind).replaceAll('_',' ') || 'Jira notification'}</Badge><strong className="text-sm">To {recipient}{recipient === overview?.participant_id ? ' (Participant)' : ''}</strong><span className="ml-auto text-xs text-slate-500">{time(item.event.occurred_at)}</span></div><p className="mt-3 whitespace-pre-wrap text-sm leading-6">{value(body.content) || value(details.summary) || 'Notification content was not recorded.'}</p><p className="mt-3 text-xs text-slate-500">{status === 'delivered' ? 'Handed to Awareness; understanding or action is not confirmed.' : status === 'uncertain' ? 'Delivery outcome is uncertain.' : 'No delivery confirmation in loaded evidence.'}</p><details className="mt-2 text-xs text-slate-500"><summary className="cursor-pointer">Evidence details</summary><pre className="mt-2 max-h-64 overflow-auto rounded bg-[#f4f5f7] p-3 dark:bg-black/30">{JSON.stringify({ notification_id: notificationId, details, creation_evidence: item.event.record_id, delivery_evidence: delivery?.event.record_id || null }, null, 2)}</pre></details></article>; })}
+                      {detailTab === 'notifications' && notifications?.has_more && <Button variant="outline" onClick={() => void loadMoreNotifications()}>Load more notification evidence</Button>}
+                      {detailTab === 'notifications' && notifications && !notificationItems.some(item => payload(item.event).type === 'ConnectionNotification') && <p className="rounded border border-dashed p-5 text-sm text-slate-500">No Jira notifications were recorded for this issue at this evidence watermark.</p>}
+                      {detailTab === 'notifications' && !notifications && <p className="text-sm text-slate-500">Loading recorded notifications…</p>}
                     </div>
                   </section>
                 </div>

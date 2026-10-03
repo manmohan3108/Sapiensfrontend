@@ -1,6 +1,6 @@
 import { authenticatedFetch, HttpError } from '../auth/authSession';
 import { apiConfig } from '../config/apiConfig';
-import type { CaseCatalog, CaseCreateRequest, DebugGuide, EventPage, InspectionActivityPage, InspectionCollection, InspectionOverview, InspectionPerson, InspectionProgressItem, InspectionQuery, InspectionResults, InspectionSpecificationResponse, ParticipantOutcome, SimulationEvent, SimulationList, SimulationResult, SimulationRun, WorldActivityPage, WorldChannel, WorldCollection, WorldConnection, WorldEmployee, WorldOverview, WorldQuery, WorldTicket } from '../../types/simulationTypes';
+import type { CaseCatalog, CaseCreateRequest, DebugGuide, EventPage, InspectionActivityPage, InspectionCollection, InspectionOverview, InspectionPerson, InspectionProgressItem, InspectionQuery, InspectionResults, InspectionSpecificationResponse, ParticipantOutcome, SimulationEvent, SimulationList, SimulationResult, SimulationRun, WorldActivityPage, WorldChannel, WorldCollection, WorldCommentsPage, WorldConnection, WorldEmployee, WorldOverview, WorldQuery, WorldTicket } from '../../types/simulationTypes';
 
 const base = `${apiConfig.baseUrl}/simulations/`;
 const runPath = (id: string) => `runs/${encodeURIComponent(id)}/`;
@@ -35,6 +35,7 @@ export const simulationService = {
   worldChannels: (id: string, values?: WorldQuery, signal?: AbortSignal) => request<WorldCollection<WorldChannel>>(`${runPath(id)}world/channels/${query(values)}`, { signal }),
   worldConnections: (id: string, values?: WorldQuery, signal?: AbortSignal) => request<WorldCollection<WorldConnection>>(`${runPath(id)}world/connections/${query(values)}`, { signal }),
   worldTickets: (id: string, values?: WorldQuery, signal?: AbortSignal) => request<WorldCollection<WorldTicket>>(`${runPath(id)}world/tickets/${query(values)}`, { signal }),
+  worldComments: (id: string, values: Pick<WorldQuery, 'through' | 'offset' | 'limit' | 'connection' | 'issue_key'>, signal?: AbortSignal) => request<WorldCommentsPage>(`${runPath(id)}world/comments/${query(values)}`, { signal }),
   worldActivity: (id: string, values?: WorldQuery, signal?: AbortSignal) => request<WorldActivityPage>(`${runPath(id)}world/activity/${query(values)}`, { signal }),
   inspectionSpecification: (id: string, values?: Pick<InspectionQuery, 'through'>, signal?: AbortSignal) => request<InspectionSpecificationResponse>(`${runPath(id)}inspection/specification/${inspectionQuery(values)}`, { signal }),
   inspectionOverview: (id: string, values?: Pick<InspectionQuery, 'through'>, signal?: AbortSignal) => request<InspectionOverview>(`${runPath(id)}inspection/overview/${inspectionQuery(values)}`, { signal }),
