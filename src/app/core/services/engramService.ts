@@ -55,6 +55,9 @@ export const engramService = {
   getWorkingMemory(sapienId: number, params: WMQuery = {}): Promise<WMResponse> {
     const q = new URLSearchParams();
     if (params.source) q.set('source', params.source);
+    params.tags?.forEach(tag => q.append('tag', tag));
+    if (params.tagsMatch) q.set('tags_match', params.tagsMatch);
+    params.references?.forEach(reference => q.append('reference', reference));
     if (params.sort) q.set('sort', params.sort);
     if (params.order) q.set('order', params.order);
     if (params.limit !== undefined) q.set('limit', String(Math.min(100, Math.max(1, params.limit))));

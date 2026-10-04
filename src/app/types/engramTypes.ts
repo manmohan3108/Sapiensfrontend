@@ -14,6 +14,7 @@ export type SequenceDirection = 'forward' | 'backward' | 'both';
 export type WMSort = 'activation' | 'recency' | 'frequency' | 'last_used' | 'worth' | 'created_at';
 export type WMOrder = 'asc' | 'desc';
 export type WMEmbeddingFilter = 'all' | 'with' | 'without';
+export type WMTagsMatch = 'all' | 'any';
 
 export interface EngramUnit {
   id: string;
@@ -255,6 +256,8 @@ export interface WMEntry {
   timeline?: Record<string, unknown> | string | null;
   provenance?: Record<string, unknown> | string | null;
   pending?: boolean;
+  tags?: string[];
+  references?: string[];
   has_embedding?: boolean;
   is_focus?: boolean;
   metadata?: Record<string, unknown> | null;
@@ -269,20 +272,15 @@ export interface WMEntry {
 export interface WMResponse {
   sapien_id: number;
   summary?: {
-    entry_count?: number;
-    total?: number;
-    total_count?: number;
-    total_entries?: number;
-    matching_count?: number;
-    returned_count?: number;
+    entries_used?: number;
+    entries_matching?: number;
+    entries_returned?: number;
+    entries_capacity?: number | null;
     focus_id?: string | null;
-    focus_count?: number;
-    pending_count?: number;
-    embedded_count?: number;
-    activation_version?: string | number;
-    activation_min?: number;
-    activation_max?: number;
-    activation_avg?: number;
+    embedded?: number;
+    pending?: number;
+    average_activation?: number;
+    max_activation?: number;
     [key: string]: unknown;
   };
   wm: {
@@ -293,13 +291,41 @@ export interface WMResponse {
     global: number;
     by_source: Record<string, number>;
   };
-  timeline?: { earliest?: string | null; latest?: string | null; [key: string]: unknown };
-  sources?: Record<string, number> | Array<{ source: string; count: number }>;
-  filters?: Record<string, unknown>;
+  timeline?: { oldest_last_used_at?: string | null; newest_last_used_at?: string | null };
+  sources?: Array<{
+    source: string;
+    entries: number;
+    capacity: null;
+    focus: boolean;
+    max_activation: number;
+    average_activation: number;
+    total_frequency: number;
+    newest_last_used_at: string;
+  }>;
+  tags?: Array<{ value: string; count: number }>;
+  references?: Array<{ value: string; count: number }>;
+  filters?: {
+    source?: string | null;
+    tags?: string[];
+    tags_match?: WMTagsMatch;
+    references?: string[];
+    sort?: WMSort;
+    order?: WMOrder;
+    limit?: number;
+    min_activation?: number;
+    has_embedding?: boolean | null;
+    focus_only?: boolean;
+    include_content?: boolean;
+    include_metadata?: boolean;
+    available_sorts?: WMSort[];
+  };
 }
 
 export interface WMQuery {
   source?: string;
+  tags?: string[];
+  tagsMatch?: WMTagsMatch;
+  references?: string[];
   sort?: WMSort;
   order?: WMOrder;
   limit?: number;
