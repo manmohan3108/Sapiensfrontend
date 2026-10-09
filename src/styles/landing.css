@@ -44,17 +44,6 @@
   margin-top: 24px;
 }
 
-.public-story .landing-today {
-  max-width: 52ch;
-  margin-top: 18px;
-  padding-left: 14px;
-  border-left: 2px solid var(--cx-violet);
-  font-size: 15px;
-  line-height: 1.65;
-  color: var(--cx-muted);
-}
-.public-story .landing-today strong { color: var(--cx-ink); font-weight: 600; }
-
 .public-story .landing-explore {
   display: inline-flex;
   align-items: center;
@@ -72,13 +61,6 @@
 
 .public-story .landing-identity .identity-art { display: block; }
 .public-story figcaption { font-size: 14px; line-height: 1.6; }
-.public-story figcaption small {
-  display: block;
-  margin-top: 6px;
-  font-size: 12px;
-  color: var(--cx-muted);
-}
-
 .public-story .landing-how {
   border-top: 1px solid var(--cx-line);
   padding-block: 40px;
@@ -125,6 +107,7 @@
   margin: 28px 0 0;
   padding: 0;
   list-style: none;
+  align-items: start;
 }
 .public-story .landing-stage { min-width: 0; display: flex; flex-direction: column; }
 .public-story .landing-stage-marker { display: flex; align-items: center; gap: 12px; color: var(--cx-violet); }
@@ -132,9 +115,19 @@
 .public-story .landing-stage-marker > svg { order: 2; flex-shrink: 0; }
 .public-story .landing-stage-marker > span { display: grid; place-items: center; width: 32px; height: 32px; border: 1px solid var(--cx-violet); border-radius: 50%; font-size: 12px; font-weight: 600; }
 .public-story .landing-stage h3 { font-size: 20px; min-height: 54px; }
-.public-story .landing-stage-cues { display: grid; gap: 8px; margin-bottom: 18px; }
-.public-story .landing-stage-cues > span { display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 8px 10px; border-radius: 8px; background: var(--cx-soft); font-size: 13px; line-height: 1.5; }
+.public-story .landing-stage-cues { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; margin-bottom: 16px; }
+.public-story .landing-stage-cues > span { position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 14px; min-height: 116px; padding: 16px 8px; border: 1px solid var(--cx-line); border-radius: 40px 40px 12px 12px; background: var(--cx-soft); text-align: center; font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
+.public-story .landing-stage-cues > span:first-child::after { content: '→'; position: absolute; right: -21px; top: 36px; color: var(--cx-violet); font-size: 20px; }
 .public-story .landing-stage-cues svg { color: var(--cx-violet); flex-shrink: 0; }
+.public-story .landing-stage-summary { color: var(--cx-muted); font-size: 15px; line-height: 1.7; margin-bottom: 12px; }
+.public-story .landing-more > summary { cursor: pointer; min-height: 44px; padding-block: 12px; color: var(--cx-violet); font-size: 14px; line-height: 1.5; }
+.public-story .landing-more > summary::marker { color: var(--cx-violet); }
+.public-story .landing-more > summary:hover { text-decoration: underline; text-underline-offset: 4px; }
+.public-story .landing-more > summary:focus-visible { outline: 2px solid var(--cx-violet); outline-offset: 4px; border-radius: 4px; }
+.public-story .landing-more-content { padding-top: 12px; }
+.public-story .landing-capabilities { padding: 4px 20px; border: 1px solid var(--cx-line); border-radius: 12px; }
+.public-story .landing-capabilities > summary { color: var(--cx-ink); font-size: 16px; font-weight: 500; }
+.public-story .landing-capabilities[open] { padding-bottom: 20px; }
 .public-story .landing-human,
 .public-story .landing-counterpart { font-size: 15px; line-height: 1.75; margin-bottom: 16px; }
 .public-story .landing-human { color: var(--cx-muted); }
@@ -180,7 +173,8 @@
   .public-story .landing-cycle-identity { padding: 16px; gap: 12px; align-items: flex-start; }
   .public-story .landing-cycle-identity .identity-art { width: 56px; }
   .public-story .landing-stage { padding-left: 42px; }
-  .public-story .landing-stage-cues { grid-template-columns: 1fr; }
+  .public-story .landing-stage-cues { gap: 20px; }
+  .public-story .landing-stage-cues > span:first-child::after { right: -18px; }
   .public-story .landing-available-grid { grid-template-columns: 1fr; gap: 16px; }
   .public-story .landing-available-grid article { padding: 20px; }
   .public-story .landing-setup ol { flex-direction: column; }

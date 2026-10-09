@@ -9,6 +9,7 @@ import '../../styles/landing.css';
 const stages = [
   {
     title: 'Notice and investigate',
+    summary: 'Find what matters. Ask what’s missing.',
     human: 'When something changes or is unclear, we notice it, ask questions and look for more information.',
     sapiens: 'The ambition is for Sapiens to identify gaps and seek relevant information—not only wait for a prompt.',
     availability: 'In development',
@@ -17,6 +18,7 @@ const stages = [
   },
   {
     title: 'Understand and decide',
+    summary: 'Connect the context. Choose a direction.',
     human: 'We connect a situation with earlier experience and our goals, then decide what deserves attention.',
     sapiens: 'Sapiens can draw on selected past context in a reply. The wider aim is to weigh that context against goals and decide what to address next.',
     availability: 'Context today · decisions in development',
@@ -25,6 +27,7 @@ const stages = [
   },
   {
     title: 'Communicate and act',
+    summary: 'Reach others. Put ideas into action.',
     human: 'We talk with other people, coordinate and use tools to move something forward.',
     sapiens: 'The direction is an individual that participates: communicating through supported channels and taking permitted tool actions toward a goal.',
     availability: 'Requires support, setup and permission',
@@ -33,6 +36,7 @@ const stages = [
   },
   {
     title: 'Reflect and continue',
+    summary: 'Consider the outcome. Carry experience forward.',
     human: 'We consider what happened, adjust our understanding and return to unfinished matters.',
     sapiens: 'We’re building toward retaining outcomes, using feedback and revisiting what matters, so experience can inform later decisions.',
     availability: 'In development',
@@ -56,8 +60,7 @@ export function PublicLandingPage() {
           <p className="customer-eyebrow">AI WITH A PERSISTENT IDENTITY</p>
           <h1 id="hero-title">Meet <span>Sapiens.</span></h1>
           <p className="landing-lead">An AI individual. Built to develop through experience.</p>
-          <p className="landing-support">We’re building toward an individual that gathers information, thinks through situations, communicates and acts—so its understanding can become more relevant to your interests, activities and goals.</p>
-          <p className="landing-today"><strong>Begin today:</strong> talk with your Sapiens and share context. The fuller cycle of initiative, action and reflection is the direction we’re developing.</p>
+          <p className="landing-support">Our goal: an individual that notices, understands, communicates and acts—with experience making its understanding more relevant to you.</p>
           <div className="landing-actions" aria-busy={status === 'loading'}>
             {cta}
             <a className="landing-explore" href="#how-it-works" onClick={() => document.getElementById('how-it-works')?.focus({ preventScroll: true })}>How it works <ArrowDown size={16} aria-hidden="true" /></a>
@@ -65,39 +68,47 @@ export function PublicLandingPage() {
         </div>
         <figure className="landing-identity">
           <IdentityArt stage={2} />
-          <figcaption>One individual, connecting experience with what comes next.<small>Illustrating the product direction</small></figcaption>
+          <figcaption>One identity. Experience connects it all.</figcaption>
         </figure>
       </section>
 
       <section id="how-it-works" tabIndex={-1} className="customer-container landing-how" aria-labelledby="how-title">
         <div className="landing-section-heading">
-          <h2 id="how-title">A familiar pattern. An AI individual.</h2>
-          <p>People notice, investigate, decide, act and reflect. That familiar pattern explains the Sapiens ambition. It’s a human parallel for how we’re building AI, not a claim that Sapiens is human or conscious.</p>
+          <h2 id="how-title">Notice. Understand. Act. Reflect.</h2>
+          <p>The Sapiens vision follows a familiar human pattern.</p>
         </div>
         <div className="landing-cycle-identity">
           <IdentityArt stage={2} />
-          <div><h3>The same Sapiens throughout</h3><p>Memory connects what it encounters, what it does and what comes next. It supports the individual’s understanding; it is one part of the larger cycle.</p></div>
+          <div><h3>The same individual throughout</h3><p>Each experience connects to what comes next.</p></div>
         </div>
         <ol className="landing-cycle" role="list" aria-label="The four stages of the Sapiens concept">
           {stages.map((stage, index) => <li className="landing-stage" key={stage.title}>
             <div className="landing-stage-marker" aria-hidden="true"><span>0{index + 1}</span>{index < stages.length - 1 && <ArrowRight size={18} />}</div>
             <h3>{stage.title}</h3>
-            <div className="landing-stage-cues" aria-hidden="true">{stage.cues.map(({ icon: Icon, label }) => <span key={label}><Icon size={18} />{label}</span>)}</div>
-            <p className="landing-human"><strong>For people</strong>{stage.human}</p>
-            <p className="landing-counterpart"><strong>For Sapiens</strong>{stage.sapiens}</p>
-            <div className="landing-availability"><span>{stage.availability}</span><p>{stage.detail}</p></div>
+            <div className="landing-stage-cues">{stage.cues.map(({ icon: Icon, label }) => <span key={label}><Icon size={28} strokeWidth={1.5} aria-hidden="true" />{label}</span>)}</div>
+            <p className="landing-stage-summary">{stage.summary}</p>
+            <details className="landing-more">
+              <summary>Learn more<span className="sr-only"> about {stage.title.toLowerCase()}</span></summary>
+              <div className="landing-more-content">
+                <p className="landing-human"><strong>For people</strong>{stage.human}</p>
+                <p className="landing-counterpart"><strong>For Sapiens</strong>{stage.sapiens}</p>
+                <div className="landing-availability"><span>{stage.availability}</span><p>{stage.detail}</p></div>
+              </div>
+            </details>
           </li>)}
         </ol>
-        <p className="landing-cycle-return"><RotateCcw size={20} aria-hidden="true" /><span><strong>The development goal:</strong> outcomes inform what the same individual notices and does next, with understanding developing through the cycle.</span></p>
+        <p className="landing-cycle-return"><RotateCcw size={20} aria-hidden="true" /><span>The goal: experience informs the next step.</span></p>
       </section>
 
-      <section className="customer-container landing-available" aria-labelledby="available-title">
-        <h2 id="available-title">What you can begin using</h2>
-        <div className="landing-available-grid">
+      <div className="customer-container landing-available">
+        <details className="landing-more landing-capabilities">
+          <summary>What can I try today?</summary>
+          <div className="landing-available-grid">
           <article><span className="customer-eyebrow">AVAILABLE TODAY</span><h3>Conversations with your Sapiens</h3><p>Create an individual, bring it questions, ideas and background, and continue interacting. You can revisit saved conversations; selected past context may inform later replies.</p></article>
           <article><span className="customer-eyebrow">DEPENDS ON CONNECTIONS</span><h3>Activities beyond conversation</h3><p>The Connections area shows the providers available for your Sapiens. Any connected communication or tool action needs support for that activity, the required setup and permitted access—not every service or action is available.</p></article>
-        </div>
-      </section>
+          </div>
+        </details>
+      </div>
 
       <section className="customer-container landing-setup" aria-labelledby="setup-title">
         <h2 id="setup-title">How to get started</h2>
