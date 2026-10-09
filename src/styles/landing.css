@@ -59,8 +59,10 @@
   text-align: center;
 }
 
-.public-story .landing-identity .identity-art { display: block; }
-.public-story figcaption { font-size: 14px; line-height: 1.6; }
+.public-story .landing-hero-art { display: block; width: 100%; height: auto; color: var(--cx-violet); }
+.public-story .landing-art-label { font-family: inherit; font-size: 14px; color: var(--cx-ink); }
+.public-story .landing-relevance { margin-top: 12px; }
+.public-story .landing-section-heading .customer-eyebrow { display: block; margin-bottom: 12px; }
 .public-story .landing-how {
   border-top: 1px solid var(--cx-line);
   padding-block: 40px;
@@ -88,18 +90,6 @@
 }
 
 .public-story .landing-setup { padding-block: 0 36px; }
-.public-story .landing-cycle-identity {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  margin-top: 28px;
-  padding: 16px 24px;
-  background: var(--cx-soft);
-  border-radius: 14px;
-}
-.public-story .landing-cycle-identity .identity-art { width: 88px; flex-shrink: 0; }
-.public-story .landing-cycle-identity h3 { margin-block: 0 8px; font-size: 18px; }
-.public-story .landing-cycle-identity p { max-width: 72ch; color: var(--cx-muted); font-size: 15px; line-height: 1.7; }
 /* One reading path: arrows connect whole cards, never individual symbols. */
 .public-story .landing-cycle {
   display: grid;
@@ -193,8 +183,6 @@
 
 @media (max-width: 600px) {
   .public-story .landing-explanation-grid { grid-template-columns: 1fr; }
-  .public-story .landing-cycle-identity { padding: 16px; gap: 12px; align-items: flex-start; }
-  .public-story .landing-cycle-identity .identity-art { width: 56px; }
   .public-story .landing-available-grid { grid-template-columns: 1fr; gap: 16px; }
   .public-story .landing-available-grid article { padding: 20px; }
   .public-story .landing-setup ol { flex-direction: column; }
@@ -206,7 +194,6 @@
   .public-story .landing-actions .customer-primary { width: 100%; }
   .public-story .landing-explore { justify-content: center; width: 100%; }
   .public-story .landing-identity { max-width: 280px; }
-  .public-story .landing-identity .identity-art { width: 160px; margin-inline: auto; }
   .public-story .landing-how { padding-block: 32px; }
   .public-story h2 { font-size: 28px; }
   .public-story .landing-invitation > div { align-items: stretch; flex-direction: column; }

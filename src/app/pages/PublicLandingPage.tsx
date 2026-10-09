@@ -2,31 +2,31 @@ import { ArrowDown, ArrowUpRight, RotateCcw } from 'lucide-react';
 import { Link } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import { CustomerHeader } from '../components/customer/CustomerHeader';
-import { IdentityArt } from '../components/customer/IdentityArt';
+import { LandingIdentity } from '../components/customer/LandingIdentity';
 import { CycleIllustration } from '../components/customer/CycleIllustration';
 import '../../styles/customer.css';
 import '../../styles/landing.css';
 
 const stages = [
   {
-    title: 'Notice and investigate',
-    summary: 'Find what matters. Ask what’s missing.',
+    title: 'Notice and explore',
+    summary: 'Notice a change. Ask what’s missing.',
     human: 'When something changes or is unclear, we notice it, ask questions and look for more information.',
     sapiens: 'The ambition is for Sapiens to identify gaps and seek relevant information—not only wait for a prompt.',
     availability: 'In development',
     detail: 'Proactive attention and independent investigation are being developed. Today, you can bring questions and information into a conversation.',
   },
   {
-    title: 'Understand and decide',
-    summary: 'Connect the context. Choose a direction.',
+    title: 'Understand and consider',
+    summary: 'Connect experience. Consider what matters.',
     human: 'We connect a situation with earlier experience and our goals, then decide what deserves attention.',
     sapiens: 'Sapiens can draw on selected past context in a reply. The wider aim is to weigh that context against goals and decide what to address next.',
     availability: 'Context today · decisions in development',
     detail: 'Recall is selective, not complete. Independent prioritisation and reliable goal pursuit are not established capabilities.',
   },
   {
-    title: 'Communicate and act',
-    summary: 'Reach others. Put ideas into action.',
+    title: 'Choose and act',
+    summary: 'Communicate. Take a meaningful next step.',
     human: 'We talk with other people, coordinate and use tools to move something forward.',
     sapiens: 'The direction is an individual that participates: communicating through supported channels and taking permitted tool actions toward a goal.',
     availability: 'Requires support, setup and permission',
@@ -56,27 +56,23 @@ export function PublicLandingPage() {
         <div>
           <p className="customer-eyebrow">AI WITH A PERSISTENT IDENTITY</p>
           <h1 id="hero-title">Meet <span>Sapiens.</span></h1>
-          <p className="landing-lead">An AI individual. Built to develop through experience.</p>
-          <p className="landing-support">Our goal: an individual that notices, understands, communicates and acts—with experience making its understanding more relevant to you.</p>
+          <p className="landing-lead">An AI individual, shaped by experience.</p>
+          <p className="landing-support">We’re building AI that notices, asks questions, develops understanding and acts—connecting what it encounters with what comes next.</p>
+          <p className="landing-support landing-relevance">An individual you can return to, around the ideas, interests and goals that matter to you.</p>
           <div className="landing-actions" aria-busy={status === 'loading'}>
             {cta}
             <a className="landing-explore" href="#how-it-works" onClick={() => document.getElementById('how-it-works')?.focus({ preventScroll: true })}>How it works <ArrowDown size={16} aria-hidden="true" /></a>
           </div>
         </div>
         <figure className="landing-identity">
-          <IdentityArt stage={2} />
-          <figcaption>One identity. Experience connects it all.</figcaption>
+          <LandingIdentity />
         </figure>
       </section>
 
       <section id="how-it-works" tabIndex={-1} className="customer-container landing-how" aria-labelledby="how-title">
         <div className="landing-section-heading">
-          <h2 id="how-title">How an AI individual develops through experience</h2>
-          <p>The Sapiens vision: notice what matters, make sense of it, participate, and reflect.</p>
-        </div>
-        <div className="landing-cycle-identity">
-          <IdentityArt stage={2} />
-          <div><h3>The same individual throughout</h3><p>Each experience connects to what comes next.</p></div>
+          <span className="customer-eyebrow">The idea behind Sapiens</span>
+          <h2 id="how-title">One individual. An ongoing experience.</h2>
         </div>
         <ol className="landing-cycle" role="list" aria-label="The four stages of the Sapiens concept">
           {stages.map((stage, index) => <li className="landing-stage" key={stage.title}>
