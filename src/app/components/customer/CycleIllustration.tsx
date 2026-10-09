@@ -36,6 +36,14 @@ export function CycleIllustration({ stage }: { stage: number }) {
       <path d="M62 60L85 72M155 72L178 60" />
     </>}
     <g transform="translate(120 76)"><LandingIdentityCore /></g>
+    <g aria-hidden="true" strokeWidth="2.5">
+      <path className="landing-scene-signal" pathLength="100" d={[
+        'M63 57L85 66',
+        'M62 56L85 66M155 66L178 56',
+        'M87 82C68 82 64 69 53 64M153 82C172 82 176 69 187 64',
+        'M62 60L85 72M155 72L178 60',
+      ][stage]} />
+    </g>
     <g className="landing-art-label" stroke="none" fill="currentColor" textAnchor="middle">
       <text x="44" y="100">{['Information', 'Experience', 'People', 'Outcome'][stage]}</text>
       <text x="196" y="100">{['Question', 'Goal', 'Tools', 'Context'][stage]}</text>

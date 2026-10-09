@@ -1,9 +1,11 @@
 import { ArrowDown, ArrowUpRight, RotateCcw } from 'lucide-react';
+import { useState } from 'react';
 import { Link } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import { CustomerHeader } from '../components/customer/CustomerHeader';
 import { LandingIdentity } from '../components/customer/LandingIdentity';
 import { CycleIllustration } from '../components/customer/CycleIllustration';
+import { useLandingMotion } from '../components/customer/useLandingMotion';
 import '../../styles/customer.css';
 import '../../styles/landing.css';
 
@@ -43,12 +45,14 @@ const stages = [
 ];
 
 export function PublicLandingPage() {
+  const motionRef = useLandingMotion();
+  const [motionPaused, setMotionPaused] = useState(false);
   const { user, status } = useAuth();
   const destination = user ? user.role === 'admin' ? '/admin' : '/home' : '/register?next=%2Fhome%3Fcreate%3D1';
   const action = user ? 'Open your Sapiens' : 'Create your Sapiens';
   const cta = <Link className="customer-primary" to={destination}>{action}<ArrowUpRight size={18} aria-hidden="true" /></Link>;
 
-  return <div className="customer-surface public-story">
+  return <div ref={motionRef} className="customer-surface public-story" data-motion-paused={motionPaused}>
     <a className="customer-skip" href="#main">Skip to content</a>
     <CustomerHeader publicPage />
     <main id="main">
@@ -64,8 +68,9 @@ export function PublicLandingPage() {
             <a className="landing-explore" href="#how-it-works" onClick={() => document.getElementById('how-it-works')?.focus({ preventScroll: true })}>How it works <ArrowDown size={16} aria-hidden="true" /></a>
           </div>
         </div>
-        <figure className="landing-identity">
+        <figure className="landing-identity" data-motion-scene>
           <LandingIdentity />
+          <button type="button" className="landing-motion-toggle" aria-pressed={motionPaused} onClick={() => setMotionPaused(paused => !paused)}>Pause animations</button>
         </figure>
       </section>
 
@@ -75,7 +80,7 @@ export function PublicLandingPage() {
           <h2 id="how-title">One individual. An ongoing experience.</h2>
         </div>
         <ol className="landing-cycle" role="list" aria-label="The four stages of the Sapiens concept">
-          {stages.map((stage, index) => <li className="landing-stage" key={stage.title}>
+          {stages.map((stage, index) => <li className="landing-stage" data-motion-scene key={stage.title}>
             <span className="landing-stage-number" aria-hidden="true">0{index + 1}{index === 0 && <small>Start here</small>}</span>
             <h3>{stage.title}</h3>
             <CycleIllustration stage={index} />
@@ -83,7 +88,7 @@ export function PublicLandingPage() {
             {index < stages.length - 1 && <svg className="landing-stage-connector" viewBox="0 0 32 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="M0 12H31M25 6L31 12L25 18" /></svg>}
           </li>)}
         </ol>
-        <div className="landing-cycle-return"><RotateCcw size={20} aria-hidden="true" /><span>Experience informs what comes next.</span></div>
+        <div className="landing-cycle-return" data-motion-scene><RotateCcw size={20} aria-hidden="true" /><span>Experience informs what comes next.</span></div>
         <details className="landing-more landing-cycle-details">
           <summary>Explore the idea</summary>
           <div className="landing-explanation-grid">

@@ -200,7 +200,101 @@
   .public-story .landing-footer { flex-direction: column; gap: 6px; }
 }
 
+.public-story .landing-signal,
+.public-story .landing-scene-signal { opacity: 0; pointer-events: none; }
+.public-story .landing-motion-toggle {
+  min-height: 44px;
+  padding: 8px 12px;
+  margin-top: 8px;
+  color: var(--cx-muted);
+  font-size: 12px;
+  cursor: pointer;
+  border-radius: 8px;
+}
+.public-story .landing-motion-toggle:hover { color: var(--cx-violet); }
+.public-story .landing-motion-toggle:focus-visible { outline: 2px solid var(--cx-violet); outline-offset: 3px; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .public-story [data-motion-started="true"] .landing-core-motion {
+    animation: landing-core-breathe 8s ease-in-out infinite;
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+  .public-story .landing-stage[data-motion-started="true"] .landing-core-motion {
+    animation: landing-core-breathe 2.4s ease-in-out 1;
+    animation-delay: var(--scene-delay, 0s);
+  }
+  .public-story [data-motion-started="true"] .landing-signal {
+    stroke-dasharray: 12 100;
+    animation: landing-signal-pass 12s linear infinite;
+  }
+  .public-story .landing-signal:nth-child(2) { animation-delay: 3s; }
+  .public-story .landing-signal:nth-child(3) { animation-delay: 6s; }
+  .public-story .landing-signal:nth-child(4) { animation-delay: 9s; }
+  .public-story .landing-stage:nth-child(2) { --scene-delay: .65s; }
+  .public-story .landing-stage:nth-child(3) { --scene-delay: 1.3s; }
+  .public-story .landing-stage:nth-child(4) { --scene-delay: 1.95s; }
+  .public-story .landing-stage[data-motion-started="true"] {
+    animation: landing-card-attention 2.4s ease-in-out var(--scene-delay, 0s) 1;
+  }
+  .public-story [data-motion-started="true"] .landing-scene-signal {
+    stroke-dasharray: 20 100;
+    animation: landing-scene-pass 2.4s ease-in-out var(--scene-delay, 0s) 1;
+  }
+  .public-story .landing-cycle-return[data-motion-started="true"]::after {
+    content: '';
+    position: absolute;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--cx-violet);
+    transform: translate(-50%, -50%);
+    opacity: 0;
+    animation: landing-return-pass 2s ease-in-out 4s 1;
+  }
+  .public-story [data-motion-active="false"],
+  .public-story [data-motion-active="false"] *,
+  .public-story [data-motion-active="false"]::after,
+  .public-story[data-motion-paused="true"] *,
+  .public-story[data-motion-paused="true"] *::after { animation-play-state: paused !important; }
+}
+
+@keyframes landing-core-breathe {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  50% { transform: scale(1.045, .97) rotate(4deg); }
+}
+@keyframes landing-signal-pass {
+  0% { opacity: 0; stroke-dashoffset: 12; }
+  3% { opacity: .7; }
+  17% { opacity: .7; }
+  20%, 100% { opacity: 0; stroke-dashoffset: -100; }
+}
+@keyframes landing-scene-pass {
+  0% { opacity: 0; stroke-dashoffset: 20; }
+  25%, 65% { opacity: .7; }
+  100% { opacity: 0; stroke-dashoffset: -100; }
+}
+@keyframes landing-card-attention {
+  0%, 100% { border-color: var(--cx-line); }
+  45% { border-color: var(--cx-violet); }
+}
+@keyframes landing-return-pass {
+  0% { left: 100%; top: 0; opacity: 0; }
+  5% { opacity: .8; }
+  20% { left: 100%; top: 100%; }
+  80% { left: 0; top: 100%; }
+  95% { opacity: .8; }
+  100% { left: 0; top: 0; opacity: 0; }
+}
+@media (max-width: 1000px) and (prefers-reduced-motion: no-preference) {
+  .public-story .landing-stage:nth-child(n) { --scene-delay: 0s; }
+  .public-story .landing-cycle-return[data-motion-started="true"]::after { display: none; }
+  .public-story .landing-cycle-return[data-motion-started="true"] > svg { animation: landing-core-breathe 2.4s ease-in-out 1; }
+  .public-story .landing-hero-signals .landing-signal:nth-child(even) { display: none; }
+}
+
 /* The illustrations convey the same information without animation. */
 @media (prefers-reduced-motion: reduce) {
   .public-story * { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+  .public-story .landing-motion-toggle { display: none; }
 }
