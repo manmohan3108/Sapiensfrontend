@@ -1,25 +1,36 @@
-import noticeSmall from '../../../assets/landing/notice-480.webp';
-import noticeLarge from '../../../assets/landing/notice-720.webp';
-import understandSmall from '../../../assets/landing/understand-480.webp';
-import understandLarge from '../../../assets/landing/understand-720.webp';
-import actSmall from '../../../assets/landing/act-480.webp';
-import actLarge from '../../../assets/landing/act-720.webp';
-import reflectSmall from '../../../assets/landing/reflect-480.webp';
-import reflectLarge from '../../../assets/landing/reflect-720.webp';
+import identity from '../../../assets/landing/identity-480.webp';
+import information from '../../../assets/landing/information.webp';
+import question from '../../../assets/landing/question.webp';
+import experience from '../../../assets/landing/experience.webp';
+import goal from '../../../assets/landing/goal.webp';
+import person from '../../../assets/landing/person.webp';
+import tool from '../../../assets/landing/tool.webp';
+import outcome from '../../../assets/landing/outcome.webp';
+import context from '../../../assets/landing/context.webp';
 
-const scenes = [
-  { small: noticeSmall, large: noticeLarge, name: 'notice', description: 'The violet individual encounters incoming glass fragments, with one warm fragment drawing its attention.' },
-  { small: understandSmall, large: understandLarge, name: 'understand', description: 'The same individual connects points of light across layered experience.' },
-  { small: actSmall, large: actLarge, name: 'act', description: 'The individual reaches toward a separate person and a tool through two flowing connections.' },
-  { small: reflectSmall, large: reflectLarge, name: 'reflect', description: 'An outcome settles beside the individual, with a returning ribbon connecting it to experience.' },
+const stages = [
+  [{ image: information, label: 'Information' }, { image: question, label: 'A question' }],
+  [{ image: experience, label: 'Earlier experience' }, { image: goal, label: 'A goal' }],
+  [{ image: person, label: 'People' }, { image: tool, label: 'Tools' }],
+  [{ image: outcome, label: 'An outcome' }, { image: context, label: 'Retained context' }],
 ];
 
+// Both subjects relate to the same individual. These lines are associations,
+// not a sequence between the subjects; arrows connect only the stage cards.
 export function CycleIllustration({ stage }: { stage: number }) {
-  const scene = scenes[stage];
-  return <div className={`landing-cycle-art landing-scene-${scene.name}`}>
-    <img className="landing-scene-image" src={scene.large} srcSet={`${scene.small} 480w, ${scene.large} 720w`}
-      sizes="(max-width: 600px) calc(100vw - 80px), (max-width: 1000px) 480px, 280px"
-      width="720" height="480" loading="lazy" decoding="async" alt={scene.description} />
-    <span className="landing-scene-light" aria-hidden="true" />
+  return <div className="landing-cycle-art">
+    <svg className="landing-card-associations" viewBox="0 0 240 160" preserveAspectRatio="none" fill="none" aria-hidden="true">
+      <path d="M120 86C120 98 50 86 50 104M120 86C120 98 190 86 190 104" />
+    </svg>
+    <div className="landing-card-identity">
+      <img src={identity} width="64" height="64" loading="lazy" alt="" />
+      <span>Sapiens</span>
+    </div>
+    <div className="landing-card-subjects">
+      {stages[stage].map(subject => <figure key={subject.label}>
+        <img src={subject.image} width="80" height="80" loading="lazy" decoding="async" alt="" />
+        <figcaption>{subject.label}</figcaption>
+      </figure>)}
+    </div>
   </div>;
 }
