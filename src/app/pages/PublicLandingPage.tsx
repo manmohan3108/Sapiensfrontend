@@ -1,11 +1,11 @@
 import { ArrowDown, ArrowUpRight, RotateCcw } from 'lucide-react';
-import { useState } from 'react';
 import { Link } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import { CustomerHeader } from '../components/customer/CustomerHeader';
 import { LandingIdentity } from '../components/customer/LandingIdentity';
 import { CycleIllustration } from '../components/customer/CycleIllustration';
 import { useLandingMotion } from '../components/customer/useLandingMotion';
+import { LandingCursorTrail } from '../components/customer/LandingCursorTrail';
 import '../../styles/customer.css';
 import '../../styles/landing.css';
 
@@ -46,13 +46,13 @@ const stages = [
 
 export function PublicLandingPage() {
   const motionRef = useLandingMotion();
-  const [motionPaused, setMotionPaused] = useState(false);
   const { user, status } = useAuth();
   const destination = user ? user.role === 'admin' ? '/admin' : '/home' : '/register?next=%2Fhome%3Fcreate%3D1';
   const action = user ? 'Open your Sapiens' : 'Create your Sapiens';
   const cta = <Link className="customer-primary" to={destination}>{action}<ArrowUpRight size={18} aria-hidden="true" /></Link>;
 
-  return <div ref={motionRef} className="customer-surface public-story" data-motion-paused={motionPaused}>
+  return <div ref={motionRef} className="customer-surface public-story">
+    <LandingCursorTrail />
     <a className="customer-skip" href="#main">Skip to content</a>
     <CustomerHeader publicPage />
     <main id="main">
@@ -70,7 +70,6 @@ export function PublicLandingPage() {
         </div>
         <figure className="landing-identity" data-motion-scene>
           <LandingIdentity />
-          <button type="button" className="landing-motion-toggle" aria-pressed={motionPaused} onClick={() => setMotionPaused(paused => !paused)}>Pause animations</button>
         </figure>
       </section>
 

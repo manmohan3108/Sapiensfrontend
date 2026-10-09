@@ -1,4 +1,16 @@
 /* Landing-only composition; home and authentication keep their shared styles. */
+.public-story { position: relative; isolation: isolate; }
+.public-story .landing-cursor-trail { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; opacity: 0; transition: opacity 180ms ease; }
+.public-story .landing-cursor-trail[data-visible="true"] { opacity: 1; }
+.public-story .landing-cursor-blob { position: absolute; top: 0; left: 0; display: block; border-radius: 46% 54% 58% 42%; }
+.public-story .landing-cursor-blob-large { width: 160px; height: 145px; background: #9561da; opacity: .22; filter: blur(25px); }
+.public-story .landing-cursor-blob-small { width: 52px; height: 48px; background: #d7a6cf; opacity: .48; filter: blur(10px); }
+.dark .public-story .landing-cursor-blob-large { background: #9967eb; opacity: .25; }
+.dark .public-story .landing-cursor-blob-small { background: #e6bbdc; opacity: .35; }
+@media (hover: none), (pointer: coarse), (prefers-reduced-motion: reduce) {
+  .public-story .landing-cursor-trail { display: none; }
+}
+
 .public-story .landing-nav-link {
   display: inline-flex;
   align-items: center;
@@ -207,15 +219,11 @@
   .public-story .landing-footer { flex-direction: column; gap: 6px; }
 }
 
-.public-story .landing-motion-toggle { min-height: 44px; padding: 8px 12px; margin-top: 12px; color: var(--cx-muted); font-size: 12px; cursor: pointer; border-radius: 8px; }
-.public-story .landing-motion-toggle:hover { color: var(--cx-violet); }
-.public-story .landing-motion-toggle:focus-visible { outline: 2px solid var(--cx-violet); outline-offset: 3px; }
 
 /* Only the hero moves. No travelling lights or simulated activity. */
 @media (prefers-reduced-motion: no-preference) {
   .public-story [data-motion-started="true"] .landing-sculpture { animation: sculpture-drift 10s ease-in-out infinite; }
-  .public-story [data-motion-active="false"] .landing-sculpture,
-  .public-story[data-motion-paused="true"] .landing-sculpture { animation-play-state: paused; }
+  .public-story [data-motion-active="false"] .landing-sculpture { animation-play-state: paused; }
 }
 @keyframes sculpture-drift {
   0%, 100% { transform: translateY(0) rotate(-2deg); }
@@ -223,5 +231,4 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .public-story *, .public-story *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
-  .public-story .landing-motion-toggle { display: none; }
 }
