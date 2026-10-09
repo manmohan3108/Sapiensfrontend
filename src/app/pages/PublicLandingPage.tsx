@@ -1,15 +1,24 @@
-import { ArrowDown, ArrowUpRight, Fingerprint, MessagesSquare, Orbit } from 'lucide-react';
+import { ArrowDown, ArrowRight, ArrowUpRight, CornerUpLeft } from 'lucide-react';
 import { Link } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import { CustomerHeader } from '../components/customer/CustomerHeader';
 import { IdentityArt } from '../components/customer/IdentityArt';
 import '../../styles/customer.css';
+import '../../styles/landing.css';
 
-const chapters = [
-  { title: 'A name. A beginning.', text: 'Create a Sapiens and give it a name. A distinct individual to return to, with a place for your conversations.', note: '01 / IDENTITY', caption: 'One recognizable beginning', stage: 0 },
-  { title: 'Experiences leave traces.', text: 'A question, an idea, a conversation. Your saved chats form a history you can revisit. Selected past context may also inform a later conversation.', note: '02 / EXPERIENCE', caption: 'A question · An idea · A conversation', stage: 1 },
-  { title: 'An idea meets another.', text: 'When relevant context is available, an earlier idea can meet what you’re exploring now. You can clarify, correct, and continue.', note: '03 / CONNECTION', caption: 'Context creates possibilities, not perfect recall', stage: 2 },
-  { title: 'The same individual.\nA different history.', text: 'Come back to the Sapiens you know by name. Start a new conversation with the same individual, or create another with a separate history.', note: '04 / CONTINUITY', caption: 'A shared history, shaped over time', stage: 3 },
+const steps = [
+  {
+    title: 'Encounter something',
+    text: 'Conversations bring in questions, ideas and background. The broader ambition includes observations and connected activities, wherever those are supported.',
+  },
+  {
+    title: 'Connect it with context',
+    text: 'What an individual has encountered can provide context for what comes next. Today, selected past context may inform a conversation; memory supports the larger aim of developing understanding.',
+  },
+  {
+    title: 'Respond, then encounter more',
+    text: 'Relevant context can help shape a later response. We’re working toward a fuller cycle: context informing decisions and supported actions, with new experiences contributing to ongoing development.',
+  },
 ];
 
 export function PublicLandingPage() {
@@ -17,32 +26,72 @@ export function PublicLandingPage() {
   const destination = user ? user.role === 'admin' ? '/admin' : '/home' : '/register?next=%2Fhome%3Fcreate%3D1';
   const action = user ? 'Open your Sapiens' : 'Create your Sapiens';
   const cta = <Link className="customer-primary" to={destination}>{action}<ArrowUpRight size={18} aria-hidden="true" /></Link>;
+
   return <div className="customer-surface public-story">
     <a className="customer-skip" href="#main">Skip to content</a>
     <CustomerHeader publicPage />
     <main id="main">
-      <section className="customer-container story-hero" aria-labelledby="hero-title">
-        <div className="story-hero-copy"><p className="customer-eyebrow"><span /> A PERSISTENT AI INDIVIDUAL</p>
-          <h1 id="hero-title">A name to know.<br />A history to <em>share.</em></h1>
-          <p className="story-lead">Meet Sapiens. Create a named AI individual and return to it across conversations. A place for your ongoing ideas—and the history you build together.</p>
-          <div className="story-actions" aria-busy={status === 'loading'}>{cta}<a className="story-explore" href="#story" onClick={() => document.getElementById('story')?.focus({ preventScroll: true })}>Explore its story <ArrowDown size={16} /></a></div>
-          <p className="story-footnote">One individual. Many conversations.</p>
+      <section className="customer-container landing-hero" aria-labelledby="hero-title">
+        <div>
+          <p className="customer-eyebrow">A PERSISTENT IDENTITY. AN EVOLVING AMBITION.</p>
+          <h1 id="hero-title">Meet <span>Sapiens.</span></h1>
+          <p className="landing-lead">An AI individual, built around experience.</p>
+          <p className="landing-support">We’re building AI that develops understanding through what it encounters and does—connecting conversations, observations and actions with what comes next.</p>
+          <p className="landing-today"><strong>Experience it today:</strong> talk with your Sapiens, share context, and return to the same individual. Selected past context may inform its replies.</p>
+          <div className="landing-actions" aria-busy={status === 'loading'}>
+            {cta}
+            <a className="landing-explore" href="#how-it-works" onClick={() => document.getElementById('how-it-works')?.focus({ preventScroll: true })}>How it works <ArrowDown size={16} aria-hidden="true" /></a>
+          </div>
         </div>
-        <div className="story-hero-art"><div className="art-coordinate">AN INDIVIDUAL, OVER TIME</div><IdentityArt /><div className="art-caption"><span className="art-caption-line" />Every shared history begins somewhere.<small>Conceptual illustration</small></div></div>
+        <figure className="landing-identity">
+          <IdentityArt stage={2} />
+          <figcaption>One identity. Its own unfolding history.<small>An illustration of the direction we’re building toward</small></figcaption>
+        </figure>
       </section>
-      <div className="customer-container story-divider"><span>MORE THAN A SINGLE CONVERSATION</span><span>THE STORY OF ONE SAPIENS <ArrowDown size={14} /></span></div>
-      <section id="story" tabIndex={-1} className="customer-container story-chapters" aria-label="The story of one Sapiens">
-        {chapters.map((chapter, i) => <article className={`story-chapter ${i % 2 ? 'story-chapter-reverse' : ''}`} key={chapter.note}>
-          <div className="story-scene"><IdentityArt stage={chapter.stage} /><span className="story-scene-caption">{chapter.caption}</span><span className="scene-illustration">Illustration</span></div>
-          <div className="story-chapter-copy"><p className="customer-eyebrow">{chapter.note}</p><h2>{chapter.title}</h2><p>{chapter.text}</p></div>
-        </article>)}
+
+      <section id="how-it-works" tabIndex={-1} className="customer-container landing-how" aria-labelledby="how-title">
+        <div className="landing-section-heading">
+          <h2 id="how-title">How Sapiens works</h2>
+          <p>The central idea: an individual connects what it encounters with what comes next. Here’s what you can experience now, and the fuller cycle we’re building toward.</p>
+        </div>
+        <figure className="landing-experience" aria-labelledby="experience-caption">
+          <div className="landing-experience-flow">
+            <div className="landing-experience-end"><span className="landing-experience-label">WHAT IT ENCOUNTERS</span><strong>Conversations &amp; shared information</strong></div>
+            <ArrowRight className="landing-flow-arrow" size={22} aria-hidden="true" />
+            <div className="landing-experience-centre"><IdentityArt stage={2} /><strong>The same Sapiens</strong><span>Relevant context from its history</span></div>
+            <ArrowRight className="landing-flow-arrow" size={22} aria-hidden="true" />
+            <div className="landing-experience-end"><span className="landing-experience-label">WHAT COMES NEXT</span><strong>Context-informed responses</strong></div>
+          </div>
+          <div className="landing-experience-loop"><CornerUpLeft size={22} aria-hidden="true" /><p><strong>In development: the cycle continues.</strong> Observations, decisions and supported actions bring new experiences back to the individual.</p></div>
+          <figcaption id="experience-caption">A concept illustration, not a live activity view. Context can inform a response; recall is not complete or guaranteed.</figcaption>
+        </figure>
+        <ol className="landing-steps" role="list">
+          {steps.map((step, index) => <li className="landing-step" key={step.title}>
+            <span className="landing-step-number" aria-hidden="true">0{index + 1}</span>
+            <h3>{step.title}</h3>
+            <p>{step.text}</p>
+          </li>)}
+        </ol>
+        <div className="landing-relevance"><h3>Why keep returning to one individual?</h3><p>Your interests, ideas and activities have continuity. The aim is for your Sapiens to develop context that becomes more relevant to them over time—whether you’re exploring a question, developing an idea or sharing a new perspective. You choose what to bring to it.</p></div>
       </section>
-      <section id="today" className="story-today"><div className="customer-container"><p className="customer-eyebrow">WITH SAPIENS TODAY</p><h2>A place to keep<br />your conversations going.</h2><div className="story-capabilities">
-        {[{ icon: Fingerprint, title: 'A name to return to', text: 'Open the same Sapiens when you come back. Its identity stays the same across conversations.' }, { icon: MessagesSquare, title: 'Conversations to revisit', text: 'Reopen saved chats and continue a conversation, or begin a new one with the same individual.' }, { icon: Orbit, title: 'Separate when you choose', text: 'Create another Sapiens with its own name and conversation history.' }].map(({ icon: Icon, title, text }) => <article key={title}><Icon size={26} strokeWidth={1.4} aria-hidden="true" /><h3>{title}</h3><p>{text}</p></article>)}
-      </div></div></section>
-      <section className="customer-container story-future"><p className="customer-eyebrow">AN AMBITION, STILL IN DEVELOPMENT</p><div><h2>Where Sapiens is headed.</h2><p>The ambition is for each Sapiens to develop its understanding through experience, ask useful questions, and take more initiative over time. These abilities are still being developed and tested.</p></div></section>
-      <section className="story-invitation"><div className="customer-container"><span className="invitation-orbit" aria-hidden="true" /><p className="customer-eyebrow">A BEGINNING, TOGETHER</p><h2>Start your shared history.</h2><p>Give a Sapiens a name. See where the conversation goes.</p>{cta}</div></section>
+
+      <aside className="customer-container landing-future" aria-labelledby="future-title">
+        <div><p className="customer-eyebrow">FUTURE DIRECTION</p><h2 id="future-title">Where Sapiens is headed</h2></div>
+        <p>Richer understanding and more initiative are goals in development, not promises of guaranteed improvement or reliable autonomous work. Connected activities depend on what is supported and available; they are not part of every Sapiens experience today.</p>
+      </aside>
+
+      <section className="customer-container landing-setup" aria-labelledby="setup-title">
+        <h2 id="setup-title">How to get started</h2>
+        <ol role="list"><li><span aria-hidden="true">1</span>Create an account</li><li><span aria-hidden="true">2</span>Name your Sapiens</li><li><span aria-hidden="true">3</span>Begin a conversation</li></ol>
+      </section>
+
+      <section className="landing-invitation" aria-labelledby="invitation-title">
+        <div className="customer-container">
+          <div><h2 id="invitation-title">{action}</h2><p>{user ? 'Choose your Sapiens and continue a conversation.' : 'Give your AI individual a name and start a conversation.'}</p></div>
+          {cta}
+        </div>
+      </section>
     </main>
-    <footer className="customer-container customer-footer"><span>Sapiens · An AI individual</span><span>Sapiens is AI and can make mistakes.</span></footer>
+    <footer className="customer-container landing-footer"><span>Sapiens · An AI individual</span><span>Sapiens is AI and can make mistakes.</span></footer>
   </div>;
 }
