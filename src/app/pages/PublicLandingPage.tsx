@@ -7,11 +7,12 @@ import { CycleIllustration } from '../components/customer/CycleIllustration';
 import { useLandingMotion } from '../components/customer/useLandingMotion';
 import { LandingCursorTrail } from '../components/customer/LandingCursorTrail';
 import { SapiensRelationships } from '../components/customer/SapiensRelationships';
+import { SapiensNetwork } from '../components/customer/SapiensNetwork';
 import '../../styles/customer.css';
 import '../../styles/landing.css';
 
-// Set to false to restore the original four-card explanation, retained below.
-const showRelationshipView = true;
+// All three alternatives are preserved. Change only this setting to switch back.
+const landingPresentation: { explanation: 'network' | 'relationships' | 'cycle' } = { explanation: 'network' };
 
 const stages = [
   {
@@ -78,7 +79,7 @@ export function PublicLandingPage() {
       </section>
 
       <section id="how-it-works" tabIndex={-1} className="customer-container landing-how" aria-labelledby="how-title">
-        {showRelationshipView ? <SapiensRelationships /> : <>
+        {landingPresentation.explanation === 'network' ? <SapiensNetwork /> : landingPresentation.explanation === 'relationships' ? <SapiensRelationships /> : <>
         <div className="landing-section-heading">
           <span className="customer-eyebrow">The idea behind Sapiens</span>
           <h2 id="how-title">One individual. An ongoing experience.</h2>

@@ -1,0 +1,26 @@
+/* Circular alternative; both earlier explanation layouts remain untouched. */
+.public-story .network-heading { text-align: center; }
+.public-story .network-heading .customer-eyebrow { justify-content: center; }
+.public-story .network-heading p { margin-inline: auto; }
+.public-story .network-map { position: relative; isolation: isolate; width: 100%; max-width: 800px; height: clamp(360px, 52vw, 480px); margin: 28px auto 12px; }
+.public-story .network-lines { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.public-story .network-lines line { stroke: var(--cx-line); stroke-width: 2px; vector-effect: non-scaling-stroke; }
+.public-story .network-lines line[data-selected="true"] { stroke: var(--cx-violet); stroke-width: 2.5px; }
+.public-story .network-centre { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: clamp(128px, 26vw, 214px); aspect-ratio: 1; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid var(--cx-violet); background: var(--cx-panel); box-shadow: 0 0 48px -22px var(--cx-violet); }
+.public-story .network-centre img { width: clamp(64px, 13vw, 108px); height: auto; }
+.public-story .network-centre h3 { font-size: clamp(20px, 3vw, 26px); margin: 0 0 3px; line-height: 1.2; }
+.public-story .network-centre > span { color: var(--cx-muted); font-size: 12px; line-height: 1.5; }
+.public-story .network-node { position: absolute; transform: translate(-50%, -50%); width: clamp(88px, 16vw, 132px); aspect-ratio: 1; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; padding: 10px; border: 1px solid var(--cx-line); background: var(--cx-panel); color: var(--cx-ink); cursor: pointer; }
+.public-story .network-node img { width: clamp(40px, 8vw, 64px); height: auto; object-fit: contain; }
+.public-story .network-node > span { font-size: clamp(12px, 1.5vw, 14px); line-height: 1.4; font-weight: 550; }
+.public-story .network-node:hover { border-color: var(--cx-violet); }
+.public-story .network-node[aria-pressed="true"] { border: 2px solid var(--cx-violet); background: var(--cx-soft); }
+.public-story .network-node:focus-visible { outline: 2px solid var(--cx-violet); outline-offset: 5px; }
+.public-story .network-hint { margin: 0; text-align: center; font-size: 12px; line-height: 1.6; color: var(--cx-muted); }
+.public-story .network-explanation { max-width: 620px; min-height: 112px; margin: 18px auto 0; text-align: center; }
+.public-story .network-explanation h3 { font-size: 17px; margin: 0 0 8px; color: var(--cx-violet); }
+.public-story .network-explanation p { font-size: 15px; line-height: 1.75; color: var(--cx-muted); }
+@media (max-width: 600px) {
+  .public-story .network-map { margin-top: 16px; }
+  .public-story .network-explanation { min-height: 150px; }
+}
