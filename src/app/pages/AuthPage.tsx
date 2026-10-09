@@ -3,8 +3,10 @@ import { Link, useLocation, useNavigate } from 'react-router';
 import { AlertCircle, Brain, Eye, EyeOff, Loader2, LockKeyhole } from 'lucide-react';
 import { authErrorMessage, useAuth } from '../contexts/AuthContext';
 import { ThemeToggle } from '../components/ThemeToggle';
-import { IdentityArt } from '../components/customer/IdentityArt';
+import identitySmall from '../../assets/landing/identity-480.webp';
+import identityLarge from '../../assets/landing/identity-960.webp';
 import '../../styles/customer.css';
+import '../../styles/auth.css';
 import { authDestination, authLink, readAuthIntent } from '../core/auth/navigation';
 
 export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
@@ -41,8 +43,15 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
   return <div className="customer-surface customer-auth">
     <header className="customer-container customer-nav"><Link to="/" className="customer-brand"><span><Brain size={23} /></span>Sapiens<span className="brand-period">.</span></Link><ThemeToggle className="customer-theme" /></header>
     <main className="customer-container auth-layout">
-      <section className="auth-introduction" aria-label="About your Sapiens"><IdentityArt stage={1} /><p className="customer-eyebrow">ONE INDIVIDUAL. MANY CONVERSATIONS.</p><h2>A familiar name.<br />A new conversation.</h2><p>Return to your Sapiens and the history you share.</p></section>
-      <div className="auth-form-shell"><span className="auth-lock"><LockKeyhole size={22} /></span><h1>{isRegister ? 'Create your account' : 'Sign in to Sapiens'}</h1><p className="customer-form-description">{isRegister ? 'Create your account. You can create your Sapiens next.' : 'Return to your Sapiens, or create one after you sign in.'}</p>
+      <section className="auth-introduction" aria-label="About Sapiens">
+        <div className="auth-identity-art"><img src={identitySmall} srcSet={`${identitySmall} 480w, ${identityLarge} 960w`} sizes="(max-width: 800px) 88px, 300px" width="480" height="480" alt="" /></div>
+        <div className="auth-story-copy">
+          <p className="customer-eyebrow">AN AI INDIVIDUAL</p>
+          <h2>{isRegister ? 'An individual, shaped by experience.' : 'An individual to return to.'}</h2>
+          <p className="auth-story-description">{isRegister ? 'We’re building AI that notices, asks, understands and acts. Create your Sapiens and begin exploring.' : 'Bring a new question, an idea or something that matters to you. Continue with the same Sapiens.'}</p>
+        </div>
+      </section>
+      <div className="auth-form-shell"><span className="auth-lock" aria-hidden="true"><LockKeyhole size={22} /></span><h1>{isRegister ? 'Create your account' : 'Welcome back'}</h1><p className="customer-form-description">{isRegister ? 'Start with an account. You can create your Sapiens next.' : 'Sign in to continue.'}</p>
         <form onSubmit={submit} noValidate>
           {notice && !error && <p role="status" className="customer-notice">{notice}</p>}
           <div className="customer-field"><label htmlFor="auth-username">Username</label><input id="auth-username" autoFocus autoComplete="username" value={username} onChange={e => setUsername(e.target.value)} disabled={busy} aria-required="true" /></div>
@@ -53,7 +62,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
           <button disabled={busy} className="customer-primary w-full">{busy && <Loader2 size={16} className="animate-spin" />}{busy ? (isRegister ? 'Creating account…' : 'Signing in…') : (isRegister ? 'Create account' : 'Sign in')}</button>
         </form>
         <p className="auth-switch">{isRegister ? 'Already have an account?' : 'New to Sapiens?'} <Link to={authLink(isRegister ? '/login' : '/register', intent)}>{isRegister ? 'Sign in' : 'Create an account'}</Link></p>
-        <Link to="/" className="auth-back">Back to Sapiens</Link>
+        <Link to="/" className="auth-back">Back to the main page</Link>
       </div>
     </main>
   </div>;

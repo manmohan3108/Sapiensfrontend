@@ -1,0 +1,34 @@
+/* Entry screens only: no landing, customer-home or workspace overrides. */
+.customer-auth .auth-layout {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: clamp(36px, 7vw, 88px);
+  padding-block: 32px 56px;
+}
+.customer-auth .auth-introduction { min-width: 0; max-width: 460px; }
+.customer-auth .auth-identity-art {
+  width: min(100%, 300px);
+  margin: 0 auto 18px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, var(--cx-soft), transparent 70%);
+}
+.customer-auth .auth-identity-art img { display: block; width: 100%; height: auto; }
+.customer-auth .auth-introduction h2 {
+  max-width: 17ch;
+  font-size: clamp(30px, 3.2vw, 40px);
+  font-weight: 500;
+  letter-spacing: -1px;
+  line-height: 1.2;
+  margin-block: 12px 16px;
+}
+.customer-auth .auth-story-description { max-width: 43ch; color: var(--cx-muted); font-size: 15px; line-height: 1.75; }
+.customer-auth .auth-form-shell { box-shadow: 0 16px 48px -32px rgb(70 36 110 / 25%); }
+.customer-auth .auth-back { min-height: 44px; display: flex; justify-content: center; align-items: center; }
+
+@media (max-width: 800px) {
+  .customer-auth .auth-layout { grid-template-columns: 1fr; gap: 24px; padding-block: 24px 36px; }
+  .customer-auth .auth-introduction { display: grid; grid-template-columns: 88px minmax(0, 1fr); align-items: center; gap: 16px; width: 100%; max-width: 440px; margin-inline: auto; }
+  .customer-auth .auth-identity-art { width: 88px; margin: 0; }
+  .customer-auth .auth-introduction h2 { font-size: 23px; letter-spacing: -.5px; margin-block: 6px 0; }
+  .customer-auth .auth-story-description { display: none; }
+  .customer-auth .auth-form-shell { padding: 24px; }
+}
