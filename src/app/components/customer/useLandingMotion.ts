@@ -10,7 +10,9 @@ export function useLandingMotion() {
     const visible = new Set<Element>();
     const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
     const sync = () => scenes.forEach(scene => {
-      const active = visible.has(scene) && !document.hidden && !preference.matches;
+      const image = scene.querySelector('img');
+      const artworkReady = !image || (image.complete && image.naturalWidth > 0);
+      const active = visible.has(scene) && artworkReady && !document.hidden && !preference.matches;
       if (active) scene.dataset.motionStarted = 'true';
       scene.dataset.motionActive = String(active);
     });
@@ -22,10 +24,12 @@ export function useLandingMotion() {
       sync();
     }, { threshold: 0.15 });
     scenes.forEach(scene => observer.observe(scene));
+    root.addEventListener('load', sync, true);
     document.addEventListener('visibilitychange', sync);
     preference.addEventListener('change', sync);
     return () => {
       observer.disconnect();
+      root.removeEventListener('load', sync, true);
       document.removeEventListener('visibilitychange', sync);
       preference.removeEventListener('change', sync);
     };
