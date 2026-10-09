@@ -123,7 +123,7 @@ export function ConnectionsPage() {
   const [busyKey, setBusyKey] = useState('');
   const [confirm, setConfirm] = useState<{ kind: 'disconnect' | 'deny'; id: number; label: string } | null>(null);
 
-  useEffect(() => { if (!currentSapiens) navigate('/'); }, [currentSapiens, navigate]);
+  useEffect(() => { if (!currentSapiens) navigate('/home'); }, [currentSapiens, navigate]);
   const load = useCallback(async () => {
     if (!Number.isFinite(sapienId)) return;
     setLoading(true); setError('');

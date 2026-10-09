@@ -11,6 +11,7 @@ import {
 } from '../types/sapiensTypes';
 import { logger } from '../utils/logger';
 import { generateId } from '../utils/formatters';
+import { resourceSession } from '../core/auth/authSession';
 import { useAuth } from '../contexts/AuthContext';
 
 export function useSapiens() {
@@ -101,16 +102,18 @@ export function useSapiens() {
   const uploadFiles = useCallback(
     async (files: File[]) => {
       if (!currentSapiens) {
-        logger.warn('No current Sapiens for file upload');
-        return;
+        throw new Error('Select a Sapiens before uploading.');
       }
+      const version = resourceSession.version;
       try {
         setStatus('processing');
-        await sapiensService.uploadFolder({ sapiensId: currentSapiens.id, files });
+        const result = await sapiensService.uploadFolder({ sapiensId: currentSapiens.id, files });
         setStatus('idle');
+        return result;
       } catch (error) {
         logger.error('Failed to upload files', error);
-        setStatus('error');
+        if (resourceSession.version === version) setStatus('error');
+        throw error;
       }
     },
     [currentSapiens, setStatus]
@@ -125,6 +128,7 @@ export function useSapiens() {
       }
 
       const now = () => new Date().toISOString();
+      const version = resourceSession.version;
 
       // 1. Add user message immediately
       const userMsgId = generateId('user');
@@ -196,14 +200,18 @@ export function useSapiens() {
         });
 
         setStatus('idle');
+        return true;
       } catch (error) {
         logger.error('Failed to send chat message', error);
+        if (resourceSession.version !== version) return false;
         updateChatMessage(assistantMsgId, {
-          content: 'An error occurred while processing your request. Please try again.',
+          content: user?.role === 'admin' ? 'An error occurred while processing your request. Please try again.' : 'We couldn’t confirm the result. Your message may have been saved. Check this conversation before sending it again; we haven’t resent it.',
+          isError: true,
           isLoading: false,
           timestamp: now(),
         });
         setStatus('error');
+        return false;
       }
     },
     [
@@ -215,6 +223,7 @@ export function useSapiens() {
       setLastMemoryUnits,
       setLastDebugInfo,
       setOverloaded,
+      user?.role,
     ]
   );
 
@@ -348,7 +357,7 @@ export function useSapiens() {
   // ── Return to home ───────────────────────────────────────────────────────────
   const returnToHome = useCallback(() => {
     reset();
-    navigate(user?.role === 'admin' ? '/admin' : '/');
+    navigate(user?.role === 'admin' ? '/admin' : '/home');
   }, [reset, navigate, user?.role]);
 
   return {

@@ -98,3 +98,20 @@ finishBody();
 await assert.rejects(lateBody, /account or Sapiens changed/);
 assert.equal(resourceSession.selectedId, '13');
 console.log('Ownership checks passed: scoped 404, inaccessible batch, discovery failure, and late response after selection change.');
+
+// Customer child failures must revalidate the owner-filtered list. Admin behavior
+// above remains unchanged. An inconclusive check blocks access without deletion.
+resourceSession.customer = true;
+resourceSession.select('12');
+globalThis.fetch = async url => String(url).endsWith('/get-all-sapiens') ? json({ sapiens: [{ id: 12 }] }) : json({ error: 'chat not found' }, 404);
+assert.equal((await authenticatedFetch('https://api.example.test/api/sapien/12/chats/missing')).status, 404);
+assert.equal(resourceSession.selectedId, '12');
+assert.equal(resourceSession.accessState, 'verified');
+globalThis.fetch = async url => String(url).endsWith('/get-all-sapiens') ? json({}, 503) : json({}, 404);
+await assert.rejects(authenticatedFetch('https://api.example.test/api/sapien/12/chats/missing'), /verify access/);
+assert.equal(resourceSession.selectedId, '12');
+assert.equal(resourceSession.accessState, 'failed');
+globalThis.fetch = async url => String(url).endsWith('/get-all-sapiens') ? json({ sapiens: [] }) : json({}, 404);
+await assert.rejects(authenticatedFetch('https://api.example.test/api/sapien/12/chats/missing'), /not available/);
+assert.equal(resourceSession.selectedId, null);
+console.log('Customer access checks passed: missing child retained only after verification, failed verification blocked, revoked identity cleared.');

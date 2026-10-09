@@ -19,7 +19,7 @@ export function HeaderBar() {
   const isProcessing = status === 'processing' || status === 'loading';
 
   const statusColors = {
-    idle:       { dot: '#34d399', label: 'Ready',      glow: 'rgba(52,211,153,0.5)' },
+    idle:       { dot: '#34d399', label: user?.role === 'admin' ? 'Ready' : 'Idle', glow: 'rgba(52,211,153,0.5)' },
     processing: { dot: '#fbbf24', label: 'Processing', glow: 'rgba(251,191,36,0.5)' },
     loading:    { dot: '#60a5fa', label: 'Loading',    glow: 'rgba(96,165,250,0.5)' },
     error:      { dot: '#f87171', label: 'Error',      glow: 'rgba(248,113,113,0.5)' },

@@ -7,6 +7,8 @@ import {
   History, Plus, RefreshCw, PanelLeftClose, PanelLeftOpen,
   Paperclip, X,
 } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
+import { resourceSession } from '../../core/auth/authSession';
 import { useSapiens } from '../../hooks/useSapiens';
 import { useSapiensStore } from '../../core/state/sapiensStore';
 import { sapiensService } from '../../core/services/sapiensService';
@@ -222,9 +224,10 @@ function MessageBubble({
   onSignal: (id: string, s: UserSignalType) => void;
   isHighlighted: boolean;
 }) {
+  const { user } = useAuth();
   const isUser = msg.role === 'user';
   const isQuery = msg.apiMode === 'query';
-  const isError = !msg.isLoading && msg.role === 'assistant' && (msg.content ?? '').startsWith('An error occurred');
+  const isError = !msg.isLoading && msg.role === 'assistant' && (msg.isError || (msg.content ?? '').startsWith('An error occurred'));
 
   return (
     <div
@@ -304,6 +307,7 @@ function MessageBubble({
               </div>
             )}
             <div
+              role={isError ? 'alert' : undefined}
               className={`px-4 py-3 rounded-2xl rounded-tl-sm text-sm leading-relaxed ${isError ? 'text-red-300' : 'text-white/80'}`}
               style={isError
                 ? { background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)' }
@@ -333,7 +337,7 @@ function MessageBubble({
               </div>
             )}
 
-            {!msg.isLoading && !isError && (
+            {user?.role === 'admin' && !msg.isLoading && !isError && (
               <SignalControls msg={msg} onSignal={(s) => onSignal(msg.id, s)} />
             )}
           </>
@@ -448,6 +452,8 @@ function ChatHistorySidebar({ history, historyLoading, historyError, detailLoadi
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export function ChatWindow() {
+  const { user } = useAuth();
+  const sending = useRef(false);
   const [input, setInput] = useState('');
   const [focused, setFocused] = useState(false);
   const [showScroll, setShowScroll] = useState(false);
@@ -506,9 +512,9 @@ export function ChatWindow() {
     } catch (error) {
       const apiError = error as ApiError;
       if (apiError.status === 404) {
-        startNewChat();
+        if (user?.role === 'admin') startNewChat();
         setHistory((items) => items.filter((item) => item.thread_id !== threadId));
-        setHistoryError('That chat is no longer available. A new chat is ready.');
+        setHistoryError(user?.role === 'admin' ? 'That chat is no longer available. A new chat is ready.' : 'That conversation is unavailable. Your current conversation is unchanged.');
       } else {
         setHistoryError(apiError.message || 'Could not open this chat.');
       }
@@ -552,7 +558,9 @@ export function ChatWindow() {
 
   const send = async (mode: 'chat' | 'query' = 'chat') => {
     const t = input.trim();
-    if (!t || isProcessing) return;
+    if (!t || isProcessing || sending.current) return;
+    sending.current = true;
+    const version = resourceSession.version;
     setInput('');
     if (textareaRef.current) textareaRef.current.style.height = 'auto';
     atBottomRef.current = true;
@@ -560,9 +568,13 @@ export function ChatWindow() {
     if (mode === 'query') {
       await sendQuery(t);
     } else {
-      await sendTextInput(t);
-      await refreshHistory();
+      const sent = await sendTextInput(t);
+      if (resourceSession.version === version) {
+        if (sent === false && user?.role !== 'admin') setInput(t);
+        await refreshHistory();
+      }
     }
+    sending.current = false;
   };
 
   const onKey = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -784,8 +796,8 @@ export function ChatWindow() {
             style={{ height: 'auto' }}
           />
 
-          {/* Query button — /api/query */}
-          <button
+          {/* The legacy query endpoint is not available to customers. */}
+          {user?.role === 'admin' && <button
             onClick={() => send('query')}
             disabled={!input.trim() || isProcessing}
             title="Send via /api/query (legacy)"
@@ -799,7 +811,7 @@ export function ChatWindow() {
           >
             <Search className="w-3.5 h-3.5" />
             Query
-          </button>
+          </button>}
 
           {/* Chat button — /api/chat */}
           <button

@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router';
+import { useEffect, useState, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router';
+import { toast } from 'sonner';
 import { BrainCircuit, Eye, Target } from 'lucide-react';
 import { HeaderBar } from '../components/workspace/HeaderBar';
 import { AwarenessPanel } from '../components/workspace/AwarenessPanel';
@@ -58,6 +59,9 @@ function TabRow({
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export function WorkspacePage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const heading = useRef<HTMLHeadingElement>(null);
+  const announced = useRef<string | null>(null);
   const { user } = useAuth();
   const [rightTab, setRightTab] = useState<RightTab>('awareness');
 
@@ -67,14 +71,25 @@ export function WorkspacePage() {
   useOrchestratorStatus();
 
   useEffect(() => {
-    if (!currentSapiens) navigate(user?.role === 'admin' ? '/admin' : '/');
+    if (!currentSapiens) navigate(user?.role === 'admin' ? '/admin' : '/home');
   }, [currentSapiens, navigate, user?.role]);
+
+  useEffect(() => {
+    const createdName = (location.state as { createdName?: string } | null)?.createdName;
+    if (currentSapiens && createdName && user?.role === 'customer' && announced.current !== currentSapiens.id) {
+      announced.current = currentSapiens.id;
+      toast.success(`${createdName} was created`);
+      heading.current?.focus();
+      navigate(location.pathname, { replace: true, state: null });
+    }
+  }, [currentSapiens?.id, location.state, location.pathname, navigate, user?.role]);
 
   if (!currentSapiens) return null;
 
   return (
     <div className="workspace-shell min-h-[100dvh] lg:h-screen flex flex-col lg:overflow-hidden" style={{ background: '#080c18' }}>
 
+      {user?.role === 'customer' && <h1 ref={heading} tabIndex={-1} className="sr-only">{currentSapiens.name} workspace</h1>}
       {/* ── Ambient canvas ── */}
       <div className="fixed inset-0 pointer-events-none select-none z-0">
         <div className="absolute -top-60 -left-60 w-[900px] h-[900px] rounded-full"

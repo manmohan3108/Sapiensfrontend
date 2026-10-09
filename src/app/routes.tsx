@@ -9,13 +9,17 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { AuthPage } from './pages/AuthPage';
 import { AccessDeniedPage, GuestRoute, ProtectedRoute } from './components/auth/RouteGuards';
 import { useAuth } from './contexts/AuthContext';
+import { PublicLandingPage } from './pages/PublicLandingPage';
+import { CustomerHomePage } from './pages/CustomerHomePage';
 
 function RoleHome() {
   const { user } = useAuth();
-  return user?.role === 'admin' ? <Navigate to="/admin" replace /> : <LandingPage />;
+  return user?.role === 'admin' ? <Navigate to="/admin" replace /> : <CustomerHomePage key={user?.user_id} />;
 }
 
 export const router = createBrowserRouter([
+  { path: '/', Component: PublicLandingPage, ErrorBoundary },
+  { Component: () => <ProtectedRoute selection={false} />, children: [{ path: '/home', Component: RoleHome, ErrorBoundary }] },
   {
     Component: GuestRoute,
     children: [
@@ -26,7 +30,6 @@ export const router = createBrowserRouter([
   {
     Component: ProtectedRoute,
     children: [
-      { path: '/', Component: RoleHome, ErrorBoundary },
       { path: '/workspace', Component: WorkspacePage, ErrorBoundary },
       { path: '/connections', Component: ConnectionsPage, ErrorBoundary },
       { path: '/access-denied', Component: AccessDeniedPage, ErrorBoundary },

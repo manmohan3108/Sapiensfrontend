@@ -136,6 +136,7 @@ export interface QueryApiResponse {
  * A single message in the chat window, enriched with observability metadata.
  */
 export interface ChatMessage {
+  isError?: boolean;
   id: string;
   role: 'user' | 'assistant';
   content: string;
@@ -323,4 +324,9 @@ export interface StoredChatMessage {
 export interface ChatDetail extends ChatHistoryItem {
   sapien_id: number;
   messages: StoredChatMessage[];
+}
+
+export interface UploadAcceptance {
+  status: "accepted";
+  documents: { document_id: string; document_version_id: string; ingestion_request_id: string; job_id?: string | null }[];
 }

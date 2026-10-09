@@ -6,6 +6,7 @@ import {
   LoadSapiensRequest,
   SaveSapiensRequest,
   LearnFolderRequest,
+  UploadAcceptance,
   TextInputRequest,
   ChatRequest,
   ChatApiResponse,
@@ -69,6 +70,10 @@ class SapiensService {
     );
     const data = response.data;
 
+    if (data.id === undefined || data.id === null || !/^\d+$/.test(String(data.id))) {
+      throw new Error('Creation response did not confirm an identity.');
+    }
+
     return {
       sapiensId: String(data.id),
       name: data.name,
@@ -90,7 +95,7 @@ class SapiensService {
     await apiClient.post(API_ENDPOINTS.saveSapiens(request.sapiensId));
   }
 
-  async uploadFolder(request: LearnFolderRequest): Promise<void> {
+  async uploadFolder(request: LearnFolderRequest): Promise<UploadAcceptance> {
     const formData = new FormData();
     formData.append('sapiens_id', request.sapiensId);
     request.files.forEach((file) => {
@@ -100,7 +105,11 @@ class SapiensService {
         formData.append('file_paths', filePath);
       }
     });
-    await apiClient.postFormData(API_ENDPOINTS.learnFolder, formData);
+    const response = await apiClient.postFormData<UploadAcceptance>(API_ENDPOINTS.learnFolder, formData);
+    if (response.data?.status !== 'accepted' || !Array.isArray(response.data.documents) || !response.data.documents.length) {
+      throw new Error('The server did not confirm any documents were accepted.');
+    }
+    return response.data;
   }
 
   /**

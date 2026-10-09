@@ -9,8 +9,12 @@ let sessionVersion = 0;
 export const resourceSession = {
   version: 0,
   selectedId: null as string | null,
+  customer: false,
+  accessState: 'verified' as 'verified' | 'checking' | 'failed',
+  accessEvent: 'sapiens:access-check',
   unavailableEvent: 'sapiens:resource-unavailable',
-  select(id: string | null) { this.selectedId = id; this.version += 1; },
+  select(id: string | null) { this.selectedId = id; this.version += 1; this.accessState = 'verified'; },
+  access(state: 'verified' | 'checking' | 'failed') { this.accessState = state; window.dispatchEvent(new Event(this.accessEvent)); },
 };
 
 function authUrl(path: string) {
@@ -44,6 +48,32 @@ export const authSession = {
 };
 
 let refreshPromise: Promise<string> | null = null;
+let ownershipCheck: { version: number; promise: Promise<void> } | null = null;
+
+function revalidateCustomerSelection(selectedId: string, version: number) {
+  if (ownershipCheck?.version === version) return ownershipCheck.promise;
+  resourceSession.access('checking');
+  const promise = (async () => {
+    try {
+      const response = await authenticatedFetch(`${apiConfig.baseUrl}/get-all-sapiens`, { signal: AbortSignal.timeout(30_000) });
+      if (!response.ok) throw new Error('Access verification failed');
+      const result = await response.json() as { sapiens?: { id: number | string }[] };
+      if (!Array.isArray(result.sapiens)) throw new Error('Access verification failed');
+      if (resourceSession.version !== version) throw new Error('Selection changed');
+      if (!result.sapiens.some(item => String(item.id) === selectedId)) {
+        resourceSession.select(null);
+        window.dispatchEvent(new Event(resourceSession.unavailableEvent));
+        throw new HttpError('This Sapiens is not available to this account.', 404);
+      }
+      resourceSession.access('verified');
+    } catch (error) {
+      if (resourceSession.version === version) resourceSession.access('failed');
+      throw error instanceof HttpError ? error : new HttpError('We couldn’t verify access. Try again before continuing.', 503);
+    }
+  })().finally(() => { if (ownershipCheck?.version === version) ownershipCheck = null; });
+  ownershipCheck = { version, promise };
+  return promise;
+}
 
 async function responseMessage(response: Response) {
   try {
@@ -110,6 +140,13 @@ export async function authenticatedFetch(input: RequestInfo | URL, init: Request
     // parent job must not clear the active Sapien and close the inspector.
     const jobInspection = /\/sapien\/[^/]+\/engine-jobs(?:\/[^/]+)?\/?$/.test(path);
     if (response.status === 404 && selectedId && scoped && !jobInspection) {
+      if (resourceSession.customer) {
+        // A missing thread or other child does not prove loss of the individual.
+        // Hide protected content until the authoritative owner-filtered list answers.
+        await revalidateCustomerSelection(selectedId, selectionVersion);
+        if (version !== sessionVersion || selectionVersion !== resourceSession.version) throw new HttpError('Session changed.', 409);
+        return new Response(body, { status: response.status, statusText: response.statusText, headers: response.headers });
+      }
       resourceSession.select(null);
       window.dispatchEvent(new Event(resourceSession.unavailableEvent));
       throw new HttpError('This Sapiens or resource is no longer available. Choose an accessible Sapiens.', 404);

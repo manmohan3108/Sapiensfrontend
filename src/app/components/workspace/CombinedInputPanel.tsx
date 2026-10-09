@@ -47,7 +47,8 @@ function ExtBadge({ name }: { name: string }) {
 export function CombinedInputPanel() {
   const [files, setFiles] = useState<FileWithPath[]>([]);
   const [uploading, setUploading] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const [acceptedCount, setAcceptedCount] = useState(0);
+  const inFlight = useRef(false);
   const [done, setDone] = useState(false);
   const [err, setErr] = useState(false);
   const [dragOver, setDragOver] = useState(false);
@@ -63,22 +64,21 @@ export function CombinedInputPanel() {
   const PREVIEW = 6;
 
   const clear = () => {
-    setFiles([]); setProgress(0); setDone(false); setErr(false);
+    setFiles([]); setAcceptedCount(0); setDone(false); setErr(false);
     if (fileRef.current) fileRef.current.value = '';
     if (folderRef.current) folderRef.current.value = '';
   };
 
   const upload = async () => {
-    if (!files.length) return;
-    setUploading(true); setDone(false); setErr(false); setProgress(0);
-    const iv = setInterval(() => setProgress((p) => p >= 85 ? 85 : p + 12), 180);
+    if (!files.length || inFlight.current || err) return;
+    inFlight.current = true;
+    setUploading(true); setDone(false); setErr(false);
     try {
-      await uploadFiles(files);
-      clearInterval(iv); setProgress(100); setDone(true);
-      setTimeout(clear, 1600);
+      const result = await uploadFiles(files);
+      setAcceptedCount(result.documents.length); setDone(true);
     } catch {
-      clearInterval(iv); setProgress(0); setErr(true);
-    } finally { setUploading(false); }
+      setErr(true);
+    } finally { inFlight.current = false; setUploading(false); }
   };
 
   const folderLabel = (() => {
@@ -267,34 +267,22 @@ export function CombinedInputPanel() {
       <div className="flex-shrink-0 px-3 pb-3 pt-2 space-y-2"
         style={{ background: 'rgba(0,0,0,0.25)', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
 
-        {/* Progress bar */}
-        {uploading && (
-          <div className="space-y-1">
-            <div className="flex justify-between text-[10px]">
-              <span className="text-white/30">{done ? 'Complete' : 'Uploading…'}</span>
-              <span className="text-white/30 font-mono">{progress}%</span>
-            </div>
-            <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.08)' }}>
-              <div className="h-full rounded-full transition-all duration-300"
-                style={{ width: `${progress}%`, background: 'linear-gradient(90deg, #059669, #10b981)' }} />
-            </div>
-          </div>
-        )}
+        {uploading && <p role="status" className="text-xs text-white/70">Uploading and waiting for acceptance…</p>}
 
         {err && (
-          <div className="flex items-center gap-2 px-3 py-2 rounded-lg text-red-400 text-[11px]"
+          <div role="alert" className="flex items-center gap-2 px-3 py-2 rounded-lg text-red-300 text-xs"
             style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)' }}>
-            <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" /> Upload failed. Please try again.
+            <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" /> We couldn’t confirm acceptance of all files. Some may have been accepted. We haven’t retried the upload.
           </div>
         )}
 
         {done ? (
-          <div className="w-full h-10 rounded-xl flex items-center justify-center gap-2 text-emerald-400 text-sm"
+          <div role="status" className="w-full rounded-xl p-3 flex items-center justify-center gap-2 text-emerald-300 text-xs"
             style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.3)' }}>
-            <CheckCircle2 className="w-4 h-4" /> Uploaded successfully!
+            <CheckCircle2 className="w-4 h-4" /> {acceptedCount} document{acceptedCount === 1 ? '' : 's'} accepted for processing. Processing completion is not confirmed.
           </div>
         ) : (
-          <button onClick={upload} disabled={files.length === 0 || disabled}
+          <button onClick={upload} disabled={files.length === 0 || disabled || err}
             className="w-full h-10 rounded-xl flex items-center justify-center gap-2 text-sm text-white transition-all duration-200 active:scale-[0.98] disabled:cursor-not-allowed"
             style={{
               background: files.length > 0 && !disabled ? 'linear-gradient(135deg, #059669, #10b981)' : 'rgba(255,255,255,0.04)',

@@ -19,7 +19,9 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 async function loadMe() {
-  return parseAuthResponse<AuthUser>(await authenticatedFetch(authSession.url('me/'), { signal: AbortSignal.timeout(30_000) }));
+  const user = await parseAuthResponse<AuthUser>(await authenticatedFetch(authSession.url('me/'), { signal: AbortSignal.timeout(30_000) }));
+  resourceSession.customer = user.role === 'customer';
+  return user;
 }
 
 async function exchange(path: 'login/' | 'register/', credentials: AuthCredentials | RegistrationCredentials) {
