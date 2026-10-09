@@ -12,7 +12,7 @@ import '../../styles/landing.css';
 const stages = [
   {
     title: 'Notice and explore',
-    summary: 'Notice a change. Ask what’s missing.',
+    summary: 'Notice what has changed and seek information to fill gaps in understanding.',
     human: 'When something changes or is unclear, we notice it, ask questions and look for more information.',
     sapiens: 'The ambition is for Sapiens to identify gaps and seek relevant information—not only wait for a prompt.',
     availability: 'In development',
@@ -20,7 +20,7 @@ const stages = [
   },
   {
     title: 'Understand and consider',
-    summary: 'Connect experience. Consider what matters.',
+    summary: 'Connect new information with earlier experience to decide what deserves attention.',
     human: 'We connect a situation with earlier experience and our goals, then decide what deserves attention.',
     sapiens: 'Sapiens can draw on selected past context in a reply. The wider aim is to weigh that context against goals and decide what to address next.',
     availability: 'Context today · decisions in development',
@@ -28,7 +28,7 @@ const stages = [
   },
   {
     title: 'Choose and act',
-    summary: 'Communicate. Take a meaningful next step.',
+    summary: 'Work toward a goal by communicating with people and using available tools.',
     human: 'We talk with other people, coordinate and use tools to move something forward.',
     sapiens: 'The direction is an individual that participates: communicating through supported channels and taking permitted tool actions toward a goal.',
     availability: 'Requires support, setup and permission',
@@ -36,7 +36,7 @@ const stages = [
   },
   {
     title: 'Reflect and continue',
-    summary: 'Consider the outcome. Carry experience forward.',
+    summary: 'Use outcomes and feedback to inform how the individual approaches what comes next.',
     human: 'We consider what happened, adjust our understanding and return to unfinished matters.',
     sapiens: 'We’re building toward retaining outcomes, using feedback and revisiting what matters, so experience can inform later decisions.',
     availability: 'In development',
