@@ -5,11 +5,10 @@
 .public-story .experience-heading .customer-eyebrow { justify-content: center; }
 .public-story .experience-heading p { margin-inline: auto; max-width: 70ch; }
 .public-story .experience-desktop { display: block; width: 100%; max-width: 1050px; height: auto; margin: 24px auto 0; overflow: visible; }
-.public-story .experience-boundary { fill: var(--cx-panel); stroke: var(--cx-violet); stroke-width: 1.8; }
+.public-story .experience-boundary { fill: var(--cx-soft); fill-opacity: .55; stroke: var(--cx-line); stroke-width: 1.5; stroke-dasharray: 5 8; }
 .public-story .experience-individual-title { fill: var(--cx-ink); font-size: 26px; font-weight: 600; }
 .public-story .experience-individual-subtitle { fill: var(--cx-muted); font-size: 14px; }
-.public-story .experience-quality { fill: var(--cx-muted); font-size: 15px; }
-.public-story .experience-quality-title { fill: var(--cx-ink); font-size: 17px; font-weight: 550; }
+.public-story .experience-internal-links { stroke: var(--cx-violet); stroke-width: 1.2; opacity: .4; }
 .public-story .experience-node circle { fill: var(--cx-panel); stroke: var(--cx-line); stroke-width: 1.5; }
 .public-story .experience-node text { fill: var(--cx-ink); font-size: 16px; font-weight: 550; }
 .public-story .experience-outward-paths, .public-story .experience-outward-marker { stroke: var(--cx-violet); stroke-width: 1.8; fill: none; }
@@ -32,13 +31,12 @@
   .public-story .experience-mini-node span { font-size: 12px; line-height: 1.4; }
   .public-story .experience-mobile-link { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 13px; color: var(--cx-violet); margin: 20px 0; text-align: center; }
   .public-story .experience-mobile-link > span { font-size: 26px; line-height: 1; }
-  .public-story .experience-mobile-individual { padding: 22px 18px; border-radius: 24px; border: 1px solid var(--cx-violet); background: var(--cx-panel); }
+  .public-story .experience-mobile-individual { padding: 26px 12px; border-radius: 64px; border: 1px dashed var(--cx-line); background: var(--cx-soft); }
   .public-story .experience-mobile-individual > h3 { margin: 0; font-size: 24px; text-align: center; }
   .public-story .experience-mobile-individual > p { color: var(--cx-muted); font-size: 13px; text-align: center; }
   .public-story .experience-mobile-individual > img { display: block; margin: 12px auto 18px; }
-  .public-story .experience-mobile-quality + .experience-mobile-quality { margin-top: 18px; }
-  .public-story .experience-mobile-quality h4 { font-size: 15px; font-weight: 550; margin-bottom: 5px; }
-  .public-story .experience-mobile-quality p { color: var(--cx-muted); font-size: 14px; line-height: 1.6; }
+  .public-story .experience-mobile-aspects { display: grid; grid-template-columns: repeat(2, minmax(0, 112px)); justify-content: center; gap: 14px; }
+  .public-story .experience-mobile-aspects > :last-child { grid-column: 1 / -1; width: 112px; justify-self: center; }
   .public-story .experience-warm { color: var(--experience-warm); }
   .public-story .experience-mobile-return { margin: 22px 0 0 -18px; padding: 12px 14px; border-bottom: 1px solid var(--experience-warm); border-radius: 0 0 0 10px; color: var(--experience-warm); font-size: 13px; line-height: 1.7; }
 }
