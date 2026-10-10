@@ -11,7 +11,12 @@
 .public-story .experience-mobile-core svg { opacity: 1; }
 .public-story .experience-mobile-core svg > path:not(.experience-motion-connection) { opacity: .4; }
 .public-story .experience-mobile-core .experience-motion-connection { stroke-width: 3; }
-.public-story .experience-graph[data-experience-enabled="false"] :is(.experience-motion-connection, .experience-motion-wash) { display: none; }
+/* Three-beat additions are opt-in; classic keeps its original appearance. */
+.public-story .experience-motion-halo { transform-box: fill-box; transform-origin: center; opacity: 0; pointer-events: none; }
+.public-story .experience-mobile-core > .experience-motion-halo { position: absolute; left: calc(50% - 80px); top: calc(50% - 56px); width: 160px; height: 112px; border-radius: 50%; background: radial-gradient(ellipse, var(--cx-violet), transparent 72%); }
+.public-story [data-experience-style="three-beat"] .experience-motion-connection { stroke-width: 5.5; }
+.public-story [data-experience-style="three-beat"] .experience-mobile-core .experience-motion-connection { stroke-width: 3.8; }
+.public-story .experience-graph[data-experience-enabled="false"] :is(.experience-motion-connection, .experience-motion-wash, .experience-motion-halo) { display: none; }
 @media (prefers-reduced-motion: reduce) {
-  .public-story .experience-graph :is(.experience-motion-connection, .experience-motion-wash) { display: none; }
+  .public-story .experience-graph :is(.experience-motion-connection, .experience-motion-wash, .experience-motion-halo) { display: none; }
 }

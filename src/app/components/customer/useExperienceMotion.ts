@@ -1,7 +1,10 @@
 import { useEffect, useRef } from 'react';
+import { startThreeBeatExperience } from './threeBeatExperienceMotion';
 
 // Set false to restore the completely static diagram, retaining all motion code.
 export const EXPERIENCE_ANIMATION_ENABLED = true;
+// 'classic' restores the previous looping animation. Neither version is deleted.
+export const EXPERIENCE_ANIMATION_STYLE: 'classic' | 'three-beat' = 'three-beat';
 
 const timings: Record<string, number> = {
   attention: 600, understanding: 2000, goals: 3400, memory: 4800,
@@ -66,7 +69,7 @@ type Scene = {
 };
 
 // Decorative only: no timers, application state, API calls or simulated status.
-export function useExperienceMotion(enabled: boolean) {
+export function useExperienceMotion(enabled: boolean, animationStyle: 'classic' | 'three-beat' = EXPERIENCE_ANIMATION_STYLE) {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -85,6 +88,11 @@ export function useExperienceMotion(enabled: boolean) {
     const start = (scene: Scene) => {
       clear(scene);
       scene.played = true;
+      if (animationStyle === 'three-beat') {
+        Object.assign(scene, startThreeBeatExperience(scene.element, root));
+        return;
+      }
+      // Classic choreography below is retained with its original timing/motion.
       let end = 0;
       const sequence: { target: Element; frames: Keyframe[]; duration: number; delay: number; easing: string }[] = [];
       const desktop = scene.element.dataset.experienceScene === 'desktop';
@@ -229,7 +237,7 @@ export function useExperienceMotion(enabled: boolean) {
       reduced.removeEventListener('change', sync);
       document.removeEventListener('visibilitychange', sync);
     };
-  }, [enabled]);
+  }, [enabled, animationStyle]);
 
   return ref;
 }

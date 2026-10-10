@@ -8,7 +8,7 @@ import question from '../../../assets/landing/question.webp';
 import outcome from '../../../assets/landing/outcome.webp';
 import experience from '../../../assets/landing/experience.webp';
 import context from '../../../assets/landing/context.webp';
-import { EXPERIENCE_ANIMATION_ENABLED, useExperienceMotion } from './useExperienceMotion';
+import { EXPERIENCE_ANIMATION_ENABLED, EXPERIENCE_ANIMATION_STYLE, useExperienceMotion } from './useExperienceMotion';
 import '../../../styles/experience-graph.css';
 import '../../../styles/experience-motion.css';
 
@@ -57,10 +57,11 @@ function Node({ x, y, image, label, second, part, radius = 62 }: { x: number; y:
 
 export function SapiensExperienceGraph() {
   const motionRef = useExperienceMotion(EXPERIENCE_ANIMATION_ENABLED);
+  const threeBeat = EXPERIENCE_ANIMATION_ENABLED && EXPERIENCE_ANIMATION_STYLE === 'three-beat';
   const id = useId().replace(/:/g, '');
   const outward = `url(#${id}-outward)`;
   const returning = `url(#${id}-returning)`;
-  return <div ref={motionRef} className="experience-graph" data-experience-enabled={EXPERIENCE_ANIMATION_ENABLED} tabIndex={EXPERIENCE_ANIMATION_ENABLED ? 0 : undefined} role="group" aria-label="Sapiens concept diagram" aria-keyshortcuts={EXPERIENCE_ANIMATION_ENABLED ? 'Enter Space' : undefined}>
+  return <div ref={motionRef} className="experience-graph" data-experience-enabled={EXPERIENCE_ANIMATION_ENABLED} data-experience-style={EXPERIENCE_ANIMATION_STYLE} tabIndex={EXPERIENCE_ANIMATION_ENABLED ? 0 : undefined} role="group" aria-label="Sapiens concept diagram" aria-keyshortcuts={EXPERIENCE_ANIMATION_ENABLED ? 'Enter Space' : undefined}>
     <div className="landing-section-heading experience-heading">
       <span className="customer-eyebrow">The idea behind Sapiens</span>
       <h2 id="how-title">An individual that notices, acts and learns.</h2>
@@ -70,12 +71,18 @@ export function SapiensExperienceGraph() {
       <title id={`${id}-title`}>Initiative, interaction and reflection around one Sapiens</title>
       <desc id={`${id}-description`}>The rounded boundary is Sapiens, one AI individual. Attention and curiosity notice what matters, ask questions and seek answers. Understanding connects information to make sense of a situation. Memory and experience carry relevant context and outcomes forward. Goals and reflection guide what to pursue and reconsider the approach. Sleep and consolidation is a quiet phase that connects experiences and strengthens what matters. Outside are people, information, tools, and outcomes and feedback. Sapiens takes initiative: noticing a reason to act, asking questions and seeking what is needed. It reaches out, seeks information and takes permitted actions; feedback returns to the individual, while experience informs its next interaction. This graph explains the Sapiens concept.</desc>
       <defs>
+        <radialGradient id={`${id}-core-halo`}>
+          <stop offset="0" stopColor="var(--cx-violet)" stopOpacity=".65" />
+          <stop offset=".55" stopColor="var(--cx-violet)" stopOpacity=".3" />
+          <stop offset="1" stopColor="var(--cx-violet)" stopOpacity="0" />
+        </radialGradient>
         <marker id={`${id}-outward`} markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M1 1L7 4L1 7" className="experience-outward-marker" /></marker>
         <marker id={`${id}-returning`} markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M1 1L7 4L1 7" className="experience-return-marker" /></marker>
       </defs>
       <rect className="experience-boundary" x="250" y="30" width="500" height="800" rx="110" />
       <text className="experience-individual-title" x="500" y="76" textAnchor="middle">Sapiens</text>
       <text className="experience-individual-subtitle" x="500" y="100" textAnchor="middle">An AI individual</text>
+      {threeBeat && <ellipse className="experience-motion-halo" cx="500" cy="432" rx="94" ry="68" fill={`url(#${id}-core-halo)`} data-experience-motion="halo" data-experience-part="core-halo" aria-hidden="true" />}
       {/* Mirror the mobile curves in a 230 × 200 space around (500, 432).
           Top connections begin below the copy; bottom ones meet the images.
           Their joins are hidden behind the artwork, with no exposed stem. */}
@@ -131,6 +138,7 @@ export function SapiensExperienceGraph() {
         <h3>Sapiens</h3><p>An AI individual</p>
         <div className="experience-mobile-aspects">
           <div className="experience-mobile-core" aria-hidden="true">
+            {threeBeat && <span className="experience-motion-halo" data-experience-motion="halo" data-experience-part="core-halo" />}
             <svg viewBox="0 0 100 100" preserveAspectRatio="none" focusable="false">
               <path d="M25 0C25 30 50 20 50 50M75 0C75 30 50 20 50 50M25 100C25 70 50 80 50 50M75 100C75 70 50 80 50 50" />
               <MotionConnection part="attention" d="M25 0C25 30 50 20 50 50" />
