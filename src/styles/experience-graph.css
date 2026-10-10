@@ -9,6 +9,8 @@
 .public-story .experience-individual-title { fill: var(--cx-ink); font-size: 26px; font-weight: 600; }
 .public-story .experience-individual-subtitle { fill: var(--cx-muted); font-size: 14px; }
 .public-story .experience-internal-links { stroke: var(--cx-violet); stroke-width: 1.2; opacity: .4; }
+.public-story .experience-desktop-aspect circle { fill: var(--cx-panel); stroke: var(--cx-line); stroke-width: 1.5; }
+.public-story .experience-aspect-title { fill: var(--cx-ink); font-size: 15px; font-weight: 600; }
 .public-story .experience-aspect-description { fill: var(--cx-muted); font-size: 15px; }
 .public-story .experience-node circle { fill: var(--cx-panel); stroke: var(--cx-line); stroke-width: 1.5; }
 .public-story .experience-node text { fill: var(--cx-ink); font-size: 16px; font-weight: 550; }

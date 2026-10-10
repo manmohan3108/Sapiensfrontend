@@ -11,13 +11,13 @@ import context from '../../../assets/landing/context.webp';
 import '../../../styles/experience-graph.css';
 
 const aspects = [
-  { title: 'Attention & curiosity', position: 'attention', label: 'Attention', second: '& curiosity', image: question, x: 385, y: 210,
+  { title: 'Attention & curiosity', position: 'attention', image: question, x: 385, y: 210,
     lines: ['Notices what matters, asks', 'questions and seeks answers.'] },
-  { title: 'Understanding', position: 'understanding', label: 'Understanding', image: context, x: 615, y: 210,
+  { title: 'Understanding', position: 'understanding', image: context, x: 615, y: 210,
     lines: ['Connects information to make', 'sense of a situation.'] },
-  { title: 'Memory & experience', position: 'memory', label: 'Memory', second: '& experience', image: experience, x: 385, y: 600,
+  { title: 'Memory & experience', position: 'memory', image: experience, x: 385, y: 568,
     lines: ['Carries relevant context', 'and outcomes forward.'] },
-  { title: 'Goals & reflection', position: 'goals', label: 'Goals', second: '& reflection', image: goal, x: 615, y: 600,
+  { title: 'Goals & reflection', position: 'goals', image: goal, x: 615, y: 568,
     lines: ['Guides what to pursue and', 'reconsiders the approach.'] },
 ];
 
@@ -49,13 +49,16 @@ export function SapiensExperienceGraph() {
       <rect className="experience-boundary" x="250" y="30" width="500" height="750" rx="110" />
       <text className="experience-individual-title" x="500" y="76" textAnchor="middle">Sapiens</text>
       <text className="experience-individual-subtitle" x="500" y="100" textAnchor="middle">An AI individual</text>
+      {/* Mirror the mobile curves in a 230 × 200 space around (500, 432).
+          Top connections begin below the copy; bottom ones meet the images.
+          Their joins are hidden behind the artwork, with no exposed stem. */}
       <g className="experience-internal-links" fill="none">
-        <path d="M448 222C512 240 510 314 470 375" />
-        <path d="M552 222C488 240 490 314 530 375" />
-        <path d="M430 555C458 535 436 485 470 435" />
-        <path d="M570 555C542 535 564 485 530 435" />
+        <path d="M385 332C385 392 500 372 500 432" />
+        <path d="M615 332C615 392 500 372 500 432" />
+        <path d="M385 532C385 472 500 492 500 432" />
+        <path d="M615 532C615 472 500 492 500 432" />
       </g>
-      <image href={identity} x="425" y="330" width="150" height="150" />
+      <image href={identity} x="425" y="357" width="150" height="150" />
 
       <g className="experience-outward-paths" fill="none">
         <path d="M250 295C218 268 185 268 163 287" markerEnd={outward} />
@@ -81,9 +84,11 @@ export function SapiensExperienceGraph() {
       <Node x={100} y={520} image={information} label="Information" />
       <Node x={900} y={330} image={tool} label="Tools" />
       <Node x={900} y={660} image={outcome} label="Outcomes" second="& feedback" radius={66} />
-      {aspects.map(aspect => <g key={aspect.title}>
-        <Node x={aspect.x} y={aspect.y} image={aspect.image} label={aspect.label} second={aspect.second} radius={64} />
-        <text className="experience-aspect-description" x={aspect.x} y={aspect.y + 93} textAnchor="middle">
+      {aspects.map(aspect => <g className="experience-desktop-aspect" key={aspect.title}>
+        <circle cx={aspect.x} cy={aspect.y} r="36" />
+        <image href={aspect.image} x={aspect.x - 26} y={aspect.y - 26} width="52" height="52" />
+        <text className="experience-aspect-title" x={aspect.x} y={aspect.y + 60} textAnchor="middle">{aspect.title}</text>
+        <text className="experience-aspect-description" x={aspect.x} y={aspect.y + 88} textAnchor="middle">
           {aspect.lines.map((line, index) => <tspan key={line} x={aspect.x} dy={index ? 22 : 0}>{line}</tspan>)}
         </text>
       </g>)}
