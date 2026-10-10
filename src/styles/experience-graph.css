@@ -1,0 +1,40 @@
+/* Always-visible concept graph. Earlier alternatives keep their own styles. */
+.public-story .experience-graph { --experience-warm: #956335; }
+.dark .public-story .experience-graph { --experience-warm: #d7b082; }
+.public-story .experience-heading { text-align: center; }
+.public-story .experience-heading .customer-eyebrow { justify-content: center; }
+.public-story .experience-heading p { margin-inline: auto; max-width: 70ch; }
+.public-story .experience-desktop { display: block; width: 100%; max-width: 1050px; height: auto; margin: 24px auto 0; overflow: visible; }
+.public-story .experience-boundary { fill: var(--cx-soft); fill-opacity: .5; stroke: var(--cx-line); stroke-dasharray: 5 8; }
+.public-story .experience-boundary-label { fill: var(--cx-muted); font-size: 13px; }
+.public-story .experience-node circle { fill: var(--cx-panel); stroke: var(--cx-line); stroke-width: 1.5; }
+.public-story .experience-node text { fill: var(--cx-ink); font-size: 16px; font-weight: 550; }
+.public-story .experience-core circle { fill: var(--cx-panel); stroke: var(--cx-violet); stroke-width: 2; }
+.public-story .experience-core text { fill: var(--cx-ink); font-size: 25px; font-weight: 550; }
+.public-story .experience-core .experience-core-subtitle { fill: var(--cx-muted); font-size: 14px; font-weight: 400; }
+.public-story .experience-outward-paths, .public-story .experience-outward-marker { stroke: var(--cx-violet); stroke-width: 1.8; fill: none; }
+.public-story .experience-return-paths, .public-story .experience-return-marker { stroke: var(--experience-warm); stroke-width: 1.8; fill: none; }
+.public-story .experience-graph-copy { font-size: 15px; fill: var(--cx-muted); }
+.public-story .experience-graph-copy .experience-group-title { fill: var(--cx-ink); font-size: 17px; font-weight: 600; }
+.public-story .experience-edge-label, .public-story .experience-feedback-label { font-size: 14px; paint-order: stroke; stroke: var(--cx-bg); stroke-width: 7px; stroke-linejoin: round; fill: var(--cx-violet); }
+.public-story .experience-graph-copy .experience-feedback-label { fill: var(--experience-warm); }
+.public-story .experience-mobile { display: none; }
+@media (max-width: 900px) {
+  .public-story .experience-desktop { display: none; }
+  .public-story .experience-mobile { display: block; position: relative; max-width: 520px; margin: 28px auto 0; padding-left: 18px; border-left: 1px solid var(--experience-warm); }
+  .public-story .experience-mobile::before { content: ''; position: absolute; left: -4px; top: 0; width: 7px; height: 7px; border-top: 1px solid var(--experience-warm); border-left: 1px solid var(--experience-warm); transform: rotate(45deg); }
+  .public-story .experience-mobile-group { text-align: center; }
+  .public-story .experience-mobile-group h3 { margin: 0 0 8px; font-size: 19px; }
+  .public-story .experience-mobile-group > p { font-size: 14px; line-height: 1.7; color: var(--cx-muted); max-width: 43ch; margin-inline: auto; }
+  .public-story .experience-mini-row { display: flex; justify-content: center; align-items: center; gap: 12px; margin-top: 18px; }
+  .public-story .experience-mini-node { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 0 1 112px; min-width: 0; aspect-ratio: 1; padding: 10px 4px; border-radius: 50%; border: 1px solid var(--cx-line); background: var(--cx-panel); text-align: center; }
+  .public-story .experience-mini-node img { width: clamp(32px, 8vw, 48px); height: clamp(32px, 8vw, 48px); object-fit: contain; }
+  .public-story .experience-mini-node span { font-size: 12px; line-height: 1.4; }
+  .public-story .experience-mobile-link { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 13px; color: var(--cx-violet); margin: 20px 0; text-align: center; }
+  .public-story .experience-mobile-link > span { font-size: 26px; line-height: 1; }
+  .public-story .experience-mobile-core { width: 168px; height: 168px; border-radius: 50%; border: 1px solid var(--cx-violet); background: var(--cx-panel); display: flex; flex-direction: column; align-items: center; justify-content: center; margin-inline: auto; }
+  .public-story .experience-mobile-core h3 { margin: 0; font-size: 23px; }
+  .public-story .experience-mobile-core p { color: var(--cx-muted); font-size: 12px; }
+  .public-story .experience-warm { color: var(--experience-warm); }
+  .public-story .experience-mobile-return { margin: 22px 0 0 -18px; padding: 12px 14px; border-bottom: 1px solid var(--experience-warm); border-radius: 0 0 0 10px; color: var(--experience-warm); font-size: 13px; line-height: 1.7; }
+}
