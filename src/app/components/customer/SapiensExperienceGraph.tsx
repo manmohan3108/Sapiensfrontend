@@ -11,13 +11,13 @@ import context from '../../../assets/landing/context.webp';
 import '../../../styles/experience-graph.css';
 
 const aspects = [
-  { title: 'Attention & curiosity', label: 'Attention', second: '& curiosity', image: question, x: 385, y: 340,
+  { title: 'Attention & curiosity', position: 'attention', label: 'Attention', second: '& curiosity', image: question, x: 385, y: 210,
     lines: ['Notices what matters, asks', 'questions and seeks answers.'] },
-  { title: 'Understanding', label: 'Understanding', image: context, x: 615, y: 340,
+  { title: 'Understanding', position: 'understanding', label: 'Understanding', image: context, x: 615, y: 210,
     lines: ['Connects information to make', 'sense of a situation.'] },
-  { title: 'Memory & experience', label: 'Memory', second: '& experience', image: experience, x: 385, y: 585,
+  { title: 'Memory & experience', position: 'memory', label: 'Memory', second: '& experience', image: experience, x: 385, y: 600,
     lines: ['Carries relevant context', 'and outcomes forward.'] },
-  { title: 'Goals & reflection', label: 'Goals', second: '& reflection', image: goal, x: 615, y: 585,
+  { title: 'Goals & reflection', position: 'goals', label: 'Goals', second: '& reflection', image: goal, x: 615, y: 600,
     lines: ['Guides what to pursue and', 'reconsiders the approach.'] },
 ];
 
@@ -27,10 +27,6 @@ function Node({ x, y, image, label, second, radius = 62 }: { x: number; y: numbe
     <image href={image} x="-32" y={second ? -48 : -44} width="64" height="64" />
     <text y={second ? 29 : 35} textAnchor="middle">{label}{second && <tspan x="0" dy="19">{second}</tspan>}</text>
   </g>;
-}
-
-function MiniNode({ image, label }: { image: string; label: string }) {
-  return <div className="experience-mini-node"><img src={image} width="56" height="56" alt="" loading="lazy" /><span>{label}</span></div>;
 }
 
 export function SapiensExperienceGraph() {
@@ -53,10 +49,11 @@ export function SapiensExperienceGraph() {
       <rect className="experience-boundary" x="250" y="30" width="500" height="750" rx="110" />
       <text className="experience-individual-title" x="500" y="76" textAnchor="middle">Sapiens</text>
       <text className="experience-individual-subtitle" x="500" y="100" textAnchor="middle">An AI individual</text>
-      <image href={identity} x="430" y="112" width="140" height="140" />
       <g className="experience-internal-links" fill="none">
-        <path d="M452 220C413 227 390 251 385 276M548 220C587 227 610 251 615 276" />
+        <path d="M449 210C500 210 500 270 500 340M551 210C500 210 500 270 500 340" />
+        <path d="M449 600C500 600 500 540 500 470M551 600C500 600 500 540 500 470" />
       </g>
+      <image href={identity} x="425" y="330" width="150" height="150" />
 
       <g className="experience-outward-paths" fill="none">
         <path d="M250 295C218 268 185 268 163 287" markerEnd={outward} />
@@ -68,7 +65,6 @@ export function SapiensExperienceGraph() {
         <path d="M38 520H12" />
         <path d="M900 392C936 465 929 534 900 593" markerEnd={returning} />
         <path d="M834 660C803 671 780 671 750 660" markerEnd={returning} />
-        <path className="experience-memory-return" d="M450 585C480 585 500 564 500 528V285Q500 267 500 253" markerEnd={returning} />
       </g>
 
       <g className="experience-graph-copy">
@@ -94,27 +90,35 @@ export function SapiensExperienceGraph() {
     <div className="experience-mobile">
       <section className="experience-mobile-individual" aria-label="Sapiens, an AI individual">
         <h3>Sapiens</h3><p>An AI individual</p>
-        <img src={identity} width="128" height="128" alt="" loading="lazy" />
         <div className="experience-mobile-aspects">
-          {aspects.map(aspect => <div className="experience-mobile-aspect" key={aspect.title}>
-            <MiniNode image={aspect.image} label={aspect.title} />
+          <div className="experience-mobile-core" aria-hidden="true">
+            <svg viewBox="0 0 100 100" preserveAspectRatio="none" focusable="false">
+              <path d="M25 0C25 30 50 20 50 50M75 0C75 30 50 20 50 50M25 100C25 70 50 80 50 50M75 100C75 70 50 80 50 50" />
+            </svg>
+            <img src={identity} width="112" height="112" alt="" loading="lazy" />
+          </div>
+          {aspects.map(aspect => <div className={`experience-mobile-aspect experience-aspect-${aspect.position}`} key={aspect.title}>
+            <img src={aspect.image} width="48" height="48" alt="" loading="lazy" />
+            <h4>{aspect.title}</h4>
             <p>{aspect.lines.join(' ')}</p>
           </div>)}
         </div>
       </section>
-      <p className="experience-mobile-link"><span aria-hidden="true">↓</span> Reach out, investigate and act</p>
-      <section className="experience-mobile-group">
+      <div className="experience-mobile-link" aria-hidden="true">↓</div>
+      <section className="experience-mobile-world">
         <h3>Engage with the world</h3>
-        <p>Ask people, gather information and act through supported tools with available access.</p>
-        <div className="experience-mini-row"><MiniNode image={person} label="People" /><MiniNode image={information} label="Information" /><MiniNode image={tool} label="Tools" /></div>
+        <ul>
+          <li><img src={person} width="48" height="48" alt="" loading="lazy" /><div><h4>People</h4><p>Reach out, ask and exchange ideas.</p></div></li>
+          <li><img src={information} width="48" height="48" alt="" loading="lazy" /><div><h4>Information</h4><p>Seek context and explore unanswered questions.</p></div></li>
+          <li><img src={tool} width="48" height="48" alt="" loading="lazy" /><div><h4>Tools</h4><p>Take supported actions with available access.</p></div></li>
+        </ul>
       </section>
-      <p className="experience-mobile-link experience-warm"><span aria-hidden="true">↓</span> See what happened</p>
-      <section className="experience-mobile-group">
-        <h3>Reflect and learn</h3>
-        <p>Outcomes, feedback and mistakes can add to Sapiens’ experience and inform its next approach.</p>
-        <div className="experience-mini-row"><MiniNode image={outcome} label="Outcomes & feedback" /></div>
+      <div className="experience-mobile-link experience-warm" aria-hidden="true">↓</div>
+      <section className="experience-mobile-feedback">
+        <img src={outcome} width="48" height="48" alt="" loading="lazy" />
+        <div><h3>Outcomes & feedback</h3><p>What happens returns to Sapiens as experience, informing its next approach.</p></div>
+        <span className="experience-mobile-return"><span aria-hidden="true">↶</span> Back to the same individual</span>
       </section>
-      <p className="experience-mobile-return"><span aria-hidden="true">↶</span> Experience stays with Sapiens, informing what it considers next.</p>
     </div>
   </div>;
 }
