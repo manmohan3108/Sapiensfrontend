@@ -5,13 +5,13 @@
 .public-story .experience-heading .customer-eyebrow { justify-content: center; }
 .public-story .experience-heading p { margin-inline: auto; max-width: 70ch; }
 .public-story .experience-desktop { display: block; width: 100%; max-width: 1050px; height: auto; margin: 24px auto 0; overflow: visible; }
-.public-story .experience-boundary { fill: var(--cx-soft); fill-opacity: .5; stroke: var(--cx-line); stroke-dasharray: 5 8; }
-.public-story .experience-boundary-label { fill: var(--cx-muted); font-size: 13px; }
+.public-story .experience-boundary { fill: var(--cx-panel); stroke: var(--cx-violet); stroke-width: 1.8; }
+.public-story .experience-individual-title { fill: var(--cx-ink); font-size: 26px; font-weight: 600; }
+.public-story .experience-individual-subtitle { fill: var(--cx-muted); font-size: 14px; }
+.public-story .experience-quality { fill: var(--cx-muted); font-size: 15px; }
+.public-story .experience-quality-title { fill: var(--cx-ink); font-size: 17px; font-weight: 550; }
 .public-story .experience-node circle { fill: var(--cx-panel); stroke: var(--cx-line); stroke-width: 1.5; }
 .public-story .experience-node text { fill: var(--cx-ink); font-size: 16px; font-weight: 550; }
-.public-story .experience-core circle { fill: var(--cx-panel); stroke: var(--cx-violet); stroke-width: 2; }
-.public-story .experience-core text { fill: var(--cx-ink); font-size: 25px; font-weight: 550; }
-.public-story .experience-core .experience-core-subtitle { fill: var(--cx-muted); font-size: 14px; font-weight: 400; }
 .public-story .experience-outward-paths, .public-story .experience-outward-marker { stroke: var(--cx-violet); stroke-width: 1.8; fill: none; }
 .public-story .experience-return-paths, .public-story .experience-return-marker { stroke: var(--experience-warm); stroke-width: 1.8; fill: none; }
 .public-story .experience-graph-copy { font-size: 15px; fill: var(--cx-muted); }
@@ -32,9 +32,13 @@
   .public-story .experience-mini-node span { font-size: 12px; line-height: 1.4; }
   .public-story .experience-mobile-link { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 13px; color: var(--cx-violet); margin: 20px 0; text-align: center; }
   .public-story .experience-mobile-link > span { font-size: 26px; line-height: 1; }
-  .public-story .experience-mobile-core { width: 168px; height: 168px; border-radius: 50%; border: 1px solid var(--cx-violet); background: var(--cx-panel); display: flex; flex-direction: column; align-items: center; justify-content: center; margin-inline: auto; }
-  .public-story .experience-mobile-core h3 { margin: 0; font-size: 23px; }
-  .public-story .experience-mobile-core p { color: var(--cx-muted); font-size: 12px; }
+  .public-story .experience-mobile-individual { padding: 22px 18px; border-radius: 24px; border: 1px solid var(--cx-violet); background: var(--cx-panel); }
+  .public-story .experience-mobile-individual > h3 { margin: 0; font-size: 24px; text-align: center; }
+  .public-story .experience-mobile-individual > p { color: var(--cx-muted); font-size: 13px; text-align: center; }
+  .public-story .experience-mobile-individual > img { display: block; margin: 12px auto 18px; }
+  .public-story .experience-mobile-quality + .experience-mobile-quality { margin-top: 18px; }
+  .public-story .experience-mobile-quality h4 { font-size: 15px; font-weight: 550; margin-bottom: 5px; }
+  .public-story .experience-mobile-quality p { color: var(--cx-muted); font-size: 14px; line-height: 1.6; }
   .public-story .experience-warm { color: var(--experience-warm); }
   .public-story .experience-mobile-return { margin: 22px 0 0 -18px; padding: 12px 14px; border-bottom: 1px solid var(--experience-warm); border-radius: 0 0 0 10px; color: var(--experience-warm); font-size: 13px; line-height: 1.7; }
 }

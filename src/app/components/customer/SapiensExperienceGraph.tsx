@@ -6,8 +6,13 @@ import tool from '../../../assets/landing/tool.webp';
 import goal from '../../../assets/landing/goal.webp';
 import question from '../../../assets/landing/question.webp';
 import outcome from '../../../assets/landing/outcome.webp';
-import experience from '../../../assets/landing/experience.webp';
 import '../../../styles/experience-graph.css';
+
+const qualities = [
+  { title: 'Attention & curiosity', lines: ['Notices what matters and asks', 'what’s missing.'] },
+  { title: 'Understanding & experience', lines: ['Connects new situations with', 'what it has encountered.'] },
+  { title: 'Goals & reflection', lines: ['Chooses what to pursue and', 'considers what happened.'] },
+];
 
 function Node({ x, y, image, label, second, radius = 62 }: { x: number; y: number; image: string; label: string; second?: string; radius?: number }) {
   return <g className="experience-node" transform={`translate(${x} ${y})`}>
@@ -33,27 +38,32 @@ export function SapiensExperienceGraph() {
     </div>
     <svg className="experience-desktop" viewBox="0 0 1000 800" role="img" aria-labelledby={`${id}-title ${id}-description`}>
       <title id={`${id}-title`}>Initiative, interaction and reflection around one Sapiens</title>
-      <desc id={`${id}-description`}>Goals and questions prompt Sapiens to choose what to pursue. It can reach out to people, investigate information and act through permitted tools. Interactions produce outcomes and feedback. Reflection connects those outcomes with experience within Sapiens, informing its next choices. This graph illustrates the long-term ambition.</desc>
+      <desc id={`${id}-description`}>The whole central boundary represents Sapiens, one AI individual. Inside are attention and curiosity, understanding and experience, and goals and reflection. Goals and questions prompt initiative. Sapiens reaches out to people, gathers information and uses permitted tools. Outcomes and feedback return to the individual to inform its next approach. These are aspects of the long-term vision, not separate technical modules.</desc>
       <defs>
         <marker id={`${id}-outward`} markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M1 1L7 4L1 7" className="experience-outward-marker" /></marker>
         <marker id={`${id}-returning`} markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M1 1L7 4L1 7" className="experience-return-marker" /></marker>
       </defs>
-      <rect className="experience-boundary" x="275" y="218" width="400" height="510" rx="110" />
-      <text className="experience-boundary-label" x="545" y="706" textAnchor="middle">Within Sapiens</text>
+      <rect className="experience-boundary" x="300" y="218" width="380" height="510" rx="28" />
+      <text className="experience-individual-title" x="490" y="258" textAnchor="middle">Sapiens</text>
+      <text className="experience-individual-subtitle" x="490" y="282" textAnchor="middle">An AI individual</text>
+      <image href={identity} x="446" y="298" width="88" height="88" />
+      {qualities.map((quality, index) => <g className="experience-quality" key={quality.title} transform={`translate(334 ${416 + index * 94})`}>
+        <text className="experience-quality-title">{quality.title}</text>
+        <text y="26">{quality.lines.map((line, lineIndex) => <tspan key={line} x="0" dy={lineIndex ? 22 : 0}>{line}</tspan>)}</text>
+      </g>)}
 
       <g className="experience-outward-paths" fill="none">
-        <path d="M370 149C370 195 455 185 472 239" markerEnd={outward} />
-        <path d="M630 149C630 195 545 185 528 239" markerEnd={outward} />
-        <path d="M401 320C325 285 260 275 193 292" markerEnd={outward} />
-        <path d="M415 388C330 410 260 450 193 466" markerEnd={outward} />
-        <path d="M600 335C680 325 745 330 807 351" markerEnd={outward} />
+        <path d="M370 149C370 180 400 185 400 218" markerEnd={outward} />
+        <path d="M630 149C630 180 580 185 580 218" markerEnd={outward} />
+        <path d="M300 320C260 290 230 275 193 292" markerEnd={outward} />
+        <path d="M300 440C260 440 230 460 193 466" markerEnd={outward} />
+        <path d="M680 335C730 325 765 330 807 351" markerEnd={outward} />
       </g>
       <g className="experience-return-paths" fill="none">
-        <path d="M68 295H44Q24 295 24 315V740Q24 760 44 760H740Q760 760 760 740V717" markerEnd={returning} />
+        <path d="M68 295H44Q24 295 24 315V740Q24 760 44 760H840Q860 760 860 740V717" markerEnd={returning} />
         <path d="M68 470H24" />
-        <path d="M870 417V548Q870 584 817 616" markerEnd={returning} />
-        <path d="M694 650H457" markerEnd={returning} />
-        <path d="M390 584C390 522 500 510 500 436" markerEnd={returning} />
+        <path d="M870 417V548Q870 570 860 584" markerEnd={returning} />
+        <path d="M794 650H680" markerEnd={returning} />
       </g>
 
       <g className="experience-graph-copy">
@@ -66,10 +76,9 @@ export function SapiensExperienceGraph() {
         <text className="experience-group-title" x="736" y="70">Engage with the world</text>
         <text x="736" y="97"><tspan x="736">Ask people, gather context</tspan><tspan x="736" dy="23">and use supported tools.</tspan></text>
         <text className="experience-feedback-label" x="880" y="505" textAnchor="middle">See what happened</text>
-        <text className="experience-feedback-label" x="575" y="626" textAnchor="middle">Reflect and learn</text>
-        <text className="experience-feedback-label" x="525" y="535" textAnchor="middle">Inform what comes next</text>
+        <text className="experience-feedback-label" x="745" y="626" textAnchor="middle">Reflect and learn</text>
         <text className="experience-group-title" x="65" y="603">Learn from what happens</text>
-        <text x="65" y="632"><tspan x="65">Outcomes, feedback and mistakes</tspan><tspan x="65" dy="23">can inform the next approach.</tspan></text>
+        <text x="65" y="632"><tspan x="65">Feedback and mistakes can</tspan><tspan x="65" dy="23">inform the next approach.</tspan></text>
       </g>
 
       <Node x={370} y={95} image={goal} label="Goals" radius={54} />
@@ -77,12 +86,7 @@ export function SapiensExperienceGraph() {
       <Node x={130} y={295} image={person} label="People" />
       <Node x={130} y={470} image={information} label="Information" />
       <Node x={870} y={355} image={tool} label="Tools" />
-      <Node x={760} y={650} image={outcome} label="Outcomes" second="& feedback" radius={66} />
-      <Node x={390} y={650} image={experience} label="Experience" radius={66} />
-      <g className="experience-core" transform="translate(500 335)">
-        <circle r="100" /><image href={identity} x="-54" y="-75" width="108" height="108" />
-        <text y="54" textAnchor="middle">Sapiens</text><text className="experience-core-subtitle" y="76" textAnchor="middle">An AI individual</text>
-      </g>
+      <Node x={860} y={650} image={outcome} label="Outcomes" second="& feedback" radius={66} />
     </svg>
 
     <div className="experience-mobile">
@@ -92,7 +96,11 @@ export function SapiensExperienceGraph() {
         <div className="experience-mini-row"><MiniNode image={goal} label="Goals" /><MiniNode image={question} label="Questions" /></div>
       </section>
       <p className="experience-mobile-link"><span aria-hidden="true">↓</span> Choose what to pursue</p>
-      <div className="experience-mobile-core"><img src={identity} width="88" height="88" alt="" loading="lazy" /><h3>Sapiens</h3><p>An AI individual</p></div>
+      <section className="experience-mobile-individual" aria-label="Sapiens, an AI individual">
+        <h3>Sapiens</h3><p>An AI individual</p>
+        <img src={identity} width="88" height="88" alt="" loading="lazy" />
+        {qualities.map(quality => <div className="experience-mobile-quality" key={quality.title}><h4>{quality.title}</h4><p>{quality.lines.join(' ')}</p></div>)}
+      </section>
       <p className="experience-mobile-link"><span aria-hidden="true">↓</span> Reach out, investigate and act</p>
       <section className="experience-mobile-group">
         <h3>Engage with the world</h3>
@@ -103,7 +111,7 @@ export function SapiensExperienceGraph() {
       <section className="experience-mobile-group">
         <h3>Reflect and learn</h3>
         <p>Outcomes, feedback and mistakes can add to Sapiens’ experience and inform its next approach.</p>
-        <div className="experience-mini-row"><MiniNode image={outcome} label="Outcomes & feedback" /><span className="experience-warm" aria-hidden="true">→</span><MiniNode image={experience} label="Experience" /></div>
+        <div className="experience-mini-row"><MiniNode image={outcome} label="Outcomes & feedback" /></div>
       </section>
       <p className="experience-mobile-return"><span aria-hidden="true">↶</span> Experience stays with Sapiens, informing what it considers next.</p>
     </div>
