@@ -21,6 +21,10 @@ const aspects = [
     lines: ['Guides what to pursue and', 'reconsiders the approach.'] },
 ];
 
+const sleepMoon = 'M21 12.8A9 9 0 1 1 11.2 3A7 7 0 0 0 21 12.8Z';
+const sleepDescription = 'Revisits experiences, connects what matters and carries it forward.';
+const initiativeDescription = 'Notices a reason to act, asks questions and seeks what’s needed.';
+
 function Node({ x, y, image, label, second, radius = 62 }: { x: number; y: number; image: string; label: string; second?: string; radius?: number }) {
   return <g className="experience-node" transform={`translate(${x} ${y})`}>
     <circle r={radius} />
@@ -41,7 +45,7 @@ export function SapiensExperienceGraph() {
     </div>
     <svg className="experience-desktop" viewBox="0 0 1000 830" role="img" aria-labelledby={`${id}-title ${id}-description`}>
       <title id={`${id}-title`}>Initiative, interaction and reflection around one Sapiens</title>
-      <desc id={`${id}-description`}>The rounded boundary is Sapiens, one AI individual. Attention and curiosity notice what matters, ask questions and seek answers. Understanding connects information to make sense of a situation. Memory and experience carry relevant context and outcomes forward. Goals and reflection guide what to pursue and reconsider the approach. Outside are people, information, tools, and outcomes and feedback. Sapiens reaches out, seeks information and takes permitted actions; feedback returns to the individual, while experience informs its next interaction. This graph explains the Sapiens concept.</desc>
+      <desc id={`${id}-description`}>The rounded boundary is Sapiens, one AI individual. Attention and curiosity notice what matters, ask questions and seek answers. Understanding connects information to make sense of a situation. Memory and experience carry relevant context and outcomes forward. Goals and reflection guide what to pursue and reconsider the approach. Sleep and consolidation revisits experiences, connects what matters and carries it forward. Outside are people, information, tools, and outcomes and feedback. Sapiens takes initiative: noticing a reason to act, asking questions and seeking what is needed. It reaches out, seeks information and takes permitted actions; feedback returns to the individual, while experience informs its next interaction. This graph explains the Sapiens concept.</desc>
       <defs>
         <marker id={`${id}-outward`} markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M1 1L7 4L1 7" className="experience-outward-marker" /></marker>
         <marker id={`${id}-returning`} markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M1 1L7 4L1 7" className="experience-return-marker" /></marker>
@@ -73,6 +77,8 @@ export function SapiensExperienceGraph() {
       </g>
 
       <g className="experience-graph-copy">
+        <text className="experience-group-title" x="35" y="112">Takes initiative</text>
+        <text className="experience-initiative-copy" x="35" y="140"><tspan x="35">Notices a reason to act,</tspan><tspan x="35" dy="22">asks questions and seeks</tspan><tspan x="35" dy="22">what’s needed.</tspan></text>
         <text className="experience-edge-label" x="198" y="228" textAnchor="middle"><tspan x="198">Ask and</tspan><tspan x="198" dy="20">reach out</tspan></text>
         <text className="experience-edge-label" x="197" y="464" textAnchor="middle"><tspan x="197">Seek relevant</tspan><tspan x="197" dy="20">information</tspan></text>
         <text className="experience-edge-label" x="803" y="260" textAnchor="middle"><tspan x="803">Take permitted</tspan><tspan x="803" dy="20">actions</tspan></text>
@@ -92,6 +98,12 @@ export function SapiensExperienceGraph() {
           {aspect.lines.map((line, index) => <tspan key={line} x={aspect.x} dy={index ? 22 : 0}>{line}</tspan>)}
         </text>
       </g>)}
+      <g className="experience-sleep">
+        <path className="experience-sleep-connection" d="M385 690C385 707 338 693 338 714" />
+        <path className="experience-sleep-moon" d={sleepMoon} transform="translate(320 716) scale(1.5)" />
+        <text className="experience-aspect-title" x="374" y="721">Sleep &amp; consolidation</text>
+        <text className="experience-aspect-description" x="374" y="744"><tspan x="374">Revisits experiences, connects what</tspan><tspan x="374" dy="22">matters and carries it forward.</tspan></text>
+      </g>
     </svg>
 
     <div className="experience-mobile">
@@ -110,10 +122,15 @@ export function SapiensExperienceGraph() {
             <p>{aspect.lines.join(' ')}</p>
           </div>)}
         </div>
+        <div className="experience-mobile-sleep">
+          <svg viewBox="0 0 24 24" width="32" height="32" aria-hidden="true" focusable="false"><path className="experience-sleep-moon" d={sleepMoon} /></svg>
+          <div><h4>Sleep &amp; consolidation</h4><p>{sleepDescription}</p></div>
+        </div>
       </section>
       <div className="experience-mobile-link" aria-hidden="true">↓</div>
       <section className="experience-mobile-world">
-        <h3>Connections beyond Sapiens</h3>
+        <h3>Takes initiative</h3>
+        <p className="experience-mobile-initiative">{initiativeDescription}</p>
         <ul>
           <li><img src={person} width="48" height="48" alt="" loading="lazy" /><h4>People</h4><p>Ask and exchange ideas.</p></li>
           <li><img src={information} width="48" height="48" alt="" loading="lazy" /><h4>Information</h4><p>Seek relevant context.</p></li>
