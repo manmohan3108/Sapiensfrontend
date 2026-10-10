@@ -60,7 +60,7 @@ export function SapiensExperienceGraph() {
   const id = useId().replace(/:/g, '');
   const outward = `url(#${id}-outward)`;
   const returning = `url(#${id}-returning)`;
-  return <div ref={motionRef} className="experience-graph" data-experience-enabled={EXPERIENCE_ANIMATION_ENABLED} tabIndex={EXPERIENCE_ANIMATION_ENABLED ? 0 : undefined} role="group" aria-label="Sapiens concept diagram">
+  return <div ref={motionRef} className="experience-graph" data-experience-enabled={EXPERIENCE_ANIMATION_ENABLED} tabIndex={EXPERIENCE_ANIMATION_ENABLED ? 0 : undefined} role="group" aria-label="Sapiens concept diagram" aria-keyshortcuts={EXPERIENCE_ANIMATION_ENABLED ? 'Enter Space' : undefined}>
     <div className="landing-section-heading experience-heading">
       <span className="customer-eyebrow">The idea behind Sapiens</span>
       <h2 id="how-title">An individual that notices, acts and learns.</h2>
@@ -120,7 +120,7 @@ export function SapiensExperienceGraph() {
       <g className="experience-sleep">
         <rect className="experience-motion-wash" x="300" y="730" width="400" height="82" rx="40" data-experience-motion="wash" data-experience-part="sleep" aria-hidden="true" />
         <path className="experience-sleep-divider" d="M300 718Q500 694 700 718" />
-        <path className="experience-sleep-moon" d={sleepMoon} transform="translate(392 746) scale(1.2)" data-experience-motion="glow" data-experience-part="sleep" />
+        <g transform="translate(392 746) scale(1.2)"><path className="experience-sleep-moon" d={sleepMoon} data-experience-motion="icon" data-experience-part="sleep" /></g>
         <text className="experience-aspect-title" x="516" y="768" textAnchor="middle">Sleep &amp; consolidation</text>
         <text className="experience-aspect-description" x="500" y="800" textAnchor="middle">{sleepDescription}</text>
       </g>
@@ -141,7 +141,7 @@ export function SapiensExperienceGraph() {
             <img src={identity} width="112" height="112" alt="" loading="lazy" data-experience-motion="icon" data-experience-part="core" />
           </div>
           {aspects.map(aspect => <div className={`experience-mobile-aspect experience-aspect-${aspect.position}`} key={aspect.title}>
-            <img src={aspect.image} width="48" height="48" alt="" loading="lazy" data-experience-motion="icon" data-experience-part={aspect.position} />
+            <span className="experience-mobile-icon"><img src={aspect.image} width="48" height="48" alt="" loading="lazy" data-experience-motion="icon" data-experience-part={aspect.position} /></span>
             <h4>{aspect.title}</h4>
             <p>{aspect.lines.join(' ')}</p>
           </div>)}
@@ -150,7 +150,7 @@ export function SapiensExperienceGraph() {
           <span className="experience-motion-wash" data-experience-motion="wash" data-experience-part="sleep" aria-hidden="true" />
           <svg className="experience-mobile-sleep-divider" viewBox="0 0 300 20" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path className="experience-sleep-divider" d="M0 14Q150 -10 300 14" /></svg>
           <div className="experience-mobile-sleep-heading">
-            <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false" data-experience-motion="glow" data-experience-part="sleep"><path className="experience-sleep-moon" d={sleepMoon} /></svg>
+            <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false" data-experience-motion="icon" data-experience-part="sleep"><path className="experience-sleep-moon" d={sleepMoon} /></svg>
             <h4>Sleep &amp; consolidation</h4>
           </div>
           <p>{sleepDescription}</p>
@@ -161,9 +161,9 @@ export function SapiensExperienceGraph() {
         <h3>Takes initiative</h3>
         <p className="experience-mobile-initiative">{initiativeDescription}</p>
         <ul>
-          <li><img src={person} width="48" height="48" alt="" loading="lazy" data-experience-motion="icon" data-experience-part="people" /><h4>People</h4><p>Ask and exchange ideas.</p></li>
-          <li><img src={information} width="48" height="48" alt="" loading="lazy" data-experience-motion="icon" data-experience-part="information" /><h4>Information</h4><p>Seek relevant context.</p></li>
-          <li><img src={tool} width="48" height="48" alt="" loading="lazy" data-experience-motion="icon" data-experience-part="tools" /><h4>Tools</h4><p>Take supported, permitted actions.</p></li>
+          <li><span className="experience-mobile-icon"><img src={person} width="48" height="48" alt="" loading="lazy" data-experience-motion="icon" data-experience-part="people" /></span><h4>People</h4><p>Ask and exchange ideas.</p></li>
+          <li><span className="experience-mobile-icon"><img src={information} width="48" height="48" alt="" loading="lazy" data-experience-motion="icon" data-experience-part="information" /></span><h4>Information</h4><p>Seek relevant context.</p></li>
+          <li><span className="experience-mobile-icon"><img src={tool} width="48" height="48" alt="" loading="lazy" data-experience-motion="icon" data-experience-part="tools" /></span><h4>Tools</h4><p>Take supported, permitted actions.</p></li>
         </ul>
       </section>
       <section className="experience-mobile-feedback" data-experience-scene="feedback">

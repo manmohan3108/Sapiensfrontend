@@ -38,7 +38,8 @@
   .public-story .experience-aspect-memory { grid-area: memory; }
   .public-story .experience-aspect-goals { grid-area: goals; }
   .public-story .experience-mobile-aspect { min-width: 0; text-align: center; overflow-wrap: anywhere; }
-  .public-story .experience-mobile-aspect > img { display: block; box-sizing: content-box; padding: 8px; margin: 0 auto 10px; border: 1px solid var(--cx-line); border-radius: 50%; background: var(--cx-panel); object-fit: contain; }
+  .public-story .experience-mobile-icon { display: block; box-sizing: content-box; width: 48px; height: 48px; padding: 8px; margin: 0 auto 10px; border: 1px solid var(--cx-line); border-radius: 50%; background: var(--cx-panel); }
+  .public-story .experience-mobile-icon > img { display: block; width: 48px; height: 48px; object-fit: contain; }
   .public-story .experience-mobile-aspect h4 { margin: 0; color: var(--cx-ink); font-size: 14px; font-weight: 600; line-height: 1.45; }
   .public-story .experience-mobile-aspect > p { margin: 7px 0 0; color: var(--cx-muted); font-size: 13px; line-height: 1.6; }
   .public-story .experience-mobile-core { grid-area: core; position: relative; display: grid; place-items: center; height: 144px; }
@@ -56,7 +57,6 @@
   .public-story .experience-mobile-world h3 { margin: 0 0 6px; font-size: 16px; text-align: center; color: var(--cx-ink); }
   .public-story .experience-mobile-world ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
   .public-story .experience-mobile-world li { min-width: 0; text-align: center; overflow-wrap: anywhere; }
-  .public-story .experience-mobile-world li > img { display: block; box-sizing: content-box; padding: 8px; margin: 0 auto 10px; border: 1px solid var(--cx-line); border-radius: 50%; background: var(--cx-panel); }
   .public-story .experience-mobile-world img, .public-story .experience-mobile-feedback > img { object-fit: contain; }
   .public-story .experience-mobile-world h4 { margin: 0 0 6px; font-size: 13px; font-weight: 600; line-height: 1.4; }
   .public-story .experience-mobile-world p, .public-story .experience-mobile-feedback p { margin: 0; color: var(--cx-muted); font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }
