@@ -50,8 +50,10 @@ export function SapiensExperienceGraph() {
       <text className="experience-individual-title" x="500" y="76" textAnchor="middle">Sapiens</text>
       <text className="experience-individual-subtitle" x="500" y="100" textAnchor="middle">An AI individual</text>
       <g className="experience-internal-links" fill="none">
-        <path d="M449 210C500 210 500 270 500 340M551 210C500 210 500 270 500 340" />
-        <path d="M449 600C500 600 500 540 500 470M551 600C500 600 500 540 500 470" />
+        <path d="M448 222C512 240 510 314 470 375" />
+        <path d="M552 222C488 240 490 314 530 375" />
+        <path d="M430 555C458 535 436 485 470 435" />
+        <path d="M570 555C542 535 564 485 530 435" />
       </g>
       <image href={identity} x="425" y="330" width="150" height="150" />
 
@@ -106,17 +108,16 @@ export function SapiensExperienceGraph() {
       </section>
       <div className="experience-mobile-link" aria-hidden="true">↓</div>
       <section className="experience-mobile-world">
-        <h3>Engage with the world</h3>
+        <h3>Connections beyond Sapiens</h3>
         <ul>
-          <li><img src={person} width="48" height="48" alt="" loading="lazy" /><div><h4>People</h4><p>Reach out, ask and exchange ideas.</p></div></li>
-          <li><img src={information} width="48" height="48" alt="" loading="lazy" /><div><h4>Information</h4><p>Seek context and explore unanswered questions.</p></div></li>
-          <li><img src={tool} width="48" height="48" alt="" loading="lazy" /><div><h4>Tools</h4><p>Take supported actions with available access.</p></div></li>
+          <li><img src={person} width="48" height="48" alt="" loading="lazy" /><h4>People</h4><p>Ask and exchange ideas.</p></li>
+          <li><img src={information} width="48" height="48" alt="" loading="lazy" /><h4>Information</h4><p>Seek relevant context.</p></li>
+          <li><img src={tool} width="48" height="48" alt="" loading="lazy" /><h4>Tools</h4><p>Take supported, permitted actions.</p></li>
         </ul>
       </section>
-      <div className="experience-mobile-link experience-warm" aria-hidden="true">↓</div>
       <section className="experience-mobile-feedback">
-        <img src={outcome} width="48" height="48" alt="" loading="lazy" />
-        <div><h3>Outcomes & feedback</h3><p>What happens returns to Sapiens as experience, informing its next approach.</p></div>
+        <img src={outcome} width="40" height="40" alt="" loading="lazy" />
+        <div><h3>Outcomes & feedback</h3><p>What happens informs Sapiens’ next approach.</p></div>
         <span className="experience-mobile-return"><span aria-hidden="true">↶</span> Back to the same individual</span>
       </section>
     </div>
