@@ -162,7 +162,7 @@
 }
 
 
-/* Only the hero moves. No travelling lights or simulated activity. */
+/* Hero motion; the concept diagram has its own optional choreography. */
 @media (prefers-reduced-motion: no-preference) {
   .public-story [data-motion-started="true"] .landing-sculpture { animation: sculpture-drift 10s ease-in-out infinite; }
   .public-story [data-motion-active="false"] .landing-sculpture { animation-play-state: paused; }

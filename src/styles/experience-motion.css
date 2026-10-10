@@ -1,0 +1,16 @@
+/* Decorative motion is driven only by useExperienceMotion; base layout is static. */
+.public-story .experience-graph:focus-visible { outline: 2px solid var(--cx-violet); outline-offset: 8px; border-radius: 12px; }
+.public-story .experience-motion-connection { fill: none; stroke: var(--cx-violet); stroke-width: 2.5; stroke-linecap: round; stroke-dasharray: 18 120; stroke-dashoffset: 18; opacity: 0; pointer-events: none; }
+.public-story .experience-motion-connection:is([data-experience-part="outcome"], [data-experience-part="return"]) { stroke: var(--experience-warm); }
+.public-story .experience-motion-wash { fill: var(--cx-violet); opacity: 0; pointer-events: none; }
+.public-story .experience-mobile-sleep { isolation: isolate; }
+.public-story .experience-mobile-sleep > .experience-motion-wash { position: absolute; z-index: -1; inset: 24px 0 -8px; border-radius: 24px; background: var(--cx-violet); }
+.public-story .experience-mobile-sleep-heading > svg { overflow: visible; }
+/* Keep the normal mobile curves muted, but let their temporary highlights show. */
+.public-story .experience-mobile-core svg { opacity: 1; }
+.public-story .experience-mobile-core svg > path:not(.experience-motion-connection) { opacity: .4; }
+.public-story .experience-mobile-core .experience-motion-connection { stroke-width: 1.8; }
+.public-story .experience-graph[data-experience-enabled="false"] :is(.experience-motion-connection, .experience-motion-wash) { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  .public-story .experience-graph :is(.experience-motion-connection, .experience-motion-wash) { display: none; }
+}
