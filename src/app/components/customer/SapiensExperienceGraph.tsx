@@ -22,7 +22,7 @@ const aspects = [
 ];
 
 const sleepMoon = 'M21 12.8A9 9 0 1 1 11.2 3A7 7 0 0 0 21 12.8Z';
-const sleepDescription = 'Revisits experiences, connects what matters and carries it forward.';
+const sleepDescription = 'Connects experiences and strengthens what matters.';
 const initiativeDescription = 'Notices a reason to act, asks questions and seeks what’s needed.';
 
 function Node({ x, y, image, label, second, radius = 62 }: { x: number; y: number; image: string; label: string; second?: string; radius?: number }) {
@@ -43,14 +43,14 @@ export function SapiensExperienceGraph() {
       <h2 id="how-title">An individual that notices, acts and learns.</h2>
       <p>The Sapiens concept connects experience, goals and curiosity with action and reflection.</p>
     </div>
-    <svg className="experience-desktop" viewBox="0 0 1000 830" role="img" aria-labelledby={`${id}-title ${id}-description`}>
+    <svg className="experience-desktop" viewBox="0 0 1000 880" role="img" aria-labelledby={`${id}-title ${id}-description`}>
       <title id={`${id}-title`}>Initiative, interaction and reflection around one Sapiens</title>
-      <desc id={`${id}-description`}>The rounded boundary is Sapiens, one AI individual. Attention and curiosity notice what matters, ask questions and seek answers. Understanding connects information to make sense of a situation. Memory and experience carry relevant context and outcomes forward. Goals and reflection guide what to pursue and reconsider the approach. Sleep and consolidation revisits experiences, connects what matters and carries it forward. Outside are people, information, tools, and outcomes and feedback. Sapiens takes initiative: noticing a reason to act, asking questions and seeking what is needed. It reaches out, seeks information and takes permitted actions; feedback returns to the individual, while experience informs its next interaction. This graph explains the Sapiens concept.</desc>
+      <desc id={`${id}-description`}>The rounded boundary is Sapiens, one AI individual. Attention and curiosity notice what matters, ask questions and seek answers. Understanding connects information to make sense of a situation. Memory and experience carry relevant context and outcomes forward. Goals and reflection guide what to pursue and reconsider the approach. Sleep and consolidation is a quiet phase that connects experiences and strengthens what matters. Outside are people, information, tools, and outcomes and feedback. Sapiens takes initiative: noticing a reason to act, asking questions and seeking what is needed. It reaches out, seeks information and takes permitted actions; feedback returns to the individual, while experience informs its next interaction. This graph explains the Sapiens concept.</desc>
       <defs>
         <marker id={`${id}-outward`} markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M1 1L7 4L1 7" className="experience-outward-marker" /></marker>
         <marker id={`${id}-returning`} markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M1 1L7 4L1 7" className="experience-return-marker" /></marker>
       </defs>
-      <rect className="experience-boundary" x="250" y="30" width="500" height="750" rx="110" />
+      <rect className="experience-boundary" x="250" y="30" width="500" height="800" rx="110" />
       <text className="experience-individual-title" x="500" y="76" textAnchor="middle">Sapiens</text>
       <text className="experience-individual-subtitle" x="500" y="100" textAnchor="middle">An AI individual</text>
       {/* Mirror the mobile curves in a 230 × 200 space around (500, 432).
@@ -70,7 +70,7 @@ export function SapiensExperienceGraph() {
         <path d="M750 310C789 286 818 300 838 324" markerEnd={outward} />
       </g>
       <g className="experience-return-paths" fill="none">
-        <path d="M38 295H24Q12 295 12 310V790Q12 808 30 808H882Q900 808 900 790V727" markerEnd={returning} />
+        <path d="M38 295H24Q12 295 12 310V840Q12 858 30 858H882Q900 858 900 840V727" markerEnd={returning} />
         <path d="M38 520H12" />
         <path d="M900 392C936 465 929 534 900 593" markerEnd={returning} />
         <path d="M834 660C803 671 780 671 750 660" markerEnd={returning} />
@@ -99,10 +99,10 @@ export function SapiensExperienceGraph() {
         </text>
       </g>)}
       <g className="experience-sleep">
-        <path className="experience-sleep-connection" d="M385 690C385 707 338 693 338 714" />
-        <path className="experience-sleep-moon" d={sleepMoon} transform="translate(320 716) scale(1.5)" />
-        <text className="experience-aspect-title" x="374" y="721">Sleep &amp; consolidation</text>
-        <text className="experience-aspect-description" x="374" y="744"><tspan x="374">Revisits experiences, connects what</tspan><tspan x="374" dy="22">matters and carries it forward.</tspan></text>
+        <path className="experience-sleep-divider" d="M300 718Q500 694 700 718" />
+        <path className="experience-sleep-moon" d={sleepMoon} transform="translate(392 746) scale(1.2)" />
+        <text className="experience-aspect-title" x="516" y="768" textAnchor="middle">Sleep &amp; consolidation</text>
+        <text className="experience-aspect-description" x="500" y="800" textAnchor="middle">{sleepDescription}</text>
       </g>
     </svg>
 
@@ -123,8 +123,12 @@ export function SapiensExperienceGraph() {
           </div>)}
         </div>
         <div className="experience-mobile-sleep">
-          <svg viewBox="0 0 24 24" width="32" height="32" aria-hidden="true" focusable="false"><path className="experience-sleep-moon" d={sleepMoon} /></svg>
-          <div><h4>Sleep &amp; consolidation</h4><p>{sleepDescription}</p></div>
+          <svg className="experience-mobile-sleep-divider" viewBox="0 0 300 20" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path className="experience-sleep-divider" d="M0 14Q150 -10 300 14" /></svg>
+          <div className="experience-mobile-sleep-heading">
+            <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false"><path className="experience-sleep-moon" d={sleepMoon} /></svg>
+            <h4>Sleep &amp; consolidation</h4>
+          </div>
+          <p>{sleepDescription}</p>
         </div>
       </section>
       <div className="experience-mobile-link" aria-hidden="true">↓</div>

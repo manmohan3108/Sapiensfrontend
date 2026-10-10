@@ -20,7 +20,7 @@
 .public-story .experience-graph-copy .experience-group-title { fill: var(--cx-ink); font-size: 17px; font-weight: 600; }
 .public-story .experience-initiative-copy { font-size: 14px; }
 .public-story .experience-sleep-moon { fill: var(--cx-soft); stroke: var(--cx-violet); stroke-width: 1.3; stroke-linejoin: round; }
-.public-story .experience-sleep-connection { fill: none; stroke: var(--cx-violet); stroke-width: 1.2; opacity: .4; }
+.public-story .experience-sleep-divider { fill: none; stroke: var(--cx-violet); stroke-width: 1; opacity: .25; vector-effect: non-scaling-stroke; }
 .public-story .experience-edge-label, .public-story .experience-feedback-label { font-size: 14px; paint-order: stroke; stroke: var(--cx-bg); stroke-width: 7px; stroke-linejoin: round; fill: var(--cx-violet); }
 .public-story .experience-graph-copy .experience-feedback-label { fill: var(--experience-warm); }
 .public-story .experience-mobile { display: none; }
@@ -45,10 +45,12 @@
   .public-story .experience-mobile-core svg { position: absolute; inset: 0; width: 100%; height: 100%; fill: none; stroke: var(--cx-violet); stroke-width: 1; opacity: .4; pointer-events: none; }
   .public-story .experience-mobile-core path { vector-effect: non-scaling-stroke; }
   .public-story .experience-mobile-core img { position: relative; width: 112px; height: 112px; object-fit: contain; }
-  .public-story .experience-mobile-sleep { position: relative; display: grid; grid-template-columns: 32px minmax(0, 1fr); align-items: center; gap: 12px; margin-top: 28px; padding-top: 18px; border-top: 1px solid var(--cx-line); }
-  .public-story .experience-mobile-sleep::before { content: ''; position: absolute; left: calc(25% - 4px); top: -23px; width: 1px; height: 22px; background: var(--cx-violet); opacity: .4; }
-  .public-story .experience-mobile-sleep h4 { margin: 0 0 6px; font-size: 14px; font-weight: 600; line-height: 1.45; }
-  .public-story .experience-mobile-sleep p { margin: 0; color: var(--cx-muted); font-size: 13px; line-height: 1.6; }
+  .public-story .experience-mobile-sleep { position: relative; margin-top: 24px; padding-top: 34px; text-align: center; }
+  .public-story .experience-mobile-sleep-divider { position: absolute; inset: 0 0 auto; width: 100%; height: 20px; pointer-events: none; }
+  .public-story .experience-mobile-sleep-heading { display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .public-story .experience-mobile-sleep-heading > svg { flex-shrink: 0; }
+  .public-story .experience-mobile-sleep h4 { margin: 0; font-size: 14px; font-weight: 600; line-height: 1.45; }
+  .public-story .experience-mobile-sleep p { max-width: 34ch; margin: 8px auto 0; color: var(--cx-muted); font-size: 13px; line-height: 1.6; }
   .public-story .experience-mobile-link { margin: 10px 0; color: var(--cx-violet); font-size: 24px; line-height: 1; text-align: center; }
   .public-story .experience-mobile-world { padding: 0; }
   .public-story .experience-mobile-world h3 { margin: 0 0 6px; font-size: 16px; text-align: center; color: var(--cx-ink); }
