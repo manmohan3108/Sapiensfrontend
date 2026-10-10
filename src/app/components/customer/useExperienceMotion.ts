@@ -25,6 +25,21 @@ const internalParts = new Set(['attention', 'understanding', 'memory', 'goals'])
 const outwardParts = new Set(['people', 'information', 'tools', 'outcome']);
 const travelDuration = 900;
 const arrivalDelay = 800;
+const cyclePause = 1800;
+
+// Put the wait inside each iteration. WAAPI's delay/endDelay would only wait
+// before/after the entire animation, allowing individual gestures to drift.
+function cycleFrames(frames: Keyframe[], delay: number, duration: number, cycleDuration: number, easing: string): Keyframe[] {
+  return [
+    { ...frames[0], offset: 0, easing: 'linear' },
+    ...frames.map((frame, index) => ({
+      ...frame,
+      offset: (delay + (frame.offset ?? index / (frames.length - 1)) * duration) / cycleDuration,
+      easing: frame.easing ?? easing,
+    })),
+    { ...frames[frames.length - 1], offset: 1, easing: 'linear' },
+  ];
+}
 
 function imageFrames(part: string, desktop: boolean, glow: string): Keyframe[] {
   const gesture = gestures[part] ?? { lift: 5, tilt: 0, scale: 1.04 };
@@ -45,6 +60,9 @@ type Scene = {
   visible: boolean;
   played: boolean;
   animations: Animation[];
+  clock: Animation | null;
+  cycleDuration: number;
+  sequenceEnd: number;
 };
 
 // Decorative only: no timers, application state, API calls or simulated status.
@@ -58,15 +76,17 @@ export function useExperienceMotion(enabled: boolean) {
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
     const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
     const scenes: Scene[] = Array.from(root.querySelectorAll<HTMLElement | SVGElement>('[data-experience-scene]'))
-      .map(element => ({ element, visible: false, played: false, animations: [] }));
+      .map(element => ({ element, visible: false, played: false, animations: [], clock: null, cycleDuration: 0, sequenceEnd: 0 }));
     const clear = (scene: Scene) => {
       scene.animations.forEach(animation => animation.cancel());
       scene.animations = [];
+      scene.clock = null;
     };
     const start = (scene: Scene) => {
       clear(scene);
       scene.played = true;
       let end = 0;
+      const sequence: { target: Element; frames: Keyframe[]; duration: number; delay: number; easing: string }[] = [];
       const desktop = scene.element.dataset.experienceScene === 'desktop';
       const violet = getComputedStyle(root).getPropertyValue('--cx-violet').trim();
       const warm = getComputedStyle(root).getPropertyValue('--experience-warm').trim();
@@ -106,7 +126,7 @@ export function useExperienceMotion(enabled: boolean) {
           default:
             frames = imageFrames(part, desktop, glow);
         }
-        scene.animations.push(target.animate(frames, { duration, delay, easing: motion === 'connection' ? 'linear' : 'ease-in-out' }));
+        sequence.push({ target, frames, duration, delay, easing: motion === 'connection' ? 'linear' : 'ease-in-out' });
         if (motion === 'connection' && (internalParts.has(part) || part === 'return')) corePulses.add(delay + arrivalDelay);
         if (motion === 'connection' && outwardParts.has(part) && part !== 'outcome') corePulses.add(delay);
         end = Math.max(end, delay + duration);
@@ -137,14 +157,21 @@ export function useExperienceMotion(enabled: boolean) {
             { filter: 'drop-shadow(0 0 0 transparent)', offset: (time + duration) / glowEnd },
           );
         });
-        // Linear timeline preserves arrival timing; each individual glow eases.
-        scene.animations.push(core.animate(glowFrames, { duration: glowEnd, easing: 'linear' }));
-        scene.animations.push(core.animate([
-          { filter: 'drop-shadow(0 0 0 transparent)' },
-          { filter: `drop-shadow(0 3px 9px ${violet})` },
-          { filter: 'drop-shadow(0 0 0 transparent)' },
-        ], { duration: 6400, delay: glowEnd, iterations: Infinity, easing: 'ease-in-out' }));
+        glowFrames.push({ filter: 'drop-shadow(0 0 0 transparent)', offset: 1 });
+        sequence.push({ target: core, frames: glowFrames, duration: glowEnd, delay: 0, easing: 'linear' });
+        end = Math.max(end, glowEnd);
       }
+      scene.sequenceEnd = end;
+      scene.cycleDuration = end + cyclePause;
+      const cycleStart = document.timeline.currentTime;
+      sequence.forEach(({ target, frames, duration, delay, easing }) => {
+        const animation = target.animate(cycleFrames(frames, delay, duration, scene.cycleDuration, easing), {
+          duration: scene.cycleDuration, iterations: Infinity, easing: 'linear',
+        });
+        if (typeof cycleStart === 'number') animation.startTime = cycleStart;
+        scene.animations.push(animation);
+        scene.clock ??= animation;
+      });
     };
     const sync = () => scenes.forEach(scene => {
       if (reduced.matches) {
@@ -167,7 +194,9 @@ export function useExperienceMotion(enabled: boolean) {
     const replay = () => {
       if (reduced.matches || document.hidden) return;
       scenes.filter(scene => scene.visible).forEach(scene => {
-        const busy = scene.animations.some(animation => animation.playState === 'running' && animation.effect?.getTiming().iterations !== Infinity);
+        // Hover/focus/tap must not keep restarting a sequence already in motion.
+        const time = scene.clock?.currentTime;
+        const busy = typeof time === 'number' && time % scene.cycleDuration < scene.sequenceEnd;
         if (!busy) start(scene);
       });
     };
