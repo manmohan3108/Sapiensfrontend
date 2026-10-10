@@ -9,6 +9,8 @@
 .public-story .experience-individual-title { fill: var(--cx-ink); font-size: 26px; font-weight: 600; }
 .public-story .experience-individual-subtitle { fill: var(--cx-muted); font-size: 14px; }
 .public-story .experience-internal-links { stroke: var(--cx-violet); stroke-width: 1.2; opacity: .4; }
+.public-story .experience-aspect-description { fill: var(--cx-muted); font-size: 15px; }
+.public-story .experience-memory-return { opacity: .65; }
 .public-story .experience-node circle { fill: var(--cx-panel); stroke: var(--cx-line); stroke-width: 1.5; }
 .public-story .experience-node text { fill: var(--cx-ink); font-size: 16px; font-weight: 550; }
 .public-story .experience-outward-paths, .public-story .experience-outward-marker { stroke: var(--cx-violet); stroke-width: 1.8; fill: none; }
@@ -35,8 +37,16 @@
   .public-story .experience-mobile-individual > h3 { margin: 0; font-size: 24px; text-align: center; }
   .public-story .experience-mobile-individual > p { color: var(--cx-muted); font-size: 13px; text-align: center; }
   .public-story .experience-mobile-individual > img { display: block; margin: 12px auto 18px; }
-  .public-story .experience-mobile-aspects { display: grid; grid-template-columns: repeat(2, minmax(0, 112px)); justify-content: center; gap: 14px; }
-  .public-story .experience-mobile-aspects > :last-child { grid-column: 1 / -1; width: 112px; justify-self: center; }
+  .public-story .experience-mobile-aspects { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 16px; }
+  .public-story .experience-mobile-aspect { min-width: 0; text-align: center; }
+  .public-story .experience-mobile-aspect .experience-mini-node { width: 112px; max-width: 100%; margin-inline: auto; }
+  .public-story .experience-mobile-aspect > p { margin-top: 10px; color: var(--cx-muted); font-size: 13px; line-height: 1.65; }
   .public-story .experience-warm { color: var(--experience-warm); }
   .public-story .experience-mobile-return { margin: 22px 0 0 -18px; padding: 12px 14px; border-bottom: 1px solid var(--experience-warm); border-radius: 0 0 0 10px; color: var(--experience-warm); font-size: 13px; line-height: 1.7; }
+}
+@media (max-width: 480px) {
+  .public-story .experience-mobile-aspects { grid-template-columns: 1fr; gap: 18px; }
+  .public-story .experience-mobile-aspect { display: grid; grid-template-columns: 104px minmax(0, 1fr); gap: 12px; align-items: center; text-align: left; }
+  .public-story .experience-mobile-aspect .experience-mini-node { width: 104px; }
+  .public-story .experience-mobile-aspect > p { margin-top: 0; }
 }
