@@ -1,24 +1,17 @@
-import { ArrowDown, ArrowUpRight, RotateCcw } from 'lucide-react';
+import { ArrowDown, ArrowUpRight } from 'lucide-react';
 import { Link } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import { CustomerHeader } from '../components/customer/CustomerHeader';
 import { LandingIdentity } from '../components/customer/LandingIdentity';
-import { CycleIllustration } from '../components/customer/CycleIllustration';
 import { useLandingMotion } from '../components/customer/useLandingMotion';
 import { LandingCursorTrail } from '../components/customer/LandingCursorTrail';
-import { SapiensRelationships } from '../components/customer/SapiensRelationships';
-import { SapiensNetwork } from '../components/customer/SapiensNetwork';
 import { SapiensExperienceGraph } from '../components/customer/SapiensExperienceGraph';
 import '../../styles/customer.css';
 import '../../styles/landing.css';
 
-// Earlier alternatives are preserved. Change only this setting to switch back.
-const landingPresentation: { explanation: 'experience' | 'network' | 'relationships' | 'cycle' } = { explanation: 'experience' };
-
 const stages = [
   {
     title: 'Notice and explore',
-    summary: 'Notice what has changed and seek information to fill gaps in understanding.',
     human: 'When something changes or is unclear, we notice it, ask questions and look for more information.',
     sapiens: 'The ambition is for Sapiens to identify gaps and seek relevant information—not only wait for a prompt.',
     availability: 'In development',
@@ -26,7 +19,6 @@ const stages = [
   },
   {
     title: 'Understand and consider',
-    summary: 'Connect new information with earlier experience to decide what deserves attention.',
     human: 'We connect a situation with earlier experience and our goals, then decide what deserves attention.',
     sapiens: 'Sapiens can draw on selected past context in a reply. The wider aim is to weigh that context against goals and decide what to address next.',
     availability: 'Context today · decisions in development',
@@ -34,7 +26,6 @@ const stages = [
   },
   {
     title: 'Choose and act',
-    summary: 'Work toward a goal by communicating with people and using available tools.',
     human: 'We talk with other people, coordinate and use tools to move something forward.',
     sapiens: 'The direction is an individual that participates: communicating through supported channels and taking permitted tool actions toward a goal.',
     availability: 'Requires support, setup and permission',
@@ -42,7 +33,6 @@ const stages = [
   },
   {
     title: 'Reflect and continue',
-    summary: 'Use outcomes and feedback to inform how the individual approaches what comes next.',
     human: 'We consider what happened, adjust our understanding and return to unfinished matters.',
     sapiens: 'We’re building toward retaining outcomes, using feedback and revisiting what matters, so experience can inform later decisions.',
     availability: 'In development',
@@ -80,23 +70,8 @@ export function PublicLandingPage() {
       </section>
 
       <section id="how-it-works" tabIndex={-1} className="customer-container landing-how" aria-labelledby="how-title">
-        {landingPresentation.explanation === 'experience' ? <SapiensExperienceGraph /> : landingPresentation.explanation === 'network' ? <SapiensNetwork /> : landingPresentation.explanation === 'relationships' ? <SapiensRelationships /> : <>
-        <div className="landing-section-heading">
-          <span className="customer-eyebrow">The idea behind Sapiens</span>
-          <h2 id="how-title">One individual. An ongoing experience.</h2>
-        </div>
-        <ol className="landing-cycle" role="list" aria-label="The four stages of the Sapiens concept">
-          {stages.map((stage, index) => <li className="landing-stage" key={stage.title}>
-            <span className="landing-stage-number" aria-hidden="true">0{index + 1}{index === 0 && <small>Start here</small>}</span>
-            <h3>{stage.title}</h3>
-            <CycleIllustration stage={index} />
-            <p className="landing-stage-summary">{stage.summary}</p>
-            {index < stages.length - 1 && <svg className="landing-stage-connector" viewBox="0 0 32 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="M0 12H31M25 6L31 12L25 18" /></svg>}
-          </li>)}
-        </ol>
-        <div className="landing-cycle-return"><RotateCcw size={20} aria-hidden="true" /><span>Experience informs what comes next.</span></div>
-        </>}
-        <details className="landing-more landing-cycle-details">
+        <SapiensExperienceGraph />
+        <details className="landing-more landing-concept-details">
           <summary>Explore the idea</summary>
           <div className="landing-explanation-grid">
             {stages.map(stage => <article key={stage.title}>

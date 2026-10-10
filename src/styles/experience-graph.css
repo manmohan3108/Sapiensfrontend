@@ -1,4 +1,4 @@
-/* Always-visible concept graph. Earlier alternatives keep their own styles. */
+/* Always-visible landing-page concept graph. */
 .public-story .experience-graph { --experience-warm: #956335; }
 .dark .public-story .experience-graph { --experience-warm: #d7b082; }
 .public-story .experience-heading { text-align: center; }

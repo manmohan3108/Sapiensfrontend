@@ -103,41 +103,7 @@
 }
 
 .public-story .landing-setup { padding-block: 0 36px; }
-/* One reading path: arrows connect whole cards, never individual symbols. */
-.public-story .landing-cycle {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 32px;
-  margin: 28px 0 0;
-  padding: 0;
-  list-style: none;
-  align-items: stretch;
-}
-.public-story .landing-stage {
-  position: relative;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  padding: 20px;
-  background: var(--cx-panel);
-  border: 1px solid var(--cx-line);
-  border-radius: 16px;
-}
-.public-story .landing-stage-number { display: flex; align-items: center; gap: 10px; color: var(--cx-violet); font-size: 13px; font-weight: 600; min-height: 24px; }
-.public-story .landing-stage-number small { font-size: 12px; font-weight: 400; }
-.public-story .landing-stage h3 { font-size: 20px; min-height: 54px; }
-/* Miniature illustrations stay static; relationships remain readable without motion. */
-.public-story .landing-cycle-art { position: relative; width: 100%; max-width: 320px; margin: 8px auto 18px; padding-top: 98px; }
-.public-story .landing-card-associations { position: absolute; inset: 0 0 auto; width: 100%; height: 160px; stroke: var(--cx-violet); stroke-width: 1.25; opacity: .5; }
-.public-story .landing-card-identity { position: absolute; top: 0; left: 50%; transform: translateX(-50%); display: grid; justify-items: center; color: var(--cx-muted); font-size: 12px; line-height: 18px; }
-.public-story .landing-card-identity img { width: 64px; height: 64px; object-fit: contain; }
-.public-story .landing-card-subjects { position: relative; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
-.public-story .landing-card-subjects figure { margin: 0; min-width: 0; text-align: center; }
-.public-story .landing-card-subjects img { display: block; width: 80px; max-width: 100%; height: 80px; object-fit: contain; margin: 0 auto 8px; }
-.public-story .landing-card-subjects figcaption { color: var(--cx-ink); font-size: 13px; line-height: 1.45; }
-.public-story .landing-stage-connector { position: absolute; width: 32px; height: 24px; right: -33px; top: calc(50% - 12px); color: var(--cx-violet); overflow: visible; }
-.public-story .landing-stage-summary { margin-top: auto; color: var(--cx-muted); font-size: 15px; line-height: 1.7; }
-.public-story .landing-cycle-details { margin-top: 28px; }
+.public-story .landing-concept-details { margin-top: 28px; }
 .public-story .landing-explanation-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 32px; padding-top: 12px; }
 .public-story .landing-explanation-grid article { min-width: 0; }
 .public-story .landing-more > summary { cursor: pointer; min-height: 44px; padding-block: 12px; color: var(--cx-violet); font-size: 14px; line-height: 1.5; }
@@ -155,21 +121,6 @@
 .public-story .landing-availability { margin-top: auto; border-top: 1px solid var(--cx-line); padding-top: 14px; }
 .public-story .landing-availability > span { display: inline-block; color: var(--cx-violet); font-size: 12px; font-weight: 600; line-height: 1.6; }
 .public-story .landing-availability p { margin-top: 7px; color: var(--cx-muted); font-size: 13px; line-height: 1.7; }
-.public-story .landing-cycle-return {
-  position: relative;
-  width: calc(75% + 24px);
-  height: 56px;
-  margin-inline: auto;
-  border: 1px solid var(--cx-violet);
-  border-top: 0;
-  border-radius: 0 0 12px 12px;
-  color: var(--cx-muted);
-  font-size: 14px;
-  line-height: 1.7;
-}
-.public-story .landing-cycle-return::before { content: ''; position: absolute; width: 9px; height: 9px; top: 0; left: -5px; border-top: 1px solid var(--cx-violet); border-left: 1px solid var(--cx-violet); transform: rotate(45deg); }
-.public-story .landing-cycle-return > svg { display: none; }
-.public-story .landing-cycle-return > span { position: absolute; left: 50%; bottom: 0; transform: translate(-50%, 50%); width: max-content; max-width: 90%; padding-inline: 12px; background: var(--cx-bg); text-align: center; }
 .public-story .landing-available { padding-block: 0 36px; }
 .public-story .landing-available-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px; margin-top: 24px; }
 .public-story .landing-available-grid article { padding: 24px; border: 1px solid var(--cx-line); border-radius: 14px; }
@@ -188,16 +139,7 @@
 
 @media (max-width: 1000px) {
   .public-story .landing-hero { gap: 24px; }
-  .public-story .landing-cycle { grid-template-columns: 1fr; gap: 32px; max-width: 560px; margin-inline: auto; }
-  .public-story .landing-stage { padding: 24px; }
-  .public-story .landing-stage h3 { min-height: 0; }
-  .public-story .landing-cycle-art { max-width: 280px; }
-  .public-story .landing-stage-connector { top: auto; right: auto; left: calc(50% - 16px); bottom: -29px; transform: rotate(90deg); }
-  .public-story .landing-cycle-return { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; height: auto; margin-top: 16px; padding-block: 12px; border: 0; }
-  .public-story .landing-cycle-return::before { display: none; }
-  .public-story .landing-cycle-return > svg { display: block; flex-shrink: 0; color: var(--cx-violet); }
-  .public-story .landing-cycle-return > span { position: static; transform: none; width: auto; max-width: none; padding: 0; }
-  .public-story .landing-cycle-details { margin-top: 12px; }
+  .public-story .landing-concept-details { margin-top: 12px; }
 }
 
 @media (max-width: 600px) {
