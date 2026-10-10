@@ -42,6 +42,12 @@ const feedbackConnections = [
   { part: 'outcome', d: 'M900 392C936 465 929 534 900 593' },
   { part: 'return', d: 'M834 660C803 671 780 671 750 660' },
 ];
+// Overlay the existing yellow line, joining both inputs at (12, 520).
+const mergedFeedbackConnections = [
+  { part: 'people-feedback', d: 'M38 295H24Q12 295 12 310V520' },
+  { part: 'information-feedback', d: 'M38 520H12' },
+  { part: 'shared-feedback', d: 'M12 520V840Q12 858 30 858H882Q900 858 900 840V727' },
+];
 
 function MotionConnection({ part, d }: { part: string; d: string }) {
   return EXPERIENCE_ANIMATION_ENABLED ? <path className="experience-motion-connection" d={d} pathLength="100" data-experience-motion="connection" data-experience-part={part} aria-hidden="true" /> : null;
@@ -101,6 +107,7 @@ export function SapiensExperienceGraph() {
         {feedbackConnections.map(connection => <path key={connection.part} d={connection.d} markerEnd={returning} />)}
       </g>
       {[...outwardConnections, ...feedbackConnections].map(connection => <MotionConnection key={connection.part} {...connection} />)}
+      {threeBeat && mergedFeedbackConnections.map(connection => <MotionConnection key={connection.part} {...connection} />)}
 
       <g className="experience-graph-copy">
         <text className="experience-group-title" x="35" y="112">Takes initiative</text>

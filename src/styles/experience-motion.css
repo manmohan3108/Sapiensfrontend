@@ -2,7 +2,7 @@
 .public-story .experience-graph:focus-visible { outline: 2px solid var(--cx-violet); outline-offset: 8px; border-radius: 12px; }
 .public-story [data-experience-motion="icon"], .public-story .experience-motion-wash { transform-box: fill-box; transform-origin: center; }
 .public-story .experience-motion-connection { fill: none; stroke: var(--cx-violet); stroke-width: 4; stroke-linecap: round; stroke-dasharray: 32 140; stroke-dashoffset: 32; filter: drop-shadow(0 0 3px var(--cx-violet)); opacity: 0; pointer-events: none; }
-.public-story .experience-motion-connection:is([data-experience-part="outcome"], [data-experience-part="return"]) { stroke: var(--experience-warm); filter: drop-shadow(0 0 3px var(--experience-warm)); }
+.public-story .experience-motion-connection:is([data-experience-part="outcome"], [data-experience-part="return"], [data-experience-part$="-feedback"]) { stroke: var(--experience-warm); filter: drop-shadow(0 0 3px var(--experience-warm)); }
 .public-story .experience-motion-wash { fill: var(--cx-violet); opacity: 0; pointer-events: none; }
 .public-story .experience-mobile-sleep { isolation: isolate; }
 .public-story .experience-mobile-sleep > .experience-motion-wash { position: absolute; z-index: -1; inset: 24px 0 -8px; border-radius: 24px; background: var(--cx-violet); }

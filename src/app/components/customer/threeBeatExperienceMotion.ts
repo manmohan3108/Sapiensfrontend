@@ -9,6 +9,13 @@ const poses: Record<string, [number, number, number]> = {
 };
 const internal = new Set(['attention', 'understanding', 'goals', 'memory']);
 const outward: Record<string, number> = { people: 2200, information: 2600, tools: 3000 };
+// Both branches meet at 3.85s. A small overlap keeps the junction illuminated;
+// the shared pulse and the Tools result finish together at 5.3s.
+const feedbackMerge: Record<string, [number, number, number]> = {
+  'people-feedback': [3050, 800, 46],
+  'information-feedback': [3500, 350, 46],
+  'shared-feedback': [3750, 1550, 18],
+};
 
 function gesture(part: string, desktop: boolean, color: string): Keyframe[] {
   const [lift, tilt, growth] = poses[part] ?? [6, 0, 1.08];
@@ -21,10 +28,10 @@ function gesture(part: string, desktop: boolean, color: string): Keyframe[] {
   ];
 }
 
-function connection(color: string, travel: boolean): Keyframe[] {
-  const base = { stroke: color, strokeDasharray: travel ? '46 150' : 'none', filter: `drop-shadow(0 0 5px ${color})` };
+function connection(color: string, travel: boolean, pulseLength = 46): Keyframe[] {
+  const base = { stroke: color, strokeDasharray: travel ? `${pulseLength} 150` : 'none', filter: `drop-shadow(0 0 5px ${color})` };
   return [
-    { ...base, opacity: 0, strokeDashoffset: travel ? '46' : '0', offset: 0 },
+    { ...base, opacity: 0, strokeDashoffset: travel ? `${pulseLength}` : '0', offset: 0 },
     { ...base, opacity: 1, offset: .18 },
     { ...base, opacity: 1, offset: .7 },
     { ...base, opacity: 0, strokeDashoffset: travel ? '-100' : '0', offset: 1 },
@@ -58,7 +65,7 @@ export function startThreeBeatExperience(element: HTMLElement | SVGElement, root
       add(target, 0, 10000, [
         pose(0, 0, 1, 0, 0), pose(8, -7, 1.12, 16, .08),
         pose(2, 3, 1.025, 4, .2), pose(7, -4, 1.08, 12, .32),
-        pose(2, 2, 1.025, 3, .46), pose(5, -3, 1.07, 15, .61),
+        pose(2, 2, 1.025, 3, .46), pose(5, -3, 1.07, 15, desktop ? .65 : .61),
         pose(1, 2, 1.02, 4, .78), pose(3, -1, 1.025, 3, .9),
         pose(0, 0, 1, 0, 1),
       ]);
@@ -71,17 +78,17 @@ export function startThreeBeatExperience(element: HTMLElement | SVGElement, root
         { opacity: 0, transform: 'scale(1.28)' },
       ];
       add(target, 0, 1900, frames);
-      add(target, 5400, 1700, frames);
+      add(target, desktop ? 6000 : 5400, 1700, frames);
       return;
     }
     if (internal.has(part)) {
       if (motion === 'connection') {
         // Illuminate the four associations together instead of four tiny pulses.
         add(target, 350, 1350, connection(violet, false));
-        if (part === 'memory') add(target, 6100, 1100, connection(warm, false));
+        if (part === 'memory') add(target, desktop ? 6500 : 6100, 1100, connection(warm, false));
       } else {
         add(target, 450, 1300, gesture(part, desktop, violet));
-        if (part === 'memory') add(target, 6250, 1150, gesture(part, desktop, warm));
+        if (part === 'memory') add(target, desktop ? 6650 : 6250, 1150, gesture(part, desktop, warm));
       }
       return;
     }
@@ -91,18 +98,23 @@ export function startThreeBeatExperience(element: HTMLElement | SVGElement, root
       else add(target, delay + (desktop ? 550 : 0), 1200, gesture(part, desktop, violet));
       return;
     }
+    if (desktop && part in feedbackMerge) {
+      const [delay, duration, pulseLength] = feedbackMerge[part];
+      add(target, delay, duration, connection(warm, true, pulseLength), 'linear');
+      return;
+    }
     if (part === 'outcome') {
       const delay = scene === 'feedback' ? 0 : 4500;
       if (motion === 'connection') add(target, delay, 800, connection(warm, true), 'linear');
-      else add(target, delay + (desktop ? 600 : 0), 1200, gesture(part, desktop, warm));
+      else add(target, delay + (desktop ? 700 : 0), 1200, gesture(part, desktop, warm));
       return;
     }
     if (part === 'return') {
-      add(target, 5350, 800, connection(warm, true), 'linear');
+      add(target, 5700, 800, connection(warm, true), 'linear');
       return;
     }
     if (part === 'sleep') {
-      const delay = scene === 'sleep' ? 0 : 6900;
+      const delay = scene === 'sleep' ? 0 : desktop ? 7300 : 6900;
       const duration = scene === 'sleep' ? 2000 : 1500;
       if (motion === 'wash') {
         add(target, delay, duration, [
@@ -116,7 +128,7 @@ export function startThreeBeatExperience(element: HTMLElement | SVGElement, root
 
   // Preserve mobile's independent reveals. A short section does not need to
   // wait through off-screen parts of the desktop story before repeating.
-  const sequenceEnd = desktop || scene === 'inside' ? 8400 : 2200;
+  const sequenceEnd = desktop ? 8800 : scene === 'inside' ? 8400 : 2200;
   const cycleDuration = desktop || scene === 'inside' ? 10000 : 4000;
   const startTime = document.timeline.currentTime;
   const animations: Animation[] = [];
