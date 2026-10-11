@@ -15,20 +15,20 @@ import type {
 // ── Color maps ────────────────────────────────────────────────────────────────
 
 const STATUS_STYLE: Record<GoalStatus, { label: string; color: string; bg: string; border: string }> = {
-  pending:   { label: 'Pending',   color: '#94a3b8', bg: 'rgba(148,163,184,0.1)', border: 'rgba(148,163,184,0.25)' },
-  active:    { label: 'Active',    color: '#60a5fa', bg: 'rgba(96,165,250,0.12)', border: 'rgba(96,165,250,0.3)'  },
-  blocked:   { label: 'Blocked',   color: '#fbbf24', bg: 'rgba(251,191,36,0.1)',  border: 'rgba(251,191,36,0.3)'  },
-  done:      { label: 'Done',      color: '#34d399', bg: 'rgba(52,211,153,0.1)',  border: 'rgba(52,211,153,0.3)'  },
-  failed:    { label: 'Failed',    color: '#f87171', bg: 'rgba(248,113,113,0.1)', border: 'rgba(248,113,113,0.3)' },
-  abandoned: { label: 'Abandoned', color: '#64748b', bg: 'rgba(100,116,139,0.1)', border: 'rgba(100,116,139,0.25)' },
+  pending:   { label: 'Pending',   color: 'var(--sp-muted, #94a3b8)', bg: 'rgba(148,163,184,0.1)', border: 'rgba(148,163,184,0.25)' },
+  active:    { label: 'Active',    color: 'var(--sp-accent, #60a5fa)', bg: 'rgba(96,165,250,0.12)', border: 'rgba(96,165,250,0.3)'  },
+  blocked:   { label: 'Blocked',   color: 'var(--sp-warning, #fbbf24)', bg: 'rgba(251,191,36,0.1)',  border: 'rgba(251,191,36,0.3)'  },
+  done:      { label: 'Done',      color: 'var(--sp-success, #34d399)', bg: 'rgba(52,211,153,0.1)',  border: 'rgba(52,211,153,0.3)'  },
+  failed:    { label: 'Failed',    color: 'var(--sp-danger, #f87171)', bg: 'rgba(248,113,113,0.1)', border: 'rgba(248,113,113,0.3)' },
+  abandoned: { label: 'Abandoned', color: 'var(--sp-muted, #64748b)', bg: 'rgba(100,116,139,0.1)', border: 'rgba(100,116,139,0.25)' },
 };
 
 const SOURCE_STYLE: Record<GoalSource, { label: string; color: string; bg: string }> = {
-  user:      { label: 'You',       color: '#c4b5fd', bg: 'rgba(196,181,253,0.12)' },
-  curiosity: { label: 'Curiosity', color: '#22d3ee', bg: 'rgba(34,211,238,0.1)'  },
-  parent:    { label: 'Parent',    color: '#818cf8', bg: 'rgba(129,140,248,0.12)' },
-  lesson:    { label: 'Lesson',    color: '#fb923c', bg: 'rgba(251,146,60,0.1)'   },
-  external:  { label: 'External',  color: '#94a3b8', bg: 'rgba(148,163,184,0.1)'  },
+  user:      { label: 'You',       color: 'var(--sp-accent, #c4b5fd)', bg: 'rgba(196,181,253,0.12)' },
+  curiosity: { label: 'Curiosity', color: 'var(--sp-accent, #22d3ee)', bg: 'rgb(var(--sp-accent-rgb, 34 211 238) / 0.1)'  },
+  parent:    { label: 'Parent',    color: 'var(--sp-accent, #818cf8)', bg: 'rgb(var(--sp-accent-rgb, 129 140 248) / 0.12)' },
+  lesson:    { label: 'Lesson',    color: 'var(--sp-warning, #fb923c)', bg: 'rgba(251,146,60,0.1)'   },
+  external:  { label: 'External',  color: 'var(--sp-muted, #94a3b8)', bg: 'rgba(148,163,184,0.1)'  },
 };
 
 
@@ -69,7 +69,7 @@ function SourceBadge({ source }: { source: GoalSource }) {
 }
 
 function Lifecycle({ record }: { record: WorkflowRecord }) {
-  return <span className="text-[9px] text-white/45">
+  return <span className="text-[9px] text-sp-muted">
     {record.finished === null ? 'Completion unknown' : record.finished ? 'Finished' : 'Unfinished'}
     {' · '}{record.retired === null ? 'Retirement unknown' : record.retired ? 'Retired' : 'Not retired'}
   </span>;
@@ -77,7 +77,7 @@ function Lifecycle({ record }: { record: WorkflowRecord }) {
 
 function RulesSummary({ rules, label }: { rules: StateRules | null; label: string }) {
   if (!rules) return null;
-  return <div className="text-[10px] text-white/45 break-words">
+  return <div className="text-[10px] text-sp-muted break-words">
     <p>{label}: {rules.allowed.length ? rules.allowed.join(', ') : 'Any state allowed'}</p>
     <p>Transitions: {rules.restrict_transitions ? 'Restricted' : 'Unrestricted'}
       {rules.transitions.length > 0 && ` · ${rules.transitions.map(([from, to]) => `${from} → ${to}`).join(', ')}`}</p>
@@ -86,7 +86,7 @@ function RulesSummary({ rules, label }: { rules: StateRules | null; label: strin
 
 function RecordDetails({ record }: { record: WorkflowRecord }) {
   return <CollapsibleSection title="Ownership, review & rules">
-    <div className="flex flex-col gap-2 text-[10px] text-white/45 break-words">
+    <div className="flex flex-col gap-2 text-[10px] text-sp-muted break-words">
       <p>Creator: {record.creator || 'Not specified'} · Owner: {record.owner || 'Not specified'}
         {' · '}Requested by: {record.requested_by || 'Not specified'}</p>
       <p>Review: {record.review_enabled === null ? 'Unknown' : record.review_enabled ? 'Enabled' : 'Disabled'}
@@ -99,9 +99,9 @@ function RecordDetails({ record }: { record: WorkflowRecord }) {
   </CollapsibleSection>;
 }
 
-function ThinMeter({ value, color = '#818cf8' }: { value: number | null; color?: string }) {
+function ThinMeter({ value, color = 'var(--sp-accent, #818cf8)' }: { value: number | null; color?: string }) {
   return (
-    <div className="h-1 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.07)' }}>
+    <div className="h-1 rounded-full overflow-hidden" style={{ background: 'rgb(var(--sp-ink-rgb, 255 255 255) / 0.07)' }}>
       <div className="h-full rounded-full transition-all duration-500"
         style={{ width: `${Math.max(0, Math.min(100, (value ?? 0) * 100))}%`, background: color }} />
     </div>
@@ -113,14 +113,14 @@ function CollapsibleSection({ title, children, defaultOpen = false }: {
 }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.07)' }}>
+    <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgb(var(--sp-ink-rgb, 255 255 255) / 0.07)' }}>
       <button onClick={() => setOpen(v => !v)}
-        className="w-full flex items-center gap-2 px-3 py-2.5 text-left transition-colors hover:bg-white/[0.03]"
-        style={{ background: 'rgba(255,255,255,0.03)' }}>
+        className="w-full flex items-center gap-2 px-3 py-2.5 text-left transition-colors hover:bg-sp-ink/[0.03]"
+        style={{ background: 'rgb(var(--sp-ink-rgb, 255 255 255) / 0.03)' }}>
         {open
-          ? <ChevronDown  className="w-3.5 h-3.5 text-white/30 flex-shrink-0" />
-          : <ChevronRight className="w-3.5 h-3.5 text-white/30 flex-shrink-0" />}
-        <span className="text-[11px] font-medium text-white/60">{title}</span>
+          ? <ChevronDown  className="w-3.5 h-3.5 text-sp-muted flex-shrink-0" />
+          : <ChevronRight className="w-3.5 h-3.5 text-sp-muted flex-shrink-0" />}
+        <span className="text-[11px] font-medium text-sp-muted">{title}</span>
       </button>
       {open && <div className="p-3">{children}</div>}
     </div>
@@ -209,10 +209,10 @@ function CommentPopover({
     zIndex: 100,
     width: 280,
     background: 'rgba(10,15,30,0.98)',
-    border: '1px solid rgba(129,140,248,0.3)',
+    border: '1px solid rgb(var(--sp-accent-rgb, 129 140 248) / 0.3)',
     borderRadius: 12,
     padding: 12,
-    boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+    boxShadow: '0 8px 32px rgb(var(--sp-shadow-rgb, 0 0 0) / var(--sp-shadow-opacity, 0.6))',
     ...(openUp ? { bottom: '100%', marginBottom: 6 } : { top: '100%', marginTop: 6 }),
   };
 
@@ -226,9 +226,9 @@ function CommentPopover({
             ? 'Sapien is catching up — comments may take longer to apply.'
             : label}
           className="w-5 h-5 flex items-center justify-center rounded transition-colors flex-shrink-0"
-          style={{ color: open ? '#818cf8' : 'rgba(255,255,255,0.2)' }}
-          onMouseEnter={e => { if (!open) (e.currentTarget as HTMLElement).style.color = 'rgba(129,140,248,0.7)'; }}
-          onMouseLeave={e => { if (!open) (e.currentTarget as HTMLElement).style.color = 'rgba(255,255,255,0.2)'; }}
+          style={{ color: open ? 'var(--sp-accent, #818cf8)' : 'rgb(var(--sp-ink-rgb, 255 255 255) / 0.2)' }}
+          onMouseEnter={e => { if (!open) (e.currentTarget as HTMLElement).style.color = 'var(--sp-accent, rgb(var(--sp-accent-rgb, 129 140 248) / 0.7))'; }}
+          onMouseLeave={e => { if (!open) (e.currentTarget as HTMLElement).style.color = 'var(--sp-muted, rgb(var(--sp-ink-rgb, 255 255 255) / 0.2))'; }}
         >
           <MessageSquare className="w-3 h-3" />
         </button>
@@ -238,9 +238,9 @@ function CommentPopover({
           title={overloaded ? 'Sapien is catching up — comments may take longer to apply.' : undefined}
           className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] transition-all"
           style={{
-            background: open ? 'rgba(129,140,248,0.15)' : 'rgba(255,255,255,0.05)',
-            border: `1px solid ${open ? 'rgba(129,140,248,0.35)' : 'rgba(255,255,255,0.1)'}`,
-            color: open ? '#a5b4fc' : overloaded ? 'rgba(251,191,36,0.6)' : 'rgba(255,255,255,0.4)',
+            background: open ? 'rgb(var(--sp-accent-rgb, 129 140 248) / 0.15)' : 'rgb(var(--sp-ink-rgb, 255 255 255) / 0.05)',
+            border: `1px solid ${open ? 'rgb(var(--sp-accent-rgb, 129 140 248) / 0.35)' : 'rgb(var(--sp-ink-rgb, 255 255 255) / 0.1)'}`,
+            color: open ? 'var(--sp-accent, #a5b4fc)' : overloaded ? 'rgba(251,191,36,0.6)' : 'rgb(var(--sp-ink-rgb, 255 255 255) / 0.4)',
           }}
         >
           <MessageSquare className="w-3 h-3" />
@@ -251,7 +251,7 @@ function CommentPopover({
       {/* Popover */}
       {open && (
         <div style={popoverStyle} onClick={e => e.stopPropagation()}>
-          <p className="text-[10px] font-medium text-white/50 mb-2">
+          <p className="text-[10px] font-medium text-sp-muted mb-2">
             {scope === 'step' ? 'Comment on this step' : scope === 'plan' ? 'Comment on the plan' : 'Comment on this goal'}
           </p>
           <textarea
@@ -261,31 +261,31 @@ function CommentPopover({
             onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) submit(); }}
             placeholder="Tell Sapien anything — change of mind, deadline, blocker, what worked, what to skip…"
             rows={3}
-            className="w-full bg-transparent border rounded-lg px-2.5 py-2 text-[11px] text-white/75 placeholder:text-white/20 resize-none outline-none mb-2"
-            style={{ borderColor: inlineError ? 'rgba(248,113,113,0.4)' : 'rgba(255,255,255,0.15)' }}
+            className="w-full bg-transparent border rounded-lg px-2.5 py-2 text-[11px] text-sp-ink placeholder:text-sp-muted resize-none outline-none mb-2"
+            style={{ borderColor: inlineError ? 'rgba(248,113,113,0.4)' : 'rgb(var(--sp-ink-rgb, 255 255 255) / 0.15)' }}
           />
           {/* Faint examples */}
           <div className="flex flex-col gap-0.5 mb-3">
             {examples.map((ex, i) => (
               <button key={i} onClick={() => setText(ex)}
-                className="text-left text-[9px] text-white/20 hover:text-white/40 transition-colors truncate">
+                className="text-left text-[9px] text-sp-muted hover:text-sp-muted transition-colors truncate">
                 e.g. "{ex}"
               </button>
             ))}
           </div>
           {inlineError && (
-            <p className="text-[10px] text-red-400 mb-2">{inlineError}</p>
+            <p className="text-[10px] text-sp-danger mb-2">{inlineError}</p>
           )}
           <div className="flex items-center justify-between gap-2">
-            <span className="text-[9px] text-white/20">⌘↵ to send</span>
+            <span className="text-[9px] text-sp-muted">⌘↵ to send</span>
             <div className="flex gap-2">
               <button onClick={() => { setOpen(false); setText(''); setInlineError(null); }}
-                className="px-2.5 py-1 rounded-lg text-[10px] text-white/30 hover:text-white/60 transition-colors">
+                className="px-2.5 py-1 rounded-lg text-[10px] text-sp-muted hover:text-sp-muted transition-colors">
                 Cancel
               </button>
               <button onClick={submit} disabled={!text.trim() || submitting}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-medium disabled:opacity-40 transition-all"
-                style={{ background: 'rgba(129,140,248,0.2)', border: '1px solid rgba(129,140,248,0.4)', color: '#a5b4fc' }}>
+                style={{ background: 'rgb(var(--sp-accent-rgb, 129 140 248) / 0.2)', border: '1px solid rgb(var(--sp-accent-rgb, 129 140 248) / 0.4)', color: 'var(--sp-accent, #a5b4fc)' }}>
                 {submitting
                   ? <><Loader2 className="w-3 h-3 animate-spin" />Processing…</>
                   : <><Send className="w-3 h-3" />Send</>}
@@ -307,7 +307,7 @@ function ContextBlock({ ctx, label, highlightAfter }: {
 }) {
   if (!ctx) return (
     <CollapsibleSection title={label}>
-      <p className="text-[10px] text-white/25 italic">(no context yet)</p>
+      <p className="text-[10px] text-sp-muted italic">(no context yet)</p>
     </CollapsibleSection>
   );
 
@@ -316,12 +316,12 @@ function ContextBlock({ ctx, label, highlightAfter }: {
       <div className="flex flex-col gap-3">
         {ctx.facts?.length > 0 && (
           <div>
-            <p className="text-[9px] uppercase tracking-widest text-white/25 mb-1.5">Facts</p>
+            <p className="text-[9px] uppercase tracking-widest text-sp-muted mb-1.5">Facts</p>
             <div className="flex flex-col gap-1">
               {ctx.facts.map((f, i) => (
                 <div key={i} className="flex gap-2 text-[10px]">
-                  <span className="text-white/40 font-medium min-w-[80px] flex-shrink-0">{f.key}</span>
-                  <span className="text-white/65 break-words">{f.value}</span>
+                  <span className="text-sp-muted font-medium min-w-[80px] flex-shrink-0">{f.key}</span>
+                  <span className="text-sp-muted break-words">{f.value}</span>
                 </div>
               ))}
             </div>
@@ -330,7 +330,7 @@ function ContextBlock({ ctx, label, highlightAfter }: {
 
         {ctx.decisions?.length > 0 && (
           <div>
-            <p className="text-[9px] uppercase tracking-widest text-white/25 mb-1.5">What Sapien decided</p>
+            <p className="text-[9px] uppercase tracking-widest text-sp-muted mb-1.5">What Sapien decided</p>
             <div className="flex flex-col gap-2">
               {ctx.decisions.map((d: ContextDecision, i) => {
                 const isNew = highlightAfter
@@ -339,18 +339,18 @@ function ContextBlock({ ctx, label, highlightAfter }: {
                 return (
                   <div key={i} className="rounded-lg p-2 transition-all duration-1000"
                     style={{
-                      background: isNew ? 'rgba(129,140,248,0.1)' : 'rgba(255,255,255,0.03)',
-                      border: isNew ? '1px solid rgba(129,140,248,0.35)' : '1px solid rgba(255,255,255,0.06)',
+                      background: isNew ? 'rgb(var(--sp-accent-rgb, 129 140 248) / 0.1)' : 'rgb(var(--sp-ink-rgb, 255 255 255) / 0.03)',
+                      border: isNew ? '1px solid rgb(var(--sp-accent-rgb, 129 140 248) / 0.35)' : '1px solid rgb(var(--sp-ink-rgb, 255 255 255) / 0.06)',
                     }}>
                     {isNew && (
                       <span className="text-[8px] px-1.5 py-0.5 rounded font-mono mr-1"
-                        style={{ background: 'rgba(129,140,248,0.2)', color: '#818cf8', border: '1px solid rgba(129,140,248,0.3)' }}>
+                        style={{ background: 'rgb(var(--sp-accent-rgb, 129 140 248) / 0.2)', color: 'var(--sp-accent, #818cf8)', border: '1px solid rgb(var(--sp-accent-rgb, 129 140 248) / 0.3)' }}>
                         new
                       </span>
                     )}
-                    <p className="text-[10px] text-white/70 inline">{d.decision}</p>
-                    {d.rationale && <p className="text-[9px] text-white/35 mt-0.5">{d.rationale}</p>}
-                    <p className="text-[8px] text-white/20 mt-1 font-mono">{fmtDate(d.at)}</p>
+                    <p className="text-[10px] text-sp-ink inline">{d.decision}</p>
+                    {d.rationale && <p className="text-[9px] text-sp-muted mt-0.5">{d.rationale}</p>}
+                    <p className="text-[8px] text-sp-muted mt-1 font-mono">{fmtDate(d.at)}</p>
                   </div>
                 );
               })}
@@ -360,18 +360,18 @@ function ContextBlock({ ctx, label, highlightAfter }: {
 
         {ctx.open_questions?.length > 0 && (
           <div>
-            <p className="text-[9px] uppercase tracking-widest text-white/25 mb-1.5">Open Questions</p>
+            <p className="text-[9px] uppercase tracking-widest text-sp-muted mb-1.5">Open Questions</p>
             <div className="flex flex-col gap-1.5">
               {ctx.open_questions.map((q: ContextQuestion) => (
                 <div key={q.id} className="flex gap-2 items-start">
-                  <span className="text-[9px] mt-0.5 flex-shrink-0" style={{ color: q.resolved_at ? '#34d399' : '#fbbf24' }}>
+                  <span className="text-[9px] mt-0.5 flex-shrink-0" style={{ color: q.resolved_at ? 'var(--sp-success, #34d399)' : 'var(--sp-warning, #fbbf24)' }}>
                     {q.resolved_at ? '✓' : '?'}
                   </span>
                   <div>
-                    <p className={`text-[10px] ${q.resolved_at ? 'line-through text-white/30' : 'text-white/60'}`}>
+                    <p className={`text-[10px] ${q.resolved_at ? 'line-through text-sp-muted' : 'text-sp-muted'}`}>
                       {q.question}
                     </p>
-                    {q.resolution && <p className="text-[9px] text-white/40 mt-0.5">{q.resolution}</p>}
+                    {q.resolution && <p className="text-[9px] text-sp-muted mt-0.5">{q.resolution}</p>}
                   </div>
                 </div>
               ))}
@@ -380,7 +380,7 @@ function ContextBlock({ ctx, label, highlightAfter }: {
         )}
 
         {!ctx.facts?.length && !ctx.decisions?.length && !ctx.open_questions?.length && (
-          <p className="text-[10px] text-white/25 italic">No context entries yet.</p>
+          <p className="text-[10px] text-sp-muted italic">No context entries yet.</p>
         )}
       </div>
     </CollapsibleSection>
@@ -395,9 +395,9 @@ function GoalCard({ goal, sapienId, onClick }: { goal: Goal; sapienId: number; o
 
   return (
     <div className="rounded-xl transition-all"
-      style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
-      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(129,140,248,0.3)'; (e.currentTarget as HTMLElement).style.background = 'rgba(129,140,248,0.06)'; }}
-      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.07)'; (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.03)'; }}>
+      style={{ background: 'rgb(var(--sp-ink-rgb, 255 255 255) / 0.03)', border: '1px solid rgb(var(--sp-ink-rgb, 255 255 255) / 0.07)' }}
+      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgb(var(--sp-accent-rgb, 129 140 248) / 0.3)'; (e.currentTarget as HTMLElement).style.background = 'rgb(var(--sp-accent-rgb, 129 140 248) / 0.06)'; }}
+      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgb(var(--sp-ink-rgb, 255 255 255) / 0.07)'; (e.currentTarget as HTMLElement).style.background = 'rgb(var(--sp-ink-rgb, 255 255 255) / 0.03)'; }}>
 
       {/* Clickable body */}
       <button onClick={onClick} className="w-full text-left p-3 flex flex-col gap-2">
@@ -405,20 +405,20 @@ function GoalCard({ goal, sapienId, onClick }: { goal: Goal; sapienId: number; o
           <SourceBadge source={goal.source} />
           <StatusPill  status={goal.state} />
           <Lifecycle record={goal} />
-          <span className="ml-auto text-[8px] font-mono text-white/20">
+          <span className="ml-auto text-[8px] font-mono text-sp-muted">
             {goal.current_plan ? `${done}/${total} tasks finished` : 'No plan created'}
           </span>
         </div>
-        <p className="text-[12px] text-white/80 leading-snug line-clamp-2">{goal.description}</p>
+        <p className="text-[12px] text-sp-ink leading-snug line-clamp-2">{goal.description}</p>
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center gap-2">
-            <span className="text-[8px] text-white/25 w-14 flex-shrink-0">Importance</span>
-            <div className="flex-1"><ThinMeter value={goal.importance} color="#818cf8" /></div>
+            <span className="text-[8px] text-sp-muted w-14 flex-shrink-0">Importance</span>
+            <div className="flex-1"><ThinMeter value={goal.importance} color="var(--sp-accent, #818cf8)" /></div>
           </div>
           {goal.progress !== null && (
             <div className="flex items-center gap-2">
-              <span className="text-[8px] text-white/25 w-14 flex-shrink-0">Progress</span>
-              <div className="flex-1"><ThinMeter value={goal.progress} color="#34d399" /></div>
+              <span className="text-[8px] text-sp-muted w-14 flex-shrink-0">Progress</span>
+              <div className="flex-1"><ThinMeter value={goal.progress} color="var(--sp-success, #34d399)" /></div>
             </div>
           )}
         </div>
@@ -537,7 +537,7 @@ function GoalDetailPane({
     <div className="flex flex-col h-full">
       <BackBtn onClick={onBack} />
       <div className="flex-1 flex items-center justify-center">
-        <Loader2 className="w-5 h-5 animate-spin text-white/30" />
+        <Loader2 className="w-5 h-5 animate-spin text-sp-muted" />
       </div>
     </div>
   );
@@ -545,7 +545,7 @@ function GoalDetailPane({
   if (error && !detail) return (
     <div className="flex flex-col h-full gap-3">
       <BackBtn onClick={onBack} />
-      <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-[11px] text-red-300"
+      <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-[11px] text-sp-danger"
         style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
         <AlertCircle className="w-4 h-4 flex-shrink-0" />{error}
       </div>
@@ -563,7 +563,7 @@ function GoalDetailPane({
       <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-3 pr-0.5">
         {/* Header */}
         <div className="rounded-2xl p-4 flex flex-col gap-3"
-          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
+          style={{ background: 'rgb(var(--sp-ink-rgb, 255 255 255) / 0.03)', border: '1px solid rgb(var(--sp-ink-rgb, 255 255 255) / 0.08)' }}>
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-1.5 flex-wrap">
               <SourceBadge source={goal.source} />
@@ -576,36 +576,36 @@ function GoalDetailPane({
               triggerVariant="pill" onSuccess={startFastPoll}
             />
           </div>
-          <p className="text-[13px] text-white/88 leading-snug">{goal.description}</p>
-          {goal.motivation && <p className="text-[11px] text-white/40 leading-relaxed">{goal.motivation}</p>}
+          <p className="text-[13px] text-sp-ink leading-snug">{goal.description}</p>
+          {goal.motivation && <p className="text-[11px] text-sp-muted leading-relaxed">{goal.motivation}</p>}
           <div className="flex flex-col gap-1.5">
-            <p className="text-[10px] text-white/40">Goal progress: {goal.progress === null ? 'Not reported' : `${Math.round(goal.progress * 100)}%`}</p>
-            <ThinMeter value={goal.progress} color="#34d399" />
+            <p className="text-[10px] text-sp-muted">Goal progress: {goal.progress === null ? 'Not reported' : `${Math.round(goal.progress * 100)}%`}</p>
+            <ThinMeter value={goal.progress} color="var(--sp-success, #34d399)" />
             <div className="flex items-center gap-2">
-              <span className="text-[9px] text-white/30 w-14">Importance</span>
-              <div className="flex-1"><ThinMeter value={goal.importance} color="#818cf8" /></div>
+              <span className="text-[9px] text-sp-muted w-14">Importance</span>
+              <div className="flex-1"><ThinMeter value={goal.importance} color="var(--sp-accent, #818cf8)" /></div>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-[9px] text-white/30 w-14">Priority</span>
-              <div className="flex-1"><ThinMeter value={goal.priority} color="#c4b5fd" /></div>
+              <span className="text-[9px] text-sp-muted w-14">Priority</span>
+              <div className="flex-1"><ThinMeter value={goal.priority} color="var(--sp-accent, #c4b5fd)" /></div>
             </div>
           </div>
         </div>
 
-        {error && <p role="alert" className="text-[11px] text-red-300">{error}</p>}
+        {error && <p role="alert" className="text-[11px] text-sp-danger">{error}</p>}
         <RecordDetails record={goal} />
 
         {/* Plan */}
         <div className="rounded-2xl flex flex-col gap-0"
-          style={{ border: '1px solid rgba(255,255,255,0.07)', overflow: 'hidden' }}>
+          style={{ border: '1px solid rgb(var(--sp-ink-rgb, 255 255 255) / 0.07)', overflow: 'hidden' }}>
 
           {/* Plan header */}
           <div className="px-4 py-3 flex items-center justify-between"
-            style={{ background: 'rgba(255,255,255,0.03)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+            style={{ background: 'rgb(var(--sp-ink-rgb, 255 255 255) / 0.03)', borderBottom: '1px solid rgb(var(--sp-ink-rgb, 255 255 255) / 0.06)' }}>
             <div className="flex items-center gap-2">
-              <span className="text-[11px] font-medium text-white/60">Plan</span>
+              <span className="text-[11px] font-medium text-sp-muted">Plan</span>
               {current_plan && (
-                <span className="text-[9px] font-mono text-white/30">{done}/{total} tasks finished</span>
+                <span className="text-[9px] font-mono text-sp-muted">{done}/{total} tasks finished</span>
               )}
             </div>
             <div className="flex items-center gap-2">
@@ -620,25 +620,25 @@ function GoalDetailPane({
           {/* Steps */}
           {current_plan === null ? (
             <div className="px-4 py-4 flex items-center gap-2">
-              <Circle className="w-3.5 h-3.5 text-white/25" />
-              <span className="text-[11px] text-white/30">No plan created</span>
+              <Circle className="w-3.5 h-3.5 text-sp-muted" />
+              <span className="text-[11px] text-sp-muted">No plan created</span>
             </div>
           ) : (
             <div className="px-4 py-3 flex flex-col gap-2">
-              <p className="text-[11px] text-white/70">{current_plan.description}</p>
+              <p className="text-[11px] text-sp-ink">{current_plan.description}</p>
               <div className="flex flex-wrap gap-2"><StatusPill status={current_plan.state} /><Lifecycle record={current_plan} /></div>
-              <p className="text-[10px] text-white/40">Plan progress: {current_plan.progress === null ? 'Not reported' : `${Math.round(current_plan.progress * 100)}%`}</p>
+              <p className="text-[10px] text-sp-muted">Plan progress: {current_plan.progress === null ? 'Not reported' : `${Math.round(current_plan.progress * 100)}%`}</p>
               <RecordDetails record={current_plan} />
               <RulesSummary rules={current_plan.task_rules} label="Task state rules" />
               {current_plan.tasks.map((step: PlanStep, i) => (
                 <div key={step.id || i} className="flex items-start gap-2.5 group">
-                  <span className="mt-0.5">{step.finished === true ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> : <Circle className="w-3.5 h-3.5 text-white/30" />}</span>
-                  <div className="flex-1 min-w-0 text-[11px] text-white/70 break-words">
-                    <p className={step.finished === true ? 'text-white/35 line-through' : ''}>{step.description}</p>
+                  <span className="mt-0.5">{step.finished === true ? <CheckCircle2 className="w-3.5 h-3.5 text-sp-success" /> : <Circle className="w-3.5 h-3.5 text-sp-muted" />}</span>
+                  <div className="flex-1 min-w-0 text-[11px] text-sp-ink break-words">
+                    <p className={step.finished === true ? 'text-sp-muted line-through' : ''}>{step.description}</p>
                     <StatusPill status={step.state} />
-                    <span className="ml-2 text-[9px] text-white/40">{step.finished === null ? 'Completion unknown' : step.finished ? 'Finished' : 'Unfinished'}</span>
-                    {step.result && <p className="mt-1 text-white/50">Result: {step.result}</p>}
-                    {step.evidence_refs.length > 0 && <p className="mt-1 text-white/40">Evidence references: {step.evidence_refs.join(', ')}</p>}
+                    <span className="ml-2 text-[9px] text-sp-muted">{step.finished === null ? 'Completion unknown' : step.finished ? 'Finished' : 'Unfinished'}</span>
+                    {step.result && <p className="mt-1 text-sp-muted">Result: {step.result}</p>}
+                    {step.evidence_refs.length > 0 && <p className="mt-1 text-sp-muted">Evidence references: {step.evidence_refs.join(', ')}</p>}
                   </div>
                   {/* Per-step comment */}
                   <div className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
@@ -648,20 +648,20 @@ function GoalDetailPane({
                       triggerVariant="icon" onSuccess={startFastPoll} openUp
                     />}
                   </div>
-                  <span className="text-[8px] text-white/15 font-mono mt-0.5 flex-shrink-0">{i + 1}</span>
+                  <span className="text-[8px] text-sp-muted font-mono mt-0.5 flex-shrink-0">{i + 1}</span>
                 </div>
               ))}
               {current_plan.tasks.length === 0 && (
-                <p className="text-[10px] text-white/30 italic">No tasks.</p>
+                <p className="text-[10px] text-sp-muted italic">No tasks.</p>
               )}
             </div>
           )}
 
           {/* Replan */}
-          <div className="px-4 pb-3" style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: 10 }}>
+          <div className="px-4 pb-3" style={{ borderTop: '1px solid rgb(var(--sp-ink-rgb, 255 255 255) / 0.05)', paddingTop: 10 }}>
             {!replanOpen ? (
               <button onClick={() => setReplanOpen(true)}
-                className="flex items-center gap-1.5 text-[10px] text-white/30 hover:text-white/60 transition-colors">
+                className="flex items-center gap-1.5 text-[10px] text-sp-muted hover:text-sp-muted transition-colors">
                 <RotateCcw className="w-3 h-3" /> Request replan
               </button>
             ) : (
@@ -671,18 +671,18 @@ function GoalDetailPane({
                   onChange={e => setReplanReason(e.target.value)}
                   placeholder="Why replan?"
                   rows={2}
-                  className="w-full bg-transparent border rounded-lg px-2.5 py-1.5 text-[11px] text-white/70 placeholder:text-white/20 resize-none outline-none"
-                  style={{ borderColor: 'rgba(255,255,255,0.15)' }}
+                  className="w-full bg-transparent border rounded-lg px-2.5 py-1.5 text-[11px] text-sp-ink placeholder:text-sp-muted resize-none outline-none"
+                  style={{ borderColor: 'rgb(var(--sp-ink-rgb, 255 255 255) / 0.15)' }}
                 />
                 <div className="flex gap-2">
                   <button onClick={handleReplan} disabled={!replanReason.trim() || replanning}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] disabled:opacity-40 transition-all"
-                    style={{ background: 'rgba(124,58,237,0.2)', border: '1px solid rgba(124,58,237,0.35)', color: '#c4b5fd' }}>
+                    style={{ background: 'rgb(var(--sp-accent-rgb, 124 58 237) / 0.2)', border: '1px solid rgb(var(--sp-accent-rgb, 124 58 237) / 0.35)', color: 'var(--sp-accent, #c4b5fd)' }}>
                     {replanning ? <Loader2 className="w-3 h-3 animate-spin" /> : <RotateCcw className="w-3 h-3" />}
                     {replanning ? 'Submitting…' : 'Submit'}
                   </button>
                   <button onClick={() => { setReplanOpen(false); setReplanReason(''); }}
-                    className="px-3 py-1.5 rounded-lg text-[10px] text-white/30 hover:text-white/60 transition-colors">
+                    className="px-3 py-1.5 rounded-lg text-[10px] text-sp-muted hover:text-sp-muted transition-colors">
                     Cancel
                   </button>
                 </div>
@@ -702,7 +702,7 @@ function GoalDetailPane({
 function BackBtn({ onClick }: { onClick: () => void }) {
   return (
     <button onClick={onClick}
-      className="flex items-center gap-1.5 text-[11px] text-white/35 hover:text-white/70 transition-colors flex-shrink-0">
+      className="flex items-center gap-1.5 text-[11px] text-sp-muted hover:text-sp-ink transition-colors flex-shrink-0">
       <ChevronLeft className="w-3.5 h-3.5" /> All goals
     </button>
   );
@@ -767,7 +767,7 @@ export function GoalsPanel({ sapienId }: { sapienId: number }) {
   if (selectedGoalId) {
     return (
       <div className="h-full rounded-2xl flex flex-col p-4"
-        style={{ background: 'rgba(8,12,22,0.85)', border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(20px)', overflow: 'hidden' }}>
+        style={{ background: 'rgb(var(--sp-panel-rgb, 8 12 22) / 0.85)', border: '1px solid rgb(var(--sp-ink-rgb, 255 255 255) / 0.08)', backdropFilter: 'blur(20px)', overflow: 'hidden' }}>
         <GoalDetailPane
           key={`${sapienId}:${selectedGoalId}`}
           sapienId={sapienId} goalId={selectedGoalId}
@@ -779,16 +779,16 @@ export function GoalsPanel({ sapienId }: { sapienId: number }) {
 
   return (
     <div className="h-full rounded-2xl flex flex-col overflow-hidden"
-      style={{ background: 'rgba(8,12,22,0.85)', border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(20px)' }}>
+      style={{ background: 'rgb(var(--sp-panel-rgb, 8 12 22) / 0.85)', border: '1px solid rgb(var(--sp-ink-rgb, 255 255 255) / 0.08)', backdropFilter: 'blur(20px)' }}>
 
       {/* Header */}
-      <div className="flex-shrink-0 px-4 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+      <div className="flex-shrink-0 px-4 py-3" style={{ borderBottom: '1px solid rgb(var(--sp-ink-rgb, 255 255 255) / 0.06)' }}>
         <div className="flex items-center justify-between mb-3">
-          <span className="text-[12px] font-medium text-white/70">Goals</span>
+          <span className="text-[12px] font-medium text-sp-ink">Goals</span>
           <div className="flex items-center gap-2">
-            {lastFetch && <span className="text-[9px] font-mono text-white/20">{lastFetch.toLocaleTimeString()}</span>}
+            {lastFetch && <span className="text-[9px] font-mono text-sp-muted">{lastFetch.toLocaleTimeString()}</span>}
             <button onClick={() => fetchGoals(true)} disabled={loading}
-              className="w-5 h-5 flex items-center justify-center rounded text-white/25 hover:text-white/60 disabled:opacity-40 transition-colors">
+              className="w-5 h-5 flex items-center justify-center rounded text-sp-muted hover:text-sp-muted disabled:opacity-40 transition-colors">
               <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
             </button>
           </div>
@@ -797,7 +797,7 @@ export function GoalsPanel({ sapienId }: { sapienId: number }) {
         {/* Overloaded banner */}
         {isOverloaded && (
           <div className="flex items-start gap-2 px-3 py-2 rounded-lg mb-3 text-[10px]"
-            style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.25)', color: 'rgba(251,191,36,0.8)' }}>
+            style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.25)', color: 'var(--sp-warning, rgba(251,191,36,0.8))' }}>
             <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
             Sapien is processing background work — plans and new goals may take longer. Comments will still queue.
           </div>
@@ -813,15 +813,15 @@ export function GoalsPanel({ sapienId }: { sapienId: number }) {
             }}
               className="px-2.5 py-1 rounded-lg text-[10px] transition-all capitalize"
               style={statusFilter === f
-                ? { background: 'rgba(129,140,248,0.18)', border: '1px solid rgba(129,140,248,0.35)', color: '#a5b4fc' }
-                : { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.35)' }}>
+                ? { background: 'rgb(var(--sp-accent-rgb, 129 140 248) / 0.18)', border: '1px solid rgb(var(--sp-accent-rgb, 129 140 248) / 0.35)', color: 'var(--sp-accent, #a5b4fc)' }
+                : { background: 'rgb(var(--sp-ink-rgb, 255 255 255) / 0.04)', border: '1px solid rgb(var(--sp-ink-rgb, 255 255 255) / 0.07)', color: 'var(--sp-muted, rgb(var(--sp-ink-rgb, 255 255 255) / 0.35))' }}>
               {f.charAt(0).toUpperCase() + f.slice(1)}
             </button>
           ))}
         </div>
 
         {/* Source chips */}
-        <p className="text-[9px] text-white/25 mt-2">Up to 30 matching goals · Sources below filter this loaded set</p>
+        <p className="text-[9px] text-sp-muted mt-2">Up to 30 matching goals · Sources below filter this loaded set</p>
         <div className="flex gap-1 flex-wrap mt-2">
           {sourceOptions.map(key => {
             const on = sourceFilters.has(key);
@@ -830,8 +830,8 @@ export function GoalsPanel({ sapienId }: { sapienId: number }) {
               <button key={key} onClick={() => toggleSource(key)}
                 className="px-2 py-0.5 rounded text-[9px] transition-all"
                 style={on
-                  ? { background: s.bg, border: `1px solid ${s.color}40`, color: s.color }
-                  : { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.25)' }}>
+                  ? { background: s.bg, border: `1px solid color-mix(in srgb, ${s.color} 25.1%, transparent)`, color: s.color }
+                  : { background: 'rgb(var(--sp-ink-rgb, 255 255 255) / 0.03)', border: '1px solid rgb(var(--sp-ink-rgb, 255 255 255) / 0.06)', color: 'var(--sp-muted, rgb(var(--sp-ink-rgb, 255 255 255) / 0.25))' }}>
                 {key || 'Source unspecified'}
               </button>
             );
@@ -843,19 +843,19 @@ export function GoalsPanel({ sapienId }: { sapienId: number }) {
       <div className="flex-1 min-h-0 overflow-y-auto px-3 py-3">
         {loading && goals.length === 0 ? (
           <div className="flex items-center justify-center h-24">
-            <Loader2 className="w-5 h-5 animate-spin text-white/25" />
+            <Loader2 className="w-5 h-5 animate-spin text-sp-muted" />
           </div>
         ) : error ? (
-          <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-[11px] text-red-300"
+          <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-[11px] text-sp-danger"
             style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
             <AlertCircle className="w-4 h-4 flex-shrink-0" />{error}
           </div>
         ) : visibleGoals.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-40 gap-3 text-center px-4">
-            <Circle className="w-8 h-8 text-white/10" />
+            <Circle className="w-8 h-8 text-sp-muted" />
             <div>
-              <p className="text-[12px] text-white/35 mb-1">No matching goals in this view.</p>
-              <p className="text-[10px] text-white/20 leading-relaxed">
+              <p className="text-[12px] text-sp-muted mb-1">No matching goals in this view.</p>
+              <p className="text-[10px] text-sp-muted leading-relaxed">
                 Refresh or choose another filter.
               </p>
             </div>

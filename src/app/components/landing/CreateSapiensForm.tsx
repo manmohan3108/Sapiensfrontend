@@ -123,7 +123,7 @@ export function CreateSapiensForm({ onNameChange }: CreateSapiensFormProps) {
           
           <Button
             type="submit"
-            className="h-11 w-full bg-violet-600 text-white hover:bg-violet-700"
+            className="h-11 w-full bg-sp-action text-white hover:bg-[var(--sapiens-action-hover)]"
             disabled={!name.trim() || isCreating}
           >
             {isCreating ? <Loader2 className="mr-2 size-4 animate-spin" /> : <ArrowRight className="mr-2 size-4" />}

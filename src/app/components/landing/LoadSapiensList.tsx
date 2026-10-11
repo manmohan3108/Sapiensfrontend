@@ -104,14 +104,14 @@ export function LoadSapiensList() {
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Search Sapiens…"
             aria-label="Search Sapiens by name, focus or ID"
-            className="h-11 w-full rounded-xl border border-input bg-background pl-10 pr-4 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20"
+            className="h-11 w-full rounded-xl border border-input bg-background pl-10 pr-4 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-sp-accent focus:ring-2 focus:ring-sp-accent/20"
           />
         </div>
         <div className="space-y-3">
           {filteredSapiens.map((sapiens) => (
             <div
               key={sapiens.id}
-              className="flex flex-col gap-4 rounded-2xl border border-border p-4 transition-all hover:border-violet-300 hover:bg-violet-50/40 sm:flex-row sm:items-center sm:justify-between dark:hover:border-violet-800 dark:hover:bg-violet-950/20"
+              className="flex flex-col gap-4 rounded-2xl border border-border p-4 transition-all hover:border-sp-accent hover:bg-accent sm:flex-row sm:items-center sm:justify-between dark:hover:border-sp-accent dark:hover:bg-accent/20"
             >
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
@@ -131,7 +131,7 @@ export function LoadSapiensList() {
               
               <Button
                 onClick={() => handleLoad(sapiens)}
-                className="w-full bg-violet-600 text-white hover:bg-violet-700 sm:ml-4 sm:w-auto"
+                className="w-full bg-sp-action text-white hover:bg-[var(--sapiens-action-hover)] sm:ml-4 sm:w-auto"
                 disabled={loadingId !== null}
               >
                 {loadingId === sapiens.id ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}

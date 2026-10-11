@@ -1,0 +1,81 @@
+/* The landing palette is the source of truth for product surfaces. */
+:root {
+  --sapiens-bg: #faf9f6;
+  --sapiens-panel: #ffffff;
+  --sapiens-ink: #242031;
+  --sapiens-muted: #686171;
+  --sapiens-line: #e5e0e9;
+  --sapiens-violet: #7139c6;
+  --sapiens-soft: #f0ebf8;
+  --sapiens-action: #7434ce;
+  --sapiens-action-hover: #6025b4;
+}
+.dark {
+  --sapiens-bg: #111017;
+  --sapiens-panel: #191720;
+  --sapiens-ink: #f2edf8;
+  --sapiens-muted: #b1a8bf;
+  --sapiens-line: #302a3b;
+  --sapiens-violet: #bb99f0;
+  --sapiens-soft: #252032;
+}
+
+/* Scope the legacy workspace migration; diagnostic views can retain their
+   existing colors through the fallbacks in shared components. Apply this class
+   to portalled product dialogs too, since they do not inherit the page root. */
+.product-surface {
+  --sp-bg: var(--sapiens-bg);
+  --sp-panel: var(--sapiens-panel);
+  --sp-ink: var(--sapiens-ink);
+  --sp-muted: var(--sapiens-muted);
+  --sp-line: var(--sapiens-line);
+  --sp-accent: var(--sapiens-violet);
+  --sp-ink-rgb: 36 32 49;
+  --sp-panel-rgb: 255 255 255;
+  --sp-accent-rgb: 113 57 198;
+  --sp-shadow-rgb: 70 36 110;
+  --sp-success: #19704e;
+  --sp-warning: #8a5708;
+  --sp-danger: #b42348;
+  --sp-action: var(--sapiens-action);
+  --sp-on-action: #ffffff;
+  --sp-recessed: var(--sapiens-soft);
+  --sp-shadow-opacity: .1;
+  color: var(--sp-ink);
+  background-color: var(--sp-bg);
+  color-scheme: light;
+}
+.dark .product-surface {
+  --sp-ink-rgb: 242 237 248;
+  --sp-panel-rgb: 25 23 32;
+  --sp-accent-rgb: 187 153 240;
+  --sp-shadow-rgb: 0 0 0;
+  --sp-success: #86d8ae;
+  --sp-warning: #e4bd7a;
+  --sp-danger: #f4a0b4;
+  --sp-shadow-opacity: .35;
+  color-scheme: dark;
+}
+.product-surface :is(button, a, input, textarea, select):focus-visible {
+  outline: 2px solid var(--sp-accent);
+  outline-offset: 3px;
+}
+.product-surface select { color-scheme: inherit; }
+.product-surface :is(option, optgroup) { background: var(--sp-panel); color: var(--sp-ink); }
+.product-surface option:checked { background: var(--sapiens-soft); color: var(--sp-ink); }
+.product-surface.product-dialog { background-color: var(--sp-panel); }
+.product-dialog > button { color: var(--sp-muted); }
+
+@theme inline {
+  --color-sp-ink: rgb(var(--sp-ink-rgb, 255 255 255));
+  --color-sp-muted: var(--sp-muted, rgb(255 255 255 / .55));
+  --color-sp-line: var(--sp-line, rgb(255 255 255 / .1));
+  --color-sp-panel: var(--sp-panel, #0b1220);
+  --color-sp-bg: var(--sp-bg, #080c18);
+  --color-sp-accent: var(--sp-accent, #c4b5fd);
+  --color-sp-success: var(--sp-success, #86efac);
+  --color-sp-warning: var(--sp-warning, #fbbf24);
+  --color-sp-danger: var(--sp-danger, #fda4af);
+  --color-sp-action: var(--sp-action, #7434ce);
+  --color-sp-on-action: var(--sp-on-action, #ffffff);
+}

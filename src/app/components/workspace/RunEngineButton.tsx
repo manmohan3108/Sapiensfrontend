@@ -67,7 +67,7 @@ export function RunEngineButton() {
   /* ── Success state ── */
   if (isSuccess) {
     return (
-      <div className="flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">
+      <div className="flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs bg-emerald-500/15 border border-emerald-500/30 text-sp-success">
         <CheckCircle2 className="w-3.5 h-3.5" />
         {totalRuns > 1 ? `Done — ${totalRuns} runs` : 'Engine Done'}
       </div>
@@ -77,7 +77,7 @@ export function RunEngineButton() {
   /* ── Error state ── */
   if (isError) {
     return (
-      <div className="flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs bg-red-500/15 border border-red-500/30 text-red-400">
+      <div className="flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs bg-red-500/15 border border-red-500/30 text-sp-danger">
         <AlertCircle className="w-3.5 h-3.5" />
         Failed {currentRun > 0 ? `on run ${currentRun}` : ''}
       </div>
@@ -89,20 +89,20 @@ export function RunEngineButton() {
     return (
       <div className="flex items-center gap-1.5 h-8">
         {/* Progress pill */}
-        <div className="flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs bg-violet-500/15 border border-violet-500/40 text-violet-300 select-none">
+        <div className="flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs bg-sp-accent/15 border border-sp-accent/40 text-sp-accent select-none">
           <span className="relative w-3.5 h-3.5 flex-shrink-0">
-            <span className="absolute inset-0 rounded-full border-2 border-violet-500/30 border-t-violet-400 animate-spin" />
+            <span className="absolute inset-0 rounded-full border-2 border-sp-accent/30 border-t-violet-400 animate-spin" />
           </span>
 
           {totalRuns > 1 ? (
             <span className="flex items-center gap-1">
-              <span className="text-violet-200 tabular-nums">
+              <span className="text-sp-accent tabular-nums">
                 Run {currentRun} / {totalRuns}
               </span>
               {/* mini progress bar */}
-              <span className="w-14 h-1 rounded-full bg-violet-900/60 overflow-hidden ml-1">
+              <span className="w-14 h-1 rounded-full bg-sp-accent/60 overflow-hidden ml-1">
                 <span
-                  className="h-full rounded-full bg-gradient-to-r from-violet-400 to-indigo-400 transition-all duration-500"
+                  className="h-full rounded-full bg-gradient-to-r from-sp-accent to-sp-accent transition-all duration-500"
                   style={{ width: `${(currentRun / totalRuns) * 100}%` }}
                 />
               </span>
@@ -125,7 +125,7 @@ export function RunEngineButton() {
             onClick={handleAbort}
             title="Stop after current run"
             className="flex items-center gap-1 px-2 h-8 rounded-lg text-xs
-              bg-red-500/10 border border-red-500/30 text-red-400
+              bg-red-500/10 border border-red-500/30 text-sp-danger
               hover:bg-red-500/20 hover:border-red-400/50
               transition-all duration-150 active:scale-95"
           >
@@ -142,15 +142,15 @@ export function RunEngineButton() {
     <div className="flex items-center gap-1 h-8">
       {/* Run-count stepper */}
       <div
-        className="flex items-center h-8 rounded-lg overflow-hidden border border-white/10 bg-white/5
+        className="flex items-center h-8 rounded-lg overflow-hidden border border-sp-line bg-sp-ink/5
           backdrop-blur-sm select-none"
       >
         <button
           onClick={handleDecrement}
           disabled={runCount <= 1}
           title="Decrease run count"
-          className="flex items-center justify-center w-6 h-full text-slate-400
-            hover:text-slate-200 hover:bg-white/10
+          className="flex items-center justify-center w-6 h-full text-sp-muted
+            hover:text-sp-ink hover:bg-sp-ink/10
             disabled:opacity-30 disabled:cursor-not-allowed
             transition-all duration-150 active:scale-90"
         >
@@ -164,12 +164,12 @@ export function RunEngineButton() {
             max={20}
             value={runCount}
             onChange={handleCountInput}
-            className="w-full text-center text-xs text-slate-200 bg-transparent
+            className="w-full text-center text-xs text-sp-ink bg-transparent
               focus:outline-none tabular-nums leading-none
               [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
           />
           {runCount > 1 && (
-            <span className="absolute -top-0.5 -right-0.5 text-[9px] text-violet-400 font-medium leading-none">×</span>
+            <span className="absolute -top-0.5 -right-0.5 text-[9px] text-sp-accent font-medium leading-none">×</span>
           )}
         </div>
 
@@ -177,8 +177,8 @@ export function RunEngineButton() {
           onClick={handleIncrement}
           disabled={runCount >= 20}
           title="Increase run count"
-          className="flex items-center justify-center w-6 h-full text-slate-400
-            hover:text-slate-200 hover:bg-white/10
+          className="flex items-center justify-center w-6 h-full text-sp-muted
+            hover:text-sp-ink hover:bg-sp-ink/10
             disabled:opacity-30 disabled:cursor-not-allowed
             transition-all duration-150 active:scale-90"
         >
@@ -196,10 +196,10 @@ export function RunEngineButton() {
             : 'Run Engine — Trigger cognitive rethink'
         }
         className="relative group flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs
-          bg-gradient-to-r from-violet-600/80 to-indigo-600/80
-          hover:from-violet-500 hover:to-indigo-500
-          border border-violet-500/40 hover:border-violet-400/60
-          text-white shadow-md shadow-violet-500/20 hover:shadow-violet-500/40
+          bg-gradient-to-r from-sp-action to-sp-action
+          hover:from-sp-action hover:to-sp-action hover:brightness-110
+          border border-sp-accent/40 hover:border-sp-accent/60
+          text-sp-on-action shadow-md shadow-violet-500/20 hover:shadow-violet-500/40
           transition-all duration-200 overflow-hidden
           disabled:opacity-50 disabled:cursor-not-allowed
           active:scale-[0.97]"

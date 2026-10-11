@@ -22,9 +22,9 @@ function TabRow({
   setTab: (t: RightTab) => void;
 }) {
   const TABS = [
-    { id: 'awareness' as RightTab, label: 'Awareness', icon: <Eye className="w-3 h-3" />, activeColor: '#67e8f9', activeBg: 'rgba(34,211,238,0.12)', activeBorder: 'rgba(34,211,238,0.25)' },
-    { id: 'memory'   as RightTab, label: 'Working Memory', icon: <BrainCircuit className="w-3 h-3" />, activeColor: '#c4b5fd', activeBg: 'rgba(124,58,237,0.15)', activeBorder: 'rgba(124,58,237,0.3)' },
-    { id: 'goals'    as RightTab, label: 'Goals',    icon: <Target    className="w-3 h-3" />, activeColor: '#86efac', activeBg: 'rgba(52,211,153,0.12)', activeBorder: 'rgba(52,211,153,0.3)' },
+    { id: 'awareness' as RightTab, label: 'Awareness', icon: <Eye className="w-3 h-3" />, activeColor: 'var(--sp-accent, #67e8f9)', activeBg: 'rgb(var(--sp-accent-rgb, 34 211 238) / 0.12)', activeBorder: 'rgb(var(--sp-accent-rgb, 34 211 238) / 0.25)' },
+    { id: 'memory'   as RightTab, label: 'Working Memory', icon: <BrainCircuit className="w-3 h-3" />, activeColor: 'var(--sp-accent, #c4b5fd)', activeBg: 'rgb(var(--sp-accent-rgb, 124 58 237) / 0.15)', activeBorder: 'rgb(var(--sp-accent-rgb, 124 58 237) / 0.3)' },
+    { id: 'goals'    as RightTab, label: 'Goals',    icon: <Target    className="w-3 h-3" />, activeColor: 'var(--sp-accent, #86efac)', activeBg: 'rgb(var(--sp-accent-rgb) / .12)', activeBorder: 'rgb(var(--sp-accent-rgb) / .3)' },
   ] as const;
 
   const active = TABS.find(t => t.id === tab) ?? TABS[0];
@@ -32,7 +32,7 @@ function TabRow({
   return (
     <div
       className="flex-shrink-0 flex items-center gap-1 px-2 py-1.5 rounded-xl"
-      style={{ background: 'rgba(8,12,22,0.7)', border: '1px solid rgba(255,255,255,0.07)', backdropFilter: 'blur(12px)' }}
+      style={{ background: 'rgb(var(--sp-panel-rgb, 8 12 22) / 0.7)', border: '1px solid rgb(var(--sp-ink-rgb, 255 255 255) / 0.07)', backdropFilter: 'blur(12px)' }}
     >
       {TABS.map(t => (
         <button
@@ -42,7 +42,7 @@ function TabRow({
           style={
             tab === t.id
               ? { background: t.activeBg, border: `1px solid ${t.activeBorder}`, color: t.activeColor }
-              : { background: 'transparent', border: '1px solid transparent', color: 'rgba(255,255,255,0.3)' }
+              : { background: 'transparent', border: '1px solid transparent', color: 'var(--sp-muted, rgb(var(--sp-ink-rgb, 255 255 255) / 0.3))' }
           }
         >
           {t.icon}
@@ -51,7 +51,7 @@ function TabRow({
       ))}
       <div className="flex-1" />
       <span className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-        style={{ background: active.activeColor, boxShadow: `0 0 6px ${active.activeColor}99`, transition: 'background 0.25s, box-shadow 0.25s' }} />
+        style={{ background: active.activeColor, boxShadow: `0 0 6px color-mix(in srgb, ${active.activeColor} 60%, transparent)`, transition: 'background 0.25s, box-shadow 0.25s' }} />
     </div>
   );
 }
@@ -87,23 +87,17 @@ export function WorkspacePage() {
   if (!currentSapiens) return null;
 
   return (
-    <div className="workspace-shell min-h-[100dvh] lg:h-screen flex flex-col lg:overflow-hidden" style={{ background: '#080c18' }}>
+    <div className="product-surface workspace-shell min-h-[100dvh] lg:h-screen flex flex-col lg:overflow-hidden">
 
       {user?.role === 'customer' && <h1 ref={heading} tabIndex={-1} className="sr-only">{currentSapiens.name} workspace</h1>}
       {/* ── Ambient canvas ── */}
       <div className="fixed inset-0 pointer-events-none select-none z-0">
         <div className="absolute -top-60 -left-60 w-[900px] h-[900px] rounded-full"
-          style={{ background: 'radial-gradient(circle, rgba(124,58,237,0.22) 0%, transparent 60%)' }} />
+          style={{ background: 'radial-gradient(circle, rgb(var(--sp-accent-rgb) / .08) 0%, transparent 60%)' }} />
         <div className="absolute -bottom-80 -right-40 w-[800px] h-[800px] rounded-full"
-          style={{ background: 'radial-gradient(circle, rgba(67,56,202,0.18) 0%, transparent 60%)' }} />
+          style={{ background: 'radial-gradient(circle, rgb(var(--sp-accent-rgb) / .05) 0%, transparent 60%)' }} />
         <div className="absolute top-1/4 left-1/2 w-[500px] h-[500px] rounded-full -translate-x-1/2"
-          style={{ background: 'radial-gradient(circle, rgba(6,182,212,0.07) 0%, transparent 70%)' }} />
-        <div className="absolute inset-0"
-          style={{
-            backgroundImage: 'radial-gradient(rgba(148,163,184,0.25) 1px, transparent 1px)',
-            backgroundSize: '32px 32px',
-            opacity: 0.18,
-          }} />
+          style={{ background: 'radial-gradient(circle, rgb(var(--sp-accent-rgb) / .04) 0%, transparent 70%)' }} />
       </div>
 
       {/* ── Header ── */}

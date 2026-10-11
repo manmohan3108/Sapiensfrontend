@@ -20,17 +20,17 @@ export function LandingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground selection:bg-violet-200 dark:selection:bg-violet-900">
+    <div className="product-surface min-h-screen bg-background text-foreground selection:bg-violet-200 dark:selection:bg-violet-900">
       <header className="border-b border-border/60 bg-background/90 backdrop-blur">
         <nav aria-label="Primary navigation" className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <a href="#top" className="flex items-center gap-2.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500">
-            <span className="grid size-9 place-items-center rounded-xl bg-violet-600 text-white">
+          <a href="#top" className="flex items-center gap-2.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sp-accent">
+            <span className="grid size-9 place-items-center rounded-xl bg-sp-action text-white">
               <Brain className="size-5" aria-hidden="true" />
             </span>
             <span className="font-semibold tracking-tight">Sapiens</span>
           </a>
           <div className="flex items-center gap-2">
-            <span className="hidden items-center gap-2 rounded-full border border-border bg-muted/40 px-3 py-1.5 text-xs text-muted-foreground sm:flex">{isAdmin ? <ShieldCheck className="size-3.5 text-violet-500" /> : <UserRound className="size-3.5 text-violet-500" />}<span className="max-w-28 truncate">{user?.username}</span><span className="capitalize text-foreground/70">· {user?.role}</span></span>
+            <span className="hidden items-center gap-2 rounded-full border border-border bg-muted/40 px-3 py-1.5 text-xs text-muted-foreground sm:flex">{isAdmin ? <ShieldCheck className="size-3.5 text-sp-accent" /> : <UserRound className="size-3.5 text-sp-accent" />}<span className="max-w-28 truncate">{user?.username}</span><span className="capitalize text-foreground/70">· {user?.role}</span></span>
             <ThemeToggle className="rounded-full" />
             {isAdmin && <Button variant="ghost" size="sm" asChild className="rounded-full px-3"><Link to="/admin/analyse"><ScanSearch className="mr-1.5 size-4" />Analyse</Link></Button>}
             {isAdmin && <Button variant="outline" size="sm" asChild className="rounded-full px-3"><Link to="/admin/simulations"><Beaker className="mr-1.5 size-4" />Simulation Lab</Link></Button>}
@@ -48,7 +48,7 @@ export function LandingPage() {
             <div className="grid gap-8 lg:grid-cols-[minmax(0,0.72fr)_minmax(0,1.28fr)] lg:items-start lg:gap-12">
               <div className="lg:sticky lg:top-10 lg:pt-5">
                 <SapiensPresence size={112} className="mb-5" />
-                <div className="inline-flex items-center gap-2 rounded-full bg-violet-100 px-3 py-1.5 text-xs font-medium text-violet-700 dark:bg-violet-950 dark:text-violet-300">
+                <div className="inline-flex items-center gap-2 rounded-full bg-accent px-3 py-1.5 text-xs font-medium text-sp-accent dark:bg-accent dark:text-sp-accent">
                   <Sparkles className="size-3.5" aria-hidden="true" /> An AI individual
                 </div>
                 <h1 className="mt-5 text-balance text-3xl font-semibold leading-tight tracking-[-0.035em] sm:text-4xl">
