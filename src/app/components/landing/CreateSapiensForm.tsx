@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { useSapiens } from '../../hooks/useSapiens';
 import { useAuth } from '../../contexts/AuthContext';
+import { SapiensPresence } from '../customer/SapiensPresence';
 
 interface CreateSapiensFormProps {
   onNameChange?: (name: string) => void;
@@ -55,10 +56,10 @@ export function CreateSapiensForm({ onNameChange }: CreateSapiensFormProps) {
   return (
     <Card className="mx-auto max-w-xl rounded-3xl border-border/70 bg-card/90 shadow-xl shadow-violet-950/5 backdrop-blur">
       <CardHeader>
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-violet-600 dark:text-violet-400">Begin its story</p>
-        <CardTitle className="text-2xl">First, give it a name</CardTitle>
+        <SapiensPresence size={40} />
+        <CardTitle className="text-2xl">Create your Sapiens</CardTitle>
         <CardDescription>
-          Start with one small choice. You can shape everything else after you meet.
+          Choose a name and, optionally, what you’d like to explore together.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -72,7 +73,7 @@ export function CreateSapiensForm({ onNameChange }: CreateSapiensFormProps) {
           )}
           
           <div className="space-y-2">
-            <Label htmlFor="name">Its name</Label>
+            <Label htmlFor="name">Name</Label>
             <Input
               id="name"
               type="text"
@@ -89,16 +90,18 @@ export function CreateSapiensForm({ onNameChange }: CreateSapiensFormProps) {
 
           <div className="space-y-2">
             <Label htmlFor="role">
-              Descriptive role <span className="font-normal text-muted-foreground">(optional, not account permissions)</span>
+              Focus <span className="font-normal text-muted-foreground">(optional)</span>
             </Label>
             <Input
               id="role"
               type="text"
-              placeholder="e.g. Research assistant"
+              placeholder="e.g. Ideas and reading"
               value={role}
               onChange={(e) => setRole(e.target.value)}
               disabled={isCreating}
+              aria-describedby="admin-focus-help"
             />
+            <p id="admin-focus-help" className="text-xs leading-5 text-muted-foreground">Descriptive context that may inform conversations. It does not add skills or access. Leave it blank to use the default, “generalist.”</p>
           </div>
 
           {isAdmin && (
@@ -124,9 +127,9 @@ export function CreateSapiensForm({ onNameChange }: CreateSapiensFormProps) {
             disabled={!name.trim() || isCreating}
           >
             {isCreating ? <Loader2 className="mr-2 size-4 animate-spin" /> : <ArrowRight className="mr-2 size-4" />}
-            {isCreating ? 'Creating…' : name.trim() ? `Begin with ${name.trim()}` : 'Begin creating'}
+            {isCreating ? 'Creating…' : 'Create and open'}
           </Button>
-          <p className="text-center text-xs text-muted-foreground">Give it a name, optionally define its role, and begin.</p>
+          {isAdmin && <p className="text-center text-xs leading-5 text-muted-foreground">Sapiens created here are available to administrators only until an owner is assigned in Django admin.</p>}
         </form>
       </CardContent>
     </Card>

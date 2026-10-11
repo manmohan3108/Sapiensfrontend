@@ -1,4 +1,4 @@
-import { Brain, Home, Save, ChevronRight, Cpu, Wifi, Hourglass, PlugZap, ScanSearch, LogOut, Beaker } from 'lucide-react';
+import { Home, Save, ChevronRight, Cpu, Wifi, Hourglass, PlugZap, ScanSearch, LogOut, Beaker } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { useSapiens } from '../../hooks/useSapiens';
 import { useSapiensStore } from '../../core/state/sapiensStore';
@@ -20,7 +20,7 @@ export function HeaderBar() {
   const isProcessing = status === 'processing' || status === 'loading';
 
   const statusColors = {
-    idle:       { dot: '#34d399', label: user?.role === 'admin' ? 'Ready' : 'Idle', glow: 'rgba(52,211,153,0.5)' },
+    idle:       { dot: '#34d399', label: 'Idle', glow: 'rgba(52,211,153,0.5)' },
     processing: { dot: '#fbbf24', label: 'Processing', glow: 'rgba(251,191,36,0.5)' },
     loading:    { dot: '#60a5fa', label: 'Loading',    glow: 'rgba(96,165,250,0.5)' },
     error:      { dot: '#f87171', label: 'Error',      glow: 'rgba(248,113,113,0.5)' },
@@ -46,15 +46,7 @@ export function HeaderBar() {
 
           {/* Logo */}
           <div className="relative flex-shrink-0">
-            {user?.role === 'customer' ? <SapiensPresence size={36} /> : <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center"
-              style={{
-                background: 'linear-gradient(135deg, #7c3aed, #4f46e5)',
-                boxShadow: '0 0 20px rgba(124,58,237,0.5)',
-              }}
-            >
-              <Brain className="w-5 h-5 text-white" />
-            </div>}
+            <SapiensPresence size={36} />
             {/* Online ring */}
             <span
               className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2"
@@ -213,7 +205,7 @@ export function HeaderBar() {
             className="flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs text-white/35 hover:text-white/70 hover:bg-white/[0.05] transition-all duration-150"
           >
             <Home className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">{user?.role === 'customer' ? 'Your Sapiens' : 'Home'}</span>
+            <span className="hidden sm:inline">Your Sapiens</span>
           </button>
           <button onClick={() => void logout()} title={`Sign out ${user?.username ?? ''}`} className="flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs text-white/35 transition hover:bg-red-400/[.06] hover:text-red-300"><LogOut className="h-3.5 w-3.5" /><span className="hidden sm:inline">Sign out</span></button>
         </div>

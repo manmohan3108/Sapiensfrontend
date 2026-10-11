@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArrowRight, FolderOpen, Loader2, AlertCircle, RefreshCw, Search, SearchX } from 'lucide-react';
+import { ArrowRight, Loader2, AlertCircle, RefreshCw, Search, SearchX } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card, CardContent } from '../ui/card';
 import { Badge } from '../ui/badge';
@@ -8,10 +8,9 @@ import { Sapiens } from '../../types/sapiensTypes';
 import { sapiensService } from '../../core/services/sapiensService';
 import { useSapiens } from '../../hooks/useSapiens';
 import { formatDateTime } from '../../utils/formatters';
-import { useAuth } from '../../contexts/AuthContext';
+import { SapiensPresence } from '../customer/SapiensPresence';
 
 export function LoadSapiensList() {
-  const { user } = useAuth();
   const [sapiensList, setSapiensList] = useState<Sapiens[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -55,9 +54,8 @@ export function LoadSapiensList() {
       <Card className="mx-auto max-w-2xl rounded-3xl border-border/70">
         <CardContent className="py-14" aria-live="polite" aria-busy="true">
           <div className="flex flex-col items-center justify-center text-muted-foreground">
-            <Loader2 className="w-8 h-8 animate-spin mb-2" />
-            <p className="font-medium">Looking for your saved memories…</p>
-            <p className="mt-1 text-sm">This should only take a moment.</p>
+            <SapiensPresence size={64} animated className="mb-3" />
+            <p className="font-medium">Loading your Sapiens…</p>
           </div>
         </CardContent>
       </Card>
@@ -70,7 +68,7 @@ export function LoadSapiensList() {
         <CardContent className="py-6">
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
-            <AlertTitle>We couldn’t load your memories</AlertTitle>
+            <AlertTitle>We couldn’t load your Sapiens</AlertTitle>
             <AlertDescription>
               {error}
             </AlertDescription>
@@ -86,9 +84,9 @@ export function LoadSapiensList() {
       <Card className="mx-auto max-w-2xl rounded-3xl border-dashed border-border/80 bg-muted/20">
         <CardContent className="py-12">
           <div className="flex flex-col items-center justify-center text-muted-foreground">
-            <FolderOpen className="w-12 h-12 mb-4 opacity-30" />
-            <p className="mb-1 text-lg font-medium text-foreground">{user?.role === 'admin' ? 'No Sapiens available' : 'You don’t have a Sapiens yet'}</p>
-            <p className="text-sm">{user?.role === 'admin' ? 'Create an admin-only Sapiens below. Assign ownership later in Django admin.' : 'Create your first Sapiens below. It will automatically belong to your account.'}</p>
+            <SapiensPresence size={96} animated className="mb-4" />
+            <p className="mb-1 text-lg font-medium text-foreground">No Sapiens yet</p>
+            <p className="text-sm">Create your first Sapiens below.</p>
           </div>
         </CardContent>
       </Card>
@@ -105,7 +103,7 @@ export function LoadSapiensList() {
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Search Sapiens…"
-            aria-label="Search Sapiens by name, role, or ID"
+            aria-label="Search Sapiens by name, focus or ID"
             className="h-11 w-full rounded-xl border border-input bg-background pl-10 pr-4 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20"
           />
         </div>
@@ -145,7 +143,7 @@ export function LoadSapiensList() {
             <div className="flex flex-col items-center rounded-2xl border border-dashed border-border py-10 text-center text-muted-foreground">
               <SearchX className="mb-3 size-7 opacity-40" />
               <p className="font-medium text-foreground">No matching Sapiens</p>
-              <p className="mt-1 text-sm">Try another name, role, or ID.</p>
+              <p className="mt-1 text-sm">Try another name, focus or ID.</p>
             </div>
           )}
         </div>

@@ -1,11 +1,12 @@
 import { useRef, useState } from 'react';
-import { Brain, Heart, Plus, Sparkles, ArrowRight, LogOut, ShieldCheck, UserRound, Beaker, ScanSearch } from 'lucide-react';
+import { Brain, Heart, Plus, Sparkles, LogOut, ShieldCheck, UserRound, Beaker, ScanSearch } from 'lucide-react';
 import { Link } from 'react-router';
 import { LoadSapiensList } from '../components/landing/LoadSapiensList';
 import { CreateSapiensForm } from '../components/landing/CreateSapiensForm';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { Button } from '../components/ui/button';
 import { useAuth } from '../contexts/AuthContext';
+import { SapiensPresence } from '../components/customer/SapiensPresence';
 
 export function LandingPage() {
   const { user, logout } = useAuth();
@@ -34,7 +35,7 @@ export function LandingPage() {
             {isAdmin && <Button variant="ghost" size="sm" asChild className="rounded-full px-3"><Link to="/admin/analyse"><ScanSearch className="mr-1.5 size-4" />Analyse</Link></Button>}
             {isAdmin && <Button variant="outline" size="sm" asChild className="rounded-full px-3"><Link to="/admin/simulations"><Beaker className="mr-1.5 size-4" />Simulation Lab</Link></Button>}
             <Button variant="ghost" size="sm" onClick={openCreate} className="rounded-full px-4">
-              <Plus className="mr-1.5 size-4" /> Create new
+              <Plus className="mr-1.5 size-4" /> Create a Sapiens
             </Button>
             <Button variant="ghost" size="icon" onClick={() => void logout()} className="rounded-full" aria-label="Sign out"><LogOut className="size-4" /></Button>
           </div>
@@ -46,27 +47,22 @@ export function LandingPage() {
           <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
             <div className="grid gap-8 lg:grid-cols-[minmax(0,0.72fr)_minmax(0,1.28fr)] lg:items-start lg:gap-12">
               <div className="lg:sticky lg:top-10 lg:pt-5">
+                <SapiensPresence size={112} className="mb-5" />
                 <div className="inline-flex items-center gap-2 rounded-full bg-violet-100 px-3 py-1.5 text-xs font-medium text-violet-700 dark:bg-violet-950 dark:text-violet-300">
-                  <Sparkles className="size-3.5" aria-hidden="true" /> A mind that grows with every interaction
+                  <Sparkles className="size-3.5" aria-hidden="true" /> An AI individual
                 </div>
                 <h1 className="mt-5 text-balance text-3xl font-semibold leading-tight tracking-[-0.035em] sm:text-4xl">
-                  Every Sapiens has a story already in motion.
+                  Your Sapiens
                 </h1>
                 <p className="mt-4 max-w-md text-base leading-7 text-muted-foreground">
-                  It remembers what it learns, connects ideas over time, and develops a perspective shaped by every conversation.
+                  Bring a question, an idea or something that matters to you. Continue with a Sapiens, or create a new individual.
                 </p>
-                <p className="mt-4 max-w-md text-sm leading-6 text-muted-foreground">
-                  {isAdmin ? 'Browse all Sapiens, including unassigned ones. New Sapiens created here are ownerless and admin-only until assigned using the Sapiens Owner field in Django admin.' : 'Only Sapiens owned by your account appear here. New Sapiens automatically belong to you.'}
-                </p>
-                <div className="mt-7 flex items-center gap-2 text-sm font-medium text-violet-600 dark:text-violet-400">
-                  Pick a Sapiens to begin <ArrowRight className="size-4" aria-hidden="true" />
-                </div>
               </div>
 
               <div className="min-w-0">
                 <div className="mb-4">
                   <h2 className="text-xl font-semibold tracking-tight">{isAdmin ? 'All Sapiens' : 'Your Sapiens'}</h2>
-                  <p className="mt-1 text-sm text-muted-foreground">Search by name, descriptive role, or ID. A Sapiens role is not an account permission.</p>
+                  <p className="mt-1 text-sm text-muted-foreground">Open an individual to continue. Search by name, focus or ID.</p>
                 </div>
                 <LoadSapiensList />
               </div>
@@ -78,7 +74,7 @@ export function LandingPage() {
           <div className="mx-auto max-w-6xl px-4 text-center sm:px-6 lg:px-8">
             {!showCreate ? (
               <div>
-                <p className="text-sm text-muted-foreground">Need a separate Sapiens for a new test?</p>
+                <p className="text-sm text-muted-foreground">Create an AI individual to explore ideas with.</p>
                 <Button variant="outline" onClick={openCreate} className="mt-4 rounded-full">
                   <Plus className="mr-2 size-4" /> Create a new Sapiens
                 </Button>
@@ -86,7 +82,7 @@ export function LandingPage() {
             ) : (
               <div>
                 <div className="mb-7">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">One-time setup</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">An AI individual</p>
                   <h2 className="mt-2 text-2xl font-semibold">Create a new Sapiens</h2>
                 </div>
                 <CreateSapiensForm />

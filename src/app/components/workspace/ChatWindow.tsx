@@ -357,47 +357,23 @@ function MessageBubble({
 
 // ─── Empty state ──────────────────────────────────────────────────────────────
 function EmptyState({ name, onHint }: { name: string; onHint: (h: string) => void }) {
-  const { user } = useAuth();
-  const isCustomer = user?.role === 'customer';
-  const hints = isCustomer ? [
+  const hints = [
     'I have an idea I’d like to explore.',
     'Help me think through a question.',
     'Let’s look at a different perspective.',
     'I’d like to share some background.',
-  ] : [
-    'What have you learned so far?',
-    'Summarize uploaded documents.',
-    'What patterns do you see?',
-    'Explain your understanding.',
   ];
   return (
     <div className="flex flex-col items-center justify-center h-full px-8 select-none text-center">
-      {isCustomer ? <SapiensPresence size={88} className="mb-4" /> : <div className="relative mb-6">
-        <div className="absolute inset-[-20px] rounded-3xl border border-violet-500/15 animate-ping opacity-25"
-          style={{ animationDuration: '3.5s' }} />
-        <div className="absolute inset-[-10px] rounded-2xl border border-violet-500/20" />
-        <div className="w-16 h-16 rounded-2xl flex items-center justify-center"
-          style={{
-            background: 'linear-gradient(135deg, rgba(124,58,237,0.3), rgba(79,70,229,0.18))',
-            border: '1px solid rgba(124,58,237,0.35)',
-            boxShadow: '0 0 40px rgba(124,58,237,0.2)',
-          }}>
-          <Brain className="w-8 h-8 text-violet-300" />
-        </div>
-        <div className="absolute -bottom-1.5 -right-1.5 w-4 h-4 rounded-full flex items-center justify-center"
-          style={{ background: '#060a15', border: '2px solid #060a15' }}>
-          <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"
-            style={{ boxShadow: '0 0 8px rgba(52,211,153,0.6)' }} />
-        </div>
-      </div>}
+      <SapiensPresence size={88} className="mb-4" />
 
-      <p className="text-white/75 mb-2">{isCustomer ? 'Talk with ' : 'Chat with '}
+      <p className="text-white/75 mb-2">Talk with{' '}
         <span style={{ background: 'linear-gradient(90deg, #c4b5fd, #a5b4fc)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
           {name}
         </span>
       </p>
-      <p className={`text-xs ${isCustomer ? 'text-white/60' : 'text-white/28'} mb-7 max-w-[260px] leading-relaxed`}>
-        {isCustomer ? 'Bring a question, an idea or something that matters to you. Start here with the same AI individual.' : 'Ask questions or trigger the cognitive engine after uploading documents.'}
+      <p className="text-xs text-white/60 mb-7 max-w-[260px] leading-relaxed">
+        Bring a question, an idea or something that matters to you. Start here with the same AI individual.
       </p>
 
       <div className="grid grid-cols-2 gap-2 w-full max-w-xs">
@@ -643,7 +619,7 @@ export function ChatWindow() {
           </div>
           <div className="min-w-0">
             <p className="text-sm text-white/85">{currentSapiens?.name ?? 'Sapiens'}</p>
-            <p className="text-[10px] text-violet-400/50">{user?.role === 'customer' ? 'Your AI individual · Conversation' : 'Cognitive Chat Interface'}</p>
+            <p className="text-[10px] text-violet-400/50">Your AI individual · Conversation</p>
           </div>
           {msgs.length > 0 && (
             <span className="px-2 py-0.5 rounded-full text-[10px] tabular-nums flex-shrink-0"
@@ -796,8 +772,8 @@ export function ChatWindow() {
 
           <textarea ref={textareaRef} value={input} onChange={onInputChange} onKeyDown={onKey}
             onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
-            placeholder={isProcessing ? 'Waiting for response…' : user?.role === 'customer' ? 'Share a thought or ask a question…' : 'Ask Sapiens anything…'}
-            aria-label={user?.role === 'customer' ? `Message ${currentSapiens?.name ?? 'Sapiens'}` : undefined}
+            placeholder={isProcessing ? 'Waiting for response…' : 'Share a thought or ask a question…'}
+            aria-label={`Message ${currentSapiens?.name ?? 'Sapiens'}`}
             disabled={isProcessing} rows={1}
             className="flex-1 resize-none overflow-hidden bg-transparent border-none outline-none
               min-h-[36px] max-h-[140px] px-2 py-2 text-sm text-white/80 placeholder:text-white/20
