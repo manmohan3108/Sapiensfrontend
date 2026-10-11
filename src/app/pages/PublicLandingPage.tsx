@@ -46,6 +46,10 @@ export function PublicLandingPage() {
   const destination = user ? user.role === 'admin' ? '/admin' : '/home' : '/register?next=%2Fhome%3Fcreate%3D1';
   const action = user ? 'Open your Sapiens' : 'Create your Sapiens';
   const cta = <Link className="customer-primary" to={destination}>{action}<ArrowUpRight size={18} aria-hidden="true" /></Link>;
+  // Signing in does not imply that an individual has already been created.
+  const nextSteps = user
+    ? ['Open your Sapiens home', 'Choose or create a Sapiens', 'Bring a question or idea']
+    : ['Create an account', 'Create your Sapiens', 'Begin interacting'];
 
   return <div ref={motionRef} className="customer-surface public-story">
     <LandingCursorTrail />
@@ -94,9 +98,9 @@ export function PublicLandingPage() {
         </details>
       </div>
 
-      <section className="customer-container landing-setup" aria-labelledby="setup-title">
-        <h2 id="setup-title">How to get started</h2>
-        <ol role="list"><li><span aria-hidden="true">1</span>Create an account</li><li><span aria-hidden="true">2</span>Create your Sapiens</li><li><span aria-hidden="true">3</span>Begin interacting</li></ol>
+      <section className="customer-container landing-setup" aria-labelledby="setup-title" aria-busy={status === 'loading'}>
+        <h2 id="setup-title">{status === 'loading' ? 'Your next step' : user ? 'Continue with Sapiens' : 'How to get started'}</h2>
+        {status === 'loading' ? <p role="status">Checking your sign-in…</p> : <ol role="list">{nextSteps.map((step, index) => <li key={step}><span aria-hidden="true">{index + 1}</span>{step}</li>)}</ol>}
       </section>
 
       <section className="landing-invitation" aria-labelledby="invitation-title">
