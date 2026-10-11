@@ -6,12 +6,26 @@
 }
 .customer-auth .auth-introduction { min-width: 0; max-width: 460px; }
 .customer-auth .auth-identity-art {
-  width: min(100%, 300px);
+  --auth-identity-lift: -7px;
+  --auth-identity-tilt: -3deg;
+  position: relative;
+  isolation: isolate;
+  pointer-events: none;
+  width: min(100%, 240px);
   margin: 0 auto 18px;
   border-radius: 50%;
   background: radial-gradient(ellipse, var(--cx-soft), transparent 70%);
 }
-.customer-auth .auth-identity-art img { display: block; width: 100%; height: auto; }
+.customer-auth .auth-identity-art::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 12%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, var(--cx-violet), transparent 70%);
+  opacity: .12;
+}
+.customer-auth .auth-identity-art img { display: block; width: 100%; height: auto; transform-origin: 50% 55%; }
 .customer-auth .auth-introduction h2 {
   max-width: 17ch;
   font-size: clamp(30px, 3.2vw, 40px);
@@ -27,8 +41,25 @@
 @media (max-width: 800px) {
   .customer-auth .auth-layout { grid-template-columns: 1fr; gap: 24px; padding-block: 24px 36px; }
   .customer-auth .auth-introduction { display: grid; grid-template-columns: 88px minmax(0, 1fr); align-items: center; gap: 16px; width: 100%; max-width: 440px; margin-inline: auto; }
-  .customer-auth .auth-identity-art { width: 88px; margin: 0; }
+  .customer-auth .auth-identity-art { --auth-identity-lift: -3px; --auth-identity-tilt: -2deg; width: 88px; margin: 0; }
   .customer-auth .auth-introduction h2 { font-size: 23px; letter-spacing: -.5px; margin-block: 6px 0; }
   .customer-auth .auth-story-description { display: none; }
   .customer-auth .auth-form-shell { padding: 24px; }
+}
+
+/* Reuse the hero's visibility lifecycle, with quieter motion for entry forms.
+   Static artwork is the fallback, including when reduced motion is requested. */
+@media (prefers-reduced-motion: no-preference) {
+  .customer-auth .auth-identity-art[data-motion-started="true"] img { animation: auth-identity-drift 12s ease-in-out infinite; }
+  .customer-auth .auth-identity-art[data-motion-started="true"]::before { animation: auth-identity-glow 12s ease-in-out infinite; }
+  .customer-auth .auth-identity-art[data-motion-active="false"] img,
+  .customer-auth .auth-identity-art[data-motion-active="false"]::before { animation-play-state: paused; }
+}
+@keyframes auth-identity-drift {
+  0%, 100% { transform: translateY(0) rotate(0deg) scale(1); }
+  50% { transform: translateY(var(--auth-identity-lift)) rotate(var(--auth-identity-tilt)) scale(1.02); }
+}
+@keyframes auth-identity-glow {
+  0%, 100% { opacity: .12; transform: scale(.95); }
+  50% { opacity: .2; transform: scale(1.08); }
 }

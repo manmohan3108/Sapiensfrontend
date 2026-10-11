@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router';
 import { AlertCircle, Brain, Eye, EyeOff, Loader2, LockKeyhole } from 'lucide-react';
 import { authErrorMessage, useAuth } from '../contexts/AuthContext';
 import { ThemeToggle } from '../components/ThemeToggle';
+import { useLandingMotion } from '../components/customer/useLandingMotion';
 import identitySmall from '../../assets/landing/identity-480.webp';
 import identityLarge from '../../assets/landing/identity-960.webp';
 import '../../styles/customer.css';
@@ -10,6 +11,7 @@ import '../../styles/auth.css';
 import { authDestination, authLink, readAuthIntent } from '../core/auth/navigation';
 
 export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
+  const motionRef = useLandingMotion();
   const { login, register, notice } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -40,11 +42,11 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
     finally { setBusy(false); }
   };
 
-  return <div className="customer-surface customer-auth">
+  return <div ref={motionRef} className="customer-surface customer-auth">
     <header className="customer-container customer-nav"><Link to="/" className="customer-brand"><span><Brain size={23} /></span>Sapiens<span className="brand-period">.</span></Link><ThemeToggle className="customer-theme" /></header>
     <main className="customer-container auth-layout">
       <section className="auth-introduction" aria-label="About Sapiens">
-        <div className="auth-identity-art"><img src={identitySmall} srcSet={`${identitySmall} 480w, ${identityLarge} 960w`} sizes="(max-width: 800px) 88px, 300px" width="480" height="480" alt="" /></div>
+        <div className="auth-identity-art" data-motion-scene aria-hidden="true"><img src={identitySmall} srcSet={`${identitySmall} 480w, ${identityLarge} 960w`} sizes="(max-width: 800px) 88px, 240px" width="480" height="480" alt="" /></div>
         <div className="auth-story-copy">
           <p className="customer-eyebrow">AN AI INDIVIDUAL</p>
           <h2>{isRegister ? 'An individual, shaped by experience.' : 'An individual to return to.'}</h2>
