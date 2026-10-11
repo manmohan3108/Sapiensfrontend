@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router';
 import * as Dialog from '@radix-ui/react-dialog';
 import { ArrowUpRight, Plus, X } from 'lucide-react';
 import { CustomerHeader } from '../components/customer/CustomerHeader';
-import { IdentityArt } from '../components/customer/IdentityArt';
+import { SapiensPresence } from '../components/customer/SapiensPresence';
 import { sapiensService } from '../core/services/sapiensService';
 import { useSapiensStore } from '../core/state/sapiensStore';
 import type { Sapiens } from '../types/sapiensTypes';
@@ -89,10 +89,10 @@ export function CustomerHomePage() {
 
   return <div className="customer-surface"><a className="customer-skip" href="#customer-main">Skip to content</a><CustomerHeader />
     <main id="customer-main" className="customer-container customer-home">
-      {loading ? <div className="customer-state" role="status" aria-busy="true">Loading your Sapiens…</div>
+      {loading ? <div className="customer-state" role="status" aria-busy="true"><SapiensPresence size={64} animated className="mx-auto mb-4" />Loading your Sapiens…</div>
         : listError ? <div className="customer-state" role="alert"><h1>We couldn’t load your Sapiens</h1><p>Your list is unavailable right now.</p><button className="customer-secondary" onClick={() => void refresh()}>Try again</button></div>
-        : list.length === 0 ? <section className="customer-empty"><IdentityArt stage={0} /><h1 ref={heading} tabIndex={-1}>Your shared history starts here.</h1><p>Create a Sapiens with its own name and conversation history. Return to the same individual whenever you come back.</p><button className="customer-primary" onClick={showCreation}>Create a Sapiens <Plus size={17} /></button><Link to="/">What is a Sapiens?</Link></section>
-        : <><div className="customer-home-heading"><div><h1 ref={heading} tabIndex={-1}>Your Sapiens</h1><p>Choose an individual to continue with.</p></div><button className="customer-secondary" onClick={showCreation}><Plus size={17} />Create a Sapiens</button></div>
+        : list.length === 0 ? <section className="customer-empty"><SapiensPresence size={144} animated className="mx-auto mb-4" /><h1 ref={heading} tabIndex={-1}>Create your first Sapiens.</h1><p>An AI individual to explore ideas with. Give it a name, bring what matters to you, and return to the same individual.</p><button className="customer-primary" onClick={showCreation}>Create your Sapiens <Plus size={17} /></button><Link to="/">What is a Sapiens?</Link></section>
+        : <><div className="customer-home-heading"><div className="flex items-center gap-3 min-w-0"><SapiensPresence size={48} /><div><h1 ref={heading} tabIndex={-1}>Your Sapiens</h1><p>{list.length === 1 ? 'Continue with your AI individual.' : 'Choose who to continue with.'}</p></div></div><button className="customer-secondary" onClick={showCreation}><Plus size={17} />Create a Sapiens</button></div>
           {list.length > 3 && <div className="customer-search"><label htmlFor="sapiens-search">Search your Sapiens</label><input id="sapiens-search" type="search" placeholder="Search by name or focus" value={query} onChange={e => setQuery(e.target.value)} /></div>}
           {filtered.length === 0 ? <div className="customer-state" role="status"><h2>No Sapiens match your search</h2><button className="customer-secondary" onClick={() => setQuery('')}>Clear search</button></div> : <div className="customer-grid">{filtered.map(item => <article className="identity-card" key={item.id}><span className="identity-monogram" aria-hidden="true">{Array.from(item.name)[0]?.toUpperCase()}</span><h2>{item.name}</h2>{item.role && <p>{item.role}</p>}
             {openError?.id === item.id && <p role="alert">{openError.message}</p>}
@@ -103,8 +103,9 @@ export function CustomerHomePage() {
     </main>
     <Dialog.Root open={dialogOpen} onOpenChange={value => { if (!busy.current && !opening) setDialogOpen(value); }}>
       <Dialog.Portal><Dialog.Overlay className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm" /><Dialog.Content className="customer-surface customer-dialog fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 border p-8 shadow-2xl" onOpenAutoFocus={event => { if (!confirmed && !unknown) { event.preventDefault(); nameInput.current?.focus(); } }} onCloseAutoFocus={event => { event.preventDefault(); (trigger.current?.isConnected ? trigger.current : heading.current)?.focus(); }}>
-        <Dialog.Title className="customer-form-title">{confirmed ? `${confirmed.name} was created` : 'Create a Sapiens'}</Dialog.Title>
-        <Dialog.Description className="customer-form-description mt-3">{confirmed ? 'Your individual has been created. Opening its workspace does not create another.' : 'Give this individual a name. Its conversations will have their own history.'}</Dialog.Description>
+        <SapiensPresence size={40} className="mb-3" />
+        <Dialog.Title className="customer-form-title">{confirmed ? `${confirmed.name} was created` : 'Create your Sapiens'}</Dialog.Title>
+        <Dialog.Description className="customer-form-description mt-3">{confirmed ? 'Open this Sapiens to continue. You won’t create another.' : 'Name your AI individual. After creation, we’ll open its workspace.'}</Dialog.Description>
         <button className="customer-icon-button absolute right-3 top-3" aria-label="Close creation" disabled={creating || opening !== null} onClick={() => setDialogOpen(false)}><X size={18} /></button>
         {confirmed ? <div><p className="customer-notice" role="status">{openError?.message || 'Opening the workspace…'}</p><div className="customer-form-actions"><button className="customer-secondary" disabled={opening !== null} onClick={inspectHome}>Back to your Sapiens</button><button className="customer-primary" disabled={opening !== null} onClick={() => void openIndividual(confirmed, true)}>{opening ? 'Opening…' : `Open ${confirmed.name}`}</button></div></div>
           : <form onSubmit={submit} noValidate>
@@ -112,7 +113,7 @@ export function CustomerHomePage() {
             {createError && <div className="customer-notice" role="alert">{createError}{unknown && <p>Check your Sapiens before deciding what to do next. Refreshing the list or finding a matching name cannot confirm this request’s outcome. We won’t submit it again automatically.</p>}</div>}
             <div className="customer-field"><label htmlFor="sapiens-name">Name</label><input ref={nameInput} id="sapiens-name" autoComplete="off" placeholder="e.g. Atlas" value={name} disabled={creating || unknown} aria-required="true" aria-invalid={Boolean(errors.name)} aria-describedby={errors.name ? 'name-error' : undefined} onChange={e => setName(e.target.value)} onBlur={() => setErrors(value => ({ ...value, name: validateCreation(name, focus).name }))} />{errors.name && <p id="name-error" className="customer-field-error" role="alert">{errors.name}</p>}</div>
             <div className="customer-field"><label htmlFor="sapiens-focus">Focus <span className="font-normal">(optional)</span></label><input id="sapiens-focus" autoComplete="off" placeholder="e.g. Ideas and reading" value={focus} disabled={creating || unknown} aria-invalid={Boolean(errors.focus)} aria-describedby={`focus-help${errors.focus ? ' focus-error' : ''}`} onChange={e => setFocus(e.target.value)} onBlur={() => setErrors(value => ({ ...value, focus: validateCreation(name, focus).focus }))} /><small id="focus-help">Descriptive context about what you’d like to explore together. It may inform conversations; it does not add specialist skills or access. Leave it blank to use the default, “generalist.”</small>{errors.focus && <p id="focus-error" className="customer-field-error" role="alert">{errors.focus}</p>}</div>
-            <div className="customer-form-actions"><button type="button" className="customer-secondary" disabled={creating} onClick={() => unknown ? inspectHome() : setDialogOpen(false)}>{unknown ? 'Check your Sapiens' : 'Cancel'}</button>{!unknown && <button type="submit" className="customer-primary" disabled={creating}>{creating ? 'Creating…' : 'Create Sapiens'}</button>}</div>
+            <div className="customer-form-actions"><button type="button" className="customer-secondary" disabled={creating} onClick={() => unknown ? inspectHome() : setDialogOpen(false)}>{unknown ? 'Check your Sapiens' : 'Cancel'}</button>{!unknown && <button type="submit" className="customer-primary" disabled={creating}>{creating ? 'Creating…' : 'Create and open'}</button>}</div>
             <p className="sr-only" role="status">{creating ? 'Creating your Sapiens. Please wait.' : ''}</p>
           </form>}
       </Dialog.Content></Dialog.Portal>

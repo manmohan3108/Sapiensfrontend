@@ -16,6 +16,7 @@ import { formatTime } from '../../utils/formatters';
 import { ChatHistoryItem, ChatMessage, UserSignalType } from '../../types/sapiensTypes';
 import { ApiError } from '../../types/apiTypes';
 import { CombinedInputPanel } from './CombinedInputPanel';
+import { SapiensPresence } from '../customer/SapiensPresence';
 
 // ─── Typing dots ──────────────────────────────────────────────────────────────
 function TypingDots() {
@@ -356,7 +357,14 @@ function MessageBubble({
 
 // ─── Empty state ──────────────────────────────────────────────────────────────
 function EmptyState({ name, onHint }: { name: string; onHint: (h: string) => void }) {
-  const hints = [
+  const { user } = useAuth();
+  const isCustomer = user?.role === 'customer';
+  const hints = isCustomer ? [
+    'I have an idea I’d like to explore.',
+    'Help me think through a question.',
+    'Let’s look at a different perspective.',
+    'I’d like to share some background.',
+  ] : [
     'What have you learned so far?',
     'Summarize uploaded documents.',
     'What patterns do you see?',
@@ -364,7 +372,7 @@ function EmptyState({ name, onHint }: { name: string; onHint: (h: string) => voi
   ];
   return (
     <div className="flex flex-col items-center justify-center h-full px-8 select-none text-center">
-      <div className="relative mb-6">
+      {isCustomer ? <SapiensPresence size={88} className="mb-4" /> : <div className="relative mb-6">
         <div className="absolute inset-[-20px] rounded-3xl border border-violet-500/15 animate-ping opacity-25"
           style={{ animationDuration: '3.5s' }} />
         <div className="absolute inset-[-10px] rounded-2xl border border-violet-500/20" />
@@ -381,15 +389,15 @@ function EmptyState({ name, onHint }: { name: string; onHint: (h: string) => voi
           <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"
             style={{ boxShadow: '0 0 8px rgba(52,211,153,0.6)' }} />
         </div>
-      </div>
+      </div>}
 
-      <p className="text-white/75 mb-2">Chat with{' '}
+      <p className="text-white/75 mb-2">{isCustomer ? 'Talk with ' : 'Chat with '}
         <span style={{ background: 'linear-gradient(90deg, #c4b5fd, #a5b4fc)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
           {name}
         </span>
       </p>
-      <p className="text-xs text-white/28 mb-7 max-w-[260px] leading-relaxed">
-        Ask questions or trigger the cognitive engine after uploading documents.
+      <p className={`text-xs ${isCustomer ? 'text-white/60' : 'text-white/28'} mb-7 max-w-[260px] leading-relaxed`}>
+        {isCustomer ? 'Bring a question, an idea or something that matters to you. Start here with the same AI individual.' : 'Ask questions or trigger the cognitive engine after uploading documents.'}
       </p>
 
       <div className="grid grid-cols-2 gap-2 w-full max-w-xs">
@@ -635,7 +643,7 @@ export function ChatWindow() {
           </div>
           <div className="min-w-0">
             <p className="text-sm text-white/85">{currentSapiens?.name ?? 'Sapiens'}</p>
-            <p className="text-[10px] text-violet-400/50">Cognitive Chat Interface</p>
+            <p className="text-[10px] text-violet-400/50">{user?.role === 'customer' ? 'Your AI individual · Conversation' : 'Cognitive Chat Interface'}</p>
           </div>
           {msgs.length > 0 && (
             <span className="px-2 py-0.5 rounded-full text-[10px] tabular-nums flex-shrink-0"
@@ -788,7 +796,8 @@ export function ChatWindow() {
 
           <textarea ref={textareaRef} value={input} onChange={onInputChange} onKeyDown={onKey}
             onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
-            placeholder={isProcessing ? 'Waiting for response…' : 'Ask Sapiens anything…'}
+            placeholder={isProcessing ? 'Waiting for response…' : user?.role === 'customer' ? 'Share a thought or ask a question…' : 'Ask Sapiens anything…'}
+            aria-label={user?.role === 'customer' ? `Message ${currentSapiens?.name ?? 'Sapiens'}` : undefined}
             disabled={isProcessing} rows={1}
             className="flex-1 resize-none overflow-hidden bg-transparent border-none outline-none
               min-h-[36px] max-h-[140px] px-2 py-2 text-sm text-white/80 placeholder:text-white/20

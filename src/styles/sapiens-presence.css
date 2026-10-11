@@ -1,0 +1,11 @@
+.sapiens-presence { position: relative; flex-shrink: 0; pointer-events: none; }
+.sapiens-presence::before { content: ''; position: absolute; inset: 8%; border-radius: 50%; background: radial-gradient(ellipse, rgb(151 108 215 / 14%), transparent 70%); }
+.sapiens-presence img { position: relative; display: block; width: 100%; height: 100%; object-fit: contain; }
+@media (prefers-reduced-motion: no-preference) {
+  .sapiens-presence[data-motion-started="true"] img { animation: sapiens-presence-drift 12s ease-in-out infinite; }
+  .sapiens-presence[data-motion-active="false"] img { animation-play-state: paused; }
+}
+@keyframes sapiens-presence-drift {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-4px) rotate(-3deg); }
+}

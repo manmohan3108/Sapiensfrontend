@@ -5,6 +5,7 @@ import { useSapiensStore } from '../../core/state/sapiensStore';
 import { ThemeToggle } from '../ThemeToggle';
 import { RunEngineButton } from './RunEngineButton';
 import { useAuth } from '../../contexts/AuthContext';
+import { SapiensPresence } from '../customer/SapiensPresence';
 
 export function HeaderBar() {
   const { currentSapiens } = useSapiensStore();
@@ -45,7 +46,7 @@ export function HeaderBar() {
 
           {/* Logo */}
           <div className="relative flex-shrink-0">
-            <div
+            {user?.role === 'customer' ? <SapiensPresence size={36} /> : <div
               className="w-9 h-9 rounded-xl flex items-center justify-center"
               style={{
                 background: 'linear-gradient(135deg, #7c3aed, #4f46e5)',
@@ -53,7 +54,7 @@ export function HeaderBar() {
               }}
             >
               <Brain className="w-5 h-5 text-white" />
-            </div>
+            </div>}
             {/* Online ring */}
             <span
               className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2"
@@ -212,7 +213,7 @@ export function HeaderBar() {
             className="flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs text-white/35 hover:text-white/70 hover:bg-white/[0.05] transition-all duration-150"
           >
             <Home className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Home</span>
+            <span className="hidden sm:inline">{user?.role === 'customer' ? 'Your Sapiens' : 'Home'}</span>
           </button>
           <button onClick={() => void logout()} title={`Sign out ${user?.username ?? ''}`} className="flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs text-white/35 transition hover:bg-red-400/[.06] hover:text-red-300"><LogOut className="h-3.5 w-3.5" /><span className="hidden sm:inline">Sign out</span></button>
         </div>
