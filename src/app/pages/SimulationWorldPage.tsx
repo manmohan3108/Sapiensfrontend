@@ -455,7 +455,7 @@ function ChatPortal({ runId, eventCount }: { runId: string; eventCount: number }
                 const senderId = value(body.sender_id || item.actor_id) || 'Unknown sender';
                 const isParticipant = !!overview?.participant_id && senderId === overview.participant_id;
                 const sender = employees.find(person => person.person_id === senderId);
-                const senderName = sender?.name || (isParticipant ? 'Simulation participant' : senderId);
+                const senderName = sender?.name || (isParticipant ? overview?.participant_name || 'Simulation participant' : senderId);
                 return (
                   <article key={event.record_id} className={`group flex gap-3 rounded-lg px-2 py-3 hover:bg-slate-50 dark:hover:bg-white/[0.03] ${isParticipant && selectedType === 'person' ? 'flex-row-reverse' : ''}`}>
                     <span className="grid size-9 shrink-0 place-items-center rounded-full bg-gradient-to-br from-violet-500 to-blue-500 text-xs font-semibold text-white">{senderName.slice(0, 2).toUpperCase()}</span>

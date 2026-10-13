@@ -12,7 +12,7 @@ export interface CaseCreateRequest { case: { case_id: string; version: string; s
 export interface ParticipantOutcome { participant_id: string; operation_id: string; outcome: { success?: boolean; is_error?: boolean; content?: string; reason?: string; [key: string]: unknown } }
 export interface DebugGuide { run_id: string; visibility: 'admin_only'; people: { person_id: string; name: string }[]; channels: unknown[]; connections: string[]; expectations: unknown[]; rules: unknown[]; employee_commands: { person_id: string; options: { command: string; description: string }[] }[] }
 
-export interface WorldBase { run_id: string; visibility: 'admin_only'; archived: boolean; through: number; state_basis: 'recorded_evidence'; directory_available: boolean; participant_id: string | null }
+export interface WorldBase { run_id: string; visibility: 'admin_only'; archived: boolean; through: number; state_basis: 'recorded_evidence'; directory_available: boolean; participant_id: string | null; participant_name?: string | null }
 export interface WorldOverview extends WorldBase { counts: { employees: number; channels: number; connections: number; tickets: number } }
 export interface WorldEmployee { person_id: string; name: string; sent: number; received: number; direct_sent: number; direct_received: number; tool_calls: number; last_activity_at: string | null }
 export interface WorldChannel { channel_id: string; title: string; members: string[]; posts: number }
