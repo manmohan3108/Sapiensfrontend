@@ -14,7 +14,7 @@ export interface DebugGuide { run_id: string; visibility: 'admin_only'; people: 
 
 export interface WorldBase { run_id: string; visibility: 'admin_only'; archived: boolean; through: number; state_basis: 'recorded_evidence'; directory_available: boolean; participant_id: string | null }
 export interface WorldOverview extends WorldBase { counts: { employees: number; channels: number; connections: number; tickets: number } }
-export interface WorldEmployee { person_id: string; name: string; sent: number; received: number; tool_calls: number; last_activity_at: string | null }
+export interface WorldEmployee { person_id: string; name: string; sent: number; received: number; direct_sent: number; direct_received: number; tool_calls: number; last_activity_at: string | null }
 export interface WorldChannel { channel_id: string; title: string; members: string[]; posts: number }
 export interface WorldConnection { connection: string; tool_calls: number; errors: number }
 export interface WorldTicket { connection: string; issue_key: string; summary: string | null; description: string | null; status: string | null; last_recorded_at: string | null; evidence_id: string | null; has_snapshot: boolean }

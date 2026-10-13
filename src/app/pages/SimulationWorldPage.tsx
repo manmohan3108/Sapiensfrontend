@@ -374,9 +374,10 @@ function ChatPortal({ runId, eventCount }: { runId: string; eventCount: number }
   const visibleEmployees = employees.filter(person => !normalizedSearch || person.name.toLowerCase().includes(normalizedSearch) || person.person_id.toLowerCase().includes(normalizedSearch));
   const visibleChannels = channels.filter(item => !normalizedSearch || item.title.toLowerCase().includes(normalizedSearch) || item.channel_id.toLowerCase().includes(normalizedSearch));
   const conversationTitle = selectedType === 'channel' ? channel?.title || selectedId : employee?.name || selectedId;
+  const directCountsAvailable = employee?.direct_sent != null && employee?.direct_received != null;
   const conversationDetail = selectedType === 'channel'
     ? `${channel?.members.length ?? 0} members · ${channel?.posts ?? 0} recorded posts`
-    : `${employee?.sent ?? 0} sent · ${employee?.received ?? 0} received`;
+    : directCountsAvailable ? `${employee.direct_sent} direct sent · ${employee.direct_received} direct received` : 'Direct-message count unavailable';
 
   useEffect(() => { conversationPaneRef.current?.scrollTo({ top: 0 }); }, [selected]);
 
@@ -402,7 +403,7 @@ function ChatPortal({ runId, eventCount }: { runId: string; eventCount: number }
               {visibleEmployees.map(person => (
                 <button key={person.person_id} onClick={() => setSelected(`person:${person.person_id}`)} className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-left transition ${selected === `person:${person.person_id}` ? 'bg-white/15 text-white' : 'text-white/65 hover:bg-white/7 hover:text-white'}`}>
                   <span className="grid size-8 shrink-0 place-items-center rounded-full bg-gradient-to-br from-violet-500 to-blue-500 text-xs font-semibold text-white">{person.name.slice(0, 2).toUpperCase()}</span>
-                  <span className="min-w-0 flex-1"><strong className="block truncate text-sm font-medium">{person.name}</strong><span className="block truncate text-xs text-white/35">{person.person_id} · {person.sent + person.received} messages</span></span>
+                  <span className="min-w-0 flex-1"><strong className="block truncate text-sm font-medium">{person.name}</strong><span className="block truncate text-xs text-white/35">{person.person_id} · {person.direct_sent != null && person.direct_received != null ? `${person.direct_sent + person.direct_received} direct messages` : 'Direct count unavailable'}</span></span>
                 </button>
               ))}
               {!visibleEmployees.length && <p className="px-3 py-2 text-xs text-white/35">No matching personal chats.</p>}
