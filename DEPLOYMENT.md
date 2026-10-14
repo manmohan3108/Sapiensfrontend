@@ -273,6 +273,11 @@ Routine deployments are automated by the repository's `deploy.sh`. It pulls
 `origin/main`, performs a frozen-lockfile install using the pnpm store on `/srv`,
 and creates a new production `dist` build.
 
+Make source changes in the local repository, then commit and push them to
+`origin/main`. Do not edit tracked application source or configuration directly
+on the VM. A local test or production build is optional and is not a deployment
+prerequisite; `deploy.sh` performs the required production build on the VM.
+
 After pushing changes to GitHub, deploy on the VM with:
 
 ```sh

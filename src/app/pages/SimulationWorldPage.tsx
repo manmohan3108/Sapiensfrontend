@@ -17,6 +17,7 @@ const message = (error: unknown) => error instanceof Error ? error.message : (er
 const payload = (event: SimulationEvent) => event.payload as Record<string, unknown>;
 const value = (input: unknown) => typeof input === 'string' ? input : input == null ? '' : JSON.stringify(input);
 const jsonObject = (input: unknown) => { if (input && typeof input === 'object') return input as Record<string, unknown>; if (typeof input !== 'string') return {}; try { const parsed = JSON.parse(input); return parsed && typeof parsed === 'object' ? parsed as Record<string, unknown> : {}; } catch { return {}; } };
+const jiraActionName = (tool: string) => ({ jira_get_issue: 'Read issue', jira_get_comments: 'Read comments', jira_add_comment: 'Added comment', jira_list_transitions: 'Checked available transitions', jira_transition_issue: 'Changed issue status', jira_update_issue: 'Updated issue fields', jira_get_metadata: 'Read Jira metadata' } as Record<string, string>)[tool] || statusName(tool || 'Jira action');
 
 function JiraPortal({ runId, eventCount }: { runId: string; eventCount: number }) {
   const [overview, setOverview] = useState<WorldOverview | null>(null);
@@ -29,10 +30,13 @@ function JiraPortal({ runId, eventCount }: { runId: string; eventCount: number }
   const [refresh, setRefresh] = useState(0);
   const previousEventCount = useRef(eventCount);
   const detailPaneRef = useRef<HTMLElement | null>(null);
-  const [detailTab, setDetailTab] = useState<'comments' | 'activity' | 'notifications'>('comments');
+  const [detailTab, setDetailTab] = useState<'comments' | 'activity' | 'notifications' | 'sapien-actions'>('comments');
   const [comments, setComments] = useState<WorldCommentsPage | null>(null);
   const [notifications, setNotifications] = useState<WorldActivityPage | null>(null);
   const [notificationItems, setNotificationItems] = useState<WorldActivityItem[]>([]);
+  const [sapienActions, setSapienActions] = useState<WorldActivityPage | null>(null);
+  const [sapienActionItems, setSapienActionItems] = useState<WorldActivityItem[]>([]);
+  const [mobileIssueOpen, setMobileIssueOpen] = useState(false);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setDebounced(search.trim()), 300);
@@ -118,6 +122,17 @@ function JiraPortal({ runId, eventCount }: { runId: string; eventCount: number }
       .catch(problem => { if (!controller.signal.aborted) setError(message(problem)); });
     return () => controller.abort();
   }, [runId, overview?.through, selected, detailTab]);
+
+  useEffect(() => {
+    if (!overview?.participant_id || detailTab !== 'sapien-actions') return;
+    const controller = new AbortController();
+    setSapienActions(null);
+    setSapienActionItems([]);
+    simulationService.worldActivity(runId, { through: overview.through, connection: 'jira', person_id: overview.participant_id, kind: 'tools', after: 0, limit: 50 }, controller.signal)
+      .then(page => { setSapienActions(page); setSapienActionItems(page.items); })
+      .catch(problem => { if (!controller.signal.aborted) setError(message(problem)); });
+    return () => controller.abort();
+  }, [runId, overview?.through, overview?.participant_id, detailTab]);
   const recordedFields = useMemo(() => {
     const result: Record<string, string> = {};
     for (const event of history?.events ?? []) {
@@ -155,6 +170,15 @@ function JiraPortal({ runId, eventCount }: { runId: string; eventCount: number }
     setNotifications(next);
     setNotificationItems(current => [...current, ...next.items.filter(item => !current.some(existing => existing.event.record_id === item.event.record_id))]);
   };
+
+  const loadMoreSapienActions = async () => {
+    if (!sapienActions?.has_more || !overview?.participant_id) return;
+    const next = await simulationService.worldActivity(runId, { through: sapienActions.through, connection: 'jira', person_id: overview.participant_id, kind: 'tools', after: sapienActions.next_after, limit: 50 });
+    setSapienActions(next);
+    setSapienActionItems(current => [...current, ...next.items.filter(item => !current.some(existing => existing.event.record_id === item.event.record_id))]);
+  };
+
+  const openIssue = (issueKey: string) => { setSelected(issueKey); setMobileIssueOpen(true); };
 
   return (
     <div className="flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden bg-[#f4f5f7] text-[#172b4d] dark:bg-[#0b1020] dark:text-slate-100">
@@ -196,7 +220,7 @@ function JiraPortal({ runId, eventCount }: { runId: string; eventCount: number }
           </div>
         </aside>
 
-        <aside className="min-h-0 overflow-y-auto border-r border-[#dfe1e6] bg-white dark:border-white/10 dark:bg-[#10172a]">
+        <aside className={`${mobileIssueOpen ? 'hidden' : 'block'} min-h-0 overflow-y-auto border-r border-[#dfe1e6] bg-white dark:border-white/10 dark:bg-[#10172a] lg:block`}>
           <div className="sticky top-0 z-10 border-b border-[#dfe1e6] bg-white p-4 dark:border-white/10 dark:bg-[#10172a]">
             <div className="flex items-center justify-between"><div><p className="text-xs text-slate-500">Sentinel Desk</p><h2 className="text-lg font-semibold">Issues</h2></div><MoreHorizontal className="size-5 text-slate-400" /></div>
             <div className="relative mt-3">
@@ -207,7 +231,7 @@ function JiraPortal({ runId, eventCount }: { runId: string; eventCount: number }
           </div>
           <div>
             {tickets?.items.map(item => (
-              <button key={item.issue_key} onClick={() => setSelected(item.issue_key)} className={`w-full border-b border-[#ebecf0] px-4 py-3 text-left transition dark:border-white/5 ${selected === item.issue_key ? 'border-l-4 border-l-[#0052cc] bg-[#deebff] pl-3 dark:bg-blue-950/35' : 'hover:bg-[#f4f5f7] dark:hover:bg-white/5'}`}>
+              <button key={item.issue_key} onClick={() => openIssue(item.issue_key)} className={`w-full border-b border-[#ebecf0] px-4 py-3 text-left transition dark:border-white/5 ${selected === item.issue_key ? 'border-l-4 border-l-[#0052cc] bg-[#deebff] pl-3 dark:bg-blue-950/35' : 'hover:bg-[#f4f5f7] dark:hover:bg-white/5'}`}>
                 <div className="flex items-center gap-2 text-xs"><CircleDot className="size-3.5 text-[#0052cc]" /><span className="font-semibold text-[#0052cc]">{item.issue_key}</span><span className="ml-auto text-slate-400">{item.status || 'Unknown'}</span></div>
                 <p className="mt-1 line-clamp-2 text-sm font-medium">{item.summary || 'Referenced issue — snapshot unavailable'}</p>
                 <p className="mt-2 truncate text-[11px] text-slate-500">Last recorded {time(item.last_recorded_at)}</p>
@@ -218,10 +242,11 @@ function JiraPortal({ runId, eventCount }: { runId: string; eventCount: number }
           </div>
         </aside>
 
-        <main ref={detailPaneRef} className="min-w-0 overflow-y-auto bg-white dark:bg-[#0f1628]">
+        <main ref={detailPaneRef} className={`${mobileIssueOpen ? 'block' : 'hidden'} min-w-0 overflow-y-auto bg-white dark:bg-[#0f1628] lg:block`}>
           {ticket ? (
             <div className="mx-auto max-w-6xl px-5 py-5 lg:px-8">
               <div className="flex flex-wrap items-center gap-2 text-xs text-[#0052cc]">
+                <button type="button" onClick={() => setMobileIssueOpen(false)} className="mr-1 grid size-8 place-items-center rounded-md text-slate-600 hover:bg-[#f4f5f7] dark:text-slate-300 dark:hover:bg-white/5 lg:hidden" aria-label="Back to issues"><ArrowLeft className="size-4" /></button>
                 <span>Projects</span><span>/</span><span>Sentinel Desk</span><span>/</span><strong>{ticket.issue_key}</strong>
                 <span className="ml-auto rounded bg-[#f4f5f7] px-2 py-1 text-slate-500 dark:bg-white/5">Recorded evidence</span>
               </div>
@@ -237,7 +262,7 @@ function JiraPortal({ runId, eventCount }: { runId: string; eventCount: number }
                 <div className="min-w-0 space-y-8">
                   <section><h2 className="text-sm font-semibold">Description</h2><div className="mt-3 min-h-28 rounded border border-transparent p-2 text-sm leading-6 text-slate-700 hover:border-[#dfe1e6] dark:text-slate-300">{ticket.description ? <p className="whitespace-pre-wrap">{ticket.description}</p> : <p className="italic text-slate-400">No description was present in the recorded snapshot.</p>}</div></section>
                   <section>
-                    <div className="flex items-center gap-5 border-b border-[#dfe1e6] dark:border-white/10">{(['comments','activity','notifications'] as const).map(tab => <button key={tab} onClick={() => setDetailTab(tab)} className={`border-b-2 pb-3 text-sm font-semibold capitalize ${detailTab === tab ? 'border-[#0052cc] text-[#0052cc]' : 'border-transparent text-slate-500'}`}>{tab}</button>)}</div>
+                    <div className="flex items-center gap-5 overflow-x-auto border-b border-[#dfe1e6] dark:border-white/10">{(['comments','activity','notifications','sapien-actions'] as const).map(tab => <button key={tab} onClick={() => setDetailTab(tab)} className={`shrink-0 border-b-2 pb-3 text-sm font-semibold ${detailTab === tab ? 'border-[#0052cc] text-[#0052cc]' : 'border-transparent text-slate-500'}`}>{tab === 'sapien-actions' ? 'Sapien actions' : statusName(tab)}</button>)}</div>
                     <div className="mt-5 space-y-5">
                       {detailTab === 'comments' && comments?.items.map(comment => <article key={comment.comment_id} className="flex gap-3"><span className={`grid size-9 shrink-0 place-items-center rounded-full text-xs font-bold ${comment.author_id === overview?.participant_id ? 'bg-violet-600 text-white' : 'bg-[#deebff] text-[#0052cc] dark:bg-blue-950'}`}>{(comment.author_name || comment.author_id || '?').slice(0,2).toUpperCase()}</span><div className="min-w-0 flex-1"><div className="flex flex-wrap items-baseline gap-2"><strong className="text-sm">{comment.author_name || comment.author_id || 'Unknown author'}</strong>{comment.author_id === overview?.participant_id && <Badge variant="secondary">Participant</Badge>}<span className="text-xs text-slate-500">{time(comment.occurred_at)}</span></div><p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-slate-700 dark:text-slate-300">{comment.text || (typeof comment.body === 'string' ? comment.body : 'Comment text was not recorded.')}</p><details className="mt-2 text-xs text-slate-500"><summary className="cursor-pointer">Evidence details</summary><dl className="mt-2 grid gap-1 rounded bg-[#f4f5f7] p-3 dark:bg-black/30"><div>Comment ID: {comment.comment_id}</div><div>Evidence: {comment.evidence_id}</div><div>Sequence: {comment.sequence}</div>{comment.operation_id && <div>Operation: {comment.operation_id}</div>}<div>Observed: {time(comment.observed_at)}</div></dl></details></div></article>)}
                       {detailTab === 'comments' && comments?.has_more && <Button variant="outline" onClick={() => void loadMoreComments()}>Load more comments ({comments.items.length} of {comments.total})</Button>}
@@ -252,6 +277,11 @@ function JiraPortal({ runId, eventCount }: { runId: string; eventCount: number }
                       {detailTab === 'notifications' && notifications?.has_more && <Button variant="outline" onClick={() => void loadMoreNotifications()}>Load more notification evidence</Button>}
                       {detailTab === 'notifications' && notifications && !notificationItems.some(item => payload(item.event).type === 'ConnectionNotification') && <p className="rounded border border-dashed p-5 text-sm text-slate-500">No Jira notifications were recorded for this issue at this evidence watermark.</p>}
                       {detailTab === 'notifications' && !notifications && <p className="text-sm text-slate-500">Loading recorded notifications…</p>}
+                      {detailTab === 'sapien-actions' && <div className="rounded border border-violet-500/20 bg-violet-500/5 p-4 text-sm"><strong>{overview?.participant_name || 'Simulation participant'} Jira activity</strong><p className="mt-1 text-xs text-slate-500">Observable Jira tool actions across all issues. Notifications are not included.</p></div>}
+                      {detailTab === 'sapien-actions' && sapienActionItems.map(item => { const body = payload(item.event); const tool = value(body.tool); const args = jsonObject(body.arguments_json); const result = jsonObject(body.result_json); const failed = body.is_error === true; const issueKey = item.issue_key || value(args.issue_key); return <article key={item.event.record_id} className="rounded border border-[#dfe1e6] p-4 dark:border-white/10"><div className="flex flex-wrap items-center gap-2"><span className={`grid size-8 shrink-0 place-items-center rounded-full text-xs font-bold ${failed ? 'bg-red-100 text-red-700 dark:bg-red-950' : 'bg-violet-100 text-violet-700 dark:bg-violet-950'}`}>{(overview?.participant_name || 'SP').slice(0,2).toUpperCase()}</span><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><strong className="text-sm">{jiraActionName(tool)}</strong>{issueKey && <Badge variant="outline">{issueKey}</Badge>}<Badge variant={failed ? 'destructive' : 'secondary'}>{failed ? 'Failed' : 'Recorded'}</Badge></div><p className="mt-1 text-xs text-slate-500">{overview?.participant_name || overview?.participant_id || 'Simulation participant'} · {time(item.event.occurred_at)}</p></div></div>{tool === 'jira_add_comment' && <p className="mt-3 whitespace-pre-wrap rounded bg-[#f4f5f7] p-3 text-sm dark:bg-black/20">{value(args.body) || 'Comment text unavailable'}</p>}{tool === 'jira_update_issue' && <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">Changed fields: {Object.keys(jsonObject(args.fields)).join(', ') || 'not recorded'}</p>}{tool === 'jira_transition_issue' && <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">Transition: {value(args.transition_id) || 'not recorded'}</p>}<details className="mt-3 text-xs text-slate-500"><summary className="cursor-pointer">Evidence details</summary><div className="mt-2 grid gap-2 sm:grid-cols-2"><pre className="max-h-64 overflow-auto rounded bg-[#f4f5f7] p-3 dark:bg-black/30">{JSON.stringify(args, null, 2)}</pre><pre className="max-h-64 overflow-auto rounded bg-[#f4f5f7] p-3 dark:bg-black/30">{JSON.stringify(result, null, 2)}</pre></div><p className="mt-2 break-all">{item.event.record_id}</p></details></article>; })}
+                      {detailTab === 'sapien-actions' && sapienActions?.has_more && <Button variant="outline" onClick={() => void loadMoreSapienActions()}>Load more Sapien actions</Button>}
+                      {detailTab === 'sapien-actions' && sapienActions && !sapienActionItems.length && <p className="rounded border border-dashed p-5 text-sm text-slate-500">No Jira actions were recorded for this participant at this evidence watermark.</p>}
+                      {detailTab === 'sapien-actions' && !sapienActions && <p className="text-sm text-slate-500">Loading recorded Sapien actions…</p>}
                     </div>
                   </section>
                 </div>
