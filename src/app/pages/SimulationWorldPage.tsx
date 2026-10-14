@@ -300,6 +300,7 @@ function ChatPortal({ runId, eventCount }: { runId: string; eventCount: number }
   const previous = useRef(eventCount);
   const [refresh, setRefresh] = useState(0);
   const conversationPaneRef = useRef<HTMLDivElement | null>(null);
+  const [mobileConversationOpen, setMobileConversationOpen] = useState(false);
 
   useEffect(() => {
     if (previous.current !== eventCount) {
@@ -378,12 +379,13 @@ function ChatPortal({ runId, eventCount }: { runId: string; eventCount: number }
   const conversationDetail = selectedType === 'channel'
     ? `${channel?.members.length ?? 0} members · ${channel?.posts ?? 0} recorded posts`
     : directCountsAvailable ? `${employee.direct_sent} direct sent · ${employee.direct_received} direct received` : 'Direct-message count unavailable';
+  const openConversation = (id: string) => { setSelected(id); setMobileConversationOpen(true); };
 
   useEffect(() => { conversationPaneRef.current?.scrollTo({ top: 0 }); }, [selected]);
 
   return (
     <div className="grid h-full min-h-0 w-full flex-1 overflow-hidden bg-[#f5f5f7] text-slate-900 dark:bg-[#090e19] dark:text-slate-100 lg:grid-cols-[320px_minmax(0,1fr)]">
-      <aside className="flex min-h-0 flex-col bg-[#201f1f] text-white">
+      <aside className={`${mobileConversationOpen ? 'hidden' : 'flex'} min-h-0 flex-col bg-[#201f1f] text-white lg:flex`}>
         <div className="border-b border-white/10 px-4 py-3">
           <div className="flex items-center gap-3">
             <span className="grid size-10 place-items-center rounded-lg bg-[#5b5fc7]"><MessageSquare className="size-5" /></span>
@@ -401,7 +403,7 @@ function ChatPortal({ runId, eventCount }: { runId: string; eventCount: number }
             <div className="flex items-center justify-between px-2 py-2"><p className="text-[11px] font-semibold uppercase tracking-wider text-white/40">Chats</p><span className="text-[10px] text-white/30">{visibleEmployees.length}</span></div>
             <div className="space-y-1">
               {visibleEmployees.map(person => (
-                <button key={person.person_id} onClick={() => setSelected(`person:${person.person_id}`)} className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-left transition ${selected === `person:${person.person_id}` ? 'bg-white/15 text-white' : 'text-white/65 hover:bg-white/7 hover:text-white'}`}>
+                <button key={person.person_id} onClick={() => openConversation(`person:${person.person_id}`)} className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-left transition ${selected === `person:${person.person_id}` ? 'bg-white/15 text-white' : 'text-white/65 hover:bg-white/7 hover:text-white'}`}>
                   <span className="grid size-8 shrink-0 place-items-center rounded-full bg-gradient-to-br from-violet-500 to-blue-500 text-xs font-semibold text-white">{person.name.slice(0, 2).toUpperCase()}</span>
                   <span className="min-w-0 flex-1"><strong className="block truncate text-sm font-medium">{person.name}</strong><span className="block truncate text-xs text-white/35">{person.person_id} · {person.direct_sent != null && person.direct_received != null ? `${person.direct_sent + person.direct_received} direct messages` : 'Direct count unavailable'}</span></span>
                 </button>
@@ -414,7 +416,7 @@ function ChatPortal({ runId, eventCount }: { runId: string; eventCount: number }
             <div className="flex items-center justify-between px-2 py-2"><p className="text-[11px] font-semibold uppercase tracking-wider text-white/40">Channels</p><span className="text-[10px] text-white/30">{visibleChannels.length}</span></div>
             <div className="space-y-1">
               {visibleChannels.map(item => (
-                <button key={item.channel_id} onClick={() => setSelected(`channel:${item.channel_id}`)} className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-left transition ${selected === `channel:${item.channel_id}` ? 'bg-white/15 text-white' : 'text-white/65 hover:bg-white/7 hover:text-white'}`}>
+                <button key={item.channel_id} onClick={() => openConversation(`channel:${item.channel_id}`)} className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-left transition ${selected === `channel:${item.channel_id}` ? 'bg-white/15 text-white' : 'text-white/65 hover:bg-white/7 hover:text-white'}`}>
                   <Hash className="size-4 shrink-0 text-white/40" />
                   <span className="min-w-0 flex-1"><strong className="block truncate text-sm font-medium">{item.title}</strong><span className="block truncate text-xs text-white/35">{item.posts} posts</span></span>
                 </button>
@@ -427,8 +429,9 @@ function ChatPortal({ runId, eventCount }: { runId: string; eventCount: number }
         <div className="border-t border-white/10 px-4 py-3 text-xs text-white/35">Read-only · evidence through #{overview?.through ?? '—'}</div>
       </aside>
 
-      <main className="flex min-h-0 min-w-0 flex-col">
+      <main className={`${mobileConversationOpen ? 'flex' : 'hidden'} min-h-0 min-w-0 flex-col lg:flex`}>
         <header className="flex min-h-16 items-center gap-3 border-b bg-white px-5 py-3 dark:bg-[#10172a]">
+          <button type="button" onClick={() => setMobileConversationOpen(false)} className="grid size-9 shrink-0 place-items-center rounded-md hover:bg-slate-100 dark:hover:bg-white/5 lg:hidden" aria-label="Back to conversations"><ArrowLeft className="size-5" /></button>
           <span className={`grid size-10 shrink-0 place-items-center ${selectedType === 'channel' ? 'rounded-lg bg-slate-100 text-slate-500 dark:bg-white/10' : 'rounded-full bg-gradient-to-br from-violet-500 to-blue-500 text-sm font-semibold text-white'}`}>
             {selectedType === 'channel' ? <Hash className="size-5" /> : (employee?.name || '?').slice(0, 2).toUpperCase()}
           </span>
