@@ -121,7 +121,7 @@ export function AwarenessPanel() {
       <div className="h-[3px] flex-shrink-0 bg-gradient-to-r from-sp-accent via-sp-accent to-sp-accent" />
       <header className="flex flex-shrink-0 items-center gap-3 border-b border-sp-accent/10 bg-sp-accent/[0.05] px-4 py-3">
         <div className="flex h-8 w-8 items-center justify-center rounded-xl border border-sp-accent/25 bg-sp-accent/10"><Eye className="h-4 w-4 text-sp-accent" /></div>
-        <div className="min-w-0 flex-1"><p className="text-sm text-sp-ink">Awareness</p><p className="truncate text-[10px] text-sp-accent">What {currentSapiens?.name} currently understands</p></div>
+        <div className="min-w-0 flex-1"><p className="text-sm text-sp-ink">Awareness</p><p className="truncate text-[10px] text-sp-accent">What {currentSapiens?.name} (ID {currentSapiens?.id}) currently understands</p></div>
         {loading && <Loader2 className="h-3.5 w-3.5 animate-spin text-sp-accent" />}
       </header>
 

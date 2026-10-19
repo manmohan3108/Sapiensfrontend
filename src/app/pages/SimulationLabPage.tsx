@@ -41,9 +41,16 @@ export function SimulationLabPage() {
   const setCurrentSapiens = useSapiensStore(state => state.setCurrentSapiens);
   const [returning, setReturning] = useState(false);
   const [params, setParams] = useSearchParams();
-  const shortcutId = params.get('sapienId');
-  const shortcutName = params.get('sapienName');
   const requestedRunId = params.get('runId') || '';
+  const storedReturnContext = (() => {
+    if (!requestedRunId) return null;
+    try {
+      const stored = JSON.parse(sessionStorage.getItem('simulation-lab-return-context') || 'null') as { runId?: string; sapienId?: string; sapienName?: string } | null;
+      return stored?.runId === requestedRunId ? stored : null;
+    } catch { return null; }
+  })();
+  const shortcutId = params.get('sapienId') || storedReturnContext?.sapienId || null;
+  const shortcutName = params.get('sapienName') || storedReturnContext?.sapienName || null;
   const requestedView = params.get('view');
   const mainView = requestedView === 'participant' || requestedView === 'results' || requestedView === 'debug' ? requestedView : 'world';
   const [catalog, setCatalog] = useState<CaseCatalog | null>(null);

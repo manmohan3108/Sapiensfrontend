@@ -84,7 +84,7 @@ export function EngramPage({ embedded = false }: { embedded?: boolean } = {}) {
               <Brain className="w-4 h-4 text-white" />
             </div>
             <div className="hidden sm:flex items-center gap-1.5 text-xs">
-              <span className="text-white/30">{currentSapiens.name}</span>
+              <span className="text-white/30">{currentSapiens.name} · ID {currentSapiens.id}</span>
               <span className="text-white/15">/</span>
               <span className="font-medium" style={{ color: accent }}>Engram Explorer</span>
             </div>

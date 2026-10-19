@@ -1,4 +1,4 @@
-import { Home, Save, ChevronRight, Cpu, Wifi, Hourglass, PlugZap, ScanSearch, LogOut, Beaker } from 'lucide-react';
+import { Home, Save, ChevronRight, Wifi, Hourglass, PlugZap, ScanSearch, LogOut, Beaker } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { useSapiens } from '../../hooks/useSapiens';
 import { useSapiensStore } from '../../core/state/sapiensStore';
@@ -65,6 +65,9 @@ export function HeaderBar() {
             <span className="text-sm text-sp-ink font-medium truncate max-w-[180px]">
               {currentSapiens.name}
             </span>
+            <span className="shrink-0 rounded border border-sp-line px-1.5 py-0.5 font-mono text-[10px] text-sp-muted">
+              ID {currentSapiens.id}
+            </span>
             {currentSapiens.role && (
               <span
                 className="hidden md:inline-flex items-center px-2 py-0.5 rounded-full text-[11px] flex-shrink-0"
@@ -120,16 +123,6 @@ export function HeaderBar() {
             </div>
           )}
 
-          {/* Instance ID */}
-          <div
-            className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-lg flex-shrink-0"
-            style={{ background: 'rgb(var(--sp-ink-rgb, 255 255 255) / 0.03)', border: '1px solid rgb(var(--sp-ink-rgb, 255 255 255) / 0.06)' }}
-          >
-            <Cpu className="w-3 h-3 text-sp-muted" />
-            <span className="text-[10px] text-sp-muted font-mono">
-              {currentSapiens.id.slice(0, 14)}…
-            </span>
-          </div>
         </div>
 
         {/* ── RIGHT: Actions ── */}

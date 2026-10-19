@@ -85,7 +85,7 @@ export function CustomerHomePage() {
 
   const showCreation = (event: React.MouseEvent<HTMLButtonElement>) => { trigger.current = event.currentTarget; setDialogOpen(true); };
   const inspectHome = () => { setDialogOpen(false); void refresh(); };
-  const filtered = list.filter(item => [item.name, item.role].some(value => value?.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())));
+  const filtered = list.filter(item => [item.name, item.role, item.id].some(value => value?.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())));
 
   return <div className="customer-surface"><a className="customer-skip" href="#customer-main">Skip to content</a><CustomerHeader />
     <main id="customer-main" className="customer-container customer-home">
@@ -93,8 +93,8 @@ export function CustomerHomePage() {
         : listError ? <div className="customer-state" role="alert"><h1>We couldn’t load your Sapiens</h1><p>Your list is unavailable right now.</p><button className="customer-secondary" onClick={() => void refresh()}>Try again</button></div>
         : list.length === 0 ? <section className="customer-empty"><SapiensPresence size={144} animated className="mx-auto mb-4" /><h1 ref={heading} tabIndex={-1}>Create your first Sapiens.</h1><p>An AI individual to explore ideas with. Give it a name, bring what matters to you, and return to the same individual.</p><button className="customer-primary" onClick={showCreation}>Create your Sapiens <Plus size={17} /></button><Link to="/">What is a Sapiens?</Link></section>
         : <><div className="customer-home-heading"><div className="flex items-center gap-3 min-w-0"><SapiensPresence size={48} /><div><h1 ref={heading} tabIndex={-1}>Your Sapiens</h1><p>{list.length === 1 ? 'Continue with your AI individual.' : 'Choose who to continue with.'}</p></div></div><button className="customer-secondary" onClick={showCreation}><Plus size={17} />Create a Sapiens</button></div>
-          {list.length > 3 && <div className="customer-search"><label htmlFor="sapiens-search">Search your Sapiens</label><input id="sapiens-search" type="search" placeholder="Search by name or focus" value={query} onChange={e => setQuery(e.target.value)} /></div>}
-          {filtered.length === 0 ? <div className="customer-state" role="status"><h2>No Sapiens match your search</h2><button className="customer-secondary" onClick={() => setQuery('')}>Clear search</button></div> : <div className="customer-grid">{filtered.map(item => <article className="identity-card" key={item.id}><span className="identity-monogram" aria-hidden="true">{Array.from(item.name)[0]?.toUpperCase()}</span><h2>{item.name}</h2>{item.role && <p>{item.role}</p>}
+          {list.length > 3 && <div className="customer-search"><label htmlFor="sapiens-search">Search your Sapiens</label><input id="sapiens-search" type="search" placeholder="Search by name, focus or ID" value={query} onChange={e => setQuery(e.target.value)} /></div>}
+          {filtered.length === 0 ? <div className="customer-state" role="status"><h2>No Sapiens match your search</h2><button className="customer-secondary" onClick={() => setQuery('')}>Clear search</button></div> : <div className="customer-grid">{filtered.map(item => <article className="identity-card" key={item.id}><span className="identity-monogram" aria-hidden="true">{Array.from(item.name)[0]?.toUpperCase()}</span><h2>{item.name}</h2><p>Sapien ID {item.id}{item.role ? ` · ${item.role}` : ''}</p>
             {openError?.id === item.id && <p role="alert">{openError.message}</p>}
             <button className="customer-primary" disabled={opening !== null} onClick={() => void openIndividual(item)}>{opening === item.id ? 'Opening…' : `Open ${item.name}`}<ArrowUpRight size={17} className="shrink-0" /></button></article>)}</div>}
         </>}

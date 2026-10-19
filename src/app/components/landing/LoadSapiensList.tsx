@@ -125,7 +125,7 @@ export function LoadSapiensList() {
                   )}
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Created {formatDateTime(sapiens.createdAt)}
+                  Sapien ID {sapiens.id} · Created {formatDateTime(sapiens.createdAt)}
                 </p>
               </div>
               

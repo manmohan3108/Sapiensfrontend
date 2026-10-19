@@ -39,6 +39,11 @@ export function SessionSummary() {
 
       {/* Meta pills */}
       <div className="flex items-center gap-2 flex-wrap">
+        {currentSapiens && (
+          <span className="rounded-full border border-white/10 px-1.5 py-0.5 text-[9px] font-mono text-white/35">
+            Sapien ID {currentSapiens.id}
+          </span>
+        )}
         {chatSessionId ? (
           <span
             className="flex items-center gap-1 px-1.5 py-0.5 rounded-full"

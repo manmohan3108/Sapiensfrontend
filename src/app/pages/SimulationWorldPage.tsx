@@ -741,6 +741,14 @@ export function SimulationWorldPage() {
   const valid = ['world','overview','test-case','timeline','progress','people','messages','jira','connections','sapien','results'];
   useEffect(() => { if (!valid.includes(section)) navigate(`/admin/simulations/${encodeURIComponent(runId)}/world/overview`, { replace: true }); }, [section, runId, navigate]);
   useEffect(() => { const controller = new AbortController(); let timer = 0; let inFlight = false; const poll = async () => { if (document.hidden || inFlight) return; inFlight = true; try { const next = await simulationService.get(runId, controller.signal); setRun(next); setError(''); if (!(next.archived && terminal.has(next.status))) timer = window.setTimeout(poll, next.status === 'scheduled' || next.status === 'paused' ? 30_000 : 15_000); } catch (problem) { if (!controller.signal.aborted) { setError(message(problem)); timer = window.setTimeout(poll, 60_000); } } finally { inFlight = false; } }; const resume = () => { if (!document.hidden) void poll(); }; document.addEventListener('visibilitychange', resume); void poll(); return () => { controller.abort(); window.clearTimeout(timer); document.removeEventListener('visibilitychange', resume); }; }, [runId]);
+  useEffect(() => {
+    if (!run?.sapien_id) return;
+    sessionStorage.setItem('simulation-lab-return-context', JSON.stringify({
+      runId: run.run_id,
+      sapienId: String(run.sapien_id),
+      ...(params.get('sapienName') ? { sapienName: params.get('sapienName')! } : {}),
+    }));
+  }, [run?.run_id, run?.sapien_id, params]);
   useEffect(() => { const next = new URLSearchParams(params); const desired = section === 'jira' || section === 'connections' ? 'tools' : null; if (desired) next.set('section', desired); if (section === 'jira') next.set('connection', 'jira'); setParams(next, { replace: true }); }, [section]);
   const base = `/admin/simulations/${encodeURIComponent(runId)}/world`;
   const links = useMemo(() => [{ to: `${base}/overview`, label: 'Overview', icon: LayoutDashboard }, { to: `${base}/test-case`, label: 'Test case', icon: BookOpen }, { to: `${base}/timeline`, label: 'Timeline', icon: Clock3 }, { to: `${base}/progress`, label: 'Progress', icon: Activity }, { to: `${base}/people`, label: 'People', icon: Users }, { to: `${base}/messages`, label: 'Messages', icon: MessageSquare }, { to: `${base}/jira`, label: 'Jira', icon: FolderKanban }, { to: `${base}/connections`, label: 'Connections', icon: PlugZap }, { to: `${base}/sapien`, label: run?.participant_mode === 'manual' ? 'Participant' : 'Sapiens', icon: Bot }, { to: `${base}/results`, label: 'Results', icon: CheckCircle2 }], [base, run?.participant_mode]);
