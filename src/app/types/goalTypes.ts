@@ -98,11 +98,34 @@ export interface GoalContext {
   open_questions: ContextQuestion[];
 }
 
+export interface GoalHistoryEntry {
+  revision: number | null;
+  actor: string;
+  operation: string;
+  operation_id: string;
+  reason: string;
+  at: string;
+}
+
+export interface GoalAttention {
+  request_id: string;
+  requested_at: string;
+  revision: number | null;
+  review_version: number | null;
+  resolved_id: string;
+  resolved_at: string;
+  // Bounded, extensible retained outcome; nested values may be omission markers.
+  outcome: Record<string, unknown> | null;
+}
+
 export interface GoalDetail {
   goal: Goal;
   context: GoalContext | null;
   current_plan: Plan | null;
   plan_context: GoalContext | null;
+  // Undefined means the older API did not supply inspection data.
+  history?: GoalHistoryEntry[];
+  attention?: GoalAttention | null;
 }
 
 export interface GoalsListResponse {

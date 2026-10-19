@@ -42,7 +42,7 @@ function planProgress(plan: Plan | null | undefined) {
 
 function fmtDate(iso: string) {
   if (!iso) return 'Not specified';
-  try { return Number.isNaN(Date.parse(iso)) ? iso : new Date(iso).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }); }
+  try { return Number.isNaN(Date.parse(iso)) ? iso : new Date(iso).toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZoneName: 'short' }); }
   catch { return iso; }
 }
 
@@ -114,7 +114,7 @@ function CollapsibleSection({ title, children, defaultOpen = false }: {
   const [open, setOpen] = useState(defaultOpen);
   return (
     <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgb(var(--sp-ink-rgb, 255 255 255) / 0.07)' }}>
-      <button onClick={() => setOpen(v => !v)}
+      <button onClick={() => setOpen(v => !v)} aria-expanded={open}
         className="w-full flex items-center gap-2 px-3 py-2.5 text-left transition-colors hover:bg-sp-ink/[0.03]"
         style={{ background: 'rgb(var(--sp-ink-rgb, 255 255 255) / 0.03)' }}>
         {open
@@ -125,6 +125,89 @@ function CollapsibleSection({ title, children, defaultOpen = false }: {
       {open && <div className="p-3">{children}</div>}
     </div>
   );
+}
+
+// ── Goal inspection ───────────────────────────────────────────────────────────
+
+const inspectionObject = (value: unknown): Record<string, unknown> =>
+  value !== null && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
+const inspectionScalar = (value: unknown): string =>
+  typeof value === 'string' || typeof value === 'boolean' || (typeof value === 'number' && Number.isFinite(value))
+    ? String(value) : '';
+
+function InspectionJson({ value }: { value: unknown }) {
+  return <pre className="max-h-64 overflow-auto whitespace-pre-wrap break-all text-[10px] text-sp-muted">{JSON.stringify(value, null, 2)}</pre>;
+}
+
+function GoalInspection({ detail }: { detail: GoalDetail }) {
+  const { history, attention, goal } = detail;
+  const outcome = attention?.outcome;
+  const assessment = inspectionObject(outcome?.assessment);
+  const execution = inspectionObject(outcome?.execution);
+  const refs = Array.isArray(assessment.evidence_refs)
+    ? assessment.evidence_refs.filter((ref): ref is string => typeof ref === 'string') : [];
+  const latest = history?.[history.length - 1];
+  const pending = !!attention?.request_id && attention.request_id !== attention.resolved_id;
+  const source = goal.metadata.source_reference;
+
+  return <>
+    {source != null && <CollapsibleSection title="Source reference (provenance)">
+      <InspectionJson value={source} />
+    </CollapsibleSection>}
+    <CollapsibleSection title="Goal change history" defaultOpen>
+      <div className="flex flex-col gap-3 text-[11px] text-sp-muted break-words">
+        <p>Up to the latest 100 stored changes, oldest first. This audit trail contains reasons, not full historical snapshots or guaranteed lifetime history.</p>
+        {history === undefined ? <p>Change history was not supplied by this API.</p>
+          : history.length === 0 ? <p>No stored changes returned.</p> : <>
+            {latest && <div className="rounded-lg bg-sp-ink/[0.03] p-2">
+              <p className="text-sp-ink">Latest stored change: {latest.operation || 'Operation unspecified'} · Revision {latest.revision ?? 'unknown'}</p>
+              <p>{latest.reason || 'No reason recorded.'}</p>
+              <p className="mt-1 text-[10px]">{latest.actor || 'Actor unknown'} · {fmtDate(latest.at)}</p>
+            </div>}
+            <CollapsibleSection title={`Stored audit trail (${history.length})`}>
+              <ol className="flex flex-col gap-3">
+                {history.map((row, index) => <li key={`${row.operation_id}:${index}`} className="border-l border-sp-ink/10 pl-3">
+                  <p className="text-sp-ink">Revision {row.revision ?? 'unknown'} · {row.operation || 'Operation unspecified'}</p>
+                  <p className="whitespace-pre-wrap">{row.reason || 'No reason recorded.'}</p>
+                  <p className="mt-1 text-[10px]">{row.actor || 'Actor unknown'} · {fmtDate(row.at)}</p>
+                  {row.operation_id && <p className="text-[10px] break-all">Operation ID: {row.operation_id}</p>}
+                </li>)}
+              </ol>
+            </CollapsibleSection>
+          </>}
+      </div>
+    </CollapsibleSection>
+    <CollapsibleSection title="Awareness attention" defaultOpen>
+      <div className="flex flex-col gap-2 text-[11px] text-sp-muted break-words">
+        <p>Current request or latest retained resolution only. A new request may replace the previous resolution.</p>
+        {attention === undefined ? <p>Attention details were not supplied by this API.</p>
+          : attention === null ? <p>No attention request or resolution retained.</p> : <>
+            <p className="text-sp-ink">{pending ? 'Pending request — no matching resolution retained' : attention.resolved_id || attention.resolved_at ? 'Latest retained resolution' : 'Attention status unknown'}</p>
+            {attention.request_id && <p>Request ID: <span className="break-all">{attention.request_id}</span></p>}
+            {attention.requested_at && <p>Requested: {fmtDate(attention.requested_at)}</p>}
+            {(attention.revision !== null || attention.review_version !== null) && <p>Request revision: {attention.revision ?? 'Unknown'} · Review version: {attention.review_version ?? 'Unknown'}</p>}
+            {attention.resolved_id && <p>Resolved request ID: <span className="break-all">{attention.resolved_id}</span></p>}
+            {attention.resolved_at && <p>Resolved: {fmtDate(attention.resolved_at)}</p>}
+            <p>Assessments are observations, not confirmation of completion or real-world success. Goal changes require explicit actions validated by Goals.</p>
+            {outcome && Object.keys(outcome).length > 0 ? <>
+              <div className="rounded-lg bg-sp-ink/[0.03] p-2 space-y-2">
+                <p className="text-sp-ink">Retained assessment: {inspectionScalar(assessment.state) || 'State not supplied'}</p>
+                <p>Assessed: {typeof assessment.assessed === 'boolean' ? assessment.assessed ? 'Yes' : 'No' : 'Unknown'} · Confidence: {inspectionScalar(assessment.confidence) || 'Not supplied'}</p>
+                {(['understanding', 'reason', 'remaining'] as const).map(field =>
+                  typeof assessment[field] === 'string' && assessment[field] ? <p key={field} className="whitespace-pre-wrap"><span className="capitalize">{field}</span>: {assessment[field] as string}</p> : null)}
+                {typeof assessment.review_at === 'string' && assessment.review_at && <p>Assessment suggested review: {fmtDate(assessment.review_at)} (see goal schedule above)</p>}
+                {refs.length > 0 && <p>Assessment evidence references: {refs.join(', ')}</p>}
+                {Object.keys(execution).length > 0 && <p>Execution actions used: {inspectionScalar(execution.actions_used) || 'Unknown'} · Action limit: {inspectionScalar(execution.action_limit) || 'Unknown'} · Budget exhausted: {typeof execution.action_budget_exhausted === 'boolean' ? execution.action_budget_exhausted ? 'Yes' : 'No' : 'Unknown'}</p>}
+              </div>
+              <p>Retained outcome is bounded; fields or evidence may be shortened or omitted.{typeof outcome.omitted_evidence_items === 'number' && ` Omitted evidence items: ${outcome.omitted_evidence_items}.`}</p>
+              <CollapsibleSection title="Retained outcome details (subject, evidence & omission indicators)">
+                <InspectionJson value={outcome} />
+              </CollapsibleSection>
+            </> : <p>No outcome retained.</p>}
+          </>}
+      </div>
+    </CollapsibleSection>
+  </>;
 }
 
 // ── CommentPopover ────────────────────────────────────────────────────────────
@@ -549,6 +632,7 @@ function GoalDetailPane({
         style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
         <AlertCircle className="w-4 h-4 flex-shrink-0" />{error}
       </div>
+      <button onClick={() => fetchDetail(true)} className="self-start rounded-lg border border-sp-ink/10 px-3 py-2 text-[11px] text-sp-muted">Retry goal details</button>
     </div>
   );
 
@@ -558,15 +642,22 @@ function GoalDetailPane({
 
   return (
     <div className="flex flex-col h-full gap-3 overflow-hidden">
-      <BackBtn onClick={onBack} />
+      <div className="flex items-center justify-between gap-2">
+        <BackBtn onClick={onBack} />
+        <button onClick={() => fetchDetail(true)} disabled={loading} aria-label="Refresh goal details"
+          className="flex items-center gap-1.5 text-[10px] text-sp-muted disabled:opacity-40">
+          <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />Refresh
+        </button>
+      </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-3 pr-0.5">
+      <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-3 pr-0.5 [&>*]:shrink-0">
         {/* Header */}
         <div className="rounded-2xl p-4 flex flex-col gap-3"
           style={{ background: 'rgb(var(--sp-ink-rgb, 255 255 255) / 0.03)', border: '1px solid rgb(var(--sp-ink-rgb, 255 255 255) / 0.08)' }}>
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-1.5 flex-wrap">
               <SourceBadge source={goal.source} />
+              <span className="text-[9px] text-sp-muted">Custom state:</span>
               <StatusPill  status={goal.state} />
               <Lifecycle record={goal} />
             </div>
@@ -578,6 +669,12 @@ function GoalDetailPane({
           </div>
           <p className="text-[13px] text-sp-ink leading-snug">{goal.description}</p>
           {goal.motivation && <p className="text-[11px] text-sp-muted leading-relaxed">{goal.motivation}</p>}
+          <div className="text-[10px] text-sp-muted space-y-1">
+            <p>Stored finished flag: {goal.finished === null ? 'Unknown' : String(goal.finished)} · Revision: {goal.revision ?? 'Unknown'}</p>
+            <p>Updated: {fmtDate(goal.updated_at || '')}</p>
+            <p>Review: {goal.review_enabled === null ? 'Unknown' : goal.review_enabled ? 'Enabled' : 'Disabled'} · Scheduled: {goal.review_at ? fmtDate(goal.review_at) : 'Not scheduled'}</p>
+            <p>Custom state, numeric progress and the finished flag are independent.</p>
+          </div>
           <div className="flex flex-col gap-1.5">
             <p className="text-[10px] text-sp-muted">Goal progress: {goal.progress === null ? 'Not reported' : `${Math.round(goal.progress * 100)}%`}</p>
             <ThinMeter value={goal.progress} color="var(--sp-success, #34d399)" />
@@ -594,6 +691,7 @@ function GoalDetailPane({
 
         {error && <p role="alert" className="text-[11px] text-sp-danger">{error}</p>}
         <RecordDetails record={goal} />
+        <GoalInspection detail={detail} />
 
         {/* Plan */}
         <div className="rounded-2xl flex flex-col gap-0"

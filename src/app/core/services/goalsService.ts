@@ -157,7 +157,21 @@ export const goalsService = {
     if (!string(object(r.goal).id)) throw new Error('Goal not found or no longer available.');
     const currentPlan = plan(r.current_plan);
     return { goal: goal(r.goal), context: context(r.context), current_plan: currentPlan,
-      plan_context: currentPlan ? context(r.plan_context) : null };
+      plan_context: currentPlan ? context(r.plan_context) : null,
+      history: Array.isArray(r.history) ? r.history.map(value => {
+        const row = object(value);
+        return { revision: number(row.revision), actor: string(row.actor),
+          operation: string(row.operation), operation_id: string(row.operation_id),
+          reason: string(row.reason), at: string(row.at) };
+      }) : undefined,
+      attention: r.attention === undefined ? undefined : r.attention === null ? null : (() => {
+        const a = object(r.attention);
+        return { request_id: string(a.request_id), requested_at: string(a.requested_at),
+          revision: number(a.revision), review_version: number(a.review_version),
+          resolved_id: string(a.resolved_id), resolved_at: string(a.resolved_at),
+          outcome: a.outcome == null ? null : object(a.outcome) };
+      })(),
+    };
   },
 
   replan(sapienId: number, goalId: string, reason: string): Promise<void> {
