@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { NavLink } from 'react-router';
-import { ArrowDown, ArrowRight, Bot, Building2, CheckCircle2, ChevronDown, CircleDashed, MessageSquare, TriangleAlert, Users, Wrench, XCircle } from 'lucide-react';
+import { ArrowDown, ArrowRight, Bot, CheckCircle2, ChevronDown, CircleDashed, MessageSquare, TriangleAlert, Users, Wrench, XCircle } from 'lucide-react';
 import { simulationService } from '../../core/services/simulationService';
 import type { InspectionActivity, InspectionActivityPage, InspectionOverview, InspectionResults, InspectionSpecificationResponse, SimulationRun } from '../../types/simulationTypes';
 import { Badge } from '../ui/badge';
@@ -26,6 +26,19 @@ const verdictStyle = {
   not_evaluated: { title: 'Not evaluated', Icon: CircleDashed, color: 'text-muted-foreground', fill: 'bg-slate-400' },
 };
 
+function actionLabel(item: InspectionActivity) {
+  const tool = text(item.payload.tool);
+  const labels: Record<string, string> = {
+    jira_get_issue: 'Read Jira issue', jira_get_comments: 'Read Jira comments',
+    jira_add_comment: 'Add Jira comment', jira_update_issue: 'Update Jira issue',
+    jira_transition_issue: 'Change Jira status', 'send-chat-message': 'Send Teams message',
+    'list-joined-teams': 'Look up Teams groups', 'list-users': 'Look up people',
+    'get-user': 'Look up a person', 'create-chat': 'Create Teams chat',
+    'list-chats': 'Find Teams chats', 'list-chat-members': 'Check chat members',
+  };
+  return `${labels[tool] || `Use ${tool || 'a tool'}`}${text(item.arguments?.issue_key) ? ` · ${text(item.arguments?.issue_key)}` : ''}`;
+}
+
 function StoryConnector({ linked, label }: { linked: boolean; label: string }) {
   return <div className="flex flex-col items-center justify-center gap-2 px-1 py-3 text-muted-foreground">
     <span className="max-w-24 text-center text-[10px]">{label}</span>
@@ -41,6 +54,7 @@ function FeaturedInteraction({ run, through, people }: {
 }) {
   const [page, setPage] = useState<InspectionActivityPage | null>(null);
   const [error, setError] = useState('');
+  const [selected, setSelected] = useState<string | null>(null);
   useEffect(() => {
     const controller = new AbortController();
     setError('');
@@ -54,16 +68,19 @@ function FeaturedInteraction({ run, through, people }: {
   const incoming = messages.filter(item => item.payload.sender_id !== participant);
   const outgoing = messages.filter(item => item.payload.sender_id === participant);
   // Only explicit reply links establish an exchange; proximity and shared actors do not.
-  const reply = [...outgoing].reverse().find(item => item.reply_to_message_id &&
-    incoming.some(source => source.message_id === item.reply_to_message_id));
-  const source = reply ? incoming.find(item => item.message_id === reply.reply_to_message_id) : incoming.at(-1);
+  const episodes = [...incoming].reverse().filter((item, index, all) =>
+    all.findIndex(other => (other.message_id || other.record_id) === (item.message_id || item.record_id)) === index).slice(0, 3);
+  const source = episodes.find(item => item.record_id === selected) || episodes[0];
+  const reply = source?.message_id ? outgoing.find(item => item.reply_to_message_id === source.message_id) : undefined;
   const name = (id: unknown) => people.find(person => person.person_id === text(id))?.name || text(id) || 'Unknown';
   const linkedTool = reply?.operation_id ? page?.items.find(item =>
     item.category === 'tool' && item.operation_id === reply.operation_id &&
     item.payload.actor_id === participant) : undefined;
   const records = [source, reply, linkedTool].filter((item): item is InspectionActivity => !!item);
+  const actions = [...(page?.items || [])].reverse().filter(item => item.category === 'tool' && item.payload.actor_id === participant).slice(0, 3);
   return <section className="rounded-2xl border border-violet-500/30 bg-card p-5 lg:p-6">
-    <div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs uppercase tracking-widest text-violet-500">What happened in this run?</p><h2 className="mt-2 text-xl font-semibold">A moment from the workplace</h2></div><Badge variant="outline">From recorded activity</Badge></div>
+    <div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs uppercase tracking-widest text-violet-500">2 · What actually happened?</p><h2 className="mt-2 text-xl font-semibold">What the team said → what {name(participant)} did</h2></div><Badge variant="outline">Recorded, not scripted</Badge></div>
+    {episodes.length > 1 && <div className="mt-4 flex flex-wrap gap-2" aria-label="Choose a recorded exchange">{episodes.map(item => <Button key={item.record_id} variant={source?.record_id === item.record_id ? 'default' : 'outline'} onClick={() => setSelected(item.record_id)} aria-pressed={source?.record_id === item.record_id}>{name(item.payload.sender_id)} · #{item.sequence}</Button>)}</div>}
     {error ? <p role="alert" className="mt-4 text-sm text-amber-600">Could not refresh this interaction: {error}</p> : !page ? <p role="status" className="mt-4 text-sm text-muted-foreground">Loading recorded activity…</p> : !source ? <p className="mt-4 text-sm text-muted-foreground">No incoming message in the loaded journey yet. Open the journey to inspect other activity.</p> : <>
       <div className="mt-6 grid items-start md:grid-cols-[1fr_80px_1fr_80px_1fr]">
         <details className="group min-w-0 text-center"><summary className="cursor-pointer list-none rounded-2xl p-3 hover:bg-blue-500/5"><span className="mx-auto grid size-20 place-items-center rounded-full border-4 border-blue-500/20 bg-blue-500/10 text-2xl font-semibold text-blue-600 dark:text-blue-300">{name(source.payload.sender_id).split(/\s+/).map(word => word[0]).slice(0, 2).join('')}</span><h3 className="mt-3 font-semibold">{name(source.payload.sender_id)}</h3><span className="mt-2 inline-flex items-center gap-1 rounded-full bg-blue-500/10 px-3 py-1 text-xs text-blue-600 dark:text-blue-300"><MessageSquare className="size-3" />Message received</span><blockquote className="mt-3 text-sm text-muted-foreground">“{preview(text(source.payload.text), 90)}”</blockquote><ChevronDown aria-hidden="true" className="mx-auto mt-3 size-4 group-open:rotate-180" /></summary><p className="mt-2 whitespace-pre-wrap rounded-xl bg-muted/50 p-4 text-left text-sm leading-6">{text(source.payload.text)}</p></details>
@@ -74,7 +91,8 @@ function FeaturedInteraction({ run, through, people }: {
       </div>
       <details className="mt-4 border-t pt-3"><summary className="cursor-pointer text-sm text-violet-500">Full exchange & evidence</summary><div className="mt-3 space-y-4">{records.map(item => <div key={item.record_id}><p className="text-xs text-muted-foreground">{stamp(item.occurred_at)} · #{item.sequence}</p>{item.category === 'message' ? <p className="mt-2 whitespace-pre-wrap text-sm leading-6">{text(item.payload.text)}</p> : <pre className="mt-2 max-h-60 overflow-auto whitespace-pre-wrap text-xs">{JSON.stringify({ arguments: item.arguments, result: item.result }, null, 2)}</pre>}<p className="mt-2 break-all text-xs text-muted-foreground">{item.record_id}</p></div>)}</div></details>
     </>}
-    <div className="mt-4 flex flex-wrap items-center justify-between gap-3"><NavLink to={`${basePath(run)}/sapien`} className="inline-flex items-center gap-2 text-sm text-violet-500">Explore the full journey <ArrowRight aria-hidden="true" className="size-4" /></NavLink>{page && <details><summary className="cursor-pointer text-xs text-muted-foreground">How this was selected</summary><p className="mt-2 max-w-lg text-xs leading-5 text-muted-foreground">Latest explicitly linked reply within {page.items.length} loaded journey entries; otherwise the latest incoming message in that window. Snapshot #{page.through}.{page.has_more ? ' More entries exist outside this window.' : ''}{page.partial ? ' Evidence coverage is partial.' : ''} No links or outcomes are inferred from timing.</p></details>}</div>
+    {!error && actions.length > 0 && <div className="mt-5 border-t pt-4"><h3 className="text-sm font-semibold">Actions also recorded in this run</h3><p className="mt-1 text-xs text-muted-foreground">Shown separately: these are not necessarily responses to the message above.</p><div className="mt-3 space-y-2">{actions.map(item => <details key={item.record_id} className="rounded-xl border p-3"><summary className="flex cursor-pointer flex-wrap items-center gap-2 text-sm"><Wrench aria-hidden="true" className="size-4 text-violet-500" /><span className="flex-1">{actionLabel(item)}</span><Badge variant="outline">{item.payload.is_error === false ? 'Tool succeeded' : item.payload.is_error === true ? 'Attempt failed' : 'Outcome not established'}</Badge></summary><p className="mt-3 text-xs text-muted-foreground">{stamp(item.occurred_at)} · A tool result does not establish completion of the whole task.</p><pre className="mt-3 max-h-60 overflow-auto whitespace-pre-wrap text-xs">{JSON.stringify({ request: item.arguments, result: item.result, evidence: item.record_id }, null, 2)}</pre></details>)}</div></div>}
+    <div className="mt-4 flex flex-wrap items-center justify-between gap-3"><NavLink to={`${basePath(run)}/sapien`} className="inline-flex items-center gap-2 text-sm text-violet-500">Explore the full journey <ArrowRight aria-hidden="true" className="size-4" /></NavLink>{page && <details><summary className="cursor-pointer text-xs text-muted-foreground">Coverage & selection</summary><p className="mt-2 max-w-lg text-xs leading-5 text-muted-foreground">Up to three latest incoming messages and tool actions within {page.items.length} loaded journey entries. Replies require an explicit message link. Snapshot #{page.through}.{page.has_more ? ' This is only the first page; newer activity may exist outside this window.' : ''}{page.partial ? ' Evidence coverage is partial.' : ''} No links or outcomes are inferred from timing.</p></details>}</div>
   </section>;
 }
 
@@ -106,18 +124,20 @@ export function SimulationStoryOverview({ run }: { run: SimulationRun }) {
   return <div className="mx-auto max-w-6xl space-y-6 p-4 lg:p-8">
     {error && <p role="alert" className="rounded-xl border border-amber-500/30 p-4 text-sm">Some display data could not be refreshed: {error}</p>}
     <section className="rounded-2xl bg-gradient-to-br from-slate-950 via-indigo-950 to-violet-950 p-6 text-white lg:p-8">
-      <div className="flex flex-wrap items-center justify-between gap-3"><p className="text-xs uppercase tracking-widest text-violet-200">A workplace simulation</p><Badge variant="secondary">{run.status.replaceAll('_', ' ')}</Badge></div>
-      <h1 className="mt-3 text-3xl font-semibold">Meet {participantName}</h1>
-      <p className="mt-2 text-sm text-slate-300">{introduction?.title || 'An AI individual in a simulated workplace'}</p>
-      <div className="mt-7 grid items-center gap-3 md:grid-cols-[1fr_60px_1fr_60px_1fr]" aria-label="Simulation setup, not recorded actions">
-        <NavLink to={`${base}/test-case`} className="rounded-2xl p-4 text-center hover:bg-white/5"><span className="mx-auto grid size-16 place-items-center rounded-2xl border border-blue-300/30 bg-blue-400/10"><Building2 aria-hidden="true" className="size-8 text-blue-200" /></span><h2 className="mt-3 font-semibold">{run.case_id === 'sentinel-desk' ? 'Sentinel Desk' : run.case_id.replaceAll('-', ' ')}</h2><span className="text-xs text-slate-300">The fictional workplace</span><span className="mt-3 flex justify-center -space-x-2" aria-hidden="true">{(authored?.scenario.initial_world.people || []).filter(item => item.person_id !== run.participant_id).slice(0, 4).map(item => <span key={item.person_id} className="grid size-8 place-items-center rounded-full border-2 border-indigo-950 bg-blue-900 text-[10px]">{item.name.split(/\s+/).map(word => word[0]).slice(0, 2).join('')}</span>)}</span></NavLink>
-        <StoryConnector linked={false} label="Introduces work" />
-        <NavLink to={`${base}/sapien`} className="rounded-2xl p-4 text-center hover:bg-white/5"><span className="mx-auto grid size-24 place-items-center rounded-full border-4 border-violet-400/30 bg-violet-500/20 ring-8 ring-violet-500/5"><Bot aria-hidden="true" className="size-12 text-violet-200" /></span><h2 className="mt-4 text-xl font-semibold">{participantName}</h2>{role && <p className="text-xs text-violet-200">{role}</p>}<span className="text-xs text-slate-300">Chooses how to respond</span></NavLink>
-        <StoryConnector linked={false} label="Can act through" />
-        <div className="grid gap-3"><NavLink to={`${base}/messages`} className="flex items-center gap-3 rounded-xl border border-white/15 bg-white/5 p-4 hover:bg-white/10"><MessageSquare aria-hidden="true" className="size-7 text-violet-200" /><span><strong className="block text-sm">Teams</strong><span className="text-xs text-slate-300">Conversations</span></span></NavLink><NavLink to={`${base}/jira`} className="flex items-center gap-3 rounded-xl border border-white/15 bg-white/5 p-4 hover:bg-white/10"><Wrench aria-hidden="true" className="size-7 text-blue-200" /><span><strong className="block text-sm">Jira</strong><span className="text-xs text-slate-300">Project work</span></span></NavLink></div>
-      </div>
-      <div className="mt-5 flex flex-wrap items-center justify-center gap-4 border-t border-white/15 pt-4 text-xs text-violet-200"><span className="inline-flex items-center gap-2"><MessageSquare className="size-4" />Understand</span><ArrowRight aria-hidden="true" className="size-3" /><span className="inline-flex items-center gap-2"><Users className="size-4" />Coordinate</span><ArrowRight aria-hidden="true" className="size-3" /><span className="inline-flex items-center gap-2"><CheckCircle2 className="size-4" />Follow through</span><span className="text-slate-400">Challenge—not a claimed result</span></div>
-      <details className="mt-4"><summary className="cursor-pointer text-xs text-slate-300">The scenario & live clock</summary><p className="mt-3 text-sm leading-6 text-slate-200">{introduction?.situation || authored?.overview?.mission || 'Case introduction unavailable.'}</p><p className="mt-3 text-sm leading-6 text-slate-200">{introduction?.challenge || 'Compare recorded actions with the case expectations.'}</p><p className="mt-3 text-xs text-slate-300">{data.current_phase?.title || 'Phase not recorded'} · {stamp(run.simulated_time)} · {run.speed}× speed</p></details>
+      <div className="flex flex-wrap items-center justify-between gap-3"><p className="text-xs uppercase tracking-widest text-violet-200">1 · What are we testing?</p><Badge variant="secondary">{run.status.replaceAll('_', ' ')}</Badge></div>
+      <h1 className="mt-3 max-w-3xl text-2xl font-semibold lg:text-3xl">{introduction ? 'Can an AI Scrum Master join a team and coordinate real work?' : 'How does an AI individual respond to this workplace?'}</h1>
+      <p className="mt-3 text-sm text-slate-200">Meet {participantName}{introduction ? `, ${introduction.title}.` : role ? ` · ${role}` : '.'} The people and tools are simulated; the Sapien chooses its own responses.</p>
+      <div className="mt-5 grid gap-3 md:grid-cols-3">{(introduction ? [
+        { Icon: MessageSquare, title: 'Understand the project', detail: 'Learn the product, role and decision boundaries.' },
+        { Icon: Users, title: 'Coordinate the team', detail: 'Contact people and clarify dependencies.' },
+        { Icon: CheckCircle2, title: 'Follow through', detail: 'Track unresolved work and respond to changes.' },
+      ] : [
+        { Icon: MessageSquare, title: 'Receive information', detail: 'Encounter the people and events in this case.' },
+        { Icon: Bot, title: 'Choose a response', detail: 'Observe recorded messages and tool attempts.' },
+        { Icon: CheckCircle2, title: 'Check the outcome', detail: 'Compare evidence with the case expectations.' },
+      ]).map(({ Icon, title, detail }, index) => <div key={title} className="rounded-xl border border-white/15 bg-white/5 p-4"><div className="flex items-center gap-2"><Icon aria-hidden="true" className="size-5 text-violet-200" /><h2 className="text-sm font-semibold">{index + 1}. {title}</h2></div><p className="mt-2 text-xs leading-5 text-slate-300">{detail}</p></div>)}</div>
+      <div className="mt-4 flex flex-wrap items-center gap-4 text-xs"><span className="text-slate-300">Scenario purpose—not a claim of success.</span><NavLink to={`${base}/messages`} className="text-violet-200 underline">See Teams conversations</NavLink><NavLink to={`${base}/jira`} className="text-blue-200 underline">See Jira work</NavLink></div>
+      <details className="mt-4"><summary className="cursor-pointer text-xs text-slate-300">Project background, exact checks & live clock</summary><p className="mt-3 text-sm leading-6 text-slate-200">{introduction?.situation || authored?.overview?.mission || 'Case introduction unavailable.'}</p><p className="mt-3 text-xs text-slate-300">{data.current_phase?.title || 'Phase not recorded'} · {stamp(run.simulated_time)} · {run.speed}× speed</p><NavLink className="mt-3 inline-block text-sm text-violet-200 underline" to={`${base}/test-case`}>Read the authored test case</NavLink></details>
     </section>
     <FeaturedInteraction key={run.run_id} run={run} through={data.through} people={authored?.scenario.initial_world.people || []} />
     <section className="rounded-2xl border bg-card p-5 lg:p-6"><h2 className="text-xl font-semibold">What has been demonstrated?</h2><p className="mt-2 text-xs text-muted-foreground">Recorded checks—not a project completion score. Select a marker for details.</p>
