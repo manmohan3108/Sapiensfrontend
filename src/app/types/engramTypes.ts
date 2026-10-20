@@ -287,10 +287,10 @@ export interface WMResponse {
     focus_id: string | null;
     entries: WMEntry[];
   };
-  capacity: {
-    global: number;
-    by_source: Record<string, number>;
-  };
+  capacity?: {
+    global?: number | null;
+    by_source?: Record<string, number> | null;
+  } | null;
   timeline?: { oldest_last_used_at?: string | null; newest_last_used_at?: string | null };
   sources?: Array<{
     source: string;

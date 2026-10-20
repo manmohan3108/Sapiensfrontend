@@ -248,7 +248,8 @@ export function EngramWMSidebar({
   // wm.wm always has entries + focus_id now (empty state: { focus_id: null, entries: [] })
   const entries  = (wm?.wm?.entries ?? []).filter((e): e is WMEntry => e != null);
   const focusId  = wm?.wm?.focus_id ?? null;
-  const capacity = wm?.capacity ?? { global: 0, by_source: {} };
+  // Stored inspection can return an empty capacity object.
+  const sourceCapacities = wm?.capacity?.by_source ?? {};
 
   // Preserve the backend's requested order. Focus remains visually marked in place.
   const sorted = entries;
@@ -259,7 +260,7 @@ export function EngramWMSidebar({
 
   const maxScore = sorted.length > 0 ? Math.max(...sorted.map(entry => entry.activation ?? entry.score ?? 0)) : 1;
   const entriesUsed = wm?.summary?.entries_used ?? entries.length;
-  const globalCapacity = wm?.summary?.entries_capacity ?? capacity.global ?? 0;
+  const globalCapacity = wm?.summary?.entries_capacity ?? wm?.capacity?.global ?? 0;
   const globalUsedPct = globalCapacity > 0 ? Math.round((entriesUsed / globalCapacity) * 100) : 0;
 
   return (
@@ -344,9 +345,9 @@ export function EngramWMSidebar({
         )}
 
         {/* Per-source breakdown */}
-        {Object.keys(capacity.by_source).length > 0 && (
+        {Object.keys(sourceCapacities).length > 0 && (
           <div className="mt-2 flex flex-col gap-0.5">
-            {Object.entries(capacity.by_source).map(([src, max]) => {
+            {Object.entries(sourceCapacities).map(([src, max]) => {
               const used = sourceCounts[src] ?? 0;
               const pct  = max > 0 ? Math.min(100, (used / max) * 100) : 0;
               const color = SOURCE_COLORS[src] ?? SOURCE_COLORS.default;

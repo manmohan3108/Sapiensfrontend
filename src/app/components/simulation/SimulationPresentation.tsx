@@ -28,6 +28,48 @@ function HowItWorks({ base }: { base: string }) {
   </section>;
 }
 
+function FeaturedInteraction({ run, through, people }: {
+  run: SimulationRun;
+  through: number;
+  people: Array<{ person_id: string; name: string }>;
+}) {
+  const [page, setPage] = useState<InspectionActivityPage | null>(null);
+  const [error, setError] = useState('');
+  useEffect(() => {
+    const controller = new AbortController();
+    setError('');
+    simulationService.inspectionJourney(run.run_id, { through, limit: 100 }, controller.signal)
+      .then(result => { if (!controller.signal.aborted) setPage(result); })
+      .catch(problem => { if (!controller.signal.aborted) setError(problemText(problem)); });
+    return () => controller.abort();
+  }, [run.run_id, through]);
+  const participant = page?.participant_id || run.participant_id;
+  const messages = (page?.items || []).filter(item => item.category === 'message');
+  const incoming = messages.filter(item => item.payload.sender_id !== participant);
+  const outgoing = messages.filter(item => item.payload.sender_id === participant);
+  // Only explicit reply links establish an exchange; proximity and shared actors do not.
+  const reply = [...outgoing].reverse().find(item => item.reply_to_message_id &&
+    incoming.some(source => source.message_id === item.reply_to_message_id));
+  const source = reply ? incoming.find(item => item.message_id === reply.reply_to_message_id) : incoming.at(-1);
+  const name = (id: unknown) => people.find(person => person.person_id === text(id))?.name || text(id) || 'Unknown';
+  const linkedTool = reply?.operation_id ? page?.items.find(item =>
+    item.category === 'tool' && item.operation_id === reply.operation_id &&
+    item.payload.actor_id === participant) : undefined;
+  const records = [source, reply, linkedTool].filter((item): item is InspectionActivity => !!item);
+  return <section className="rounded-2xl border border-violet-500/30 bg-card p-5 lg:p-6">
+    <div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs uppercase tracking-widest text-violet-500">See it in action</p><h2 className="mt-2 text-xl font-semibold">One recorded interaction</h2></div><Badge variant="outline">Actual run evidence</Badge></div>
+    {error ? <p role="alert" className="mt-4 text-sm text-amber-600">Could not refresh this interaction: {error}</p> : !page ? <p role="status" className="mt-4 text-sm text-muted-foreground">Loading recorded activity…</p> : !source ? <p className="mt-4 text-sm text-muted-foreground">No incoming message in the loaded journey yet. Open the journey to inspect other activity.</p> : <>
+      <div className="mt-5 grid gap-3 md:grid-cols-3">
+        <article className="rounded-xl bg-blue-500/5 p-4"><MessageSquare aria-hidden="true" className="size-5 text-blue-500" /><h3 className="mt-3 text-sm font-semibold">1 · What arrived</h3><p className="mt-2 text-xs text-muted-foreground">{name(source.payload.sender_id)} → {name(source.payload.recipient_id || source.channel_id)}</p><blockquote className="mt-3 text-sm leading-6">{preview(text(source.payload.text), 220)}</blockquote></article>
+        <article className="rounded-xl bg-violet-500/5 p-4"><Bot aria-hidden="true" className="size-5 text-violet-500" /><h3 className="mt-3 text-sm font-semibold">2 · What {name(participant)} said</h3><p className="mt-2 text-xs text-muted-foreground">{reply ? stamp(reply.occurred_at) : 'No explicitly linked reply in loaded evidence'}</p>{reply && <blockquote className="mt-3 text-sm leading-6">{preview(text(reply.payload.text), 220)}</blockquote>}</article>
+        <article className="rounded-xl bg-muted/50 p-4"><CircleDashed aria-hidden="true" className="size-5 text-muted-foreground" /><h3 className="mt-3 text-sm font-semibold">3 · What is verified</h3><p className="mt-3 text-sm leading-6">{reply ? 'A reply is recorded and explicitly linked to the incoming message.' : 'The incoming message is recorded. This view cannot establish a reply or completed work.'}</p>{linkedTool && <p className="mt-2 text-sm">{text(linkedTool.payload.tool)}: {linkedTool.payload.is_error === false ? 'tool reported success' : linkedTool.payload.is_error === true ? 'tool reported an error' : 'result available in evidence'}.</p>}<p className="mt-3 text-xs text-muted-foreground">A recorded reply is not proof that the requested work is complete.</p></article>
+      </div>
+      <details className="mt-4 border-t pt-3"><summary className="cursor-pointer text-sm text-violet-500">Full exchange & evidence</summary><div className="mt-3 space-y-4">{records.map(item => <div key={item.record_id}><p className="text-xs text-muted-foreground">{stamp(item.occurred_at)} · #{item.sequence}</p>{item.category === 'message' ? <p className="mt-2 whitespace-pre-wrap text-sm leading-6">{text(item.payload.text)}</p> : <pre className="mt-2 max-h-60 overflow-auto whitespace-pre-wrap text-xs">{JSON.stringify({ arguments: item.arguments, result: item.result }, null, 2)}</pre>}<p className="mt-2 break-all text-xs text-muted-foreground">{item.record_id}</p></div>)}</div></details>
+    </>}
+    <div className="mt-4 flex flex-wrap items-center justify-between gap-3"><NavLink to={`${basePath(run)}/sapien`} className="inline-flex items-center gap-2 text-sm text-violet-500">Explore the full journey <ArrowRight aria-hidden="true" className="size-4" /></NavLink>{page && <details><summary className="cursor-pointer text-xs text-muted-foreground">How this was selected</summary><p className="mt-2 max-w-lg text-xs leading-5 text-muted-foreground">Latest explicitly linked reply within {page.items.length} loaded journey entries; otherwise the latest incoming message in that window. Snapshot #{page.through}.{page.has_more ? ' More entries exist outside this window.' : ''}{page.partial ? ' Evidence coverage is partial.' : ''} No links or outcomes are inferred from timing.</p></details>}</div>
+  </section>;
+}
+
 export function SimulationStoryOverview({ run }: { run: SimulationRun }) {
   const [data, setData] = useState<InspectionOverview | null>(null);
   const [spec, setSpec] = useState<InspectionSpecificationResponse | null>(null);
@@ -61,7 +103,8 @@ export function SimulationStoryOverview({ run }: { run: SimulationRun }) {
       <p className="mt-4 text-sm text-slate-300">Simulated time: {stamp(run.simulated_time)} · {run.speed}× speed</p>
       <details className="mt-4 border-t border-white/15 pt-3"><summary className="cursor-pointer text-sm text-violet-200">About the product and case</summary><p className="mt-3 max-w-3xl text-sm leading-7 text-slate-200">{authored?.overview?.mission || 'No case mission recorded.'}</p></details>
     </section>
-    <HowItWorks base={base} />
+    <FeaturedInteraction key={run.run_id} run={run} through={data.through} people={authored?.scenario.initial_world.people || []} />
+    <details className="rounded-xl border bg-card p-4"><summary className="cursor-pointer text-sm font-medium">How the simulation works</summary><div className="mt-4"><HowItWorks base={base} /></div></details>
     {(run.detail || run.participant?.failure_type || run.status === 'failed') && <section className="rounded-xl border border-amber-500/40 bg-amber-500/5 p-4"><div className="flex items-center gap-2"><TriangleAlert aria-hidden="true" className="size-5 text-amber-600" /><h2 className="font-semibold">Run status: {run.status.replaceAll('_', ' ')}</h2></div><p className="mt-2 text-sm">{preview(run.detail || run.participant?.failure_type || 'Failure reason is not available in this response.')}</p><details className="mt-3"><summary className="cursor-pointer text-xs text-muted-foreground">Recorded status details</summary><p className="mt-2 whitespace-pre-wrap text-sm">{run.detail || run.participant?.failure_type || 'No reason recorded.'}</p></details></section>}
     <div className="grid gap-6 lg:grid-cols-2">
       <section className="rounded-2xl border bg-card p-6"><h2 className="font-semibold">Latest recorded message</h2>{latest ? <><p className="mt-2 text-xs text-muted-foreground">{stamp(latest.occurred_at)}</p><blockquote className="mt-4 border-l-2 border-violet-500 pl-4 text-lg leading-7">{preview(text(latest.payload.text), 180)}</blockquote><details className="mt-4"><summary className="cursor-pointer text-sm text-violet-500">Full message & source</summary><p className="mt-3 text-xs text-muted-foreground">{text(latest.payload.sender_id)} → {text(latest.payload.recipient_id || latest.channel_id)}</p><p className="mt-2 whitespace-pre-wrap text-sm leading-6">{text(latest.payload.text)}</p><p className="mt-2 break-all text-xs text-muted-foreground">{latest.record_id}</p></details></> : <p className="mt-3 text-sm text-muted-foreground">No message in the recent evidence window.</p>}<NavLink className="mt-5 inline-flex items-center gap-2 text-sm text-violet-500" to={`${base}/sapien`}>Follow the journey <ArrowRight className="size-4" /></NavLink></section>

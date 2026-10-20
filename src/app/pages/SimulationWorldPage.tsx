@@ -19,6 +19,7 @@ const payload = (event: SimulationEvent) => event.payload as Record<string, unkn
 const value = (input: unknown) => typeof input === 'string' ? input : input == null ? '' : JSON.stringify(input);
 const jsonObject = (input: unknown) => { if (input && typeof input === 'object') return input as Record<string, unknown>; if (typeof input !== 'string') return {}; try { const parsed = JSON.parse(input); return parsed && typeof parsed === 'object' ? parsed as Record<string, unknown> : {}; } catch { return {}; } };
 const jiraActionName = (tool: string) => ({ jira_get_issue: 'Read issue', jira_get_comments: 'Read comments', jira_add_comment: 'Added comment', jira_list_transitions: 'Checked available transitions', jira_transition_issue: 'Changed issue status', jira_update_issue: 'Updated issue fields', jira_get_metadata: 'Read Jira metadata' } as Record<string, string>)[tool] || statusName(tool || 'Jira action');
+const jiraActionKind = (tool: string) => ['jira_add_comment', 'jira_transition_issue', 'jira_update_issue'].includes(tool) ? 'Change' : 'Read';
 
 function JiraPortal({ runId, eventCount }: { runId: string; eventCount: number }) {
   const [overview, setOverview] = useState<WorldOverview | null>(null);
@@ -38,6 +39,10 @@ function JiraPortal({ runId, eventCount }: { runId: string; eventCount: number }
   const [notificationItems, setNotificationItems] = useState<WorldActivityItem[]>([]);
   const [sapienActions, setSapienActions] = useState<WorldActivityPage | null>(null);
   const [sapienActionItems, setSapienActionItems] = useState<WorldActivityItem[]>([]);
+  const [actionSearch, setActionSearch] = useState('');
+  const [actionTool, setActionTool] = useState('all');
+  const [actionIssue, setActionIssue] = useState('all');
+  const [actionOutcome, setActionOutcome] = useState<'all' | 'recorded' | 'failed'>('all');
   const [mobileIssueOpen, setMobileIssueOpen] = useState(false);
 
   useEffect(() => {
@@ -182,7 +187,64 @@ function JiraPortal({ runId, eventCount }: { runId: string; eventCount: number }
 
   const openIssue = (issueKey: string) => { setSelected(issueKey); setMobileIssueOpen(true); };
   const notificationCards = notificationItems.filter(item => payload(item.event).type === 'ConnectionNotification').map(item => { const body = payload(item.event); const notificationId = value(body.notification_id); const delivery = notificationItems.find(candidate => payload(candidate.event).type === 'NotificationDelivery' && value(payload(candidate.event).notification_id) === notificationId); const deliveryBody = delivery ? payload(delivery.event) : null; const details = jsonObject(body.details_json); const recipient = value(body.recipient_id) || 'Unknown recipient'; const status = value(deliveryBody?.status); return <article key={item.event.record_id} className="rounded-xl border border-[#dfe1e6] bg-white p-4 dark:border-white/10 dark:bg-[#10172a]"><div className="flex flex-wrap items-center gap-2"><Badge variant="outline">{value(body.event_kind).replaceAll('_',' ') || 'Jira notification'}</Badge>{item.issue_key && <Badge variant="secondary">{item.issue_key}</Badge>}<strong className="text-sm">To {recipient}{recipient === overview?.participant_id ? ` (${overview?.participant_name || 'Participant'})` : ''}</strong><span className="ml-auto text-xs text-slate-500">{time(item.event.occurred_at)}</span></div><p className="mt-3 whitespace-pre-wrap text-sm leading-6">{value(body.content) || value(details.summary) || 'Notification content was not recorded.'}</p><p className="mt-3 text-xs text-slate-500">{status === 'delivered' ? 'Handed to Awareness; understanding or action is not confirmed.' : status === 'uncertain' ? 'Delivery outcome is uncertain.' : 'No delivery confirmation in loaded evidence.'}</p><details className="mt-2 text-xs text-slate-500"><summary className="cursor-pointer">Evidence details</summary><pre className="mt-2 max-h-64 overflow-auto rounded bg-[#f4f5f7] p-3 dark:bg-black/30">{JSON.stringify({ notification_id: notificationId, details, creation_evidence: item.event.record_id, delivery_evidence: delivery?.event.record_id || null }, null, 2)}</pre></details></article>; });
-  const sapienActionCards = sapienActionItems.map(item => { const body = payload(item.event); const tool = value(body.tool); const args = jsonObject(body.arguments_json); const result = jsonObject(body.result_json); const failed = body.is_error === true; const issueKey = item.issue_key || value(args.issue_key); return <article key={item.event.record_id} className="rounded-xl border border-[#dfe1e6] bg-white p-4 dark:border-white/10 dark:bg-[#10172a]"><div className="flex flex-wrap items-center gap-2"><span className={`grid size-8 shrink-0 place-items-center rounded-full text-xs font-bold ${failed ? 'bg-red-100 text-red-700 dark:bg-red-950' : 'bg-violet-100 text-violet-700 dark:bg-violet-950'}`}>{(overview?.participant_name || 'SP').slice(0,2).toUpperCase()}</span><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><strong className="text-sm">{jiraActionName(tool)}</strong>{issueKey && <Badge variant="outline">{issueKey}</Badge>}<Badge variant={failed ? 'destructive' : 'secondary'}>{failed ? 'Failed' : 'Recorded'}</Badge></div><p className="mt-1 text-xs text-slate-500">{overview?.participant_name || overview?.participant_id || 'Simulation participant'} · {time(item.event.occurred_at)}</p></div></div>{tool === 'jira_add_comment' && <p className="mt-3 whitespace-pre-wrap rounded bg-[#f4f5f7] p-3 text-sm dark:bg-black/20">{value(args.body) || 'Comment text unavailable'}</p>}{tool === 'jira_update_issue' && <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">Changed fields: {Object.keys(jsonObject(args.fields)).join(', ') || 'not recorded'}</p>}{tool === 'jira_transition_issue' && <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">Transition: {value(args.transition_id) || 'not recorded'}</p>}<details className="mt-3 text-xs text-slate-500"><summary className="cursor-pointer">Evidence details</summary><div className="mt-2 grid gap-2 sm:grid-cols-2"><pre className="max-h-64 overflow-auto rounded bg-[#f4f5f7] p-3 dark:bg-black/30">{JSON.stringify(args, null, 2)}</pre><pre className="max-h-64 overflow-auto rounded bg-[#f4f5f7] p-3 dark:bg-black/30">{JSON.stringify(result, null, 2)}</pre></div><p className="mt-2 break-all">{item.event.record_id}</p></details></article>; });
+  const actionRows = sapienActionItems.map(item => {
+    const body = payload(item.event);
+    const tool = value(body.tool);
+    const args = jsonObject(body.arguments_json);
+    const result = jsonObject(body.result_json);
+    const failed = body.is_error === true;
+    const issueKey = item.issue_key || value(args.issue_key);
+    return { item, body, tool, args, result, failed, issueKey };
+  });
+  const actionTools = [...new Set(actionRows.map(row => row.tool).filter(Boolean))].sort();
+  const actionIssues = [...new Set(actionRows.map(row => row.issueKey).filter(Boolean))].sort();
+  const normalizedActionSearch = actionSearch.trim().toLowerCase();
+  const filteredActionRows = actionRows.filter(row => {
+    if (actionTool !== 'all' && row.tool !== actionTool) return false;
+    if (actionIssue !== 'all' && row.issueKey !== actionIssue) return false;
+    if (actionOutcome === 'failed' && !row.failed) return false;
+    if (actionOutcome === 'recorded' && row.failed) return false;
+    if (!normalizedActionSearch) return true;
+    return `${jiraActionName(row.tool)} ${row.tool} ${row.issueKey} ${JSON.stringify(row.args)} ${JSON.stringify(row.result)}`.toLowerCase().includes(normalizedActionSearch);
+  });
+  const actionChanges = actionRows.filter(row => jiraActionKind(row.tool) === 'Change').length;
+  const actionFailures = actionRows.filter(row => row.failed).length;
+  const clearActionFilters = () => { setActionSearch(''); setActionTool('all'); setActionIssue('all'); setActionOutcome('all'); };
+  const sapienActionCards = [
+    <section key="action-controls" className="space-y-4">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {[['Loaded actions', actionRows.length], ['Issues touched', actionIssues.length], ['Changes made', actionChanges], ['Failed actions', actionFailures]].map(([label, count]) => <div key={label} className="rounded-xl border border-[#dfe1e6] bg-white p-4 dark:border-white/10 dark:bg-[#10172a]"><p className="text-xs text-slate-500">{label}</p><strong className="mt-1 block text-2xl">{count}</strong></div>)}
+      </div>
+      <div className="rounded-xl border border-[#dfe1e6] bg-white p-4 dark:border-white/10 dark:bg-[#10172a]">
+        <div className="flex items-center gap-2"><ListFilter className="size-4 text-[#0052cc]" /><strong className="text-sm">Filter activity</strong><span className="ml-auto text-xs text-slate-500">Showing {filteredActionRows.length} of {actionRows.length} loaded</span></div>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(220px,1fr)_180px_150px_150px_auto]">
+          <div className="relative"><Search className="absolute left-3 top-2.5 size-4 text-slate-400" /><Input className="pl-9" value={actionSearch} onChange={event => setActionSearch(event.target.value)} placeholder="Search actions or content" /></div>
+          <select aria-label="Action type" className="h-9 rounded-md border border-input bg-background px-3 text-sm" value={actionTool} onChange={event => setActionTool(event.target.value)}><option value="all">All action types</option>{actionTools.map(tool => <option key={tool} value={tool}>{jiraActionName(tool)}</option>)}</select>
+          <select aria-label="Jira issue" className="h-9 rounded-md border border-input bg-background px-3 text-sm" value={actionIssue} onChange={event => setActionIssue(event.target.value)}><option value="all">All issues</option>{actionIssues.map(issue => <option key={issue} value={issue}>{issue}</option>)}</select>
+          <select aria-label="Action outcome" className="h-9 rounded-md border border-input bg-background px-3 text-sm" value={actionOutcome} onChange={event => setActionOutcome(event.target.value as 'all' | 'recorded' | 'failed')}><option value="all">Any outcome</option><option value="recorded">Recorded</option><option value="failed">Failed</option></select>
+          <Button variant="outline" onClick={clearActionFilters}>Clear</Button>
+        </div>
+      </div>
+    </section>,
+    ...filteredActionRows.map(({ item, tool, args, result, failed, issueKey }) => {
+      const fields = jsonObject(args.fields);
+      const kind = jiraActionKind(tool);
+      return <article key={item.event.record_id} className={`overflow-hidden rounded-xl border bg-white shadow-sm dark:bg-[#10172a] ${failed ? 'border-red-300 dark:border-red-900' : 'border-[#dfe1e6] dark:border-white/10'}`}>
+        <div className="flex gap-3 p-4 sm:p-5"><span className={`grid size-10 shrink-0 place-items-center rounded-full text-xs font-bold ${failed ? 'bg-red-100 text-red-700 dark:bg-red-950' : kind === 'Change' ? 'bg-violet-100 text-violet-700 dark:bg-violet-950' : 'bg-blue-100 text-blue-700 dark:bg-blue-950'}`}>{(overview?.participant_name || 'SP').slice(0,2).toUpperCase()}</span><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><strong>{jiraActionName(tool)}</strong><Badge variant={kind === 'Change' ? 'default' : 'outline'}>{kind}</Badge>{issueKey && <button type="button" onClick={() => { setSelected(issueKey); setJiraView('issues'); setMobileIssueOpen(true); }} className="rounded border border-[#0052cc]/30 px-2 py-0.5 text-xs font-semibold text-[#0052cc] hover:bg-blue-50 dark:hover:bg-blue-950">{issueKey}</button>}<Badge variant={failed ? 'destructive' : 'secondary'}>{failed ? 'Failed' : 'Succeeded'}</Badge></div><p className="mt-1 text-xs text-slate-500">{overview?.participant_name || overview?.participant_id || 'Simulation participant'} · {time(item.event.occurred_at)}</p>
+          {tool === 'jira_add_comment' && <div className="mt-3"><p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Comment added</p><p className="mt-1 whitespace-pre-wrap rounded-lg bg-[#f4f5f7] p-3 text-sm leading-6 dark:bg-black/20">{value(args.body) || 'Comment text unavailable'}</p></div>}
+          {tool === 'jira_update_issue' && <div className="mt-3"><p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Fields changed</p><div className="mt-2 flex flex-wrap gap-2">{Object.entries(fields).map(([field, nextValue]) => <span key={field} className="rounded-lg bg-violet-50 px-2.5 py-1.5 text-xs text-violet-800 dark:bg-violet-950 dark:text-violet-200"><strong>{statusName(field)}</strong>: {value(nextValue)}</span>)}{!Object.keys(fields).length && <span className="text-sm text-slate-500">Changed fields were not recorded.</span>}</div></div>}
+          {tool === 'jira_transition_issue' && <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">Changed status using transition <strong>{value(args.transition_id) || 'not recorded'}</strong>.</p>}
+          {tool === 'jira_get_issue' && <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">Opened the issue to inspect its recorded details.</p>}
+          {tool === 'jira_get_comments' && <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">Reviewed the issue discussion and existing comments.</p>}
+          {tool === 'jira_list_transitions' && <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">Checked which status changes were available.</p>}
+          {failed && <p className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">This Jira action returned an error. Open evidence details for the recorded response.</p>}
+          <details className="mt-3 text-xs text-slate-500"><summary className="cursor-pointer font-medium">Technical evidence</summary><div className="mt-2 grid gap-2 sm:grid-cols-2"><div><p className="mb-1 font-semibold">Request</p><pre className="max-h-64 overflow-auto rounded bg-[#f4f5f7] p-3 dark:bg-black/30">{JSON.stringify(args, null, 2)}</pre></div><div><p className="mb-1 font-semibold">Result</p><pre className="max-h-64 overflow-auto rounded bg-[#f4f5f7] p-3 dark:bg-black/30">{JSON.stringify(result, null, 2)}</pre></div></div><p className="mt-2 break-all">Evidence: {item.event.record_id}</p></details>
+        </div></div>
+      </article>;
+    }),
+    ...(sapienActions && actionRows.length === 0 ? [<p key="no-actions" className="rounded-xl border border-dashed bg-white p-6 text-center text-sm text-slate-500 dark:bg-[#10172a]">No Jira actions were recorded for this participant at this evidence watermark.</p>] : []),
+    ...(actionRows.length > 0 && filteredActionRows.length === 0 ? [<p key="no-matches" className="rounded-xl border border-dashed bg-white p-6 text-center text-sm text-slate-500 dark:bg-[#10172a]">No loaded actions match these filters. Clear the filters or load more evidence.</p>] : []),
+  ];
 
   return (
     <div className="flex h-full min-h-0 w-full flex-1 flex-col overflow-hidden bg-[#f4f5f7] text-[#172b4d] dark:bg-[#0b1020] dark:text-slate-100">
@@ -589,7 +651,7 @@ function TestCasePortal({ run }: { run: SimulationRun }) {
     const facts = (person: typeof authored.scenario.initial_world.people[number]) => Object.fromEntries((person.facts || []).map(fact => [fact.key, fact.text]));
     const people = authored.scenario.initial_world.people.map(person => {
       const personFacts = facts(person);
-      return { id: person.person_id, name: person.name, role: personFacts.role || 'Authored participant', context: personFacts.context || personFacts.project || 'No separate authored context.', group: 'authored' as const };
+      return { id: person.person_id, name: person.name, role: personFacts.role?.trim() || '', context: personFacts.context || personFacts.project || 'No separate authored context.', group: 'authored' as const };
     });
     const expectationTitle = (item: Record<string, unknown>, index: number) => value(item.expected || item.expectation_id) || `Expectation ${index + 1}`;
     return {
@@ -597,7 +659,7 @@ function TestCasePortal({ run }: { run: SimulationRun }) {
       version: authored.scenario.version,
       product: { name: caseInfo?.title || statusName(authored.scenario.scenario_id), summary: overview?.mission || caseInfo?.description || 'Authored simulation case.', boundaries: overview?.limitations || [] },
       mission: {
-        role: people.find(person => person.id === run.participant_id)?.role || 'Simulation participant',
+        role: people.find(person => person.id === run.participant_id)?.role || '',
         objective: overview?.mission || caseInfo?.description || 'Complete the authored scenario.',
         responsibilities: authored.expectations.map(expectationTitle),
         onboardingGate: 'Readiness and participation requirements are defined by the authored evaluation windows below.',
@@ -656,7 +718,7 @@ function TestCasePortal({ run }: { run: SimulationRun }) {
       <div className="mx-auto max-w-7xl p-4 lg:p-8">
         {tab === 'brief' && <div className="space-y-6">
           <section className="rounded-2xl border bg-white p-6 dark:bg-[#10172a]">
-            <div className="flex items-center gap-3"><span className="grid size-12 place-items-center rounded-xl bg-violet-500/10 text-violet-600"><Bot className="size-6" /></span><div><p className="text-xs text-slate-500">Participant in this workplace</p><h2 className="text-xl font-semibold">{participantName}</h2><p className="text-sm text-violet-600 dark:text-violet-300">{spec.mission.role}</p></div></div>
+            <div className="flex items-center gap-3"><span className="grid size-12 place-items-center rounded-xl bg-violet-500/10 text-violet-600"><Bot className="size-6" /></span><div><p className="text-xs text-slate-500">Participant in this workplace</p><h2 className="text-xl font-semibold">{participantName}</h2>{spec.mission.role && <p className="text-sm text-violet-600 dark:text-violet-300">{spec.mission.role}</p>}</div></div>
             <details className="mt-4 border-t pt-3"><summary className="cursor-pointer text-sm font-medium">Mission & responsibilities</summary><p className="mt-3 text-sm leading-6">{spec.mission.objective}</p><ol className="mt-4 list-inside list-decimal space-y-2 text-sm text-slate-500">{spec.mission.responsibilities.map(item => <li key={item}>{item}</li>)}</ol></details>
           </section>
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">{([
