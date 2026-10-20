@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { NavLink, useLocation, useNavigate, useParams, useSearchParams } from 'react-router';
-import { Activity, ArrowLeft, Beaker, BookOpen, Bot, CheckCircle2, ChevronDown, CircleDot, Clock3, FolderKanban, Hash, LayoutDashboard, ListFilter, MessageSquare, MoreHorizontal, PanelLeftClose, PanelLeftOpen, Phone, RefreshCw, Search, ShieldCheck, Star, Target, UserRound, Video } from 'lucide-react';
+import { Activity, ArrowLeft, Beaker, BookOpen, Bot, CheckCircle2, ChevronDown, CircleDot, Clock3, FolderKanban, Hash, LayoutDashboard, ListFilter, MessageSquare, MoreHorizontal, PanelLeftClose, PanelLeftOpen, Phone, RefreshCw, Search, Star, Target, UserRound, Video } from 'lucide-react';
 import { SimulationStoryOverview, SimulationJourney, SimulationResults } from '../components/simulation/SimulationPresentation';
 import { SimulationWorldExplorer } from '../components/simulation/SimulationWorldExplorer';
 import { Badge } from '../components/ui/badge';
@@ -643,7 +643,7 @@ function TestCasePortal({ run }: { run: SimulationRun }) {
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500"><Badge variant="outline">Authored test case</Badge><Badge variant="secondary">{inspection?.specification ? 'Backend specification' : 'Legacy fallback'}</Badge><span>{spec.caseId}</span><span>•</span><span>Version {spec.version}</span></div>
               <h1 className="mt-2 text-3xl font-semibold tracking-tight">{spec.product.name}</h1>
-              <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-600 dark:text-slate-300">{spec.product.summary}</p>
+              <details className="mt-2"><summary className="cursor-pointer text-sm text-violet-600 dark:text-violet-300">Read the product brief</summary><p className="mt-3 max-w-4xl text-sm leading-6 text-slate-600 dark:text-slate-300">{spec.product.summary}</p></details>
             </div>
             <div className="rounded-xl border bg-slate-50 px-4 py-3 text-right dark:bg-white/5"><p className="text-xs text-slate-500">Subject under test</p><p className="mt-1 font-semibold">{participantName}</p><p className="text-xs text-slate-500">{run.participant_mode === 'sapien' ? `Sapiens ID ${run.sapien_id}` : statusName(run.participant_mode)}</p></div>
           </div>
@@ -654,36 +654,21 @@ function TestCasePortal({ run }: { run: SimulationRun }) {
       </div>
 
       <div className="mx-auto max-w-7xl p-4 lg:p-8">
-        {tab === 'brief' && <div className="grid gap-6 lg:grid-cols-[minmax(0,1.45fr)_minmax(300px,0.7fr)]">
-          <div className="space-y-6">
-            <section className="rounded-2xl border bg-white p-6 shadow-sm dark:bg-[#10172a]">
-              <div className="flex items-center gap-3"><span className="grid size-9 place-items-center rounded-lg bg-violet-100 text-violet-700 dark:bg-violet-950"><Target className="size-4" /></span><div><h2 className="font-semibold">Participant mission</h2><p className="text-xs text-slate-500">What this case is actually testing</p></div></div>
-              <p className="mt-5 text-base leading-7">{spec.mission.objective}</p>
-              <div className="mt-5 grid gap-3 sm:grid-cols-2">{spec.mission.responsibilities.map((item, index) => <div key={item} className="flex gap-3 rounded-xl bg-slate-50 p-4 dark:bg-white/5"><span className="grid size-6 shrink-0 place-items-center rounded-full bg-violet-600 text-xs font-semibold text-white">{index + 1}</span><p className="text-sm leading-6">{item}</p></div>)}</div>
-            </section>
-
-            <section className="rounded-2xl border border-amber-300/60 bg-amber-50 p-6 dark:border-amber-500/20 dark:bg-amber-950/15">
-              <h2 className="flex items-center gap-2 font-semibold text-amber-900 dark:text-amber-200"><ShieldCheck className="size-5" />Onboarding readiness gate</h2>
-              <p className="mt-3 text-sm leading-7 text-amber-900/80 dark:text-amber-100/70">{spec.mission.onboardingGate}</p>
-            </section>
-
-            <section className="rounded-2xl border bg-white p-6 shadow-sm dark:bg-[#10172a]">
-              <h2 className="font-semibold">Simulation boundaries</h2>
-              <p className="mt-1 text-xs text-slate-500">What this simulation models—and what its evidence cannot prove</p>
-              <div className="mt-5 space-y-3">{spec.product.boundaries.map(item => <div key={item} className="flex gap-3"><CheckCircle2 className="mt-0.5 size-5 shrink-0 text-emerald-600" /><p className="text-sm leading-6">{item}</p></div>)}{!spec.product.boundaries.length && <p className="text-sm text-slate-500">No separately structured product boundaries were authored for this case snapshot.</p>}</div>
-            </section>
-
-            <section className="rounded-2xl border bg-white p-6 shadow-sm dark:bg-[#10172a]">
-              <h2 className="font-semibold">Communication spaces</h2>
-              <div className="mt-5 grid gap-3 sm:grid-cols-2">{spec.channels.map(channel => <article key={channel.id} className="rounded-xl border p-4"><div className="flex items-center gap-2"><Hash className="size-4 text-indigo-600" /><strong>{channel.name}</strong><code className="ml-auto text-[10px] text-slate-400">{channel.id}</code></div><p className="mt-2 text-sm leading-6 text-slate-500">{channel.purpose}</p></article>)}</div>
-            </section>
-          </div>
-
-          <aside className="space-y-6">
-            <section className="rounded-2xl border bg-white p-5 shadow-sm dark:bg-[#10172a]"><h2 className="font-semibold">Role under test</h2><p className="mt-3 text-lg font-semibold text-violet-700 dark:text-violet-300">{spec.mission.role}</p><p className="mt-2 text-sm leading-6 text-slate-500">Facilitate, expose impediments and escalate to the correct owner. Do not replace specialist or customer authority.</p></section>
-            <section className="rounded-2xl border bg-white p-5 shadow-sm dark:bg-[#10172a]"><h2 className="font-semibold">Connected workplace</h2><div className="mt-4 space-y-2"><div className="flex items-center gap-3 rounded-lg bg-slate-50 p-3 dark:bg-white/5"><MessageSquare className="size-4 text-[#5b5fc7]" /><span className="text-sm">Personal and channel messaging</span></div><div className="flex items-center gap-3 rounded-lg bg-slate-50 p-3 dark:bg-white/5"><FolderKanban className="size-4 text-[#0052cc]" /><span className="text-sm">Simulated Jira project</span></div></div></section>
-            <section className="rounded-2xl border bg-white p-5 shadow-sm dark:bg-[#10172a]"><h2 className="font-semibold">Case limitations</h2><p className="mt-3 text-sm leading-6 text-slate-500">{caseInfo?.limitations || 'Employee behavior follows authored response options. Evaluation measures participation rather than complete Scrum quality.'}</p></section>
-          </aside>
+        {tab === 'brief' && <div className="space-y-6">
+          <section className="rounded-2xl border bg-white p-6 dark:bg-[#10172a]">
+            <div className="flex items-center gap-3"><span className="grid size-12 place-items-center rounded-xl bg-violet-500/10 text-violet-600"><Bot className="size-6" /></span><div><p className="text-xs text-slate-500">Participant in this workplace</p><h2 className="text-xl font-semibold">{participantName}</h2><p className="text-sm text-violet-600 dark:text-violet-300">{spec.mission.role}</p></div></div>
+            <details className="mt-4 border-t pt-3"><summary className="cursor-pointer text-sm font-medium">Mission & responsibilities</summary><p className="mt-3 text-sm leading-6">{spec.mission.objective}</p><ol className="mt-4 list-inside list-decimal space-y-2 text-sm text-slate-500">{spec.mission.responsibilities.map(item => <li key={item}>{item}</li>)}</ol></details>
+          </section>
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">{([
+            ['team', UserRound, spec.people.length, 'People', 'Roles & context'],
+            ['backlog', FolderKanban, spec.backlog.length, 'Work items', 'Initial Jira backlog'],
+            ['challenges', MessageSquare, challengeGroups.length, 'Situations', 'Authored workplace events'],
+            ['evaluation', Target, spec.evaluation.length, 'Checks', 'What will be evaluated'],
+          ] as const).map(([destination, Icon, count, title, caption]) => <button key={destination} onClick={() => setTab(destination)} className="rounded-2xl border bg-white p-5 text-left transition hover:border-violet-400 dark:bg-[#10172a]"><Icon aria-hidden="true" className="mb-3 size-6 text-violet-500" /><strong className="text-3xl">{count}</strong><h3 className="mt-1 font-medium">{title}</h3><p className="mt-1 text-xs text-slate-500">{caption} →</p></button>)}</div>
+          <section className="rounded-2xl border bg-white p-6 dark:bg-[#10172a]"><h2 className="font-semibold">Project journey</h2><p className="mt-1 text-xs text-slate-500">Authored phases—not a live completion indicator.</p><div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{spec.phases.map((phase, index) => <details key={`${phase.period}-${index}`} className="rounded-xl border p-4"><summary className="flex cursor-pointer items-center gap-3"><span className="grid size-8 shrink-0 place-items-center rounded-full bg-violet-500/10 text-sm font-semibold text-violet-600">{index + 1}</span><span className="text-sm font-medium">{phase.period}</span></summary><p className="mt-3 text-sm">{phase.goal}</p><p className="mt-2 text-xs leading-5 text-slate-500">{phase.evidence}</p></details>)}</div></section>
+          <div className="flex flex-wrap gap-3"><NavLink to={`/admin/simulations/${run.run_id}/world/messages`} className="inline-flex items-center gap-2 rounded-xl border px-4 py-3 text-sm"><MessageSquare className="size-5 text-[#5b5fc7]" />Open Messages</NavLink><NavLink to={`/admin/simulations/${run.run_id}/world/jira`} className="inline-flex items-center gap-2 rounded-xl border px-4 py-3 text-sm"><FolderKanban className="size-5 text-[#0052cc]" />Open Jira</NavLink></div>
+          <details className="rounded-xl border bg-white p-5 dark:bg-[#10172a]"><summary className="cursor-pointer text-sm font-medium">Readiness, boundaries & limitations</summary><p className="mt-4 text-sm leading-6">{spec.mission.onboardingGate}</p><ul className="mt-3 list-inside list-disc space-y-2 text-sm text-slate-500">{spec.product.boundaries.map(item => <li key={item}>{item}</li>)}</ul><p className="mt-3 text-sm leading-6 text-slate-500">{caseInfo?.limitations || 'Employee behavior follows authored response options. Checks do not measure every aspect of competence.'}</p></details>
+          <details className="rounded-xl border bg-white p-5 dark:bg-[#10172a]"><summary className="cursor-pointer text-sm font-medium">Communication spaces · {spec.channels.length}</summary><div className="mt-4 grid gap-3 sm:grid-cols-2">{spec.channels.map(channel => <div key={channel.id} className="rounded-xl border p-4"><h3 className="font-medium"># {channel.name}</h3><p className="mt-2 text-sm text-slate-500">{channel.purpose}</p><code className="text-xs text-slate-400">{channel.id}</code></div>)}</div></details>
         </div>}
 
         {tab === 'roadmap' && <section className="rounded-2xl border bg-white p-6 shadow-sm dark:bg-[#10172a]"><div><h2 className="text-xl font-semibold">Project journey</h2><p className="mt-1 text-sm text-slate-500">Each phase has a delivery goal and evidence required before the project can honestly proceed.</p></div><div className="mt-7 space-y-0">{spec.phases.map((phase, index) => <article key={phase.period} className="grid gap-4 sm:grid-cols-[44px_180px_minmax(0,1fr)]"><div className="flex flex-col items-center"><span className="grid size-9 place-items-center rounded-full bg-violet-600 text-sm font-semibold text-white">{index + 1}</span>{index < spec.phases.length - 1 && <span className="min-h-16 w-px flex-1 bg-violet-200 dark:bg-violet-900" />}</div><p className="pb-8 pt-2 text-sm font-semibold text-violet-700 dark:text-violet-300">{phase.period}</p><div className="pb-8 pt-1"><h3 className="font-semibold">{phase.goal}</h3><p className="mt-2 text-sm leading-6 text-slate-500"><strong className="font-medium text-slate-700 dark:text-slate-300">Authored schedule:</strong> {phase.evidence}</p></div></article>)}</div></section>}
