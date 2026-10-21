@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { NavLink } from 'react-router';
-import { ArrowDown, ArrowRight, Bot, CheckCircle2, ChevronDown, CircleDashed, MessageSquare, TriangleAlert, Users, Wrench, XCircle } from 'lucide-react';
+import { ArrowDown, ArrowRight, Bot, CheckCircle2, ChevronDown, CircleDashed, MessageSquare, TriangleAlert, Wrench, XCircle } from 'lucide-react';
 import { simulationService } from '../../core/services/simulationService';
 import type { InspectionActivity, InspectionActivityPage, InspectionOverview, InspectionResults, InspectionSpecificationResponse, SimulationRun } from '../../types/simulationTypes';
 import { Badge } from '../ui/badge';
@@ -11,14 +11,6 @@ const stamp = (input?: string | null) => input ? new Date(input).toLocaleString(
 const problemText = (error: unknown) => error instanceof Error ? error.message : 'Unable to load recorded evidence.';
 const basePath = (run: SimulationRun) => `/admin/simulations/${run.run_id}/world`;
 const preview = (input: string, limit = 140) => input.length > limit ? `${input.slice(0, limit).trimEnd()}…` : input;
-// Case-specific presentation copy, never a claim about the participant's performance.
-const caseIntroductions: Record<string, { title: string; situation: string; challenge: string }> = {
-  'sentinel-desk': {
-    title: 'an AI Scrum Master joining Sentinel Desk',
-    situation: 'Sentinel Desk is a fictional project that helps analysts investigate security issues using evidence and human-reviewed recommendations.',
-    challenge: 'The team introduces the project and asks for coordination. Can the Sapien understand the work, contact the right people and follow through—without taking over decisions that belong to others?',
-  },
-};
 const verdictStyle = {
   pass: { title: 'Passed', Icon: CheckCircle2, color: 'text-emerald-600 dark:text-emerald-400', fill: 'bg-emerald-500' },
   fail: { title: 'Failed', Icon: XCircle, color: 'text-red-600 dark:text-red-400', fill: 'bg-red-500' },
@@ -116,7 +108,8 @@ export function SimulationStoryOverview({ run }: { run: SimulationRun }) {
   const person = authored?.scenario.initial_world.people.find(person => person.person_id === run.participant_id);
   const role = person?.facts.find(fact => fact.key === 'role')?.text;
   const participantName = person?.name || `Sapien ${run.sapien_id ?? run.participant_id ?? ''}`;
-  const introduction = caseIntroductions[run.case_id];
+  const overview = authored?.overview;
+  const stages = overview?.stages || [];
   const blockers = data.recorded_blockers.filter(item => item.status === 'blocked' || item.status === 'review_needed');
   const waiting = data.recorded_blockers.filter(item => item.status === 'waiting').length;
   const base = basePath(run);
@@ -125,19 +118,12 @@ export function SimulationStoryOverview({ run }: { run: SimulationRun }) {
     {error && <p role="alert" className="rounded-xl border border-amber-500/30 p-4 text-sm">Some display data could not be refreshed: {error}</p>}
     <section className="rounded-2xl bg-gradient-to-br from-slate-950 via-indigo-950 to-violet-950 p-6 text-white lg:p-8">
       <div className="flex flex-wrap items-center justify-between gap-3"><p className="text-xs uppercase tracking-widest text-violet-200">1 · What are we testing?</p><Badge variant="secondary">{run.status.replaceAll('_', ' ')}</Badge></div>
-      <h1 className="mt-3 max-w-3xl text-2xl font-semibold lg:text-3xl">{introduction ? 'Can an AI Scrum Master join a team and coordinate real work?' : 'How does an AI individual respond to this workplace?'}</h1>
-      <p className="mt-3 text-sm text-slate-200">Meet {participantName}{introduction ? `, ${introduction.title}.` : role ? ` · ${role}` : '.'} The people and tools are simulated; the Sapien chooses its own responses.</p>
-      <div className="mt-5 grid gap-3 md:grid-cols-3">{(introduction ? [
-        { Icon: MessageSquare, title: 'Understand the project', detail: 'Learn the product, role and decision boundaries.' },
-        { Icon: Users, title: 'Coordinate the team', detail: 'Contact people and clarify dependencies.' },
-        { Icon: CheckCircle2, title: 'Follow through', detail: 'Track unresolved work and respond to changes.' },
-      ] : [
-        { Icon: MessageSquare, title: 'Receive information', detail: 'Encounter the people and events in this case.' },
-        { Icon: Bot, title: 'Choose a response', detail: 'Observe recorded messages and tool attempts.' },
-        { Icon: CheckCircle2, title: 'Check the outcome', detail: 'Compare evidence with the case expectations.' },
-      ]).map(({ Icon, title, detail }, index) => <div key={title} className="rounded-xl border border-white/15 bg-white/5 p-4"><div className="flex items-center gap-2"><Icon aria-hidden="true" className="size-5 text-violet-200" /><h2 className="text-sm font-semibold">{index + 1}. {title}</h2></div><p className="mt-2 text-xs leading-5 text-slate-300">{detail}</p></div>)}</div>
+      <h1 className="mt-3 max-w-3xl text-2xl font-semibold lg:text-3xl">{overview?.purpose?.trim() || 'What does this case test?'}</h1>
+      <p className="mt-3 text-sm text-slate-200">Meet {participantName}{role ? ` · ${role}` : '.'}</p>
+      <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-200">{overview?.introduction?.trim() || overview?.mission || 'No case introduction was saved for this run. See the recorded checks below.'}</p>
+      {stages.length > 0 && <div className="mt-5 grid gap-3 md:grid-cols-3">{stages.map((stage, index) => <div key={stage.stage_id} className="rounded-xl border border-white/15 bg-white/5 p-4"><div className="flex items-center gap-2"><span className="grid size-7 shrink-0 place-items-center rounded-full bg-violet-400/20 text-xs text-violet-200">{index + 1}</span><h2 className="text-sm font-semibold">{stage.title}</h2></div><p className="mt-2 text-xs leading-5 text-slate-300">{stage.description}</p>{stage.expectation_ids.length > 0 && <details className="mt-3"><summary className="cursor-pointer text-xs text-violet-200">Related checks · {stage.expectation_ids.length}</summary><ul className="mt-2 space-y-2 text-xs text-slate-300">{stage.expectation_ids.map(id => { const check = data.objectives.find(item => item.expectation_id === id); return <li key={id}>{check?.title || id}<span className="ml-2 text-slate-400">{check ? verdictStyle[check.verdict].title : 'Check details unavailable'}</span></li>; })}</ul><p className="mt-2 text-xs text-slate-400">These checks do not assign a completion status to this stage.</p></details>}</div>)}</div>}
       <div className="mt-4 flex flex-wrap items-center gap-4 text-xs"><span className="text-slate-300">Scenario purpose—not a claim of success.</span><NavLink to={`${base}/messages`} className="text-violet-200 underline">See Teams conversations</NavLink><NavLink to={`${base}/jira`} className="text-blue-200 underline">See Jira work</NavLink></div>
-      <details className="mt-4"><summary className="cursor-pointer text-xs text-slate-300">Project background, exact checks & live clock</summary><p className="mt-3 text-sm leading-6 text-slate-200">{introduction?.situation || authored?.overview?.mission || 'Case introduction unavailable.'}</p><p className="mt-3 text-xs text-slate-300">{data.current_phase?.title || 'Phase not recorded'} · {stamp(run.simulated_time)} · {run.speed}× speed</p><NavLink className="mt-3 inline-block text-sm text-violet-200 underline" to={`${base}/test-case`}>Read the authored test case</NavLink></details>
+      <details className="mt-4"><summary className="cursor-pointer text-xs text-slate-300">Project background, exact checks & live clock</summary><p className="mt-3 text-sm leading-6 text-slate-200">{overview?.mission || 'Case mission unavailable.'}</p><p className="mt-3 text-xs text-slate-300">{data.current_phase?.title || 'Phase not recorded'} · {stamp(run.simulated_time)} · {run.speed}× speed</p><NavLink className="mt-3 inline-block text-sm text-violet-200 underline" to={`${base}/test-case`}>Read the authored test case</NavLink></details>
     </section>
     <FeaturedInteraction key={run.run_id} run={run} through={data.through} people={authored?.scenario.initial_world.people || []} />
     <section className="rounded-2xl border bg-card p-5 lg:p-6"><h2 className="text-xl font-semibold">What has been demonstrated?</h2><p className="mt-2 text-xs text-muted-foreground">Recorded checks—not a project completion score. Select a marker for details.</p>
