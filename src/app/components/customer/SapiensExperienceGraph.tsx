@@ -61,7 +61,7 @@ function Node({ x, y, image, label, second, part, radius = 62 }: { x: number; y:
   </g>;
 }
 
-export function SapiensExperienceGraph({ identityImage = identity }: { identityImage?: string }) {
+export function SapiensExperienceGraph({ identityImage = identity, showControls = true }: { identityImage?: string; showControls?: boolean }) {
   const motionRef = useExperienceMotion(EXPERIENCE_ANIMATION_ENABLED);
   const threeBeat = EXPERIENCE_ANIMATION_ENABLED && EXPERIENCE_ANIMATION_STYLE === 'three-beat';
   const id = useId().replace(/:/g, '');
@@ -73,7 +73,7 @@ export function SapiensExperienceGraph({ identityImage = identity }: { identityI
       <h2 id="how-title">An individual that notices, acts and learns.</h2>
       <p>The Sapiens concept connects experience, goals and curiosity with action and reflection.</p>
     </div>
-    {EXPERIENCE_ANIMATION_ENABLED && <button type="button" className="experience-play" onClick={() => motionRef.current?.dispatchEvent(new Event('experience-replay'))}>Play / replay the diagram <span aria-hidden="true">↗</span></button>}
+    {EXPERIENCE_ANIMATION_ENABLED && showControls && <button type="button" className="experience-play" onClick={() => motionRef.current?.dispatchEvent(new Event('experience-replay'))}>Play / replay the diagram <span aria-hidden="true">↗</span></button>}
     <svg className="experience-desktop" data-experience-scene="desktop" viewBox="0 0 1000 880" role="img" aria-labelledby={`${id}-title ${id}-description`}>
       <title id={`${id}-title`}>Initiative, interaction and reflection around one Sapiens</title>
       <desc id={`${id}-description`}>The rounded boundary is Sapiens, one AI individual. Attention and curiosity notice what matters, ask questions and seek answers. Understanding connects information to make sense of a situation. Memory and experience carry relevant context and outcomes forward. Goals and reflection guide what to pursue and reconsider the approach. Sleep and consolidation is a quiet phase that connects experiences and strengthens what matters. Outside are people, information, tools, and outcomes and feedback. Sapiens takes initiative: noticing a reason to act, asking questions and seeking what is needed. It reaches out, seeks information and takes permitted actions; feedback returns to the individual, while experience informs its next interaction. This graph explains the Sapiens concept.</desc>
