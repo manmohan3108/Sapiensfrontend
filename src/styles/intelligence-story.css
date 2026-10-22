@@ -92,13 +92,41 @@
 .story-outro strong{font-weight:600}
 .story-outro button{display:flex;align-items:center;gap:22px;padding:16px 22px;min-height:50px;border:0;border-radius:32px;background:#244e3c;color:#fff7df;font-size:15px;cursor:pointer}
 .approach-comparison :is(a,summary):focus-visible,.intelligence-story button:focus-visible{outline:3px solid #a33b32;outline-offset:5px}
+/* Scroll progress joins the visible stages without changing reading order. */
+.story-flow{position:absolute;pointer-events:none;background:#80906855;z-index:1}
+.story-flow-horizontal{height:3px;left:0;right:-24px;top:-1px}
+.story-sequence>li:last-child .story-flow-horizontal{right:0}
+.story-flow-vertical{display:none}
+.story-flow-fill{display:block;width:100%;height:100%;background:#a64330;transform-origin:0 0}
+.story-flow-dot{position:absolute;width:9px;height:9px;border-radius:50%;background:#a64330;box-shadow:0 0 0 4px #a6433017;top:-3px;margin-left:-4px}
+.story-waypoint{border-top-color:transparent}
+.story-step-count{position:relative}
+.story-step-count:after{content:'';position:absolute;inset:-2px;border:1px solid #a64330;border-radius:50%;opacity:0;pointer-events:none}
+.dinner-scene{isolation:isolate}
+.dinner-evidence{will-change:transform}
 @media(prefers-reduced-motion:no-preference){
   .concept-hero-scene .layered-art-sheet>img{animation:art-arrival 2.6s ease-in-out both;transform-origin:50% 80%}
   .sapiens-explore-core>img{animation:core-arrival 2.4s ease-out both;transition:scale .3s}
   .sapiens-explore-core:is(:hover,:focus-visible)>img{scale:1.07}
-  .dinner-evidence{animation:story-arrival .35s ease-out both}
+  .story-step.is-revealed .dinner-scene{animation:scene-arrival .9s cubic-bezier(.2,.7,.25,1) var(--step-delay) both}
+  .story-step.is-revealed .story-step-count:after{animation:waypoint-ring 1.8s ease-out var(--step-delay) both}
+  .story-step.is-revealed .dinner-missing{animation:notice-highlight 2.4s ease-out calc(var(--step-delay) + .45s) both}
+  .story-step.is-revealed .dinner-memory svg{animation:memory-leaf 2s ease-in-out calc(var(--step-delay) + .6s) both;transform-origin:50% 100%}
+  .story-step.is-revealed .dinner-outcomes>div{animation:outcome-arrival .8s ease-out calc(var(--step-delay) + .5s) both}
+  .story-step.is-revealed .dinner-outcomes>div+div{animation-delay:calc(var(--step-delay) + .75s)}
+  .story-step.is-revealed .dinner-dialogue>div{animation:dialogue-arrival .9s ease-out calc(var(--step-delay) + .5s) both}
+  .story-step.is-revealed .dinner-dialogue>div+div{animation-delay:calc(var(--step-delay) + 1s)}
+  .story-context .dinner-illustration{transition:transform .6s cubic-bezier(.2,.7,.25,1)}
+  .story-context:hover .dinner-illustration{transform:translateY(-5px) rotate(-4deg)}
+  .story-outro button svg{transition:transform .25s}
+  .story-outro button:hover svg{transform:translate(3px,-3px)}
 }
-@keyframes story-arrival{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes scene-arrival{from{translate:0 22px;rotate:1deg}to{translate:0 0;rotate:0deg}}
+@keyframes waypoint-ring{0%{transform:scale(.8);opacity:0}25%{opacity:.6}100%{transform:scale(1.8);opacity:0}}
+@keyframes notice-highlight{0%,100%{background:transparent}35%,65%{background:#f2cc7399}}
+@keyframes memory-leaf{0%,100%{transform:rotate(0)}35%{transform:rotate(-16deg) scale(1.12)}65%{transform:rotate(8deg)}}
+@keyframes outcome-arrival{from{translate:-10px 0}to{translate:0 0}}
+@keyframes dialogue-arrival{from{translate:0 16px;scale:.97}to{translate:0 0;scale:1}}
 @keyframes art-arrival{0%{transform:rotate(5deg) scale(.96)}55%{transform:rotate(-2deg) scale(1.015)}100%{transform:rotate(0) scale(1)}}
 @keyframes core-arrival{0%{opacity:0;transform:translateY(25px) rotate(-12deg)}65%{opacity:1;transform:translateY(-7px) rotate(3deg)}100%{opacity:1;transform:translateY(0) rotate(0)}}
 @media(max-width:1150px){
@@ -107,6 +135,8 @@
   .story-context .dinner-illustration{width:155px;float:right;margin-left:20px}
   .story-sequence{grid-template-columns:repeat(2,minmax(0,1fr));gap:32px}
   .story-sequence>li{grid-template-rows:58px auto minmax(104px,auto) 1fr auto}
+  .story-sequence>li:nth-child(2) .story-flow-horizontal{right:0}
+  .story-flow-horizontal{right:-32px}
   .story-sequence>li:nth-child(2) .story-waypoint:after{content:'↓'}
   .dinner-scene{min-height:280px;padding:24px}
   .dinner-evidence{max-width:360px;margin:auto}
@@ -138,6 +168,10 @@
   .intelligence-story .story-status{margin:20px 0 28px}
   .story-sequence{grid-template-columns:1fr;gap:32px}
   .story-sequence>li{display:block;padding-left:20px;border-left:1px solid #809068}
+  .story-flow-horizontal{display:none}
+  .story-flow-vertical{display:block;left:-2px;top:17px;bottom:-32px;width:3px}
+  .story-sequence>li:last-child .story-flow-vertical{bottom:0}
+  .story-flow-vertical .story-flow-dot{left:-3px;margin-left:0;margin-top:-4px}
   .story-waypoint{border:0;padding:0;margin-left:-38px}
   .story-waypoint>span:last-child{background:#f6e4b4;padding:4px}
   .story-sequence>li:not(:last-child) .story-waypoint:after{content:'↓'}
@@ -153,5 +187,7 @@
   .direction-layered .layered-hero h1{font-size:clamp(40px,8.6vw,60px)}
 }
 @media(prefers-reduced-motion:reduce){
-  .intelligence-story *,.concept-hero-scene *{animation:none!important;transition:none!important}
+  .intelligence-story *,.intelligence-story *:after,.concept-hero-scene *{animation:none!important;transition:none!important}
+  .story-flow-dot{display:none}
+  .dinner-evidence{will-change:auto}
 }

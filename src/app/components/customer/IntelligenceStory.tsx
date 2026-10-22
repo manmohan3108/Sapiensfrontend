@@ -1,3 +1,5 @@
+import { useRef, type CSSProperties } from 'react';
+import { motion, useInView, useReducedMotion, useScroll, useTransform, type MotionValue } from 'motion/react';
 import { ArrowUpRight, Check, Leaf } from 'lucide-react';
 import '../../../styles/intelligence-story.css';
 
@@ -21,27 +23,40 @@ function DinnerIllustration() {
   </svg>;
 }
 
-function ExampleScene({ step }: { step: number }) {
+function ExampleScene({ step, progress, reduced }: { step: number; progress: MotionValue<number>; reduced: boolean }) {
+  const drift = useTransform(progress, [0, 1], [14 + step * 2, -8 - step * 2]);
   return <div className="dinner-scene" data-step={step}>
-    <div className="dinner-evidence" key={step}>
+    <motion.div className="dinner-evidence" style={{ y: reduced ? 0 : drift }} whileHover={reduced ? undefined : { rotate: 2, scale: 1.025 }} transition={{ type: 'spring', stiffness: 160, damping: 22 }}>
       {step === 0 && <div className="dinner-plan"><span className="dinner-paper-label">YOUR PLAN SO FAR</span><h4>Dinner with Maya & Alex</h4><p><Check size={18}/> Friday, 7 pm</p><p><Check size={18}/> Three people</p><p className="dinner-missing"><span aria-hidden="true">○</span> Restaurant not booked</p></div>}
       {step === 1 && <div className="dinner-memory"><span className="dinner-paper-label">SOMETHING YOU SHARED EARLIER</span><blockquote>“Maya and Alex are vegetarian.”</blockquote><div><Leaf size={22}/><p>Look for a place with<br/><strong>good vegetarian options.</strong></p></div></div>}
       {step === 2 && <div className="dinner-outcomes"><span className="dinner-paper-label">TWO POSSIBLE NEXT STEPS</span><div><strong>Check tables now</strong><span>More time to find a suitable place.</span></div><div><strong>Wait until Friday</strong><span>Suitable places might be full.</span></div><p>A possibility to check, not a fact about availability.</p></div>}
       {step === 3 && <div className="dinner-dialogue"><div><span className="dinner-paper-label">SAPIENS COULD ASK</span><blockquote>“Want me to find vegetarian-friendly places for Friday?”</blockquote></div><div><span className="dinner-paper-label">YOUR FEEDBACK AFTER DINNER</span><p>“The food was great. A quieter place next time.”</p><span className="dinner-takeaway">Next time: consider noise, too.</span></div></div>}
-    </div>
+    </motion.div>
   </div>;
+}
+
+function StoryStep({ step, index }: { step: typeof steps[number]; index: number }) {
+  const element = useRef<HTMLLIElement>(null);
+  const reduced = Boolean(useReducedMotion());
+  const entered = useInView(element, { once: true, amount: 0.18 });
+  const { scrollYProgress } = useScroll({ target: element, offset: ['start 90%', 'end 45%'] });
+  const flow = useTransform(scrollYProgress, value => Math.max(0, Math.min(1, value * 1.6 - index * 0.15)));
+  const position = useTransform(flow, value => `${value * 100}%`);
+  return <li ref={element} className={`story-step${entered ? ' is-revealed' : ''}`} style={{ '--step-delay': `${index * 0.16}s` } as CSSProperties}>
+    <span className="story-flow story-flow-horizontal" aria-hidden="true"><motion.span className="story-flow-fill" style={{ scaleX: reduced ? 1 : flow }}/><motion.span className="story-flow-dot" style={{ left: reduced ? '100%' : position }}/></span>
+    <span className="story-flow story-flow-vertical" aria-hidden="true"><motion.span className="story-flow-fill" style={{ scaleY: reduced ? 1 : flow }}/><motion.span className="story-flow-dot" style={{ top: reduced ? '100%' : position }}/></span>
+    <div className="story-waypoint"><span className="story-step-count">0{index + 1}</span><span>{step.name}</span></div>
+    <h3>{step.title}</h3><p className="story-step-description">{step.text}</p>
+    <ExampleScene step={index} progress={scrollYProgress} reduced={reduced}/>
+    <div className="story-concept"><span>{step.concept}</span><p>{step.explanation}</p></div>
+  </li>;
 }
 
 export function IntelligenceStory({ onOpenGraph }: { onOpenGraph: () => void }) {
   return <section className="intelligence-story story-open" id="layered-chapters" aria-labelledby="intelligence-title">
     <header className="story-heading"><div><span className="intelligence-eyebrow">THE IDEA, IN EVERYDAY LIFE</span><h2 id="intelligence-title">One dinner.<br/><em>Four connected steps.</em></h2><p>Here’s how Sapiens could help you plan dinner with friends.</p></div><div className="story-context"><DinnerIllustration/><div><span className="intelligence-eyebrow">YOUR FRIDAY DINNER</span><p>You’ve shared the plan and your friends’ food preferences. You haven’t booked a restaurant yet.</p></div></div></header>
     <p className="story-status">Concept example · The behavior we’re developing, using information and permissions you provide.</p>
-    <ol className="story-sequence" aria-label="Four connected steps in the dinner example">{steps.map((step, index) => <li key={step.name}>
-      <div className="story-waypoint"><span className="story-step-count">0{index + 1}</span><span>{step.name}</span></div>
-      <h3>{step.title}</h3><p className="story-step-description">{step.text}</p>
-      <ExampleScene step={index}/>
-      <div className="story-concept"><span>{step.concept}</span><p>{step.explanation}</p></div>
-    </li>)}</ol>
+    <ol className="story-sequence" aria-label="Four connected steps in the dinner example">{steps.map((step, index) => <StoryStep key={step.name} step={step} index={index}/>)}</ol>
     <footer className="story-outro"><p>See how these parts connect<br/><strong>inside the Sapiens concept.</strong></p><button onClick={onOpenGraph} aria-haspopup="dialog">Open the full picture <ArrowUpRight size={22}/></button></footer>
   </section>;
 }
