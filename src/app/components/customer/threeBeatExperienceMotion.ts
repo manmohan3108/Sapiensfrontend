@@ -144,7 +144,7 @@ export function startThreeBeatExperience(element: HTMLElement | SVGElement, root
     });
     const last = list[list.length - 1];
     frames.push({ ...last.frames[last.frames.length - 1], offset: 1, easing: 'linear' });
-    const animation = target.animate(frames, { duration: cycleDuration, iterations: Infinity, easing: 'linear' });
+    const animation = target.animate(frames, { duration: cycleDuration, iterations: 1, easing: 'linear' });
     if (typeof startTime === 'number') animation.startTime = startTime;
     animations.push(animation);
   });

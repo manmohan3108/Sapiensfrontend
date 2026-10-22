@@ -3,8 +3,6 @@ import { Link } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import { CustomerHeader } from '../components/customer/CustomerHeader';
 import { LandingIdentity } from '../components/customer/LandingIdentity';
-import { useLandingMotion } from '../components/customer/useLandingMotion';
-import { LandingCursorTrail } from '../components/customer/LandingCursorTrail';
 import { SapiensExperienceGraph } from '../components/customer/SapiensExperienceGraph';
 import '../../styles/customer.css';
 import '../../styles/landing.css';
@@ -41,7 +39,6 @@ const stages = [
 ];
 
 export function PublicLandingPage() {
-  const motionRef = useLandingMotion();
   const { user, status } = useAuth();
   const destination = user ? user.role === 'admin' ? '/admin' : '/home' : '/register?next=%2Fhome%3Fcreate%3D1';
   const action = user ? 'Open your Sapiens' : 'Create your Sapiens';
@@ -51,8 +48,7 @@ export function PublicLandingPage() {
     ? ['Open your Sapiens home', 'Choose or create a Sapiens', 'Bring a question or idea']
     : ['Create an account', 'Create your Sapiens', 'Begin interacting'];
 
-  return <div ref={motionRef} className="customer-surface public-story">
-    <LandingCursorTrail />
+  return <div className="customer-surface public-story">
     <a className="customer-skip" href="#main">Skip to content</a>
     <CustomerHeader publicPage />
     <main id="main">
@@ -89,13 +85,13 @@ export function PublicLandingPage() {
       </section>
 
       <div className="customer-container landing-available">
-        <details className="landing-more landing-capabilities">
-          <summary>What can I try today?</summary>
+        <section className="landing-capabilities" aria-labelledby="capabilities-title">
+          <h2 id="capabilities-title">What can I try today?</h2>
           <div className="landing-available-grid">
           <article><span className="customer-eyebrow">AVAILABLE TODAY</span><h3>Conversations with your Sapiens</h3><p>Create an individual, bring it questions, ideas and background, and continue interacting. You can revisit saved conversations; selected past context may inform later replies.</p></article>
           <article><span className="customer-eyebrow">DEPENDS ON CONNECTIONS</span><h3>Activities beyond conversation</h3><p>The Connections area shows the providers available for your Sapiens. Any connected communication or tool action needs support for that activity, the required setup and permitted access—not every service or action is available.</p></article>
           </div>
-        </details>
+        </section>
       </div>
 
       <section className="customer-container landing-setup" aria-labelledby="setup-title" aria-busy={status === 'loading'}>

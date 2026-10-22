@@ -77,7 +77,6 @@ export function useExperienceMotion(enabled: boolean, animationStyle: 'classic' 
     if (!enabled || !root || !('IntersectionObserver' in window) || !Element.prototype.animate) return;
 
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
     const scenes: Scene[] = Array.from(root.querySelectorAll<HTMLElement | SVGElement>('[data-experience-scene]'))
       .map(element => ({ element, visible: false, played: false, animations: [], clock: null, cycleDuration: 0, sequenceEnd: 0 }));
     const clear = (scene: Scene) => {
@@ -149,7 +148,7 @@ export function useExperienceMotion(enabled: boolean, animationStyle: 'classic' 
           { transform: `translateY(${-lift}px) rotate(${-tilt}deg) scale(1.035)`, offset: .35 },
           { transform: `translateY(${-lift * .4}px) rotate(${tilt}deg) scale(1.015)`, offset: .7 },
           { transform: 'translateY(0) rotate(0deg) scale(1)', offset: 1 },
-        ], { duration: 6400, iterations: Infinity, easing: 'ease-in-out' }));
+        ], { duration: 6400, iterations: 1, easing: 'ease-in-out' }));
         const glowFrames: Keyframe[] = [];
         const pulseDuration = 700;
         const glowEnd = Math.max(end, ...Array.from(corePulses, time => time + pulseDuration));
@@ -174,7 +173,7 @@ export function useExperienceMotion(enabled: boolean, animationStyle: 'classic' 
       const cycleStart = document.timeline.currentTime;
       sequence.forEach(({ target, frames, duration, delay, easing }) => {
         const animation = target.animate(cycleFrames(frames, delay, duration, scene.cycleDuration, easing), {
-          duration: scene.cycleDuration, iterations: Infinity, easing: 'linear',
+          duration: scene.cycleDuration, iterations: 1, easing: 'linear',
         });
         if (typeof cycleStart === 'number') animation.startTime = cycleStart;
         scene.animations.push(animation);
@@ -186,8 +185,7 @@ export function useExperienceMotion(enabled: boolean, animationStyle: 'classic' 
         clear(scene);
         scene.played = false;
       } else if (scene.visible && !document.hidden) {
-        if (!scene.played) start(scene);
-        else scene.animations.forEach(animation => { if (animation.playState === 'paused') animation.play(); });
+        if (scene.played) scene.animations.forEach(animation => { if (animation.playState === 'paused') animation.play(); });
       } else {
         scene.animations.forEach(animation => { if (animation.playState === 'running') animation.pause(); });
       }
@@ -201,39 +199,22 @@ export function useExperienceMotion(enabled: boolean, animationStyle: 'classic' 
     }, { threshold: [0, .2] });
     const replay = () => {
       if (reduced.matches || document.hidden) return;
-      scenes.filter(scene => scene.visible).forEach(scene => {
-        // Hover/focus/tap must not keep restarting a sequence already in motion.
+      scenes.filter(scene => scene.element.getBoundingClientRect().width > 0).forEach(scene => {
+        // Repeated playback requests must not restart an active sequence.
         const time = scene.clock?.currentTime;
-        const busy = typeof time === 'number' && time % scene.cycleDuration < scene.sequenceEnd;
+        const busy = scene.clock?.playState === 'running' && typeof time === 'number' && time < scene.sequenceEnd;
         if (!busy) start(scene);
       });
-    };
-    const onPointerEnter = () => { if (finePointer.matches) replay(); };
-    const onClick = (event: MouseEvent) => {
-      const target = event.target;
-      if (!(target instanceof Element) || target.closest('a, button, input, select, textarea, summary')) return;
-      if (window.getSelection()?.isCollapsed === false) return;
-      replay();
-    };
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.target !== root || event.repeat || !['Enter', ' '].includes(event.key)) return;
-      event.preventDefault();
-      replay();
+      sync();
     };
     scenes.forEach(scene => observer.observe(scene.element));
-    root.addEventListener('pointerenter', onPointerEnter);
-    root.addEventListener('focus', replay);
-    root.addEventListener('click', onClick);
-    root.addEventListener('keydown', onKeyDown);
+    root.addEventListener('experience-replay', replay);
     reduced.addEventListener('change', sync);
     document.addEventListener('visibilitychange', sync);
     return () => {
       observer.disconnect();
       scenes.forEach(clear);
-      root.removeEventListener('pointerenter', onPointerEnter);
-      root.removeEventListener('focus', replay);
-      root.removeEventListener('click', onClick);
-      root.removeEventListener('keydown', onKeyDown);
+      root.removeEventListener('experience-replay', replay);
       reduced.removeEventListener('change', sync);
       document.removeEventListener('visibilitychange', sync);
     };

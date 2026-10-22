@@ -10,6 +10,7 @@ import { AuthPage } from './pages/AuthPage';
 import { AccessDeniedPage, GuestRoute, ProtectedRoute } from './components/auth/RouteGuards';
 import { useAuth } from './contexts/AuthContext';
 import { PublicLandingPage } from './pages/PublicLandingPage';
+import { LandingDirectionsPage } from './pages/LandingDirectionsPage';
 import { CustomerHomePage } from './pages/CustomerHomePage';
 
 function RoleHome() {
@@ -18,7 +19,8 @@ function RoleHome() {
 }
 
 export const router = createBrowserRouter([
-  { path: '/', Component: PublicLandingPage, ErrorBoundary },
+  { path: '/', Component: import.meta.env.DEV ? () => <Navigate to="/design-directions?view=editorial" replace /> : PublicLandingPage, ErrorBoundary },
+  ...(import.meta.env.DEV ? [{ path: '/design-directions', Component: LandingDirectionsPage, ErrorBoundary }] : []),
   { Component: () => <ProtectedRoute selection={false} />, children: [{ path: '/home', Component: RoleHome, ErrorBoundary }] },
   {
     Component: GuestRoute,

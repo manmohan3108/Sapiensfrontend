@@ -61,18 +61,19 @@ function Node({ x, y, image, label, second, part, radius = 62 }: { x: number; y:
   </g>;
 }
 
-export function SapiensExperienceGraph() {
+export function SapiensExperienceGraph({ identityImage = identity }: { identityImage?: string }) {
   const motionRef = useExperienceMotion(EXPERIENCE_ANIMATION_ENABLED);
   const threeBeat = EXPERIENCE_ANIMATION_ENABLED && EXPERIENCE_ANIMATION_STYLE === 'three-beat';
   const id = useId().replace(/:/g, '');
   const outward = `url(#${id}-outward)`;
   const returning = `url(#${id}-returning)`;
-  return <div ref={motionRef} className="experience-graph" data-experience-enabled={EXPERIENCE_ANIMATION_ENABLED} data-experience-style={EXPERIENCE_ANIMATION_STYLE} tabIndex={EXPERIENCE_ANIMATION_ENABLED ? 0 : undefined} role="group" aria-label="Sapiens concept diagram" aria-keyshortcuts={EXPERIENCE_ANIMATION_ENABLED ? 'Enter Space' : undefined}>
+  return <div ref={motionRef} className="experience-graph" data-experience-enabled={EXPERIENCE_ANIMATION_ENABLED} data-experience-style={EXPERIENCE_ANIMATION_STYLE} role="group" aria-label="Sapiens concept diagram">
     <div className="landing-section-heading experience-heading">
       <span className="customer-eyebrow">The idea behind Sapiens</span>
       <h2 id="how-title">An individual that notices, acts and learns.</h2>
       <p>The Sapiens concept connects experience, goals and curiosity with action and reflection.</p>
     </div>
+    {EXPERIENCE_ANIMATION_ENABLED && <button type="button" className="experience-play" onClick={() => motionRef.current?.dispatchEvent(new Event('experience-replay'))}>Play / replay the diagram <span aria-hidden="true">↗</span></button>}
     <svg className="experience-desktop" data-experience-scene="desktop" viewBox="0 0 1000 880" role="img" aria-labelledby={`${id}-title ${id}-description`}>
       <title id={`${id}-title`}>Initiative, interaction and reflection around one Sapiens</title>
       <desc id={`${id}-description`}>The rounded boundary is Sapiens, one AI individual. Attention and curiosity notice what matters, ask questions and seek answers. Understanding connects information to make sense of a situation. Memory and experience carry relevant context and outcomes forward. Goals and reflection guide what to pursue and reconsider the approach. Sleep and consolidation is a quiet phase that connects experiences and strengthens what matters. Outside are people, information, tools, and outcomes and feedback. Sapiens takes initiative: noticing a reason to act, asking questions and seeking what is needed. It reaches out, seeks information and takes permitted actions; feedback returns to the individual, while experience informs its next interaction. This graph explains the Sapiens concept.</desc>
@@ -93,10 +94,10 @@ export function SapiensExperienceGraph() {
           Top connections begin below the copy; bottom ones meet the images.
           Their joins are hidden behind the artwork, with no exposed stem. */}
       <g className="experience-internal-links" fill="none">
-        {internalConnections.map(connection => <path key={connection.part} d={connection.d} />)}
+        {internalConnections.map(connection => <path key={connection.part} data-aspect={connection.part} d={connection.d} />)}
       </g>
       {internalConnections.map(connection => <MotionConnection key={connection.part} {...connection} />)}
-      <image href={identity} x="425" y="357" width="150" height="150" data-experience-motion="icon" data-experience-part="core" />
+      <image href={identityImage} x="425" y="357" width="150" height="150" data-experience-motion="icon" data-experience-part="core" />
 
       <g className="experience-outward-paths" fill="none">
         {outwardConnections.map(connection => <path key={connection.part} d={connection.d} markerEnd={outward} />)}
@@ -123,7 +124,7 @@ export function SapiensExperienceGraph() {
       <Node x={100} y={520} image={information} label="Information" part="information" />
       <Node x={900} y={330} image={tool} label="Tools" part="tools" />
       <Node x={900} y={660} image={outcome} label="Outcomes" second="& feedback" part="outcome" radius={66} />
-      {aspects.map(aspect => <g className="experience-desktop-aspect" key={aspect.title}>
+      {aspects.map(aspect => <g className="experience-desktop-aspect" data-aspect={aspect.position} key={aspect.title}>
         <circle cx={aspect.x} cy={aspect.y} r="36" />
         <image href={aspect.image} x={aspect.x - 26} y={aspect.y - 26} width="52" height="52" data-experience-motion="icon" data-experience-part={aspect.position} />
         <text className="experience-aspect-title" x={aspect.x} y={aspect.y + 60} textAnchor="middle">{aspect.title}</text>
@@ -153,7 +154,7 @@ export function SapiensExperienceGraph() {
               <MotionConnection part="memory" d="M25 100C25 70 50 80 50 50" />
               <MotionConnection part="goals" d="M75 100C75 70 50 80 50 50" />
             </svg>
-            <img src={identity} width="112" height="112" alt="" loading="lazy" data-experience-motion="icon" data-experience-part="core" />
+            <img src={identityImage} width="112" height="112" alt="" loading="lazy" data-experience-motion="icon" data-experience-part="core" />
           </div>
           {aspects.map(aspect => <div className={`experience-mobile-aspect experience-aspect-${aspect.position}`} key={aspect.title}>
             <span className="experience-mobile-icon"><img src={aspect.image} width="48" height="48" alt="" loading="lazy" data-experience-motion="icon" data-experience-part={aspect.position} /></span>
