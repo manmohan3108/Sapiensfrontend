@@ -135,21 +135,6 @@ function EventTimeline({ events = [] }: { events?: AwarenessBeatEvent[] }) {
   })}</ol>;
 }
 
-function BeatSummary({ beat }: { beat: AwarenessBeat }) {
-  const events = [...(beat.events ?? [])].sort((a, b) => (a.sequence ?? Number.MAX_SAFE_INTEGER) - (b.sequence ?? Number.MAX_SAFE_INTEGER));
-  const normalized = events.map(displayEvent);
-  const firstSummary = normalized[0]?.summary;
-  const consequences = events.map(event => event.consequence).filter((value): value is string => Boolean(value));
-  const unfinished = normalized.filter(event => /pending|failed|error|blocked|held|deferred|unfinished|uncertain|in.progress/i.test(event.status));
-  const fallbackWhatHappened = firstSummary || 'Not available for this historical beat.';
-  const fallbackChanged = consequences.length ? consequences.join(' · ') : 'Not available for this historical beat.';
-  const fallbackUnfinished = unfinished.length ? unfinished.map(event => event.title || event.summary || event.status).filter(Boolean).join(' · ') : 'Not available for this historical beat.';
-  const happened = beat.conclusion?.summary || fallbackWhatHappened;
-  const changed = beat.conclusion ? (beat.conclusion.changed ? fallbackChanged : 'The beat reported no state change.') : fallbackChanged;
-  const remains = beat.conclusion?.unfinished || fallbackUnfinished;
-  return <section className={`${panel} p-4`}><div className="mb-3 flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-300/65"/><h4 className="text-[11px] font-medium text-white/65">Cycle summary</h4>{beat.conclusion && <span className="rounded-full bg-emerald-400/[.07] px-2 py-0.5 text-[8px] text-emerald-100/45">Backend-derived</span>}</div><dl className="grid gap-3 lg:grid-cols-3"><div className="rounded-lg border border-cyan-400/10 bg-cyan-400/[.035] p-3"><dt className="text-[9px] font-medium text-cyan-100/55">What happened?</dt><dd className="mt-1 text-[10px] leading-5 text-white/58">{happened}</dd></div><div className="rounded-lg border border-emerald-400/10 bg-emerald-400/[.035] p-3"><dt className="text-[9px] font-medium text-emerald-100/55">What changed?</dt><dd className="mt-1 text-[10px] leading-5 text-white/58">{changed}</dd></div><div className="rounded-lg border border-amber-400/10 bg-amber-400/[.035] p-3"><dt className="text-[9px] font-medium text-amber-100/55">What remains unfinished?</dt><dd className="mt-1 text-[10px] leading-5 text-white/58">{remains}</dd></div></dl>{beat.events_truncated && <p className="mt-3 text-[8px] text-amber-200/55">The event list was truncated by the backend; this conclusion may cover events not shown below.</p>}</section>;
-}
-
 function AssessmentSummary({ beat }: { beat: AwarenessBeat }) {
   const assessment = beat.assessment;
   if (!assessment) return null;
@@ -171,7 +156,7 @@ function BeatDetails({ beat, latest = false }: { beat: AwarenessBeat; latest?: b
   const focusFormation = beat.focus_formation ?? beat.events?.find(event => /focus.*form|form.*focus/i.test(event.stage ?? ''))?.detail;
   return <div className="space-y-3">
     <section className={`${panel} p-4`}><div className="flex flex-wrap items-start gap-3"><span className={`grid h-10 w-10 place-items-center rounded-xl border ${beat.mode === 'autonomous' ? 'border-violet-400/20 bg-violet-400/[.08] text-violet-200' : 'border-cyan-400/20 bg-cyan-400/[.08] text-cyan-200'}`}>{beat.mode === 'autonomous' ? <Bot className="h-4 w-4" /> : <CircleDot className="h-4 w-4" />}</span><div><div className="flex flex-wrap items-center gap-2"><h3 className="text-sm font-medium text-white/75">{latest ? 'Latest processing cycle' : 'Processing cycle'}</h3><span className="rounded-full bg-white/[.05] px-2 py-0.5 text-[8px] capitalize text-white/45">{beat.mode || 'mode unavailable'}</span></div><p className="mt-1 text-[10px] text-white/30">Triggered by {beat.trigger_source || 'unknown source'} · {absoluteTime(beat.started_at)} · Stored time interval: {duration(beat)}</p>{beat.occurrence_id && <p className="mt-1 text-[8px] text-white/22">Occurrence <span className="font-mono text-white/35">{beat.occurrence_id}</span> · continuing beats may share this ID</p>}</div><span className="ml-auto font-mono text-[8px] text-white/20">{beat._id}</span></div></section>
-    <BeatSummary beat={beat}/>
+
     <details className={`${panel} p-4`} onToggle={event => setGraphOpen(event.currentTarget.open)}><summary className="cursor-pointer text-sm text-white/65">Explore the technical flow graph</summary>{graphOpen && <div className="mt-4"><AwarenessFlowGraph beat={beat}/></div>}</details>
     <details className={`${panel} p-4`}><summary className="cursor-pointer text-sm text-white/65">Decisions and observed results ({beat.events?.length ?? 0})</summary><div className="mt-4"><EventTimeline events={beat.events}/></div></details>
     <details className={`${panel} p-4`}><summary className="cursor-pointer text-sm text-white/65">Why this information received attention</summary><div className="mt-4"><CandidateFlow beat={beat}/></div></details>
@@ -179,6 +164,48 @@ function BeatDetails({ beat, latest = false }: { beat: AwarenessBeat; latest?: b
   </div>;
 }
 
+function RunFlow({ beat }: { beat: AwarenessBeat }) {
+  const flow = beat.run_flow;
+  const record = (value: unknown): Record<string, unknown> => value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
+  const focus = record(beat.focus_formation);
+  const winner = record(beat.winner);
+  const focusText = text(focus.content) || text(winner.content) || text(beat.winner);
+  const context = record(beat.curation).selected_context;
+  const contextItems = Array.isArray(context) ? context.map(record) : [];
+  const decisions: Record<string, string> = { act: 'Use a tool', execute_plan: 'Carry out a plan', speak: 'Prepare a reply', hold: 'Pause and wait', think: 'Think further' };
+  return <div className="space-y-4">
+    <p className="text-sm leading-6 text-white/60">Follow the recorded path below. Each round starts with a decision and includes the observations or reconsideration that followed. Missing steps are not reconstructed.</p>
+    <section className="rounded-xl border border-cyan-300/20 bg-cyan-300/[.04] p-4">
+      <h4 className="text-sm font-medium text-cyan-100">Starting point · saved snapshots</h4>
+      <p className="mt-2 text-sm text-white/65">{beat.mode === 'reactive' ? 'Responding to an incoming event' : beat.mode === 'autonomous' ? 'Self-directed attention' : 'Trigger mode not recorded'} · Source: {beat.trigger_source || 'Unknown'}</p>
+      <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-white/80"><span className="font-medium">Focus: </span>{focusText || 'The selected focus text was not retained.'}</p>
+      <details className="mt-3"><summary className="cursor-pointer text-sm text-white/65">Context considered ({contextItems.length} retained items)</summary>
+        <p className="mt-2 text-xs text-white/50">This is the saved context snapshot, not a complete record of what was known in every round.</p>
+        {contextItems.length ? <ul className="mt-2 space-y-2">{contextItems.map((item, index) => <li key={index} className="rounded-lg border border-white/10 p-3 text-sm leading-6 text-white/75">{text(item.content) || text(item.summary) || 'Content not retained'}<span className="mt-1 block text-xs text-white/50">Source: {text(item.source) || 'Unknown'}</span></li>)}</ul> : <p className="mt-2 text-sm text-white/55">No context items were retained in this snapshot.</p>}
+      </details>
+    </section>
+    {!flow ? <p className="text-sm text-amber-100/80">This API version does not provide a run flow. The original trace remains available in Advanced diagnostics.</p> : <>
+      <p className="text-xs text-white/55">{flow.round_count} recorded decision rounds · {flow.steps.length} recorded steps · Stored event order (not proof of causality)</p>
+      {flow.truncated && <p role="status" className="rounded-lg border border-amber-300/20 p-3 text-sm text-amber-100">Part of this trace was omitted in storage. Round numbers describe only the retained decisions.</p>}
+      {!flow.steps.length && <p className="text-sm text-white/60">No individual steps were retained for this run.</p>}
+      <ol className="space-y-0">{flow.steps.map((step, index) => {
+        const event = beat.events?.[step.event_index];
+        const startsRound = step.round !== null && (index === 0 || flow.steps[index - 1].round !== step.round);
+        return <li key={step.event_index} className="relative border-l-2 border-cyan-300/20 pb-5 pl-5 last:pb-0">
+          {startsRound && <h4 className="mb-3 text-sm font-semibold text-cyan-200">Round {step.round}</h4>}
+          <span className="absolute -left-[5px] top-1 h-2 w-2 rounded-full bg-cyan-200"/>
+          <article className="rounded-xl border border-white/10 p-4">
+            <h5 className="text-sm font-medium text-white/90"><span className="mr-2 text-white/45">{index + 1}.</span>{step.title}{step.decision ? ` · ${decisions[step.decision] || step.decision.replaceAll('_', ' ')}` : ''}</h5>
+            <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-white/75">{step.summary}</p>
+            {event?.status && <p className="mt-2 text-xs text-white/55">Recorded status: {event.status.replaceAll('_', ' ')}</p>}
+            {event && <details className="mt-3"><summary className="cursor-pointer text-xs text-white/60">Inspect this step’s evidence</summary><div className="mt-3"><EventTimeline events={[event]}/></div></details>}
+          </article>
+        </li>;
+      })}</ol>
+    </>}
+    {beat.assessment?.remaining && <p className="rounded-xl border border-amber-300/20 p-4 text-sm leading-6 text-amber-100/85"><strong>Still unresolved: </strong>{beat.assessment.remaining}</p>}
+  </div>;
+}
 function RelatedCycle({ sapienId, thoughtId }: { sapienId: string; thoughtId: string }) {
   const [data, setData] = useState<AwarenessBeatsResponse | null>(null);
   const [error, setError] = useState('');
@@ -199,16 +226,16 @@ function RelatedCycle({ sapienId, thoughtId }: { sapienId: string; thoughtId: st
   const final = beat?.final;
   const processing = final && typeof final === 'object' ? text(final.status) : null;
   return <section className={`${panel} p-4`} aria-label="Related processing cycle">
-    <h3 className="text-sm font-medium text-white/85">What happened next</h3>
+    <h3 className="text-base font-medium text-white/85">Inside this Awareness run</h3>
     {error ? <p role="alert" className="mt-3 text-sm text-red-200">{error} <button className="underline" onClick={() => setAttempt(value => value + 1)}>Retry</button></p>
       : !data ? <p role="status" className="mt-3 text-sm text-white/60">Loading the matching processing cycle…</p>
       : !beat ? <p className="mt-3 text-sm text-white/60">{data.match_status === 'ambiguous' ? 'Multiple cycles reference this record; none has been selected automatically.' : 'No exact connection is available. The trace may be missing, shortened, or from an older version.'}</p>
       : <div className="mt-3 space-y-4">
         <p className="text-sm text-white/75">Processing: {processing?.replaceAll('_', ' ') || 'Status not recorded'} · Task: {beat.assessment?.state ? assessmentLabels[beat.assessment.state] || beat.assessment.state : 'Assessment unavailable'}</p>
         <p className="text-xs text-white/50">Matched by the saved record ID. Processing completion does not establish task completion or message delivery.</p>
-        <BeatSummary beat={beat}/>
-        <details className={`${panel} p-3`}><summary className="cursor-pointer text-sm text-white/75">Decisions and observed results</summary><div className="mt-4"><EventTimeline events={beat.events}/></div></details>
-        <details className={`${panel} p-3`}><summary className="cursor-pointer text-sm text-white/75">Technical cycle details</summary><div className="mt-4"><BeatDetails beat={beat}/></div></details>
+    
+        <RunFlow beat={beat}/>
+        <details className={`${panel} p-3`}><summary className="cursor-pointer text-sm text-white/75">Advanced diagnostics</summary><div className="mt-4"><BeatDetails beat={beat}/></div></details>
       </div>}
   </section>;
 }

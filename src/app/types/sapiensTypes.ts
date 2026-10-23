@@ -263,6 +263,12 @@ export interface AwarenessBeatAttention {
 }
 
 export interface AwarenessBeat {
+  run_flow?: {
+    steps: Array<{ title: string; summary: string; round: number | null; event_index: number; decision?: string | null }>;
+    round_count: number;
+    truncated: boolean;
+    ordering: 'stored_event_order';
+  };
   _id: string;
   sapien_id: number;
   occurrence_id?: string;
