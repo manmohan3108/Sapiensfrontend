@@ -19,7 +19,7 @@ function RoleHome() {
 }
 
 export const router = createBrowserRouter([
-  { path: '/', Component: import.meta.env.DEV ? () => <Navigate to="/design-directions?view=editorial" replace /> : PublicLandingPage, ErrorBoundary },
+  { path: '/', Component: PublicLandingPage, ErrorBoundary },
   { path: '/design-directions', Component: LandingDirectionsPage, ErrorBoundary },
   { Component: () => <ProtectedRoute selection={false} />, children: [{ path: '/home', Component: RoleHome, ErrorBoundary }] },
   {
