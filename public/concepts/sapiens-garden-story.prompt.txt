@@ -1,0 +1,15 @@
+Asset: sapiens-garden-story.png
+Generator: built-in image_gen (not CLI)
+Use: six illustrated scenes in the layered design preview, displayed using CSS image regions.
+
+Final generation prompt:
+Use case: illustration-story. Create ONE square illustration contact sheet for a production website, six rectangular scenes arranged in EXACTLY TWO EQUAL COLUMNS and THREE EQUAL ROWS, edge to edge, no gaps, no borders, each individual panel aspect ratio 3:2. The site will display each panel separately. Every scene must fit entirely inside its own cell, with clear visual subject and consistent characters and setting. NO TEXT, NO LETTERS, NO NUMERALS, NO speech bubbles, NO logos, NO title anywhere.
+Style: sophisticated editorial gouache and hand-inked cut-paper illustration, softly textured warm paper, cream, olive and forest green, sun yellow, terracotta, coral; avoid blue and purple. Lush natural human warmth, not corporate clip art. One community garden with wooden raised beds and plants, same young Indian woman gardener Maya with dark hair in a loose bun, cream shirt and olive overalls. No robots or magical AI entities, no floating icons. Strong large shapes and readable scene composition suitable for website width400px.
+Cell positions:
+TOP LEFT: hot sunny community garden, visibly drooping plants in wooden bed in foreground, bright sun and heat atmosphere, Maya's hand holding phone photographing the drooping leaves. Shows gathering evidence.
+TOP RIGHT: same Maya holding phone looking thoughtfully at message (screen without any text), resting beside garden. A watering can sits unused on ground beside her. Waiting and communication. Close-medium composition.
+MIDDLE LEFT: close-up of Maya's hand checking dark moist garden soil underneath drooping plant, a few moist crumbs visible in hand; same garden context, leaf and partial sleeve. Evidence that changes initial assumption, not dry cracked dirt.
+MIDDLE RIGHT: Maya and a second adult gardener in terracotta shirt, together erecting a simple olive shade cloth over the same raised garden bed. Clear humans performing physical action, cloth raised overhead taut.
+BOTTOM LEFT: next morning, plants look perkier under shade cloth, Maya takes photo of recovered leaves. Observing results. Same location.
+BOTTOM RIGHT: later sunny day, same garden still healthy and lush BEFORE distress; Maya and other gardener checking soil and preparing rolled shade cloth beside the bed, anticipation. They are not yet installing cloth. Optimistic calm.
+All six illustrations have comparable lighting, texture, framing and visual richness. Crisp sufficiently detailed editorial artwork with ample subject separation. Critical: exact regular 2 by 3 panel grid, no text and no panel edges or decorations spilling into neighboring cells.
