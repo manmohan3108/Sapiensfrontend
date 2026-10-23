@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Activity, AlertCircle, Bot, BrainCircuit, CheckCircle2, ChevronRight, CircleDot,
-  Clock3, Loader2, RefreshCw, Search, ShieldAlert,
-  Sparkles, Trophy, XCircle,
+  Loader2, RefreshCw, Search,
+  Trophy, XCircle,
 } from 'lucide-react';
 import { sapiensService } from '../../core/services/sapiensService';
 import type { AwarenessBeat, AwarenessBeatEvent, AwarenessBeatsResponse, AwarenessHistoryItem, AwarenessResponse } from '../../types/sapiensTypes';
@@ -12,21 +12,49 @@ import { AwarenessFlowGraph } from './AwarenessFlowGraph';
 const panel = 'rounded-xl border border-white/[.07] bg-white/[.025]';
 const sensitiveKey = /(credential|secret|token|password|argument|\bargs?\b|payload|result|prompt|raw_response)/i;
 
-function relative(value?: string) {
-  if (!value) return '—';
-  const time = new Date(value).getTime();
-  if (!Number.isFinite(time)) return '—';
-  const seconds = Math.max(0, Math.floor((Date.now() - time) / 1000));
-  if (seconds < 60) return `${seconds}s ago`;
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
-  return `${Math.floor(seconds / 86400)}d ago`;
-}
-
 function absoluteTime(value?: string) {
   if (!value) return 'Time unavailable';
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? 'Time unavailable' : date.toLocaleString();
+  return Number.isNaN(date.getTime()) ? 'Time unavailable' : date.toLocaleString(undefined, { timeZoneName: 'short' });
+}
+
+const assessmentLabels: Record<string, string> = {
+  completed: 'Assessed as complete', waiting: 'Waiting',
+  ongoing: 'Still in progress', blocked: 'Blocked', unresolved: 'Unresolved',
+};
+
+function UnderstandingStory({ item }: { item: AwarenessHistoryItem }) {
+  return <div className="space-y-4">
+    <ol className="grid gap-4 xl:grid-cols-3">
+      <li className={`${panel} p-4`}>
+        <h3 className="text-sm font-medium text-cyan-200">1. What arrived</h3>
+        <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-6 text-white/80">{item.subject?.content || 'The original event was not retained with this record.'}</p>
+        {item.subject && <p className="mt-3 text-xs text-white/50">Source: {item.subject.source || 'Unknown'} · Event time: {absoluteTime(item.subject.event_at)}</p>}
+      </li>
+      <li className={`${panel} p-4`}>
+        <h3 className="text-sm font-medium text-violet-200">2. What was understood</h3>
+        <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-6 text-white/80">{item.understanding || item.focus || 'No understanding was retained.'}</p>
+        <p className="mt-3 flex items-center gap-2 text-xs text-white/50"><BrainCircuit className="h-4 w-4 shrink-0"/>Saved interpretation, not independent verification.</p>
+      </li>
+      <li className={`${panel} p-4`}>
+        <h3 className="text-sm font-medium text-emerald-200">3. Where it stands</h3>
+        <p className="mt-3 text-sm font-medium text-white/85">{item.state ? assessmentLabels[item.state] || item.state.replaceAll('_', ' ') : 'No assessment recorded'}</p>
+        {item.reason && <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-white/75">{item.reason}</p>}
+        <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-6 text-amber-100/80"><span className="font-medium">Still needed: </span>{item.remaining || 'No remaining-work description recorded.'}</p>
+        <p className="mt-3 text-xs leading-5 text-white/50">This assessment does not by itself confirm an action or message delivery.</p>
+      </li>
+    </ol>
+    <details className={`${panel} p-4`}>
+      <summary className="cursor-pointer text-sm text-white/65">Record details</summary>
+      <dl className="mt-3 grid gap-3 text-xs text-white/65 sm:grid-cols-2">
+        <div><dt>Record ID</dt><dd className="mt-1 break-all font-mono">{item.id}</dd></div>
+        <div><dt>Assessment source</dt><dd className="mt-1">{item.source || 'Unknown'}</dd></div>
+        <div><dt>Assessment time</dt><dd className="mt-1">{absoluteTime(item.assessed_at)}</dd></div>
+        <div><dt>Created time</dt><dd className="mt-1">{absoluteTime(item.created_at)}</dd></div>
+        {typeof item.confidence === 'number' && <div><dt>Reported confidence (not a measured accuracy)</dt><dd className="mt-1">{Math.round(item.confidence * 100)}%</dd></div>}
+      </dl>
+    </details>
+  </div>;
 }
 
 function duration(beat: AwarenessBeat) {
@@ -103,7 +131,7 @@ function EventTimeline({ events = [] }: { events?: AwarenessBeatEvent[] }) {
     const stage = event.stage || 'compatibility event'; const detail = event.detail ?? {}; const display = displayEvent(event, index); const status = display.status.toLowerCase();
     const failed = Boolean(status?.includes('fail') || status?.includes('error')); const succeeded = Boolean(status?.includes('success') || status === 'completed'); const fields = detailFields(detail);
     const technical = event.technical_details ? publicTechnicalDetails(event.technical_details) : null;
-    return <li key={`${event.sequence ?? index}-${display.title}`} className="flex gap-3"><div className="flex w-7 flex-col items-center"><span className={`grid h-7 w-7 flex-shrink-0 place-items-center rounded-lg border ${failed ? 'border-red-400/20 bg-red-400/[.07] text-red-200' : succeeded ? 'border-emerald-400/20 bg-emerald-400/[.07] text-emerald-200' : 'border-cyan-400/15 bg-cyan-400/[.06] text-cyan-200/65'}`}><EventIcon status={status} /></span>{index < ordered.length - 1 && <span className="min-h-5 w-px flex-1 bg-white/[.08]" />}</div><article className="min-w-0 flex-1 pb-4"><div className="flex flex-wrap items-center gap-2"><span className="text-[8px] text-white/22">Step {display.step}</span><span className="text-[10px] font-medium text-white/70">{display.title}</span>{event.actor && <span className="rounded-full bg-indigo-400/[.07] px-2 py-0.5 text-[8px] text-indigo-100/50">{event.actor}</span>}<span className={`rounded-full px-2 py-0.5 text-[8px] ${failed ? 'bg-red-400/10 text-red-200' : succeeded ? 'bg-emerald-400/10 text-emerald-200' : 'bg-amber-400/10 text-amber-200'}`}>{status}</span><span className="ml-auto text-right text-[8px] text-white/22" title={absoluteTime(display.when)}>{absoluteTime(display.when)} · {relative(display.when)}</span></div><p className="mt-1 text-[10px] leading-5 text-white/55">{display.summary}</p>{display.consequence && <p className="mt-1 text-[9px] leading-4 text-emerald-100/45"><span className="text-white/25">Consequence: </span>{display.consequence}</p>}{(event.correlation_id || event.reference_id) && <p className="mt-1 font-mono text-[8px] text-white/20">{event.correlation_id && `correlation ${event.correlation_id}`}{event.correlation_id && event.reference_id && ' · '}{event.reference_id && `reference ${event.reference_id}`}</p>} {(fields.length > 0 || technical || event.stage || event.sequence !== undefined) && <details className="mt-2 rounded-lg border border-white/[.05] bg-black/10"><summary className="cursor-pointer px-2 py-1.5 text-[8px] text-white/30">Technical and compatibility details</summary><div className="border-t border-white/[.05] p-2">{fields.length > 0 && <dl className="grid gap-x-4 gap-y-2 sm:grid-cols-2">{fields.map(field => <div key={field.key}><dt className="text-[8px] uppercase tracking-wide text-white/20">{field.key.replaceAll('_', ' ')}</dt><dd className="mt-0.5 break-words text-[9px] leading-4 text-white/48">{field.value}</dd></div>)}</dl>}{technical && <pre className="mt-2 max-h-52 overflow-auto whitespace-pre-wrap break-words text-[8px] leading-4 text-white/35">{JSON.stringify(technical, null, 2)}</pre>}<p className="mt-2 text-[8px] text-white/18">Sequence: {event.sequence ?? 'unavailable'} · Compatibility stage: {stage}</p></div></details>}</article></li>;
+    return <li key={`${event.sequence ?? index}-${display.title}`} className="flex gap-3"><div className="flex w-7 flex-col items-center"><span className={`grid h-7 w-7 flex-shrink-0 place-items-center rounded-lg border ${failed ? 'border-red-400/20 bg-red-400/[.07] text-red-200' : succeeded ? 'border-emerald-400/20 bg-emerald-400/[.07] text-emerald-200' : 'border-cyan-400/15 bg-cyan-400/[.06] text-cyan-200/65'}`}><EventIcon status={status} /></span>{index < ordered.length - 1 && <span className="min-h-5 w-px flex-1 bg-white/[.08]" />}</div><article className="min-w-0 flex-1 pb-4"><div className="flex flex-wrap items-center gap-2"><span className="text-[8px] text-white/22">Step {display.step}</span><span className="text-[10px] font-medium text-white/70">{display.title}</span>{event.actor && <span className="rounded-full bg-indigo-400/[.07] px-2 py-0.5 text-[8px] text-indigo-100/50">{event.actor}</span>}<span className={`rounded-full px-2 py-0.5 text-[8px] ${failed ? 'bg-red-400/10 text-red-200' : succeeded ? 'bg-emerald-400/10 text-emerald-200' : 'bg-amber-400/10 text-amber-200'}`}>{status}</span><span className="ml-auto text-right text-[8px] text-white/22" title={absoluteTime(display.when)}>{absoluteTime(display.when)}</span></div><p className="mt-1 text-[10px] leading-5 text-white/55">{display.summary}</p>{display.consequence && <p className="mt-1 text-[9px] leading-4 text-emerald-100/45"><span className="text-white/25">Consequence: </span>{display.consequence}</p>}{(event.correlation_id || event.reference_id) && <p className="mt-1 font-mono text-[8px] text-white/20">{event.correlation_id && `correlation ${event.correlation_id}`}{event.correlation_id && event.reference_id && ' · '}{event.reference_id && `reference ${event.reference_id}`}</p>} {(fields.length > 0 || technical || event.stage || event.sequence !== undefined) && <details className="mt-2 rounded-lg border border-white/[.05] bg-black/10"><summary className="cursor-pointer px-2 py-1.5 text-[8px] text-white/30">Technical and compatibility details</summary><div className="border-t border-white/[.05] p-2">{fields.length > 0 && <dl className="grid gap-x-4 gap-y-2 sm:grid-cols-2">{fields.map(field => <div key={field.key}><dt className="text-[8px] uppercase tracking-wide text-white/20">{field.key.replaceAll('_', ' ')}</dt><dd className="mt-0.5 break-words text-[9px] leading-4 text-white/48">{field.value}</dd></div>)}</dl>}{technical && <pre className="mt-2 max-h-52 overflow-auto whitespace-pre-wrap break-words text-[8px] leading-4 text-white/35">{JSON.stringify(technical, null, 2)}</pre>}<p className="mt-2 text-[8px] text-white/18">Sequence: {event.sequence ?? 'unavailable'} · Compatibility stage: {stage}</p></div></details>}</article></li>;
   })}</ol>;
 }
 
@@ -119,14 +147,14 @@ function BeatSummary({ beat }: { beat: AwarenessBeat }) {
   const happened = beat.conclusion?.summary || fallbackWhatHappened;
   const changed = beat.conclusion ? (beat.conclusion.changed ? fallbackChanged : 'The beat reported no state change.') : fallbackChanged;
   const remains = beat.conclusion?.unfinished || fallbackUnfinished;
-  return <section className={`${panel} p-4`}><div className="mb-3 flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-300/65"/><h4 className="text-[11px] font-medium text-white/65">Beat conclusion</h4>{beat.conclusion && <span className="rounded-full bg-emerald-400/[.07] px-2 py-0.5 text-[8px] text-emerald-100/45">Backend-derived</span>}</div><dl className="grid gap-3 lg:grid-cols-3"><div className="rounded-lg border border-cyan-400/10 bg-cyan-400/[.035] p-3"><dt className="text-[9px] font-medium text-cyan-100/55">What happened?</dt><dd className="mt-1 text-[10px] leading-5 text-white/58">{happened}</dd></div><div className="rounded-lg border border-emerald-400/10 bg-emerald-400/[.035] p-3"><dt className="text-[9px] font-medium text-emerald-100/55">What changed?</dt><dd className="mt-1 text-[10px] leading-5 text-white/58">{changed}</dd></div><div className="rounded-lg border border-amber-400/10 bg-amber-400/[.035] p-3"><dt className="text-[9px] font-medium text-amber-100/55">What remains unfinished?</dt><dd className="mt-1 text-[10px] leading-5 text-white/58">{remains}</dd></div></dl>{beat.events_truncated && <p className="mt-3 text-[8px] text-amber-200/55">The event list was truncated by the backend; this conclusion may cover events not shown below.</p>}</section>;
+  return <section className={`${panel} p-4`}><div className="mb-3 flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-300/65"/><h4 className="text-[11px] font-medium text-white/65">Cycle summary</h4>{beat.conclusion && <span className="rounded-full bg-emerald-400/[.07] px-2 py-0.5 text-[8px] text-emerald-100/45">Backend-derived</span>}</div><dl className="grid gap-3 lg:grid-cols-3"><div className="rounded-lg border border-cyan-400/10 bg-cyan-400/[.035] p-3"><dt className="text-[9px] font-medium text-cyan-100/55">What happened?</dt><dd className="mt-1 text-[10px] leading-5 text-white/58">{happened}</dd></div><div className="rounded-lg border border-emerald-400/10 bg-emerald-400/[.035] p-3"><dt className="text-[9px] font-medium text-emerald-100/55">What changed?</dt><dd className="mt-1 text-[10px] leading-5 text-white/58">{changed}</dd></div><div className="rounded-lg border border-amber-400/10 bg-amber-400/[.035] p-3"><dt className="text-[9px] font-medium text-amber-100/55">What remains unfinished?</dt><dd className="mt-1 text-[10px] leading-5 text-white/58">{remains}</dd></div></dl>{beat.events_truncated && <p className="mt-3 text-[8px] text-amber-200/55">The event list was truncated by the backend; this conclusion may cover events not shown below.</p>}</section>;
 }
 
 function AssessmentSummary({ beat }: { beat: AwarenessBeat }) {
   const assessment = beat.assessment;
   if (!assessment) return null;
   const evidence = assessment.evidence_refs ?? [];
-  return <section className={`${panel} border-emerald-400/10 p-4`}><div className="flex flex-wrap items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-300/65"/><h4 className="text-[11px] font-medium text-white/70">Outcome assessment</h4>{typeof assessment.assessed === 'boolean' && <span className="rounded-full bg-white/[.05] px-2 py-0.5 text-[8px] text-white/45">{assessment.assessed ? 'Assessed' : 'Not assessed'}</span>}{assessment.state && <span className="rounded-full bg-emerald-400/[.08] px-2 py-0.5 text-[8px] capitalize text-emerald-100/60">{assessment.state}</span>}{typeof assessment.confidence === 'number' && <span className="rounded-full bg-white/[.05] px-2 py-0.5 text-[8px] text-white/45">{Math.round(assessment.confidence * 100)}% confidence</span>}</div>{assessment.reason && <p className="mt-3 text-[10px] leading-5 text-white/58"><span className="text-white/28">Reason: </span>{assessment.reason}</p>}{assessment.remaining && <p className="mt-2 text-[10px] leading-5 text-amber-100/60"><span className="text-white/28">Remaining: </span>{assessment.remaining}</p>}{assessment.review_at && <p className="mt-2 text-[9px] text-white/30">Review {absoluteTime(assessment.review_at)} · {relative(assessment.review_at)}</p>}{evidence.length > 0 && <details className="mt-3 rounded-lg border border-white/[.06] bg-black/10"><summary className="cursor-pointer px-3 py-2 text-[9px] text-white/35">Evidence references ({evidence.length})</summary><div className="border-t border-white/[.05] p-3 font-mono text-[8px] leading-4 text-white/35">{evidence.map(reference => <div key={reference} className="break-all">{reference}</div>)}</div></details>}</section>;
+  return <section className={`${panel} border-emerald-400/10 p-4`}><div className="flex flex-wrap items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-300/65"/><h4 className="text-[11px] font-medium text-white/70">Outcome assessment</h4>{typeof assessment.assessed === 'boolean' && <span className="rounded-full bg-white/[.05] px-2 py-0.5 text-[8px] text-white/45">{assessment.assessed ? 'Assessed' : 'Not assessed'}</span>}{assessment.state && <span className="rounded-full bg-emerald-400/[.08] px-2 py-0.5 text-[8px] capitalize text-emerald-100/60">{assessment.state}</span>}{typeof assessment.confidence === 'number' && <span className="rounded-full bg-white/[.05] px-2 py-0.5 text-[8px] text-white/45">{Math.round(assessment.confidence * 100)}% confidence</span>}</div>{assessment.reason && <p className="mt-3 text-[10px] leading-5 text-white/58"><span className="text-white/28">Reason: </span>{assessment.reason}</p>}{assessment.remaining && <p className="mt-2 text-[10px] leading-5 text-amber-100/60"><span className="text-white/28">Remaining: </span>{assessment.remaining}</p>}{assessment.review_at && <p className="mt-2 text-[9px] text-white/30">Review {absoluteTime(assessment.review_at)}</p>}{evidence.length > 0 && <details className="mt-3 rounded-lg border border-white/[.06] bg-black/10"><summary className="cursor-pointer px-3 py-2 text-[9px] text-white/35">Evidence references ({evidence.length})</summary><div className="border-t border-white/[.05] p-3 font-mono text-[8px] leading-4 text-white/35">{evidence.map(reference => <div key={reference} className="break-all">{reference}</div>)}</div></details>}</section>;
 }
 
 function CandidateFlow({ beat }: { beat: AwarenessBeat }) {
@@ -138,39 +166,97 @@ function CandidateFlow({ beat }: { beat: AwarenessBeat }) {
 }
 
 function BeatDetails({ beat, latest = false }: { beat: AwarenessBeat; latest?: boolean }) {
+  const [graphOpen, setGraphOpen] = useState(false);
   const deliveryFields = safeFields(beat.delivery); const deliveryStatus = deliveryFields.find(field => field.key === 'status')?.value;
   const focusFormation = beat.focus_formation ?? beat.events?.find(event => /focus.*form|form.*focus/i.test(event.stage ?? ''))?.detail;
   return <div className="space-y-3">
-    <section className={`${panel} p-4`}><div className="flex flex-wrap items-start gap-3"><span className={`grid h-10 w-10 place-items-center rounded-xl border ${beat.mode === 'autonomous' ? 'border-violet-400/20 bg-violet-400/[.08] text-violet-200' : 'border-cyan-400/20 bg-cyan-400/[.08] text-cyan-200'}`}>{beat.mode === 'autonomous' ? <Bot className="h-4 w-4" /> : <CircleDot className="h-4 w-4" />}</span><div><div className="flex flex-wrap items-center gap-2"><h3 className="text-sm font-medium text-white/75">{latest ? 'Latest awareness beat' : 'Awareness beat'}</h3><span className="rounded-full bg-white/[.05] px-2 py-0.5 text-[8px] capitalize text-white/45">{beat.mode || 'mode unavailable'}</span></div><p className="mt-1 text-[10px] text-white/30">Triggered by {beat.trigger_source || 'unknown source'} · {absoluteTime(beat.started_at)} ({relative(beat.started_at)}) · {duration(beat)}</p>{beat.occurrence_id && <p className="mt-1 text-[8px] text-white/22">Occurrence <span className="font-mono text-white/35">{beat.occurrence_id}</span> · continuing beats may share this ID</p>}</div><span className="ml-auto font-mono text-[8px] text-white/20">{beat._id}</span></div></section>
+    <section className={`${panel} p-4`}><div className="flex flex-wrap items-start gap-3"><span className={`grid h-10 w-10 place-items-center rounded-xl border ${beat.mode === 'autonomous' ? 'border-violet-400/20 bg-violet-400/[.08] text-violet-200' : 'border-cyan-400/20 bg-cyan-400/[.08] text-cyan-200'}`}>{beat.mode === 'autonomous' ? <Bot className="h-4 w-4" /> : <CircleDot className="h-4 w-4" />}</span><div><div className="flex flex-wrap items-center gap-2"><h3 className="text-sm font-medium text-white/75">{latest ? 'Latest processing cycle' : 'Processing cycle'}</h3><span className="rounded-full bg-white/[.05] px-2 py-0.5 text-[8px] capitalize text-white/45">{beat.mode || 'mode unavailable'}</span></div><p className="mt-1 text-[10px] text-white/30">Triggered by {beat.trigger_source || 'unknown source'} · {absoluteTime(beat.started_at)} · {duration(beat)}</p>{beat.occurrence_id && <p className="mt-1 text-[8px] text-white/22">Occurrence <span className="font-mono text-white/35">{beat.occurrence_id}</span> · continuing beats may share this ID</p>}</div><span className="ml-auto font-mono text-[8px] text-white/20">{beat._id}</span></div></section>
     <BeatSummary beat={beat}/>
-    <AwarenessFlowGraph beat={beat}/>
+    <details className={`${panel} p-4`} onToggle={event => setGraphOpen(event.currentTarget.open)}><summary className="cursor-pointer text-sm text-white/65">Explore the technical flow graph</summary>{graphOpen && <div className="mt-4"><AwarenessFlowGraph beat={beat}/></div>}</details>
+    <details className={`${panel} p-4`}><summary className="cursor-pointer text-sm text-white/65">Decisions and observed results ({beat.events?.length ?? 0})</summary><div className="mt-4"><EventTimeline events={beat.events}/></div></details>
+    <details className={`${panel} p-4`}><summary className="cursor-pointer text-sm text-white/65">Why this information received attention</summary><div className="mt-4"><CandidateFlow beat={beat}/></div></details>
     <details className={`${panel} p-3`}><summary className="cursor-pointer text-[10px] text-white/40">Supporting diagnostic summaries</summary><div className="mt-3 grid gap-3 md:grid-cols-3"><SummaryBlock title="Preparation" value={beat.preparation} color="#67e8f9"/><SummaryBlock title="Focus formation" value={focusFormation} color="#86efac"/><SummaryBlock title="Curated context" value={beat.curation} color="#c4b5fd"/><AssessmentSummary beat={beat}/><SummaryBlock title="Generated response / final resolution" value={beat.final} color="#86efac"/><SummaryBlock title="Delivery route" value={beat.delivery} color={deliveryStatus?.includes('fail') ? '#fca5a5' : '#7dd3fc'}/></div></details>
   </div>;
 }
 
 export function AwarenessDiagnostics({ sapienId }: { sapienId: string }) {
   const diagnosticsLoaded = useRef(false);
-  const [data, setData] = useState<AwarenessResponse | null>(null); const [beatData, setBeatData] = useState<AwarenessBeatsResponse | null>(null); const [loading, setLoading] = useState(true); const [beatsLoading, setBeatsLoading] = useState(false); const [staffSessionReady, setStaffSessionReady] = useState(false); const [error, setError] = useState(''); const [beatsError, setBeatsError] = useState(''); const [search, setSearch] = useState('');
+  const requestVersion = useRef(0);
+  const [data, setData] = useState<AwarenessResponse | null>(null);
+  const [beatData, setBeatData] = useState<AwarenessBeatsResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [beatsLoading, setBeatsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [beatsError, setBeatsError] = useState('');
+  const [search, setSearch] = useState('');
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const refresh = useCallback(async (includeBeats = diagnosticsLoaded.current) => {
+    const version = ++requestVersion.current;
     setLoading(true); setError('');
     if (includeBeats) { setBeatsLoading(true); setBeatsError(''); }
-    const awarenessRequest = sapiensService.getAwareness(sapienId, 20).then(setData).catch(caught => setError((caught as ApiError).message || 'Could not load awareness.')).finally(() => setLoading(false));
-    const beatsRequest = includeBeats ? sapiensService.getAwarenessBeats(sapienId, 20).then(setBeatData).catch(caught => { const apiError = caught as ApiError; setBeatsError(apiError.status === 403 ? 'Your app account does not have permission to view beat diagnostics. Ask an administrator to review the backend permission policy.' : apiError.message || 'Could not load awareness beat diagnostics.'); }).finally(() => setBeatsLoading(false)) : Promise.resolve();
+    const awarenessRequest = sapiensService.getAwareness(sapienId, 20)
+      .then(result => { if (version === requestVersion.current) setData(result); })
+      .catch(caught => { if (version === requestVersion.current) setError((caught as ApiError).message || 'Could not load saved understanding.'); })
+      .finally(() => { if (version === requestVersion.current) setLoading(false); });
+    const beatsRequest = includeBeats ? sapiensService.getAwarenessBeats(sapienId, 20)
+      .then(result => { if (version === requestVersion.current) setBeatData(result); })
+      .catch(caught => {
+        if (version !== requestVersion.current) return;
+        const apiError = caught as ApiError;
+        setBeatsError(apiError.status === 403 ? 'Processing details require an administrator account.' : apiError.message || 'Could not load processing details.');
+      })
+      .finally(() => { if (version === requestVersion.current) setBeatsLoading(false); }) : Promise.resolve();
     await Promise.all([awarenessRequest, beatsRequest]);
   }, [sapienId]);
-  const loadStaffBeats = useCallback(async () => {
-    diagnosticsLoaded.current = true;
-    setStaffSessionReady(true);
-    await refresh(true);
+  useEffect(() => {
+    diagnosticsLoaded.current = false;
+    setData(null); setBeatData(null); setSelectedId(null); setSearch(''); setBeatsError(''); setBeatsLoading(false);
+    void refresh(false);
+    return () => { requestVersion.current += 1; };
   }, [refresh]);
-  useEffect(() => { void refresh(false); }, [refresh]);
-  const beats = beatData?.beats ?? []; const currentBeat = beatData?.current_beat ?? beats[0] ?? null; const history = data?.history ?? [];
-  const filteredHistory = useMemo(() => history.filter(item => [item.understanding, item.focus, item.subject?.content].some(value => value?.toLowerCase().includes(search.toLowerCase()))), [history, search]);
-  if (loading && !data) return <div className="flex min-h-80 items-center justify-center gap-2 text-xs text-white/30"><Loader2 className="h-4 w-4 animate-spin" />Loading awareness diagnostics…</div>;
-  return <div className="space-y-4">{error && <div className="flex items-center gap-2 rounded-xl border border-red-400/20 bg-red-400/[.07] px-4 py-3 text-xs text-red-200/75"><AlertCircle className="h-4 w-4"/><span className="flex-1">{error}</span><button onClick={() => void refresh()} className="rounded-lg border border-red-300/20 px-3 py-1.5">Retry</button></div>}{!beatData && <div className="flex flex-wrap items-center gap-3 rounded-xl border border-amber-400/20 bg-amber-400/[.07] px-4 py-3 text-xs text-amber-100/70"><ShieldAlert className="h-4 w-4"/><span className="min-w-56 flex-1">Load beat diagnostics using your authenticated app-admin session.</span><button onClick={() => void loadStaffBeats()} disabled={beatsLoading} className="rounded-lg bg-amber-300/15 px-3 py-2 text-amber-50 disabled:opacity-50">{beatsLoading ? 'Loading diagnostics…' : staffSessionReady ? 'Retry diagnostics' : 'Load diagnostics'}</button></div>}{beatsError && <div className="flex items-center gap-2 rounded-xl border border-red-400/20 bg-red-400/[.07] px-4 py-3 text-xs text-red-100/70"><AlertCircle className="h-4 w-4"/><span className="flex-1">{beatsError}</span></div>}
-    <section className="grid gap-3 lg:grid-cols-2"><div className={`${panel} p-4`}><p className="text-[9px] uppercase tracking-[.16em] text-cyan-300/45">Latest retained understanding</p>{data?.current ? <><p className="mt-2 text-sm leading-6 text-white/72">{data.current.understanding || data.current.focus}</p>{data.current.subject && <div className="mt-3 rounded-lg border border-violet-400/10 bg-violet-400/[.04] p-2"><p className="text-[8px] uppercase text-violet-200/40">Original attended event</p><p className="mt-1 text-[10px] text-white/50">{data.current.subject.content}</p><p className="mt-1 text-[8px] text-white/22">Source: {data.current.subject.source}{data.current.subject.event_at ? ` · ${absoluteTime(data.current.subject.event_at)}` : ''}</p></div>}<p className="mt-3 flex items-center gap-1.5 text-[8px] text-violet-200/45"><BrainCircuit className="h-3 w-3"/>Internal retained understanding; this does not verify an external action.</p></> : <p className="mt-3 text-xs text-white/25">No retained understanding returned.</p>}</div><div className={`${panel} p-4`}><p className="text-[9px] uppercase tracking-[.16em] text-emerald-300/45">Latest beat</p>{currentBeat ? <><p className="mt-2 text-sm text-white/72">{currentBeat.mode} · {currentBeat.trigger_source || 'unknown trigger'}</p><p className="mt-2 text-[9px] text-white/25">{duration(currentBeat)} · {currentBeat.events?.length ?? 0} events · {currentBeat.completed_at ? 'completed' : 'in progress'}</p></> : <p className="mt-3 text-xs text-white/25">Beat diagnostics are unavailable on this response.</p>}</div></section>
-    {currentBeat ? <BeatDetails beat={currentBeat} latest/> : staffSessionReady && !beatsLoading && !beatsError ? <div className={`${panel} p-5 text-center`}><ShieldAlert className="mx-auto h-6 w-6 text-white/18"/><p className="mt-3 text-xs text-white/35">No awareness beat diagnostics were returned.</p><p className="mt-1 text-[10px] text-white/22">Committed thought history remains available below.</p></div> : null}
-    {beats.length > 1 && <section className={`${panel} p-4`}><h3 className="text-xs text-white/60">Historical beats</h3><div className="mt-3 space-y-2">{beats.filter(beat => beat._id !== currentBeat?._id).map(beat => <details key={beat._id} className="rounded-xl border border-white/[.06] bg-black/10"><summary className="flex cursor-pointer list-none items-center gap-3 px-3 py-3"><Clock3 className="h-3.5 w-3.5 text-white/25"/><span className="text-[10px] capitalize text-white/55">{beat.mode}</span><span className="text-[9px] text-white/28">{beat.trigger_source || 'unknown trigger'} · {relative(beat.started_at)} · {duration(beat)}</span><ChevronRight className="ml-auto h-3 w-3 text-white/20"/></summary><div className="border-t border-white/[.05] p-3"><BeatDetails beat={beat}/></div></details>)}</div></section>}
-    <section className={`${panel} overflow-hidden`}><div className="flex items-center gap-2 border-b border-white/[.06] p-3"><Search className="h-3.5 w-3.5 text-white/25"/><input value={search} onChange={event => setSearch(event.target.value)} placeholder="Search retained understanding or attended events" className="min-w-0 flex-1 bg-transparent text-[10px] text-white/60 outline-none"/><button onClick={() => void refresh()} className="rounded p-2 text-white/30"><RefreshCw className={`h-3.5 w-3.5 ${(loading || beatsLoading) ? 'animate-spin' : ''}`}/></button></div><div className="max-h-64 overflow-y-auto">{filteredHistory.map((item: AwarenessHistoryItem) => <article key={item.id} className="border-b border-white/[.04] px-4 py-3 last:border-0"><p className="text-[10px] leading-5 text-white/52">{item.understanding || item.focus}</p>{item.subject && <p className="mt-1 truncate text-[9px] text-violet-100/35">Attended: {item.subject.content}</p>}<p className="mt-1 text-[8px] text-white/22">Assessment source: {item.source} · {relative(item.assessed_at || item.created_at)}</p></article>)}{!filteredHistory.length && <p className="p-6 text-center text-[10px] text-white/25">No retained understanding matches this search.</p>}</div></section>
+  const history = useMemo(() => {
+    const items = data?.history ?? [];
+    return data?.current ? [data.current, ...items.filter(item => item.id !== data.current?.id)] : items;
+  }, [data]);
+  const selected = history.find(item => item.id === selectedId) ?? history[0];
+  const filteredHistory = useMemo(() => history.filter(item =>
+    [item.understanding, item.focus, item.subject?.content, item.state, item.remaining].some(value => value?.toLowerCase().includes(search.toLowerCase()))
+  ), [history, search]);
+  const beats = beatData?.beats ?? [];
+  const currentBeat = beatData?.current_beat ?? beats[0] ?? null;
+  if (loading && !data) return <div className="flex min-h-80 items-center justify-center gap-2 text-sm text-white/60"><Loader2 className="h-4 w-4 animate-spin"/>Loading saved understanding…</div>;
+  return <div className="space-y-6">
+    <header className="flex flex-wrap items-start justify-between gap-4">
+      <div><h2 className="text-lg font-medium text-white/90">How understanding develops</h2>
+        <p className="mt-1 max-w-3xl text-sm leading-6 text-white/60">Follow an event from its original words to the understanding saved by this Sapien, and see what remains unresolved.</p>
+        <p className="mt-2 text-xs leading-5 text-white/45">Showing up to 20 recent records. Times include your timezone; simulation times may be ahead of today. Source text may already be shortened in storage.</p>
+      </div>
+      <button onClick={() => void refresh()} disabled={loading || beatsLoading} className="flex items-center gap-2 rounded-lg border border-white/15 px-3 py-2 text-sm text-white/75 disabled:opacity-50"><RefreshCw className={`h-4 w-4 ${loading || beatsLoading ? 'animate-spin' : ''}`}/>Refresh</button>
+    </header>
+    {error && <div role="alert" className="flex items-center gap-2 rounded-xl border border-red-400/20 p-4 text-sm text-red-200"><AlertCircle className="h-4 w-4"/>{error}<button onClick={() => void refresh()} className="ml-auto underline">Retry</button></div>}
+    <div className="grid items-start gap-4 lg:grid-cols-[minmax(240px,300px)_minmax(0,1fr)]">
+      <section className={`${panel} overflow-hidden`} aria-label="Recent understanding">
+        <div className="border-b border-white/10 p-4"><h3 className="text-sm font-medium text-white/80">Recent understanding</h3>
+          <label className="mt-3 flex items-center gap-2 rounded-lg border border-white/15 px-3 py-2"><Search className="h-4 w-4 shrink-0 text-white/50"/><input aria-label="Search recent understanding" value={search} onChange={event => setSearch(event.target.value)} placeholder="Search events or understanding" className="min-w-0 w-full bg-transparent text-sm text-white/80 outline-none"/></label>
+        </div>
+        <div className="max-h-[640px] overflow-y-auto">{filteredHistory.map(item => <button key={item.id} onClick={() => setSelectedId(item.id)} aria-pressed={selected?.id === item.id} className={`block w-full border-b border-white/[.07] p-4 text-left last:border-0 ${selected?.id === item.id ? 'bg-cyan-400/10 ring-1 ring-inset ring-cyan-300/30' : 'hover:bg-white/[.04]'}`}>
+          <span className="block text-xs text-white/55">{absoluteTime(item.assessed_at || item.created_at)}</span>
+          <span className="mt-2 block line-clamp-3 text-sm leading-6 text-white/80">{item.understanding || item.focus || 'No saved understanding'}</span>
+          <span className="mt-2 block text-xs text-cyan-200/75">{item.state ? assessmentLabels[item.state] || item.state.replaceAll('_', ' ') : 'Assessment unavailable'}</span>
+        </button>)}{!filteredHistory.length && <p className="p-4 text-sm text-white/55">{history.length ? 'No records match your search.' : 'No saved understanding is available yet.'}</p>}</div>
+      </section>
+      <section className="min-w-0 space-y-3" aria-label="Selected understanding">
+        {selected ? <><p className="text-xs text-white/55">Selected record · {absoluteTime(selected.assessed_at || selected.created_at)}</p><UnderstandingStory item={selected}/></> : <p className={`${panel} p-6 text-sm text-white/55`}>An event and its saved understanding will appear here when available.</p>}
+      </section>
+    </div>
+    <details className={`${panel} p-4`}>
+      <summary className="cursor-pointer text-sm font-medium text-white/80">Processing details · for deeper debugging</summary>
+      <p className="mt-3 text-sm leading-6 text-white/60">A cycle is one pass of attention, decisions, and assessment. These are independently loaded recent cycles; they are not automatically matched to the selected understanding above. Finishing a cycle does not mean its task is complete.</p>
+      <button onClick={() => { diagnosticsLoaded.current = true; void refresh(true); }} disabled={loading || beatsLoading} className="mt-3 rounded-lg border border-white/15 px-3 py-2 text-sm text-white/75 disabled:opacity-50">{beatsLoading ? 'Loading processing details…' : beatData ? 'Refresh processing details' : 'Load processing details'}</button>
+      {beatsError && <p role="alert" className="mt-3 text-sm text-red-200">{beatsError}</p>}
+      {currentBeat && <div className="mt-4"><BeatDetails beat={currentBeat} latest/></div>}
+      {beatData && !currentBeat && <p className="mt-3 text-sm text-white/55">No saved processing cycles were returned. Understanding records remain available above.</p>}
+      {beats.filter(beat => beat._id !== currentBeat?._id).map(beat => <details key={beat._id} className="mt-3 rounded-lg border border-white/10 p-3"><summary className="cursor-pointer text-sm text-white/65">{absoluteTime(beat.started_at)} · {beat.mode === 'reactive' ? 'Responding to an event' : beat.mode === 'autonomous' ? 'Self-directed attention' : beat.mode || 'Unknown mode'}</summary><div className="mt-3"><BeatDetails beat={beat}/></div></details>)}
+    </details>
   </div>;
 }

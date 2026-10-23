@@ -1,0 +1,5 @@
+Tool: Built-in image_gen (edit, transparent background)
+Source: src/assets/landing/identity-960.webp (unchanged)
+Output: public/concepts/sapiens-core-orange.png
+
+Use case: precise-object-edit. Input image is the edit target: Sapiens' existing core sculpture. Change ONLY its violet/lavender glass coloration to rich warm orange, amber and subtle coral, with a luminous pale warm pearl core. Preserve the exact recognizable rounded asymmetric folded membrane sculpture, silhouette, layering, camera angle, composition, scale, frosted textures and studio lighting. This is a recolor of the existing brand sculpture, not a new logo design. Keep the entire object visible, square composition, transparent background with genuine alpha. No text, icons, extra objects or new geometry.

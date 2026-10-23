@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ExperienceDialog } from '../components/customer/ExperienceDialog';
 import { LayeredStudy } from '../components/customer/LayeredStudy';
+import { SapiensBrandMark } from '../components/customer/SapiensBrandMark';
 import { ProductStudyHero } from '../components/customer/ProductStudyHero';
 import { Link, useSearchParams } from 'react-router';
 import { ArrowUpRight, ArrowDown, ArrowRight, MessageCircle, Brain, Target, Paperclip } from 'lucide-react';
@@ -43,7 +44,7 @@ export function LandingDirectionsPage() {
     </aside>
     {graphOpen && <ExperienceDialog onClose={() => setGraphOpen(false)}/>}
     <div className="direction-design">
-      <header className="direction-header"><Link className="direction-brand" to="/">sapiens<span aria-hidden="true">✳</span></Link><nav aria-label="Main navigation">{isComplete && <a href="#direction-product">Product</a>}{howLink}{isComplete && <a href="#direction-contact">Contact us</a>}<Link to={user ? destination : '/login'}>{user ? 'Your Sapiens' : 'Sign in'}<ArrowUpRight size={15}/></Link></nav></header>
+      <header className="direction-header"><Link className="direction-brand" to="/" aria-label="Sapiens home">{direction.id === 'layered' ? <><SapiensBrandMark/>Sapiens</> : <>sapiens<span aria-hidden="true">✳</span></>}</Link><nav aria-label="Main navigation">{isComplete && <a href="#direction-product">Product</a>}{howLink}{isComplete && <a href="#direction-contact">Contact us</a>}<Link to={user ? destination : '/login'}>{user ? 'Your Sapiens' : 'Sign in'}<ArrowUpRight size={15}/></Link></nav></header>
       <main id="direction-main">
         {direction.id === 'layered' && <LayeredStudy cta={cta} onOpenGraph={() => setGraphOpen(true)}/> }
         {direction.id === 'studio' && <ProductStudyHero cta={cta}/> }
@@ -71,7 +72,7 @@ export function LandingDirectionsPage() {
         {isComplete && <>
           {direction.id !== 'layered' && <section className="spectrum-start direction-wrap"><div><span className="direction-eyebrow">GETTING STARTED</span><h2>{user ? 'Continue with Sapiens' : 'How to get started'}</h2></div><ol>{(user ? ['Open your Sapiens home','Choose or create a Sapiens','Bring a question or idea'] : ['Create an account','Create your Sapiens','Begin interacting']).map((step,i)=><li key={step}><span>0{i+1}</span>{step}</li>)}</ol>{cta}</section>}
           <section id="direction-contact" className="spectrum-contact" aria-labelledby="contact-title"><div className="direction-wrap"><div><span className="direction-eyebrow">CONTACT US</span><h2 id="contact-title">Let’s talk.</h2><p>Questions, ideas, or feedback about Sapiens?</p></div><address><a href="mailto:manmohan2566@gmail.com">manmohan2566@gmail.com<ArrowUpRight size={20}/></a><a href="tel:+919980637645">+91 99806 37645<ArrowUpRight size={20}/></a></address></div></section>
-          <footer className="spectrum-footer direction-wrap"><div><span className="direction-brand">sapiens<span aria-hidden="true">✳</span></span><p>Sapiens · An AI individual</p></div><nav aria-label="Footer navigation"><a href="#direction-product">Product</a>{howLink}<a href="#direction-contact">Contact us</a></nav><p>Sapiens is AI and can make mistakes.</p></footer>
+          <footer className="spectrum-footer direction-wrap"><div><span className="direction-brand">{direction.id === 'layered' ? <><SapiensBrandMark/>Sapiens</> : <>sapiens<span aria-hidden="true">✳</span></>}</span><p>Sapiens · An AI individual</p></div><nav aria-label="Footer navigation"><a href="#direction-product">Product</a>{howLink}<a href="#direction-contact">Contact us</a></nav><p>Sapiens is AI and can make mistakes.</p></footer>
         </>}
         <section className="direction-end direction-wrap"><div><span className="direction-eyebrow">END OF DESIGN PREVIEW</span><p>{direction.note}</p></div><a href="#direction-main">Back to the top <ArrowRight size={17}/></a></section>
       </main>

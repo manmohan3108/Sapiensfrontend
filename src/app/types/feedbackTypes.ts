@@ -7,6 +7,7 @@ export type FeedbackEventDetails = { available: false } | {
   metadata: Record<string, unknown>;
   observed_at: string | null;
   truncated: boolean;
+  display?: { kind: string; actor: string; recipient: string; tool: string; server: string; outcome: string | null; text: string };
 };
 
 export interface FeedbackReference {
@@ -28,6 +29,7 @@ export interface FeedbackFinding {
   updated_at: string | null;
   last_surfaced_at: string | null;
   acknowledged_at: string | null;
+  supporting_experiences?: FeedbackReference[];
 }
 
 export interface FeedbackResponse {
@@ -35,4 +37,9 @@ export interface FeedbackResponse {
   mode: string;
   count: number;
   findings: FeedbackFinding[];
+  total?: number;
+  processing?: { available: boolean; counts?: Record<string, number>; recent_jobs?: Array<{
+    id: string; status: string; run_id: string | null; experience_count: number;
+    reviewed_count: number; eligible_at: string | null; updated_at: string; retries: number;
+  }> };
 }

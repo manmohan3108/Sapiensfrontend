@@ -24,6 +24,7 @@ function MetadataValue({ value }: { value: unknown }) {
 
 function Reference({ label, value }: { label: string; value: FeedbackReference }) {
   const details = value?.details;
+  const display = details?.available ? details.display : undefined;
   const metadata = details?.available ? Object.entries(details.metadata ?? {}) : [];
   const priority = ['server', 'tool', 'is_error', 'arguments'];
   const orderedMetadata = [...metadata].sort(([a], [b]) => {
@@ -33,16 +34,20 @@ function Reference({ label, value }: { label: string; value: FeedbackReference }
   return <div className="min-w-0 rounded-lg border border-white/[.07] bg-black/10 p-3">
     <h4 className="text-xs font-medium text-cyan-200/80">{label}</h4>
     <dl className="mt-2 space-y-2 text-xs">
-      <div><dt className="text-white/35">Source</dt><dd className="break-words text-white/65">{value?.source || 'Not recorded'}</dd></div>
+      <div><dt className="text-white/35">Event</dt><dd className="break-words text-white/65">{value?.source?.replaceAll('_', ' ') || 'Not recorded'}</dd></div>
+      {display?.actor && <div><dt className="text-white/35">Who</dt><dd>{display.actor}{display.recipient ? ` → ${display.recipient}` : ''}</dd></div>}
+      {display?.tool && <div><dt className="text-white/35">Action</dt><dd>{display.server} · {display.tool} · {display.outcome || 'Outcome unknown'}</dd></div>}
       <div><dt className="text-white/35">Occurred at</dt><dd className="text-white/65">{timestamp(value?.occurred_at)}</dd></div>
     </dl>
     {details?.available ? <>
-      <p className="mt-3 max-h-80 overflow-auto whitespace-pre-wrap break-words text-xs leading-5 text-white/75">{details.content || 'No stored event text.'}</p>
+      {(!display?.tool || display.text !== details.content) && <p className="mt-3 max-h-80 overflow-auto whitespace-pre-wrap break-words text-sm leading-6 text-white/75">{display?.text || details.content || 'No stored event text.'}</p>}
+      {display?.tool && display.text === details.content && <p className="mt-3 text-xs text-white/50">The recorded tool action is shown above. Its full request and result are available in technical details.</p>}
       {details.truncated && <p className="mt-2 text-[11px] text-amber-200/75">Stored evidence is truncated; this is not the full original event.</p>}
       {details.metadata?._truncated === true && <p className="mt-2 text-[11px] text-amber-200/75">Metadata is truncated. The preview below is only a partial stored snapshot.</p>}
       <p className="mt-3 text-[11px] text-white/40">Observed at: {timestamp(details.observed_at)}</p>
-      <details className="mt-3" open={orderedMetadata.length > 0}>
-        <summary className="cursor-pointer text-xs text-cyan-100/65">Stored metadata ({orderedMetadata.length} fields)</summary>
+      <details className="mt-3">
+        <summary className="cursor-pointer text-xs text-cyan-100/65">Technical details</summary>
+        <MetadataValue value={details.content} />
         {orderedMetadata.length ? <dl className="mt-2 space-y-2">{orderedMetadata.map(([key, entry]) => <div key={key}>
           <dt className="mb-1 break-words font-mono text-[11px] text-white/45">{key}</dt>
           <dd><MetadataValue value={entry} /></dd>
@@ -86,8 +91,8 @@ export function FeedbackInspection({ sapienId }: { sapienId: string }) {
         <span className="rounded-full border border-cyan-300/20 bg-cyan-300/5 px-2 py-0.5 text-[10px] text-cyan-100/65">Read-only</span>
         {(data || error?.status === 503) && <span className="text-xs text-white/45">Mode: {data?.mode ?? 'off'}</span>}
       </div>
-      <p className="mt-2 max-w-3xl text-xs leading-5 text-white/45">Inspect interpreted FeedbackFinding records linking experiences and activities. These are not SignalFeedback usage reports and do not indicate that learning or a behavior change occurred.</p>
-      <p className="mt-2 max-w-3xl text-xs leading-5 text-white/45">Linked events are stored, redacted evidence snapshots—not complete live tool output or a new fetch or execution of the original action. They do not prove that the interpretation is correct. Event text and metadata may be bounded by the backend.</p>
+      <p className="mt-2 max-w-3xl text-sm leading-6 text-white/65">What did the Sapien do, what happened afterward, and what could it learn? Each finding is an interpretation—not a proven fact or proof that behavior changed.</p>
+      <p className="mt-2 text-xs text-white/45">{!data ? 'Loading Feedback mode.' : data.mode === 'observe' ? 'Observe mode: findings are recorded for inspection, not applied to behavior.' : data.mode === 'off' ? 'Feedback is off. Previously saved findings remain available.' : 'Active mode can make findings available to other engines; it does not prove they were used.'} Evidence below is a saved, possibly shortened snapshot.</p>
     </section>
 
     <section className={`${panel} p-4`} aria-label="Feedback filters">
@@ -102,7 +107,7 @@ export function FeedbackInspection({ sapienId }: { sapienId: string }) {
           <button type="button" onClick={() => setRevision(value => value + 1)} disabled={loading} className="flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-xs text-white/65 disabled:opacity-40"><RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />Refresh</button>
         </div>
       </div>
-      <p className="mt-3 text-[11px] text-white/35">Bounded returned subset, sorted within that subset by the backend. This is not a complete history or a guarantee of the globally newest findings.</p>
+      <p className="mt-3 text-[11px] text-white/35">{data?.total !== undefined ? `Showing the newest ${data.count} of ${data.total} matching findings.` : 'Showing a bounded set of saved findings.'}</p>
     </section>
 
     {loading && <div role="status" className="flex min-h-40 items-center justify-center gap-2 text-xs text-white/45"><Loader2 className="h-4 w-4 animate-spin" />Loading feedback findings…</div>}
@@ -112,6 +117,18 @@ export function FeedbackInspection({ sapienId }: { sapienId: string }) {
       <p className="mt-2 text-white/40">{error.status === 503 ? 'Ask an administrator to check engine availability, then retry.' : error.status === 400 ? 'Clear the state filters and retry.' : 'Check your connection or retry the request.'}</p>
       <button type="button" onClick={() => { if (error.status === 400) setStates([]); setRevision(value => value + 1); }} className="mt-3 rounded-lg border border-white/15 px-3 py-2 text-white/70">{error.status === 400 ? 'Clear filters and retry' : 'Retry'}</button>
     </div>}
+    {data?.processing?.available && <section className={`${panel} p-4`} aria-label="Feedback processing">
+      <h3 className="text-sm text-white/80">Review processing</h3>
+      <p className="mt-2 text-xs leading-5 text-white/50">New experiences collect until the next cognitive-hour boundary. Large windows are reviewed in smaller batches. These are saved jobs across all runs, not a live runtime status. A completed review may find nothing to report.</p>
+      <div className="mt-3 flex flex-wrap gap-4 text-sm text-white/75">{['pending', 'running', 'completed', 'failed'].map(status => <span key={status}>{status === 'pending' ? 'Queued' : status === 'running' ? 'Recorded as processing' : status === 'completed' ? 'Completed' : 'Failed'}: {data.processing?.counts?.[status] ?? 0}</span>)}</div>
+      <details className="mt-3"><summary className="cursor-pointer text-xs text-cyan-100/65">Recent review jobs</summary>
+        <ul className="mt-2 space-y-3">{data.processing.recent_jobs?.map(job => <li key={job.id} className="rounded border border-white/10 p-3 text-xs text-white/65">
+          <p>{job.status} · {job.reviewed_count} reviewed here / {job.experience_count} supplied · {job.retries} retries</p>
+          <p className="mt-1">Eligible from: {timestamp(job.eligible_at)} (cognitive time; not a guaranteed start)</p>
+          <p className="mt-1 break-all">{job.run_id ? `Simulation ${job.run_id}` : 'Normal runtime'}</p>
+        </li>)}</ul>
+      </details>
+    </section>}
     {data && <section aria-label="Returned feedback findings" className="space-y-3">
       <p role="status" className="text-xs text-white/45">{data.count} findings returned · Sapiens {data.sapien_id}</p>
       {!data.findings.length && <div className={`${panel} p-10 text-center text-xs text-white/45`}>No findings returned for these filters.</div>}
@@ -120,11 +137,14 @@ export function FeedbackInspection({ sapienId }: { sapienId: string }) {
           <span className="rounded-full border px-2 py-1 text-[11px]" style={{ color: colors[finding.state] ?? '#94a3b8', borderColor: `${colors[finding.state] ?? '#94a3b8'}40` }}>{finding.state}</span>
           <span className="text-xs text-white/45">Confidence: {Number.isFinite(finding.confidence) ? finding.confidence : 'Not recorded'}</span>
         </div>
-        <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-6 text-white/75">{finding.meaning || 'No meaning recorded.'}</p>
+        <h3 className="mt-3 text-xs text-cyan-200/80">What Feedback concluded</h3>
+        <p className="mt-1 whitespace-pre-wrap break-words text-sm leading-6 text-white/75">{finding.meaning || 'No interpretation recorded.'}</p>
+        <p className="mt-2 text-xs text-white/45">{finding.state === 'ambiguous' ? 'The relationship is uncertain.' : finding.state === 'interpreted' ? 'A possible lesson was identified; review the evidence below.' : finding.state === 'superseded' ? 'A later interpretation has replaced this one.' : 'No relevant relationship was established.'} Confidence is the model’s estimate, not measured accuracy.</p>
         <div className="mt-4 grid gap-3 lg:grid-cols-2">
-          <Reference label="Earlier action" value={finding.activity} />
-          <Reference label="New evidence" value={finding.experience} />
+          <Reference label="1. What the Sapien did" value={finding.activity} />
+          <Reference label="2. What happened afterward" value={finding.experience} />
         </div>
+        {!!finding.supporting_experiences?.length && <details className="mt-3"><summary className="cursor-pointer text-xs text-cyan-100/65">Other evidence considered ({finding.supporting_experiences.length})</summary><div className="mt-2 grid gap-3 lg:grid-cols-2">{finding.supporting_experiences.map(ref => <Reference key={ref.id} label="Supporting evidence" value={ref} />)}</div></details>}
         <details className="mt-4 border-t border-white/[.07] pt-3">
           <summary className="cursor-pointer text-xs text-cyan-100/65">Finding IDs and timestamps</summary>
           <dl className="mt-3 grid gap-3 text-xs sm:grid-cols-2">
