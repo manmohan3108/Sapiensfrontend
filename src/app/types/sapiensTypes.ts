@@ -194,6 +194,8 @@ export interface AwarenessResponse {
 }
 
 export interface AwarenessBeatsResponse {
+  thought_id?: string;
+  match_status?: 'exact' | 'unavailable' | 'ambiguous';
   sapien_id: number;
   current_beat: AwarenessBeat | null;
   beats: AwarenessBeat[];

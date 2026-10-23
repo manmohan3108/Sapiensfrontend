@@ -1,13 +1,13 @@
 import { useEffect, useId, useRef, useState, type CSSProperties } from 'react';
-import { ArrowDown, ArrowRight, Check, Clock3, Compass, History, Moon, Network, Plus, RotateCcw, ScanSearch } from 'lucide-react';
+import { ArrowDown, ArrowRight, Clock3, Compass, History, Moon, Network, Plus, RotateCcw, ScanSearch } from 'lucide-react';
 import { SapiensBrandMark } from './SapiensBrandMark';
 import '../../../styles/sapiens-world.css';
 
 const interactions = [
-  { id: 'people', title: 'People', action: 'Ask. Listen. Wait.', index: 0, color: '#a94130', tint: '#ffe4d5', out: 'Questions', back: 'Replies', why: 'When someone else knows more.', from: 'Sapiens asks Maya', example: '“What time can you join?”', after: 'It waits for her answer before deciding.', aspect: 'understanding' },
-  { id: 'information', title: 'Information', action: 'Seek. Check. Connect.', index: 1, color: '#80601a', tint: '#fff0ba', out: 'Seek context', back: 'Evidence', why: 'When its picture is incomplete.', from: 'Sapiens checks a source', example: 'Forecast: rain during the planned outing.', after: 'New evidence changes its understanding.', aspect: 'attention' },
-  { id: 'tools', title: 'Tools', action: 'Act with permission.', index: 2, color: '#286957', tint: '#d9ecdf', out: 'Actions', back: 'Results', why: 'When understanding needs to become action.', from: 'You approve a calendar update', example: 'Sapiens sends it, then checks the result.', after: 'A tool result tells it what actually happened.', aspect: 'goals' },
-  { id: 'feedback', title: 'Outcomes & feedback', action: 'Observe. Reconsider. Remember.', index: 3, color: '#a63d5c', tint: '#f9dfe7', out: 'Follow up', back: 'Experience', why: 'When reality differs from what it expected.', from: 'Maya describes the outcome', example: '“The café was too noisy.”', after: 'Next time, Sapiens checks quiet seating first.', aspect: 'memory' },
+  { id: 'people', title: 'People', action: 'Clarify what’s missing.', index: 0, color: '#a94130', tint: '#ffe4d5', out: 'Ask to clarify', back: 'Listen & understand', why: 'A plan is missing Maya’s availability.', from: 'Sapiens asks Maya', example: '“When are you usually free?”', waiting: 'Waits for Maya. No answer assumed.', reveal: 'See Maya’s reply', source: 'Maya replies', answer: '“Weekdays, after six.”', change: 'Understands her availability.', carry: 'Keeps this context for future plans; checks if it changes.', alternative: 'If her reply is unclear', unclear: '“It depends on the day.”', retry: 'Asks which days work, instead of guessing.', aspect: 'understanding' },
+  { id: 'information', title: 'Information', action: 'Fill gaps in understanding.', index: 1, color: '#80601a', tint: '#fff0ba', out: 'Look for evidence', back: 'Check what it finds', why: 'Its information may be out of date.', from: 'Sapiens checks the current source', example: '“Is this place still open on Sunday?”', waiting: 'Checks before relying on old information.', reveal: 'See the evidence', source: 'The current opening hours', answer: '“Closed on Sundays.”', change: 'Revises its understanding.', carry: 'Uses the updated hours when considering options.', alternative: 'If sources disagree', unclear: 'Two sources list different hours.', retry: 'Seeks confirmation before treating either as fact.', aspect: 'understanding' },
+  { id: 'tools', title: 'Tools', action: 'Turn intent into action.', index: 2, color: '#286957', tint: '#d9ecdf', out: 'Act with permission', back: 'Check the result', why: 'An agreed plan needs a calendar update.', from: 'With your approval, Sapiens acts', example: 'Sends the agreed time to the calendar.', waiting: 'Waits for confirmation from the tool.', reveal: 'See the tool result', source: 'The calendar confirms', answer: '“Event updated.”', change: 'Knows the action succeeded.', carry: 'Uses the confirmed result to decide what to do next.', alternative: 'If the action fails', unclear: '“Calendar unavailable.”', retry: 'Reports the failure and reconsiders the next step.', aspect: 'goals' },
+  { id: 'feedback', title: 'Outcomes & feedback', action: 'Learn from what happened.', index: 3, color: '#a63d5c', tint: '#f9dfe7', out: 'Follow up', back: 'Compare & reflect', why: 'A completed action may not have helped.', from: 'Sapiens follows up with Maya', example: '“Did the reminder arrive at a useful time?”', waiting: 'Asks about the outcome, beyond task completion.', reveal: 'See the feedback', source: 'Maya explains', answer: '“Too late. I had already left.”', change: 'Reconsiders its timing.', carry: 'Remembers to check when a reminder would be useful.', alternative: 'If feedback is unclear', unclear: '“It was fine, I guess.”', retry: 'Asks what helped before changing its approach.', aspect: 'memory' },
 ] as const;
 
 const aspects = [
@@ -21,12 +21,14 @@ type Wire = { id: string; out: string; back: string; x: number; y: number; color
 
 export function SapiensWorldDiagram() {
   const [selected, setSelected] = useState<string | null>(null);
-  const [reply, setReply] = useState(false);
+  const [response, setResponse] = useState<'pending' | 'received' | 'unclear'>('pending');
   const [entered, setEntered] = useState(false);
   const [geometry, setGeometry] = useState({ width: 1200, height: 600, wires: [] as Wire[], outcome: '', outcomeX: 0, outcomeY: 0 });
   const ref = useRef<HTMLDivElement>(null);
   const id = useId().replace(/:/g, '');
   const current = interactions.find(item => item.id === selected);
+  const activeAspect = current ? response === 'pending' ? 'attention' : current.aspect : null;
+  const waiting = !!current && response === 'pending';
 
   useEffect(() => {
     const map = ref.current;
@@ -41,8 +43,8 @@ export function SapiensWorldDiagram() {
         const start = (left ? core.left : core.right) - box.left;
         const end = (left ? node.right : node.left) - box.left;
         const sign = left ? -1 : 1;
-        const outY = y - 16;
-        const backY = y + 16;
+        const outY = y - 22;
+        const backY = y + 22;
         return { id: item.id, color: item.color, x: (start + end) / 2, y,
           out: `M${start} ${outY}H${end - sign * 7}`,
           back: `M${end} ${backY}H${start + sign * 7}` };
@@ -92,25 +94,27 @@ export function SapiensWorldDiagram() {
       ], 4600);
       const pulse = [{ transform: 'translate(-50%,-50%) scale(.6)', opacity: 0 }, { opacity: .65, offset: .2 }, { transform: 'translate(-50%,-50%) scale(1.45)', opacity: 0 }];
       animate('.world-core-ripple:not(.world-core-ripple-return)', pulse, 1600, 100);
-      animate('.world-core-ripple-return', pulse, 1500, 3100);
+      if (!selected || response !== 'pending') animate('.world-core-ripple-return', pulse, 1500, 3100);
       const signal = [{ strokeDashoffset: '100', opacity: 0 }, { opacity: 1, offset: .15 }, { opacity: 1, offset: .85 }, { strokeDashoffset: '0', opacity: 0 }];
       interactions.filter(item => !selected || item.id === selected).forEach((item, index) => {
         const delay = index * 140;
-        animate(`[data-wire="${item.id}"] .world-signal:not(.world-signal-back)`, signal, 1100, 400 + delay);
-        animate(`[data-wire="${item.id}"] .world-signal-back`, signal, 1100, 2100 + delay);
+        if (!selected || response === 'pending') animate(`[data-wire="${item.id}"] .world-signal:not(.world-signal-back)`, signal, 1100, 400 + delay);
+        if (!selected || response !== 'pending') animate(`[data-wire="${item.id}"] .world-signal-back`, signal, 1100, (selected ? 500 : 2100) + delay);
         animate(`.world-node-${item.id} .world-art`, [
           { transform: 'translateY(0) rotate(0) scale(1)' },
           { transform: 'translateY(-10px) rotate(-3deg) scale(1.055)', offset: .4 },
           { transform: 'translateY(0) rotate(0) scale(1)' },
         ], 1800, 1000 + delay);
-        animate(`[data-inner-wire="${item.aspect}"] .world-inner-signal`, signal, 1000, 3300 + delay);
-        animate(`.world-aspect-${item.aspect} .world-aspect-icon`, [
+        const aspect = selected && response === 'pending' ? 'attention' : item.aspect;
+        animate(`[data-inner-wire="${aspect}"] .world-inner-signal`, signal, 1000, (selected ? 1800 : 3300) + delay);
+        if (selected && response === 'received' && aspect !== 'memory') animate('[data-inner-wire="memory"] .world-inner-signal', signal, 1000, 3200);
+        animate(`.world-aspect-${aspect} .world-aspect-icon`, [
           { transform: 'scale(1)', boxShadow: '0 0 0 0 transparent' },
           { transform: 'scale(1.16)', boxShadow: `0 0 0 8px ${item.color}22`, offset: .45 },
           { transform: 'scale(1)', boxShadow: '0 0 0 0 transparent' },
         ], 1000, 3300 + delay);
       });
-      if (!selected || selected === 'tools' || selected === 'feedback') animate('.world-outcome-signal', signal, 1100, 1700);
+      if (!selected || (response !== 'pending' && (selected === 'tools' || selected === 'feedback'))) animate('.world-outcome-signal', signal, 1100, 1700);
       animate('.world-node.is-selected .world-mobile-exchange svg', [
         { transform: 'translateX(0)', opacity: .5 }, { transform: 'translateX(5px)', opacity: 1 }, { transform: 'translateX(0)', opacity: 1 },
       ], 1600, 500);
@@ -119,38 +123,49 @@ export function SapiensWorldDiagram() {
     preference.addEventListener('change', play);
     document.addEventListener('visibilitychange', play);
     return () => { stop(); preference.removeEventListener('change', play); document.removeEventListener('visibilitychange', play); };
-  }, [entered, selected, reply]);
+  }, [entered, selected, response]);
 
-  const select = (key: string) => { setSelected(value => value === key ? null : key); setReply(false); };
+  const select = (key: string) => { setSelected(value => value === key ? null : key); setResponse('pending'); };
   const detail = current && <>
-    <span className="world-detail-why">{current.why}</span>
-    <span className="world-detail-from">{selected === 'people' && reply ? 'Maya replies' : current.from}</span>
-    <strong>{selected === 'people' && reply ? '“After three works.”' : current.example}</strong>
-    <p>{selected === 'people' && reply ? 'Her answer becomes part of its understanding.' : current.after}</p>
-    {selected === 'people' && <button type="button" className="world-reply" onClick={() => setReply(value => !value)}>{reply ? <Check size={14}/> : <Clock3 size={14}/>} {reply ? 'Back to waiting' : 'See her reply'}</button>}
+    <div className="world-exchange-reason"><ScanSearch size={15} aria-hidden="true"/><span>{current.why}</span></div>
+    <div className="world-exchange-message">
+      <span>{response === 'pending' ? current.from : current.source}</span>
+      <strong>{response === 'pending' ? current.example : response === 'unclear' ? current.unclear : current.answer}</strong>
+    </div>
+    {response === 'pending' ? <div className="world-wait-state"><Clock3 size={16} aria-hidden="true"/><span>{current.waiting}</span></div> :
+      <div className={`world-change${response === 'unclear' ? ' is-uncertain' : ''}`}>
+        {response === 'unclear' ? <ScanSearch size={18} aria-hidden="true"/> : <History size={18} aria-hidden="true"/>}
+        <div><strong>{response === 'unclear' ? selected === 'tools' ? 'The action did not succeed.' : 'Still uncertain. Ask or check again.' : current.change}</strong><p>{response === 'unclear' ? current.retry : current.carry}</p></div>
+      </div>}
+    <div className="world-exchange-controls">
+      <button type="button" className="world-reply" onClick={() => setResponse(value => value === 'pending' ? 'received' : 'pending')}>
+        {response === 'pending' ? <ArrowRight size={14}/> : <RotateCcw size={14}/>} {response === 'pending' ? current.reveal : 'Back to the request'}
+      </button>
+      {response !== 'pending' && <button type="button" className="world-alternative" onClick={() => setResponse(value => value === 'unclear' ? 'received' : 'unclear')}>{response === 'unclear' ? 'Show the original response' : current.alternative}</button>}
+    </div>
   </>;
 
-  return <div className={`sapiens-world${entered ? ' has-entered' : ''}`} ref={ref} onKeyDown={event => { if (event.key === 'Escape') { setSelected(null); setReply(false); } }}>
+  return <div className={`sapiens-world${entered ? ' has-entered' : ''}`} data-exchange-state={current ? response : 'overview'} ref={ref} onKeyDown={event => { if (event.key === 'Escape') { setSelected(null); setResponse('pending'); } }}>
     <svg className="world-links" viewBox={`0 0 ${geometry.width} ${geometry.height}`} aria-hidden="true">
       <defs>{interactions.map(item => <marker key={item.id} id={`${id}-${item.id}`} markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M1 1 6 3.5 1 6" fill="none" stroke={item.color} strokeWidth="1.5"/></marker>)}</defs>
-      {geometry.wires.map(wire => <g key={wire.id} data-wire={wire.id} className={`world-link-pair${selected === wire.id ? ' is-active' : ''}`} style={{ '--wire-color': wire.color } as CSSProperties}>
+      {geometry.wires.map(wire => <g key={wire.id} data-wire={wire.id} className={`world-link-pair${selected === wire.id ? ` is-active${waiting ? ' is-waiting' : ''}` : ''}`} style={{ '--wire-color': wire.color } as CSSProperties}>
         <path d={wire.out} markerEnd={`url(#${id}-${wire.id})`}/><path d={wire.back} className="world-return" markerEnd={`url(#${id}-${wire.id})`}/>
         <path d={wire.out} className="world-signal" pathLength="100"/><path d={wire.back} className="world-signal world-signal-back" pathLength="100"/>
       </g>)}
       <path className="world-outcome-link" d={geometry.outcome} markerEnd={`url(#${id}-feedback)`}/>
       <path className="world-outcome-signal" d={geometry.outcome} pathLength="100"/>
     </svg>
-    {geometry.wires.map(wire => { const item = interactions.find(entry => entry.id === wire.id)!; return <div key={wire.id} className="world-edge-label" style={{ left: wire.x, top: wire.y, color: wire.color }} aria-hidden="true"><span>{item.out}</span><span>{item.back}</span></div>; })}
+    {geometry.wires.map(wire => { const item = interactions.find(entry => entry.id === wire.id)!; return <div key={wire.id} className="world-edge-label" style={{ left: wire.x, top: wire.y, color: wire.color }} aria-hidden="true"><span>{item.out}</span><span>{selected === item.id && waiting ? 'Awaiting response' : item.back}</span></div>; })}
     <span className="world-outcome-label" style={{ left: geometry.outcomeX, top: geometry.outcomeY }} aria-hidden="true">What happened?</span>
 
     <section className="world-individual" aria-label="Inside Sapiens: one persistent individual">
       <header><span>ONE CONTINUING INDIVIDUAL</span><h3>Sapiens</h3></header>
       <div className="world-inner">
-        {aspects.map(aspect => <div key={aspect.id} style={{ '--aspect-color': aspect.color, '--aspect-tint': aspect.tint } as CSSProperties} className={`world-aspect world-aspect-${aspect.id}${current?.aspect === aspect.id ? ' is-active' : ''}`}><span className="world-aspect-icon" aria-hidden="true"><aspect.icon size={20} strokeWidth={1.6}/></span><h4>{aspect.title}</h4><p>{aspect.text}</p></div>)}
+        {aspects.map(aspect => <div key={aspect.id} style={{ '--aspect-color': aspect.color, '--aspect-tint': aspect.tint } as CSSProperties} className={`world-aspect world-aspect-${aspect.id}${activeAspect === aspect.id || (!!current && response === 'received' && aspect.id === 'memory') ? ' is-active' : ''}`}><span className="world-aspect-icon" aria-hidden="true"><aspect.icon size={20} strokeWidth={1.6}/></span><h4>{aspect.title}</h4><p>{aspect.text}</p></div>)}
         <div className="world-core-space">
           {/* Connections occupy only this corridor, never the text rows. */}
           <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-            {aspects.map(aspect => <g key={aspect.id} data-inner-wire={aspect.id} className={`world-inner-wire${current?.aspect === aspect.id ? ' is-active' : ''}`} style={{ '--aspect-color': aspect.color } as CSSProperties}>
+            {aspects.map(aspect => <g key={aspect.id} data-inner-wire={aspect.id} className={`world-inner-wire${activeAspect === aspect.id || (!!current && response === 'received' && aspect.id === 'memory') ? ' is-active' : ''}`} style={{ '--aspect-color': aspect.color } as CSSProperties}>
               <path d={aspect.path}/>
               <path key={`${aspect.id}-${selected}`} className="world-inner-signal" d={aspect.path} pathLength="100"/>
               <ellipse cx={aspect.x} cy={aspect.y} rx=".85" ry="1.8"/>
@@ -170,9 +185,10 @@ export function SapiensWorldDiagram() {
     {interactions.map(item => <section key={item.id} className={`world-node world-node-${item.id}${selected === item.id ? ' is-selected' : ''}`} style={{ '--node-color': item.color, '--node-tint': item.tint } as CSSProperties}>
       <button type="button" className="world-node-button" data-world-node={item.id} aria-pressed={selected === item.id} aria-controls={`${id}-detail ${id}-${item.id}-mobile`} onClick={() => select(item.id)}>
         <span className="world-art" aria-hidden="true" style={{ backgroundPosition: `${item.index % 2 * 100}% ${Math.floor(item.index / 2) * 100}%` }}/>
+        {selected === item.id && waiting && <span className="world-node-wait"><Clock3 size={13} aria-hidden="true"/> Awaiting response</span>}
         <span className="world-node-title">{item.title}<Plus size={16}/></span><span className="world-node-action">{item.action}</span>
       </button>
-      <div className="world-mobile-exchange"><span>Sapiens <ArrowRight size={12}/> {item.out}</span><span>{item.back} <ArrowRight size={12}/> Sapiens</span></div>
+      <div className="world-mobile-exchange"><span>Sapiens <ArrowRight size={12}/> {item.out}</span><span>{selected === item.id && waiting ? 'Awaiting response' : item.back} <ArrowRight size={12}/> Sapiens</span></div>
       <div className="world-mobile-detail" id={`${id}-${item.id}-mobile`} aria-live="polite" aria-atomic="true">{selected === item.id && detail}</div>
     </section>)}
     <div className="world-mobile-loop"><RotateCcw size={18}/> Back to the same individual <ArrowDown size={16}/></div>

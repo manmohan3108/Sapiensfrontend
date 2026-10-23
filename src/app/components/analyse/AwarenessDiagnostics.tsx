@@ -170,7 +170,7 @@ function BeatDetails({ beat, latest = false }: { beat: AwarenessBeat; latest?: b
   const deliveryFields = safeFields(beat.delivery); const deliveryStatus = deliveryFields.find(field => field.key === 'status')?.value;
   const focusFormation = beat.focus_formation ?? beat.events?.find(event => /focus.*form|form.*focus/i.test(event.stage ?? ''))?.detail;
   return <div className="space-y-3">
-    <section className={`${panel} p-4`}><div className="flex flex-wrap items-start gap-3"><span className={`grid h-10 w-10 place-items-center rounded-xl border ${beat.mode === 'autonomous' ? 'border-violet-400/20 bg-violet-400/[.08] text-violet-200' : 'border-cyan-400/20 bg-cyan-400/[.08] text-cyan-200'}`}>{beat.mode === 'autonomous' ? <Bot className="h-4 w-4" /> : <CircleDot className="h-4 w-4" />}</span><div><div className="flex flex-wrap items-center gap-2"><h3 className="text-sm font-medium text-white/75">{latest ? 'Latest processing cycle' : 'Processing cycle'}</h3><span className="rounded-full bg-white/[.05] px-2 py-0.5 text-[8px] capitalize text-white/45">{beat.mode || 'mode unavailable'}</span></div><p className="mt-1 text-[10px] text-white/30">Triggered by {beat.trigger_source || 'unknown source'} · {absoluteTime(beat.started_at)} · {duration(beat)}</p>{beat.occurrence_id && <p className="mt-1 text-[8px] text-white/22">Occurrence <span className="font-mono text-white/35">{beat.occurrence_id}</span> · continuing beats may share this ID</p>}</div><span className="ml-auto font-mono text-[8px] text-white/20">{beat._id}</span></div></section>
+    <section className={`${panel} p-4`}><div className="flex flex-wrap items-start gap-3"><span className={`grid h-10 w-10 place-items-center rounded-xl border ${beat.mode === 'autonomous' ? 'border-violet-400/20 bg-violet-400/[.08] text-violet-200' : 'border-cyan-400/20 bg-cyan-400/[.08] text-cyan-200'}`}>{beat.mode === 'autonomous' ? <Bot className="h-4 w-4" /> : <CircleDot className="h-4 w-4" />}</span><div><div className="flex flex-wrap items-center gap-2"><h3 className="text-sm font-medium text-white/75">{latest ? 'Latest processing cycle' : 'Processing cycle'}</h3><span className="rounded-full bg-white/[.05] px-2 py-0.5 text-[8px] capitalize text-white/45">{beat.mode || 'mode unavailable'}</span></div><p className="mt-1 text-[10px] text-white/30">Triggered by {beat.trigger_source || 'unknown source'} · {absoluteTime(beat.started_at)} · Stored time interval: {duration(beat)}</p>{beat.occurrence_id && <p className="mt-1 text-[8px] text-white/22">Occurrence <span className="font-mono text-white/35">{beat.occurrence_id}</span> · continuing beats may share this ID</p>}</div><span className="ml-auto font-mono text-[8px] text-white/20">{beat._id}</span></div></section>
     <BeatSummary beat={beat}/>
     <details className={`${panel} p-4`} onToggle={event => setGraphOpen(event.currentTarget.open)}><summary className="cursor-pointer text-sm text-white/65">Explore the technical flow graph</summary>{graphOpen && <div className="mt-4"><AwarenessFlowGraph beat={beat}/></div>}</details>
     <details className={`${panel} p-4`}><summary className="cursor-pointer text-sm text-white/65">Decisions and observed results ({beat.events?.length ?? 0})</summary><div className="mt-4"><EventTimeline events={beat.events}/></div></details>
@@ -179,39 +179,63 @@ function BeatDetails({ beat, latest = false }: { beat: AwarenessBeat; latest?: b
   </div>;
 }
 
+function RelatedCycle({ sapienId, thoughtId }: { sapienId: string; thoughtId: string }) {
+  const [data, setData] = useState<AwarenessBeatsResponse | null>(null);
+  const [error, setError] = useState('');
+  const [attempt, setAttempt] = useState(0);
+  useEffect(() => {
+    let active = true;
+    setData(null); setError('');
+    void sapiensService.getAwarenessBeats(sapienId, 20, thoughtId).then(result => {
+      if (active) setData(result);
+    }).catch(caught => {
+      if (active) setError((caught as ApiError).status === 403 ? 'An administrator account is needed to inspect this cycle.' : 'Could not load the related cycle.');
+    });
+    return () => { active = false; };
+  }, [sapienId, thoughtId, attempt]);
+  // An older API may ignore the filter and return unrelated recent cycles.
+  const exact = data?.thought_id === thoughtId && data.match_status === 'exact';
+  const beat = exact ? data?.current_beat : null;
+  const final = beat?.final;
+  const processing = final && typeof final === 'object' ? text(final.status) : null;
+  return <section className={`${panel} p-4`} aria-label="Related processing cycle">
+    <h3 className="text-sm font-medium text-white/85">What happened next</h3>
+    {error ? <p role="alert" className="mt-3 text-sm text-red-200">{error} <button className="underline" onClick={() => setAttempt(value => value + 1)}>Retry</button></p>
+      : !data ? <p role="status" className="mt-3 text-sm text-white/60">Loading the matching processing cycle…</p>
+      : !beat ? <p className="mt-3 text-sm text-white/60">{data.match_status === 'ambiguous' ? 'Multiple cycles reference this record; none has been selected automatically.' : 'No exact connection is available. The trace may be missing, shortened, or from an older version.'}</p>
+      : <div className="mt-3 space-y-4">
+        <p className="text-sm text-white/75">Processing: {processing?.replaceAll('_', ' ') || 'Status not recorded'} · Task: {beat.assessment?.state ? assessmentLabels[beat.assessment.state] || beat.assessment.state : 'Assessment unavailable'}</p>
+        <p className="text-xs text-white/50">Matched by the saved record ID. Processing completion does not establish task completion or message delivery.</p>
+        <BeatSummary beat={beat}/>
+        <details className={`${panel} p-3`}><summary className="cursor-pointer text-sm text-white/75">Decisions and observed results</summary><div className="mt-4"><EventTimeline events={beat.events}/></div></details>
+        <details className={`${panel} p-3`}><summary className="cursor-pointer text-sm text-white/75">Technical cycle details</summary><div className="mt-4"><BeatDetails beat={beat}/></div></details>
+      </div>}
+  </section>;
+}
+
 export function AwarenessDiagnostics({ sapienId }: { sapienId: string }) {
-  const diagnosticsLoaded = useRef(false);
   const requestVersion = useRef(0);
   const [data, setData] = useState<AwarenessResponse | null>(null);
-  const [beatData, setBeatData] = useState<AwarenessBeatsResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [beatsLoading, setBeatsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [beatsError, setBeatsError] = useState('');
   const [search, setSearch] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const refresh = useCallback(async (includeBeats = diagnosticsLoaded.current) => {
+  const [revision, setRevision] = useState(0);
+  const refresh = useCallback(async () => {
     const version = ++requestVersion.current;
     setLoading(true); setError('');
-    if (includeBeats) { setBeatsLoading(true); setBeatsError(''); }
-    const awarenessRequest = sapiensService.getAwareness(sapienId, 20)
-      .then(result => { if (version === requestVersion.current) setData(result); })
-      .catch(caught => { if (version === requestVersion.current) setError((caught as ApiError).message || 'Could not load saved understanding.'); })
-      .finally(() => { if (version === requestVersion.current) setLoading(false); });
-    const beatsRequest = includeBeats ? sapiensService.getAwarenessBeats(sapienId, 20)
-      .then(result => { if (version === requestVersion.current) setBeatData(result); })
-      .catch(caught => {
-        if (version !== requestVersion.current) return;
-        const apiError = caught as ApiError;
-        setBeatsError(apiError.status === 403 ? 'Processing details require an administrator account.' : apiError.message || 'Could not load processing details.');
-      })
-      .finally(() => { if (version === requestVersion.current) setBeatsLoading(false); }) : Promise.resolve();
-    await Promise.all([awarenessRequest, beatsRequest]);
+    try {
+      const result = await sapiensService.getAwareness(sapienId, 20);
+      if (version === requestVersion.current) { setData(result); setRevision(value => value + 1); }
+    } catch (caught) {
+      if (version === requestVersion.current) setError((caught as ApiError).message || 'Could not load saved understanding.');
+    } finally {
+      if (version === requestVersion.current) setLoading(false);
+    }
   }, [sapienId]);
   useEffect(() => {
-    diagnosticsLoaded.current = false;
-    setData(null); setBeatData(null); setSelectedId(null); setSearch(''); setBeatsError(''); setBeatsLoading(false);
-    void refresh(false);
+    setData(null); setSelectedId(null); setSearch('');
+    void refresh();
     return () => { requestVersion.current += 1; };
   }, [refresh]);
   const history = useMemo(() => {
@@ -222,8 +246,8 @@ export function AwarenessDiagnostics({ sapienId }: { sapienId: string }) {
   const filteredHistory = useMemo(() => history.filter(item =>
     [item.understanding, item.focus, item.subject?.content, item.state, item.remaining].some(value => value?.toLowerCase().includes(search.toLowerCase()))
   ), [history, search]);
-  const beats = beatData?.beats ?? [];
-  const currentBeat = beatData?.current_beat ?? beats[0] ?? null;
+
+
   if (loading && !data) return <div className="flex min-h-80 items-center justify-center gap-2 text-sm text-white/60"><Loader2 className="h-4 w-4 animate-spin"/>Loading saved understanding…</div>;
   return <div className="space-y-6">
     <header className="flex flex-wrap items-start justify-between gap-4">
@@ -231,7 +255,7 @@ export function AwarenessDiagnostics({ sapienId }: { sapienId: string }) {
         <p className="mt-1 max-w-3xl text-sm leading-6 text-white/60">Follow an event from its original words to the understanding saved by this Sapien, and see what remains unresolved.</p>
         <p className="mt-2 text-xs leading-5 text-white/45">Showing up to 20 recent records. Times include your timezone; simulation times may be ahead of today. Source text may already be shortened in storage.</p>
       </div>
-      <button onClick={() => void refresh()} disabled={loading || beatsLoading} className="flex items-center gap-2 rounded-lg border border-white/15 px-3 py-2 text-sm text-white/75 disabled:opacity-50"><RefreshCw className={`h-4 w-4 ${loading || beatsLoading ? 'animate-spin' : ''}`}/>Refresh</button>
+      <button onClick={() => void refresh()} disabled={loading} className="flex items-center gap-2 rounded-lg border border-white/15 px-3 py-2 text-sm text-white/75 disabled:opacity-50"><RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`}/>Refresh</button>
     </header>
     {error && <div role="alert" className="flex items-center gap-2 rounded-xl border border-red-400/20 p-4 text-sm text-red-200"><AlertCircle className="h-4 w-4"/>{error}<button onClick={() => void refresh()} className="ml-auto underline">Retry</button></div>}
     <div className="grid items-start gap-4 lg:grid-cols-[minmax(240px,300px)_minmax(0,1fr)]">
@@ -246,17 +270,8 @@ export function AwarenessDiagnostics({ sapienId }: { sapienId: string }) {
         </button>)}{!filteredHistory.length && <p className="p-4 text-sm text-white/55">{history.length ? 'No records match your search.' : 'No saved understanding is available yet.'}</p>}</div>
       </section>
       <section className="min-w-0 space-y-3" aria-label="Selected understanding">
-        {selected ? <><p className="text-xs text-white/55">Selected record · {absoluteTime(selected.assessed_at || selected.created_at)}</p><UnderstandingStory item={selected}/></> : <p className={`${panel} p-6 text-sm text-white/55`}>An event and its saved understanding will appear here when available.</p>}
+        {selected ? <><p className="text-xs text-white/55">Selected record · {absoluteTime(selected.assessed_at || selected.created_at)}</p><UnderstandingStory item={selected}/><RelatedCycle key={`${sapienId}:${selected.id}:${revision}`} sapienId={sapienId} thoughtId={selected.id}/></> : <p className={`${panel} p-6 text-sm text-white/55`}>An event and its saved understanding will appear here when available.</p>}
       </section>
     </div>
-    <details className={`${panel} p-4`}>
-      <summary className="cursor-pointer text-sm font-medium text-white/80">Processing details · for deeper debugging</summary>
-      <p className="mt-3 text-sm leading-6 text-white/60">A cycle is one pass of attention, decisions, and assessment. These are independently loaded recent cycles; they are not automatically matched to the selected understanding above. Finishing a cycle does not mean its task is complete.</p>
-      <button onClick={() => { diagnosticsLoaded.current = true; void refresh(true); }} disabled={loading || beatsLoading} className="mt-3 rounded-lg border border-white/15 px-3 py-2 text-sm text-white/75 disabled:opacity-50">{beatsLoading ? 'Loading processing details…' : beatData ? 'Refresh processing details' : 'Load processing details'}</button>
-      {beatsError && <p role="alert" className="mt-3 text-sm text-red-200">{beatsError}</p>}
-      {currentBeat && <div className="mt-4"><BeatDetails beat={currentBeat} latest/></div>}
-      {beatData && !currentBeat && <p className="mt-3 text-sm text-white/55">No saved processing cycles were returned. Understanding records remain available above.</p>}
-      {beats.filter(beat => beat._id !== currentBeat?._id).map(beat => <details key={beat._id} className="mt-3 rounded-lg border border-white/10 p-3"><summary className="cursor-pointer text-sm text-white/65">{absoluteTime(beat.started_at)} · {beat.mode === 'reactive' ? 'Responding to an event' : beat.mode === 'autonomous' ? 'Self-directed attention' : beat.mode || 'Unknown mode'}</summary><div className="mt-3"><BeatDetails beat={beat}/></div></details>)}
-    </details>
   </div>;
 }

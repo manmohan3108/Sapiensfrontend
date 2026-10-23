@@ -1,8 +1,11 @@
 .world-section{padding:38px max(24px,calc((100% - 1240px)/2)) 0;background:#fbf8ef;border-top:1px solid #e2dfd3;scroll-margin-top:16px}
 .world-heading{display:flex;justify-content:space-between;gap:32px;align-items:end;padding:0 20px 30px}.world-heading h2{font-size:clamp(29px,3vw,40px);font-weight:600;letter-spacing:-.035em;line-height:1.1;margin-top:12px}.world-heading p{font-size:16px;color:#5e6458;margin-top:12px;max-width:58ch;line-height:1.5}.world-hint{font-size:12px;line-height:1.5;color:#69705f;flex-shrink:0}
-.sapiens-world{position:relative;isolation:isolate;display:grid;grid-template-columns:minmax(180px,1fr) minmax(330px,1.65fr) minmax(180px,1fr);grid-template-rows:1fr 1fr;gap:28px 100px;padding:10px 0 30px;max-width:1200px;margin:auto;color:#2c352b}
+.sapiens-world{position:relative;isolation:isolate;display:grid;grid-template-columns:minmax(180px,1fr) minmax(330px,1.65fr) minmax(180px,1fr);grid-template-rows:1fr 1fr;gap:28px 126px;padding:10px 0 30px;max-width:1200px;margin:auto;color:#2c352b}
 .world-links{position:absolute;inset:0;width:100%;height:100%;z-index:-1;overflow:visible;pointer-events:none}.world-link-pair path{fill:none;stroke:var(--wire-color);stroke-width:1.5;opacity:.55}.world-link-pair .world-return{stroke-dasharray:4 4}.world-link-pair.is-active path{opacity:1;stroke-width:2}.world-link-pair .world-signal{stroke-width:3;stroke-dasharray:8 92;stroke-dashoffset:100;opacity:0}
-.world-edge-label{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;gap:41px;font-size:10px;line-height:1;white-space:nowrap;pointer-events:none}.world-edge-label span{background:#fbf8ef;padding:2px 4px}
+.world-edge-label{position:absolute;transform:translateX(-50%);width:122px;height:0;font-size:12px;font-weight:600;line-height:1.2;text-align:center;pointer-events:none}
+.world-edge-label span{position:absolute;left:0;width:100%;padding:3px 5px;background:#fbf8ef;text-wrap:balance}
+.world-edge-label span:first-child{bottom:27px}.world-edge-label span:last-child{top:27px}
+
 .world-outcome-link{fill:none;stroke:#a63d5c;stroke-width:1.5;opacity:.6}.world-outcome-label{position:absolute;transform:translate(12px,-50%);font-size:10px;color:#a63d5c;pointer-events:none}
 .world-node-feedback .world-art{clip-path:inset(0 0 0 6%)}
 .world-individual{grid-column:2;grid-row:1/3;align-self:stretch;background:linear-gradient(165deg,#ffe6c5,#f4eecf 45%,#e2edcf);border:1px solid #cfbd94;border-radius:90px 90px 36px 36px;padding:25px 18px 16px;position:relative;min-width:0;box-shadow:inset 0 0 0 7px #fffdf34d}
@@ -32,8 +35,8 @@
 .world-node-button{display:flex;flex-direction:column;align-items:center;width:100%;background:transparent;color:inherit;border:1px solid transparent;border-radius:30px;padding:12px 8px 16px;position:relative;transition:background .2s,border-color .2s}.world-node-button:hover,.world-node.is-selected .world-node-button{background:var(--node-tint);border-color:color-mix(in srgb,var(--node-color) 28%,transparent)}
 .world-art{display:block;width:min(100%,190px);aspect-ratio:1;background-image:url('/concepts/sapiens-world-3d.png');background-size:200% 200%;background-repeat:no-repeat;margin-bottom:9px;filter:drop-shadow(0 8px 9px #382f2012)}.world-node-title{display:flex;align-items:center;justify-content:center;gap:9px;font-size:22px;font-weight:600;line-height:1.1;letter-spacing:-.02em}.world-node-title>svg{flex-shrink:0;color:var(--node-color);transition:rotate .2s}.world-node.is-selected .world-node-title>svg{rotate:45deg}.world-node-action{font-size:13px;margin-top:9px;color:#626757;line-height:1.4;text-align:center}
 .world-mobile-exchange,.world-mobile-detail,.world-mobile-loop{display:none}
-@media(min-width:861px) and (max-width:1100px){.sapiens-world{grid-template-columns:minmax(150px,1fr) minmax(310px,1.6fr) minmax(150px,1fr);column-gap:76px}.world-art{width:155px}.world-node-title{font-size:19px}.world-node-action{font-size:12px}.world-edge-label{font-size:9px}.world-individual{padding-inline:10px}.world-aspect h4{font-size:12px}.world-hint{display:none}}
-@media(max-width:860px){
+@media(min-width:1021px) and (max-width:1160px){.sapiens-world{grid-template-columns:minmax(150px,1fr) minmax(310px,1.6fr) minmax(150px,1fr);column-gap:108px}.world-art{width:155px}.world-node-title{font-size:19px}.world-node-action{font-size:12px}.world-edge-label{font-size:11px;width:104px}.world-individual{padding-inline:10px}.world-aspect h4{font-size:12px}.world-hint{display:none}}
+@media(max-width:1020px){
  .world-section{padding:28px 20px 0}.world-heading{display:block;padding:0 0 24px}.world-heading h2{font-size:31px}.world-heading p{font-size:15px}.world-hint{display:block;font-size:11px;margin-top:12px}.world-hint br{display:none}
  .sapiens-world{display:flex;flex-direction:column;gap:16px;padding:0 0 12px;max-width:540px}.world-individual{width:100%;border-radius:60px 60px 28px 28px;padding:22px 20px 12px}.world-inner{grid-template-rows:auto 148px auto;max-width:380px;margin-inline:auto}.world-aspect h4{font-size:14px}.world-aspect p{font-size:11px}.world-rest{margin:0;padding-bottom:8px}.world-core-detail{min-height:0;padding:12px 0 4px;gap:5px}.world-core-detail>strong{font-size:18px}.world-core-detail>strong br{display:none}.world-core-detail>strong br:after{content:' '}.world-core-detail.is-open{display:none}.world-core-detail>span:last-child{display:none}
  .world-links,.world-edge-label,.world-outcome-label{display:none}.world-node{width:100%;border:1px solid #dcded1;border-radius:22px;background:var(--node-tint);padding:5px}.world-node-button{display:grid;grid-template-columns:115px 1fr;grid-template-rows:auto auto;text-align:left;padding:8px 12px;border-radius:16px;gap:0 16px}.world-art{grid-row:1/3;grid-column:1;width:115px;margin:0}.world-node-title{grid-row:1;grid-column:2;justify-content:space-between;align-self:end;font-size:22px}.world-node-action{grid-row:2;grid-column:2;text-align:left;align-self:start;font-size:13px;margin-top:7px}.world-node-button:hover,.world-node.is-selected .world-node-button{background:#fffdf780;border-color:transparent}
@@ -52,3 +55,20 @@
 @media(prefers-reduced-motion:reduce){.world-inner-signal,.world-outcome-signal,.world-core-ripple{display:none}}
 
 .world-link-pair.is-active .world-signal,.world-inner-wire.is-active .world-inner-signal{opacity:0}
+
+/* A compact exchange: reason, response, and the experience carried forward. */
+.world-core-detail{min-height:250px}.world-core-detail.is-open{gap:12px;justify-content:flex-start;padding-top:18px}
+.world-exchange-reason{display:flex;align-items:flex-start;gap:7px;font-size:12px;line-height:1.4;color:#586044}
+.world-exchange-reason svg{flex-shrink:0;margin-top:1px}
+.world-exchange-message{padding:11px 13px;background:#fffdf5;border:1px solid #d8d7bb;border-radius:5px 15px 15px;align-self:stretch;display:grid;gap:5px}
+.world-exchange-message>span{font-size:11px;color:#666c55}.world-exchange-message>strong{font-size:15px;font-weight:600;line-height:1.35}
+.world-wait-state{display:flex;align-items:center;gap:8px;color:#805b25;font-size:12px;line-height:1.4}.world-wait-state svg{flex-shrink:0}
+.world-change{display:flex;gap:9px;padding:10px 0 0;border-top:1px solid #bfc9a9;align-self:stretch;color:#345c42}.world-change>svg{flex-shrink:0;margin-top:2px}.world-change strong{display:block;font-size:13px;line-height:1.4}.world-change p{font-size:12px;line-height:1.4;margin-top:4px}.world-change.is-uncertain{color:#84581e}
+.world-exchange-controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;align-self:stretch}.world-exchange-controls .world-reply{margin:0;min-height:40px;background:#fffdf3;font-size:12px!important}.world-alternative{font-size:11px;line-height:1.4;text-decoration:underline;text-underline-offset:3px;text-align:left;color:#5c624d;min-height:36px;padding:3px 0}.world-alternative:focus-visible{outline:2px solid #345f4c;outline-offset:3px}
+.world-node-wait{position:absolute;top:8px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:5px;white-space:nowrap;font-size:11px;font-weight:600;color:#805b25;background:#fff8e6;border:1px solid #dac49b;border-radius:20px;padding:6px 9px;z-index:1;pointer-events:none}
+.world-link-pair.is-waiting .world-return{opacity:.2}
+@media(max-width:1020px){
+ .world-core-detail{min-height:0}.world-mobile-detail:not(:empty){gap:12px}
+ .world-node-wait{top:-10px;left:12px;transform:none}
+ .world-mobile-exchange{font-size:11px;gap:8px 18px;line-height:1.4}
+}
