@@ -274,69 +274,6 @@ export function useSapiens() {
     []
   );
 
-  // ── Send query (legacy /api/query) ───────────────────────────────────────────
-  const sendQuery = useCallback(
-    async (text: string) => {
-      if (!currentSapiens) {
-        logger.warn('No current Sapiens for query');
-        return;
-      }
-
-      const now = () => new Date().toISOString();
-
-      // 1. User message
-      const userMsgId = generateId('user');
-      addChatMessage({
-        id: userMsgId,
-        role: 'user',
-        content: text,
-        timestamp: now(),
-        apiMode: 'query',
-      });
-
-      // 2. Loading placeholder
-      const assistantMsgId = generateId('assistant');
-      addChatMessage({
-        id: assistantMsgId,
-        role: 'assistant',
-        content: '',
-        timestamp: now(),
-        isLoading: true,
-        apiMode: 'query',
-      });
-
-      try {
-        setStatus('processing');
-
-        const reply = await sapiensService.sendQuery(currentSapiens.id, text);
-
-        updateChatMessage(assistantMsgId, {
-          content: reply,
-          isLoading: false,
-          timestamp: now(),
-          apiMode: 'query',
-        });
-
-        setStatus('idle');
-      } catch (error) {
-        logger.error('Failed to send query', error);
-        updateChatMessage(assistantMsgId, {
-          content: 'An error occurred while processing your query. Please try again.',
-          isLoading: false,
-          timestamp: now(),
-          apiMode: 'query',
-        });
-        setStatus('error');
-      }
-    },
-    [
-      currentSapiens,
-      setStatus,
-      addChatMessage,
-      updateChatMessage,
-    ]
-  );
-
   // ── Run engine ───────────────────────────────────────────────────────────────
   const runEngine = useCallback(async () => {
     if (!currentSapiens) {
@@ -368,7 +305,6 @@ export function useSapiens() {
     saveSapiens,
     uploadFiles,
     sendTextInput,
-    sendQuery,
     sendUserSignal,
     loadChat,
     startNewChat,

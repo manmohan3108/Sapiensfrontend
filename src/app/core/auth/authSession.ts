@@ -135,7 +135,7 @@ export async function authenticatedFetch(input: RequestInfo | URL, init: Request
       throw new HttpError('The active account or Sapiens changed. Please try again.', 409);
     }
     const path = new URL(typeof input === 'string' ? input : input instanceof URL ? input.href : input.url, window.location.origin).pathname;
-    const scoped = /\/api\/(sapien\/|engram\/(?!sapiens$)|sapiens\/|chat$|query$|run-engines$|load-sapien$|\d+\/save\/)/.test(path);
+    const scoped = /\/api\/(sapien\/|engram\/(?!sapiens$)|sapiens\/|chat$|run-engines$|load-sapien$|\d+\/save\/)/.test(path);
     // Read-only job inspection handles missing jobs/Sapiens locally. A missing
     // parent job must not clear the active Sapien and close the inspector.
     const jobInspection = /\/sapien\/[^/]+\/engine-jobs(?:\/[^/]+)?\/?$/.test(path);

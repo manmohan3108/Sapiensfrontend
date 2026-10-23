@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Activity, AlertCircle, Bot, BrainCircuit, CheckCircle2, ChevronRight, CircleDot,
+  Activity, AlertCircle, Bot, CheckCircle2, ChevronRight, CircleDot,
   Loader2, RefreshCw, Search,
   Trophy, XCircle,
 } from 'lucide-react';
@@ -24,39 +24,36 @@ const assessmentLabels: Record<string, string> = {
 };
 
 function UnderstandingStory({ item }: { item: AwarenessHistoryItem }) {
-  return <div className="space-y-4">
-    <ol className="grid gap-4 xl:grid-cols-3">
-      <li className={`${panel} p-4`}>
-        <h3 className="text-sm font-medium text-cyan-200">1. What arrived</h3>
-        <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-6 text-white/80">{item.subject?.content || 'The original event was not retained with this record.'}</p>
-        {item.subject && <p className="mt-3 text-xs text-white/50">Source: {item.subject.source || 'Unknown'} · Event time: {absoluteTime(item.subject.event_at)}</p>}
-      </li>
-      <li className={`${panel} p-4`}>
-        <h3 className="text-sm font-medium text-violet-200">2. What was understood</h3>
-        <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-6 text-white/80">{item.understanding || item.focus || 'No understanding was retained.'}</p>
-        <p className="mt-3 flex items-center gap-2 text-xs text-white/50"><BrainCircuit className="h-4 w-4 shrink-0"/>Saved interpretation, not independent verification.</p>
-      </li>
-      <li className={`${panel} p-4`}>
-        <h3 className="text-sm font-medium text-emerald-200">3. Where it stands</h3>
-        <p className="mt-3 text-sm font-medium text-white/85">{item.state ? assessmentLabels[item.state] || item.state.replaceAll('_', ' ') : 'No assessment recorded'}</p>
-        {item.reason && <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-white/75">{item.reason}</p>}
-        <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-6 text-amber-100/80"><span className="font-medium">Still needed: </span>{item.remaining || 'No remaining-work description recorded.'}</p>
-        <p className="mt-3 text-xs leading-5 text-white/50">This assessment does not by itself confirm an action or message delivery.</p>
-      </li>
-    </ol>
-    <details className={`${panel} p-4`}>
-      <summary className="cursor-pointer text-sm text-white/65">Record details</summary>
+  return <section className="space-y-4" aria-label="Run outcome">
+    <div className="rounded-xl border border-white/10 bg-white/[.035] p-5">
+      <p className="text-xs font-medium uppercase tracking-wide text-white/50">Outcome</p>
+      <h3 className="mt-2 text-xl font-semibold text-white/90">{item.state ? assessmentLabels[item.state] || item.state.replaceAll('_', ' ') : 'No assessment recorded'}</h3>
+      <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-6 text-white/80">{item.remaining || item.understanding || item.focus || 'No outcome description was retained.'}</p>
+      {item.remaining && <p className="mt-2 text-xs text-amber-100/70">This work remains unresolved.</p>}
+    </div>
+    <details className="border-b border-white/10 pb-4">
+      <summary className="cursor-pointer text-sm font-medium text-white/80">What arrived</summary>
+      <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-6 text-white/75">{item.subject?.content || 'The original event was not retained with this record.'}</p>
+      {item.subject && <p className="mt-2 text-xs text-white/50">Source: {item.subject.source || 'Unknown'} · {absoluteTime(item.subject.event_at)}</p>}
+    </details>
+    <details className="border-b border-white/10 pb-4">
+      <summary className="cursor-pointer text-sm font-medium text-white/80">Saved understanding and assessment</summary>
+      <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-6 text-white/75">{item.understanding || item.focus || 'No understanding was retained.'}</p>
+      {item.reason && <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-6 text-white/65"><strong>Assessment reason: </strong>{item.reason}</p>}
+      <p className="mt-3 text-xs leading-5 text-white/50">Saved interpretation, not independent verification or confirmation of delivery.</p>
+    </details>
+    <details className="pb-2">
+      <summary className="cursor-pointer text-xs text-white/55">Record metadata</summary>
       <dl className="mt-3 grid gap-3 text-xs text-white/65 sm:grid-cols-2">
         <div><dt>Record ID</dt><dd className="mt-1 break-all font-mono">{item.id}</dd></div>
         <div><dt>Assessment source</dt><dd className="mt-1">{item.source || 'Unknown'}</dd></div>
         <div><dt>Assessment time</dt><dd className="mt-1">{absoluteTime(item.assessed_at)}</dd></div>
         <div><dt>Created time</dt><dd className="mt-1">{absoluteTime(item.created_at)}</dd></div>
-        {typeof item.confidence === 'number' && <div><dt>Reported confidence (not a measured accuracy)</dt><dd className="mt-1">{Math.round(item.confidence * 100)}%</dd></div>}
+        {typeof item.confidence === 'number' && <div><dt>Reported confidence (not measured accuracy)</dt><dd className="mt-1">{Math.round(item.confidence * 100)}%</dd></div>}
       </dl>
     </details>
-  </div>;
+  </section>;
 }
-
 function duration(beat: AwarenessBeat) {
   if (!beat.started_at || !beat.completed_at) return 'In progress';
   const ms = new Date(beat.completed_at).getTime() - new Date(beat.started_at).getTime();
@@ -124,9 +121,20 @@ function displayEvent(event: AwarenessBeatEvent, index: number) {
   };
 }
 
-function EventTimeline({ events = [] }: { events?: AwarenessBeatEvent[] }) {
+function EventTimeline({ events = [], compact = false }: { events?: AwarenessBeatEvent[]; compact?: boolean }) {
   const ordered = [...events].sort((a, b) => (a.sequence ?? Number.MAX_SAFE_INTEGER) - (b.sequence ?? Number.MAX_SAFE_INTEGER));
   if (!ordered.length) return <p className="rounded-xl border border-dashed border-white/10 p-4 text-center text-[10px] text-white/25">No ordered events were returned for this beat.</p>;
+  if (compact) return <ol className="space-y-3">{ordered.map((event, index) => {
+    const display = displayEvent(event, index);
+    return <li key={index} className="border-l-2 border-cyan-300/25 pl-4">
+      <details>
+        <summary className="cursor-pointer text-sm font-medium leading-6 text-white/85">{index + 1}. {display.title}<span className="ml-2 text-xs font-normal text-white/55">{display.status}</span></summary>
+        <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-white/75">{display.summary}</p>
+        {display.consequence && <p className="mt-2 text-sm leading-6 text-white/65">{display.consequence}</p>}
+        <details className="mt-3"><summary className="cursor-pointer text-xs text-white/55">Recorded evidence</summary><div className="mt-3"><EventTimeline events={[event]}/></div></details>
+      </details>
+    </li>;
+  })}</ol>;
   return <ol className="space-y-0">{ordered.map((event, index) => {
     const stage = event.stage || 'compatibility event'; const detail = event.detail ?? {}; const display = displayEvent(event, index); const status = display.status.toLowerCase();
     const failed = Boolean(status?.includes('fail') || status?.includes('error')); const succeeded = Boolean(status?.includes('success') || status === 'completed'); const fields = detailFields(detail);
@@ -174,17 +182,17 @@ function RunFlow({ beat }: { beat: AwarenessBeat }) {
   const contextItems = Array.isArray(context) ? context.map(record) : [];
   const decisions: Record<string, string> = { act: 'Use a tool', execute_plan: 'Carry out a plan', speak: 'Prepare a reply', hold: 'Pause and wait', think: 'Think further' };
   return <div className="space-y-4">
-    <p className="text-sm leading-6 text-white/60">Follow the recorded path below. Each round starts with a decision and includes the observations or reconsideration that followed. Missing steps are not reconstructed.</p>
-    <section className="rounded-xl border border-cyan-300/20 bg-cyan-300/[.04] p-4">
-      <h4 className="text-sm font-medium text-cyan-100">Starting point · saved snapshots</h4>
+    <p className="text-sm leading-6 text-white/60">Read from top to bottom. Expand a step for its explanation and evidence.</p>
+    <details className="border-b border-white/10 pb-4">
+      <summary className="cursor-pointer text-sm font-medium text-white/75">Starting context</summary>
       <p className="mt-2 text-sm text-white/65">{beat.mode === 'reactive' ? 'Responding to an incoming event' : beat.mode === 'autonomous' ? 'Self-directed attention' : 'Trigger mode not recorded'} · Source: {beat.trigger_source || 'Unknown'}</p>
       <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-white/80"><span className="font-medium">Focus: </span>{focusText || 'The selected focus text was not retained.'}</p>
       <details className="mt-3"><summary className="cursor-pointer text-sm text-white/65">Context considered ({contextItems.length} retained items)</summary>
         <p className="mt-2 text-xs text-white/50">This is the saved context snapshot, not a complete record of what was known in every round.</p>
         {contextItems.length ? <ul className="mt-2 space-y-2">{contextItems.map((item, index) => <li key={index} className="rounded-lg border border-white/10 p-3 text-sm leading-6 text-white/75">{text(item.content) || text(item.summary) || 'Content not retained'}<span className="mt-1 block text-xs text-white/50">Source: {text(item.source) || 'Unknown'}</span></li>)}</ul> : <p className="mt-2 text-sm text-white/55">No context items were retained in this snapshot.</p>}
       </details>
-    </section>
-    {!flow ? <p className="text-sm text-amber-100/80">This API version does not provide a run flow. The original trace remains available in Advanced diagnostics.</p> : <>
+    </details>
+    {!flow ? <div className="space-y-4"><p className="text-sm text-amber-100/80">Grouped rounds are unavailable from this API. The recorded events below show the available sequence.</p><EventTimeline events={beat.events} compact/></div> : <>
       <p className="text-xs text-white/55">{flow.round_count} recorded decision rounds · {flow.steps.length} recorded steps · Stored event order (not proof of causality)</p>
       {flow.truncated && <p role="status" className="rounded-lg border border-amber-300/20 p-3 text-sm text-amber-100">Part of this trace was omitted in storage. Round numbers describe only the retained decisions.</p>}
       {!flow.steps.length && <p className="text-sm text-white/60">No individual steps were retained for this run.</p>}
@@ -196,14 +204,13 @@ function RunFlow({ beat }: { beat: AwarenessBeat }) {
           <span className="absolute -left-[5px] top-1 h-2 w-2 rounded-full bg-cyan-200"/>
           <article className="rounded-xl border border-white/10 p-4">
             <h5 className="text-sm font-medium text-white/90"><span className="mr-2 text-white/45">{index + 1}.</span>{step.title}{step.decision ? ` · ${decisions[step.decision] || step.decision.replaceAll('_', ' ')}` : ''}</h5>
-            <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-white/75">{step.summary}</p>
+            <details className="mt-2"><summary className="cursor-pointer text-sm text-white/60">Explanation</summary><p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-white/75">{step.summary}</p></details>
             {event?.status && <p className="mt-2 text-xs text-white/55">Recorded status: {event.status.replaceAll('_', ' ')}</p>}
             {event && <details className="mt-3"><summary className="cursor-pointer text-xs text-white/60">Inspect this step’s evidence</summary><div className="mt-3"><EventTimeline events={[event]}/></div></details>}
           </article>
         </li>;
       })}</ol>
     </>}
-    {beat.assessment?.remaining && <p className="rounded-xl border border-amber-300/20 p-4 text-sm leading-6 text-amber-100/85"><strong>Still unresolved: </strong>{beat.assessment.remaining}</p>}
   </div>;
 }
 function RelatedCycle({ sapienId, thoughtId }: { sapienId: string; thoughtId: string }) {
@@ -226,7 +233,7 @@ function RelatedCycle({ sapienId, thoughtId }: { sapienId: string; thoughtId: st
   const final = beat?.final;
   const processing = final && typeof final === 'object' ? text(final.status) : null;
   return <section className={`${panel} p-4`} aria-label="Related processing cycle">
-    <h3 className="text-base font-medium text-white/85">Inside this Awareness run</h3>
+    <h3 className="text-base font-medium text-white/85">Run flow</h3>
     {error ? <p role="alert" className="mt-3 text-sm text-red-200">{error} <button className="underline" onClick={() => setAttempt(value => value + 1)}>Retry</button></p>
       : !data ? <p role="status" className="mt-3 text-sm text-white/60">Loading the matching processing cycle…</p>
       : !beat ? <p className="mt-3 text-sm text-white/60">{data.match_status === 'ambiguous' ? 'Multiple cycles reference this record; none has been selected automatically.' : 'No exact connection is available. The trace may be missing, shortened, or from an older version.'}</p>
@@ -246,6 +253,7 @@ export function AwarenessDiagnostics({ sapienId }: { sapienId: string }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [revision, setRevision] = useState(0);
   const refresh = useCallback(async () => {
@@ -261,7 +269,7 @@ export function AwarenessDiagnostics({ sapienId }: { sapienId: string }) {
     }
   }, [sapienId]);
   useEffect(() => {
-    setData(null); setSelectedId(null); setSearch('');
+    setData(null); setSelectedId(null); setSearch(''); setHistoryOpen(false);
     void refresh();
     return () => { requestVersion.current += 1; };
   }, [refresh]);
@@ -276,28 +284,31 @@ export function AwarenessDiagnostics({ sapienId }: { sapienId: string }) {
 
 
   if (loading && !data) return <div className="flex min-h-80 items-center justify-center gap-2 text-sm text-white/60"><Loader2 className="h-4 w-4 animate-spin"/>Loading saved understanding…</div>;
-  return <div className="space-y-6">
+  return <div className="mx-auto w-full max-w-5xl space-y-6">
     <header className="flex flex-wrap items-start justify-between gap-4">
-      <div><h2 className="text-lg font-medium text-white/90">How understanding develops</h2>
-        <p className="mt-1 max-w-3xl text-sm leading-6 text-white/60">Follow an event from its original words to the understanding saved by this Sapien, and see what remains unresolved.</p>
-        <p className="mt-2 text-xs leading-5 text-white/45">Showing up to 20 recent records. Times include your timezone; simulation times may be ahead of today. Source text may already be shortened in storage.</p>
+      <div><h2 className="text-lg font-medium text-white/90">Awareness runs</h2>
+        <p className="mt-1 max-w-3xl text-sm leading-6 text-white/60">Start with the outcome, then follow the recorded steps.</p>
+        <details className="mt-2 text-xs leading-5 text-white/50"><summary className="cursor-pointer">About these records</summary><p>Up to 20 recent records. Times include your timezone; simulation times may be ahead of today. Stored text and traces may be shortened.</p></details>
       </div>
       <button onClick={() => void refresh()} disabled={loading} className="flex items-center gap-2 rounded-lg border border-white/15 px-3 py-2 text-sm text-white/75 disabled:opacity-50"><RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`}/>Refresh</button>
     </header>
     {error && <div role="alert" className="flex items-center gap-2 rounded-xl border border-red-400/20 p-4 text-sm text-red-200"><AlertCircle className="h-4 w-4"/>{error}<button onClick={() => void refresh()} className="ml-auto underline">Retry</button></div>}
-    <div className="grid items-start gap-4 lg:grid-cols-[minmax(240px,300px)_minmax(0,1fr)]">
+    <div className="space-y-5">
       <section className={`${panel} overflow-hidden`} aria-label="Recent understanding">
+        <button type="button" aria-expanded={historyOpen} aria-controls="awareness-history" onClick={() => setHistoryOpen(value => !value)} className="flex w-full items-center justify-between gap-3 p-4 text-left text-sm text-white/80"><span>{selected ? absoluteTime(selected.assessed_at || selected.created_at) : 'Recent runs'}</span><span className="shrink-0 text-cyan-200">{historyOpen ? 'Close history' : 'Change run'}</span></button>
+        <div id="awareness-history" hidden={!historyOpen}>
         <div className="border-b border-white/10 p-4"><h3 className="text-sm font-medium text-white/80">Recent understanding</h3>
           <label className="mt-3 flex items-center gap-2 rounded-lg border border-white/15 px-3 py-2"><Search className="h-4 w-4 shrink-0 text-white/50"/><input aria-label="Search recent understanding" value={search} onChange={event => setSearch(event.target.value)} placeholder="Search events or understanding" className="min-w-0 w-full bg-transparent text-sm text-white/80 outline-none"/></label>
         </div>
-        <div className="max-h-[640px] overflow-y-auto">{filteredHistory.map(item => <button key={item.id} onClick={() => setSelectedId(item.id)} aria-pressed={selected?.id === item.id} className={`block w-full border-b border-white/[.07] p-4 text-left last:border-0 ${selected?.id === item.id ? 'bg-cyan-400/10 ring-1 ring-inset ring-cyan-300/30' : 'hover:bg-white/[.04]'}`}>
+        <div className="max-h-72 overflow-y-auto">{filteredHistory.map(item => <button key={item.id} onClick={() => { setSelectedId(item.id); setHistoryOpen(false); }} aria-pressed={selected?.id === item.id} className={`block w-full border-b border-white/[.07] p-4 text-left last:border-0 ${selected?.id === item.id ? 'bg-cyan-400/10 ring-1 ring-inset ring-cyan-300/30' : 'hover:bg-white/[.04]'}`}>
           <span className="block text-xs text-white/55">{absoluteTime(item.assessed_at || item.created_at)}</span>
-          <span className="mt-2 block line-clamp-3 text-sm leading-6 text-white/80">{item.understanding || item.focus || 'No saved understanding'}</span>
+          <span className="mt-2 block truncate text-sm leading-6 text-white/80">{item.understanding || item.focus || 'No saved understanding'}</span>
           <span className="mt-2 block text-xs text-cyan-200/75">{item.state ? assessmentLabels[item.state] || item.state.replaceAll('_', ' ') : 'Assessment unavailable'}</span>
         </button>)}{!filteredHistory.length && <p className="p-4 text-sm text-white/55">{history.length ? 'No records match your search.' : 'No saved understanding is available yet.'}</p>}</div>
+        </div>
       </section>
-      <section className="min-w-0 space-y-3" aria-label="Selected understanding">
-        {selected ? <><p className="text-xs text-white/55">Selected record · {absoluteTime(selected.assessed_at || selected.created_at)}</p><UnderstandingStory item={selected}/><RelatedCycle key={`${sapienId}:${selected.id}:${revision}`} sapienId={sapienId} thoughtId={selected.id}/></> : <p className={`${panel} p-6 text-sm text-white/55`}>An event and its saved understanding will appear here when available.</p>}
+      <section className="min-w-0 space-y-5" aria-label="Selected understanding">
+        {selected ? <><UnderstandingStory key={selected.id} item={selected}/><RelatedCycle key={`${sapienId}:${selected.id}:${revision}`} sapienId={sapienId} thoughtId={selected.id}/></> : <p className={`${panel} p-6 text-sm text-white/55`}>An event and its saved understanding will appear here when available.</p>}
       </section>
     </div>
   </div>;

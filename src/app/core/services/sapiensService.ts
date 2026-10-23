@@ -10,8 +10,6 @@ import {
   TextInputRequest,
   ChatRequest,
   ChatApiResponse,
-  QueryRequest,
-  QueryApiResponse,
   UserSignalPayload,
   Sapiens,
   ChatHistoryResponse,
@@ -134,28 +132,6 @@ class SapiensService {
       memory_units: data.memory_units ?? [],
       context_used: data.context_used ?? 0,
     };
-  }
-
-  /**
-   * POST /api/query (legacy endpoint)
-   */
-  async sendQuery(
-    sapiensId: string,
-    query: string
-  ): Promise<string> {
-    const body: QueryRequest = {
-      sapien_id: parseInt(sapiensId, 10),
-      query,
-    };
-    const response = await apiClient.post<QueryApiResponse>(API_ENDPOINTS.query, body);
-    const data = response.data;
-    return (
-      data.response ??
-      data.answer ??
-      data.result ??
-      data.message ??
-      JSON.stringify(data)
-    );
   }
 
   async sendUserSignal(payload: UserSignalPayload): Promise<void> {

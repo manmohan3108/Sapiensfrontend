@@ -110,29 +110,6 @@ export interface ChatApiResponse {
 }
 
 /**
- * Request to POST /api/query (legacy endpoint)
- */
-export interface QueryRequest {
-  sapien_id: number;
-  query: string;
-}
-
-/**
- * Response from POST /api/query.
- * Backend may return the answer under several field names.
- */
-export interface QueryApiResponse {
-  /** Primary answer field */
-  response?: string;
-  /** Alternate answer fields the backend may use */
-  answer?: string;
-  result?: string;
-  message?: string;
-  /** Any extra fields the backend returns */
-  [key: string]: unknown;
-}
-
-/**
  * A single message in the chat window, enriched with observability metadata.
  */
 export interface ChatMessage {
@@ -142,8 +119,6 @@ export interface ChatMessage {
   content: string;
   timestamp: string;
   isLoading?: boolean;
-  /** Which API produced this message */
-  apiMode?: 'chat' | 'query';
   /** Memory units referenced in this response */
   memoryUnits?: MemoryUnit[];
   /** Number of context items used */

@@ -3,7 +3,7 @@ import {
   Send, Brain, User, AlertCircle,
   Loader2, ChevronDown, Sparkles, Copy, Check,
   ThumbsUp, ThumbsDown, Star, BookMarked, MinusCircle,
-  Database, ChevronRight, Search,
+  Database, ChevronRight,
   History, Plus, RefreshCw, PanelLeftClose, PanelLeftOpen,
   Paperclip, X,
 } from 'lucide-react';
@@ -188,35 +188,6 @@ function SignalControls({ msg, onSignal }: { msg: ChatMessage; onSignal: (s: Use
   );
 }
 
-// ─── API mode badge ───────────────────────────────────────────────────────────
-function ApiModeBadge({ mode }: { mode: 'chat' | 'query' }) {
-  return mode === 'query' ? (
-    <span
-      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-mono flex-shrink-0"
-      style={{
-        background: 'rgb(var(--sp-accent-rgb, 6 182 212) / 0.12)',
-        border: '1px solid rgb(var(--sp-accent-rgb, 6 182 212) / 0.25)',
-        color: 'var(--sp-accent, #67e8f9)',
-      }}
-    >
-      <Search className="w-2 h-2" />
-      /query
-    </span>
-  ) : (
-    <span
-      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-mono flex-shrink-0"
-      style={{
-        background: 'rgb(var(--sp-accent-rgb, 124 58 237) / 0.12)',
-        border: '1px solid rgb(var(--sp-accent-rgb, 124 58 237) / 0.22)',
-        color: 'var(--sp-accent, #c4b5fd)',
-      }}
-    >
-      <Brain className="w-2 h-2" />
-      /chat
-    </span>
-  );
-}
-
 // ─── Message Bubble ───────────────────────────────────────────────────────────
 function MessageBubble({
   msg, onSignal, isHighlighted,
@@ -227,7 +198,6 @@ function MessageBubble({
 }) {
   const { user } = useAuth();
   const isUser = msg.role === 'user';
-  const isQuery = msg.apiMode === 'query';
   const isError = !msg.isLoading && msg.role === 'assistant' && (msg.isError || (msg.content ?? '').startsWith('An error occurred'));
 
   return (
@@ -245,16 +215,9 @@ function MessageBubble({
         {isUser ? (
           <div
             className="w-7 h-7 rounded-full flex items-center justify-center"
-            style={
-              isQuery
-                ? { background: 'var(--sp-action, #0e7490)', boxShadow: '0 0 12px rgb(var(--sp-accent-rgb, 6 182 212) / 0.4)' }
-                : { background: 'var(--sp-action, #7434ce)', boxShadow: '0 0 12px rgb(var(--sp-accent-rgb, 124 58 237) / 0.4)' }
-            }
+            style={{ background: 'var(--sp-action, #7434ce)', boxShadow: '0 0 12px rgb(var(--sp-accent-rgb, 124 58 237) / 0.4)' }}
           >
-            {isQuery
-              ? <Search className="w-3.5 h-3.5 text-sp-on-action" />
-              : <User className="w-3.5 h-3.5 text-sp-on-action" />
-            }
+            <User className="w-3.5 h-3.5 text-sp-on-action" />
           </div>
         ) : isError ? (
           <div className="w-7 h-7 rounded-full flex items-center justify-center"
@@ -264,16 +227,9 @@ function MessageBubble({
         ) : (
           <div
             className="w-7 h-7 rounded-full flex items-center justify-center"
-            style={
-              isQuery
-                ? { background: 'rgb(var(--sp-accent-rgb, 6 182 212) / 0.2)', border: '1px solid rgb(var(--sp-accent-rgb, 6 182 212) / 0.35)', boxShadow: '0 0 10px rgb(var(--sp-accent-rgb, 6 182 212) / 0.2)' }
-                : { background: 'rgb(var(--sp-accent-rgb, 124 58 237) / 0.2)', border: '1px solid rgb(var(--sp-accent-rgb, 124 58 237) / 0.35)', boxShadow: '0 0 10px rgb(var(--sp-accent-rgb, 124 58 237) / 0.2)' }
-            }
+            style={{ background: 'rgb(var(--sp-accent-rgb, 124 58 237) / 0.2)', border: '1px solid rgb(var(--sp-accent-rgb, 124 58 237) / 0.35)', boxShadow: '0 0 10px rgb(var(--sp-accent-rgb, 124 58 237) / 0.2)' }}
           >
-            {isQuery
-              ? <Search className="w-3.5 h-3.5 text-sp-accent" />
-              : <Brain className="w-3.5 h-3.5 text-sp-accent" />
-            }
+            <Brain className="w-3.5 h-3.5 text-sp-accent" />
           </div>
         )}
       </div>
@@ -283,30 +239,12 @@ function MessageBubble({
         {isUser ? (
           <div
             className="px-4 py-3 rounded-2xl rounded-tr-sm text-sm leading-relaxed text-sp-ink"
-            style={
-              isQuery
-                ? {
-                    background: 'linear-gradient(135deg, rgb(var(--sp-accent-rgb, 6 182 212) / 0.8), rgba(14,116,144,0.8))',
-                    border: '1px solid rgb(var(--sp-accent-rgb, 6 182 212) / 0.4)',
-                    boxShadow: '0 4px 20px rgb(var(--sp-accent-rgb, 6 182 212) / 0.2)',
-                  }
-                : {
-                    background: 'linear-gradient(135deg, rgb(var(--sp-accent-rgb, 124 58 237) / 0.85), rgba(79,70,229,0.85))',
-                    border: '1px solid rgb(var(--sp-accent-rgb, 124 58 237) / 0.4)',
-                    boxShadow: '0 4px 20px rgb(var(--sp-accent-rgb, 124 58 237) / 0.25)',
-                  }
-            }
+            style={{ background: 'linear-gradient(135deg, rgb(var(--sp-accent-rgb, 124 58 237) / 0.85), rgba(79,70,229,0.85))', border: '1px solid rgb(var(--sp-accent-rgb, 124 58 237) / 0.4)', boxShadow: '0 4px 20px rgb(var(--sp-accent-rgb, 124 58 237) / 0.25)' }}
           >
             <p className="whitespace-pre-wrap break-words">{msg.content}</p>
           </div>
         ) : (
           <>
-            {/* API mode badge above assistant bubble */}
-            {msg.apiMode && (
-              <div className="mb-0.5">
-                <ApiModeBadge mode={msg.apiMode} />
-              </div>
-            )}
             <div
               role={isError ? 'alert' : undefined}
               className={`px-4 py-3 rounded-2xl rounded-tl-sm text-sm leading-relaxed ${isError ? 'text-sp-danger' : 'text-sp-ink'}`}
@@ -448,7 +386,7 @@ export function ChatWindow() {
   const [historyError, setHistoryError] = useState<string | null>(null);
   const [attachmentsOpen, setAttachmentsOpen] = useState(false);
 
-  const { sendTextInput, sendUserSignal, sendQuery, loadChat, startNewChat } = useSapiens();
+  const { sendTextInput, sendUserSignal, loadChat, startNewChat } = useSapiens();
   const msgs = useSapiensStore((s) => s.chatMessages);
   const currentSapiens = useSapiensStore((s) => s.currentSapiens);
   const chatSessionId = useSapiensStore((s) => s.chatSessionId);
@@ -538,7 +476,7 @@ export function ChatWindow() {
     setJumpToMessageId(null);
   }, [jumpToMessageId, setJumpToMessageId]);
 
-  const send = async (mode: 'chat' | 'query' = 'chat') => {
+  const send = async () => {
     const t = input.trim();
     if (!t || isProcessing || sending.current) return;
     sending.current = true;
@@ -547,14 +485,10 @@ export function ChatWindow() {
     if (textareaRef.current) textareaRef.current.style.height = 'auto';
     atBottomRef.current = true;
     setShowScroll(false);
-    if (mode === 'query') {
-      await sendQuery(t);
-    } else {
-      const sent = await sendTextInput(t);
-      if (resourceSession.version === version) {
-        if (sent === false && user?.role !== 'admin') setInput(t);
-        await refreshHistory();
-      }
+    const sent = await sendTextInput(t);
+    if (resourceSession.version === version) {
+      if (sent === false && user?.role !== 'admin') setInput(t);
+      await refreshHistory();
     }
     sending.current = false;
   };
@@ -562,7 +496,7 @@ export function ChatWindow() {
   const onKey = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault();
-      void send('chat');
+      void send();
     }
   };
 
@@ -779,26 +713,9 @@ export function ChatWindow() {
             style={{ height: 'auto' }}
           />
 
-          {/* The legacy query endpoint is not available to customers. */}
-          {user?.role === 'admin' && <button
-            onClick={() => send('query')}
-            disabled={!input.trim() || isProcessing}
-            title="Send via /api/query (legacy)"
-            className="flex-shrink-0 flex items-center gap-1.5 px-3 h-9 rounded-lg text-[11px] font-medium transition-all duration-200 active:scale-95 disabled:cursor-not-allowed"
-            style={{
-              background: input.trim() && !isProcessing ? 'rgb(var(--sp-accent-rgb, 6 182 212) / 0.18)' : 'rgb(var(--sp-ink-rgb, 255 255 255) / 0.04)',
-              border: `1px solid ${input.trim() && !isProcessing ? 'rgb(var(--sp-accent-rgb, 6 182 212) / 0.4)' : 'rgb(var(--sp-ink-rgb, 255 255 255) / 0.07)'}`,
-              color: input.trim() && !isProcessing ? 'var(--sp-accent, #67e8f9)' : 'rgb(var(--sp-ink-rgb, 255 255 255) / 0.2)',
-              opacity: !input.trim() || isProcessing ? 0.4 : 1,
-            }}
-          >
-            <Search className="w-3.5 h-3.5" />
-            Query
-          </button>}
-
           {/* Chat button — /api/chat */}
           <button
-            onClick={() => send('chat')}
+            onClick={() => send()}
             disabled={!input.trim() || isProcessing}
             title="Send message (Enter)" aria-label="Send message"
             className="flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200 active:scale-95 disabled:cursor-not-allowed"

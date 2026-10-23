@@ -29,7 +29,6 @@ export const API_ENDPOINTS = {
   saveSapiens: (id: string) => `/${encodeURIComponent(id)}/save/`,
   learnFolder: '/sapiens/learn-folder',
   chat: '/chat',
-  query: '/query',
   chatSignal: '/chat/signal',
   sapienChats: (sapienId: string | number) => `/sapien/${sapienId}/chats`,
   sapienAwareness: (sapienId: string | number) => `/sapien/${sapienId}/awareness`,
