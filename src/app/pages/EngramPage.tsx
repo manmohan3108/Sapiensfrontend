@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { BarChart2, Table2, User, Search, Share2, Cpu, Brain, Home } from 'lucide-react';
 import { useSapiensStore } from '../core/state/sapiensStore';
 import { EngramDashboard }  from '../components/engram/EngramDashboard';
@@ -120,13 +120,13 @@ export function EngramPage({ embedded = false }: { embedded?: boolean } = {}) {
               <Cpu className="w-2.5 h-2.5" />
               id={sapienId}
             </span>
-            <button
-              onClick={() => navigate('/workspace')}
+            <Link
+              to="/workspace"
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] text-white/35 hover:text-white/70 hover:bg-white/[0.05] transition-all"
             >
               <Home className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Workspace</span>
-            </button>
+            </Link>
           </div>
         </div>
       </div>}

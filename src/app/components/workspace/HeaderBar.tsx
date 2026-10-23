@@ -1,5 +1,5 @@
 import { Home, Save, ChevronRight, Wifi, Hourglass, PlugZap, ScanSearch, LogOut, Beaker } from 'lucide-react';
-import { useNavigate } from 'react-router';
+import { Link } from 'react-router';
 import { useSapiens } from '../../hooks/useSapiens';
 import { useSapiensStore } from '../../core/state/sapiensStore';
 import { ThemeToggle } from '../ThemeToggle';
@@ -10,7 +10,6 @@ import { SapiensPresence } from '../customer/SapiensPresence';
 export function HeaderBar() {
   const { currentSapiens } = useSapiensStore();
   const { saveSapiens, returnToHome } = useSapiens();
-  const navigate = useNavigate();
   const status = useSapiensStore((s) => s.status);
   const isOverloaded = useSapiensStore((s) => s.isOverloaded);
   const { user, logout } = useAuth();
@@ -20,7 +19,7 @@ export function HeaderBar() {
   const isProcessing = status === 'processing' || status === 'loading';
 
   const statusColors = {
-    idle:       { dot: 'var(--sp-success, #34d399)', label: 'Idle', glow: 'rgba(52,211,153,0.5)' },
+    idle:       { dot: 'var(--sp-success, #34d399)', label: 'Ready', glow: 'rgba(52,211,153,0.5)' },
     processing: { dot: 'var(--sp-warning, #fbbf24)', label: 'Processing', glow: 'rgba(251,191,36,0.5)' },
     loading:    { dot: 'var(--sp-accent, #60a5fa)', label: 'Loading',    glow: 'rgba(96,165,250,0.5)' },
     error:      { dot: 'var(--sp-danger, #f87171)', label: 'Error',      glow: 'rgba(248,113,113,0.5)' },
@@ -87,7 +86,7 @@ export function HeaderBar() {
 
           {/* Status */}
           <div
-            className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-lg flex-shrink-0"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg flex-shrink-0"
             style={{
               background: 'rgb(var(--sp-ink-rgb, 255 255 255) / 0.04)',
               border: '1px solid rgb(var(--sp-ink-rgb, 255 255 255) / 0.08)',
@@ -126,7 +125,7 @@ export function HeaderBar() {
         </div>
 
         {/* ── RIGHT: Actions ── */}
-        <div className="order-3 flex w-full items-center gap-2 overflow-x-auto border-t border-sp-line pt-2 pb-0.5 min-[1800px]:order-none min-[1800px]:w-auto min-[1800px]:flex-shrink-0 min-[1800px]:overflow-visible min-[1800px]:border-0 min-[1800px]:pt-0 min-[1800px]:pb-0">
+        <div className="order-3 flex w-full flex-wrap items-center gap-2 overflow-visible border-t border-sp-line pt-2 pb-0.5 min-[1800px]:order-none min-[1800px]:w-auto min-[1800px]:flex-shrink-0 min-[1800px]:overflow-visible min-[1800px]:border-0 min-[1800px]:pt-0 min-[1800px]:pb-0">
           <ThemeToggle
             variant="ghost"
             size="icon"
@@ -135,39 +134,44 @@ export function HeaderBar() {
 
           <div className="w-px h-5 bg-sp-ink/10" />
 
-          {(user?.role === 'customer' || user?.role === 'admin') && <button
-            onClick={() => navigate('/connections')}
+          {(user?.role === 'customer' || user?.role === 'admin') && <Link
+            to="/connections"
             title="Manage external account connections"
             className="flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs transition-all duration-150"
             style={{ background: 'rgb(var(--sp-accent-rgb, 34 211 238) / 0.08)', border: '1px solid rgb(var(--sp-accent-rgb, 34 211 238) / 0.22)', color: 'var(--sp-accent, rgba(103,232,249,0.78))' }}
           >
             <PlugZap className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Connections</span>
-          </button>}
+            <span className="inline">Connections</span>
+          </Link>}
 
-          {user?.role === 'admin' && <button
-            onClick={() => navigate('/admin/analyse')}
+          <details className="workspace-tools relative">
+            <summary className="cursor-pointer rounded-lg border border-sp-line px-3 py-2 text-xs text-sp-ink">Tools</summary>
+            <div className="workspace-tools-menu">
+          {user?.role === 'admin' && <Link
+            to="/admin/analyse"
             title="Open the analysis platform"
             className="flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs transition-all duration-150"
             style={{ background: 'rgb(var(--sp-accent-rgb, 124 58 237) / 0.12)', border: '1px solid rgb(var(--sp-accent-rgb, 139 92 246) / 0.3)', color: 'var(--sp-accent, #c4b5fd)' }}
           >
             <ScanSearch className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Analyse</span>
-          </button>}
+            <span className="inline">Analyse</span>
+          </Link>}
 
-          {user?.role === 'admin' && <button
-            onClick={() => navigate(`/admin/simulations?sapienId=${encodeURIComponent(currentSapiens.id)}&sapienName=${encodeURIComponent(currentSapiens.name)}&returnTo=%2Fworkspace`)}
+          {user?.role === 'admin' && <Link
+            to={`/admin/simulations?sapienId=${encodeURIComponent(currentSapiens.id)}&sapienName=${encodeURIComponent(currentSapiens.name)}&returnTo=%2Fworkspace`}
             title={`Open simulations for ${currentSapiens.name}`}
             className="flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs transition-all duration-150"
             style={{ background: 'rgba(245,158,11,0.10)', border: '1px solid rgba(245,158,11,0.28)', color: 'var(--sp-warning, #fcd34d)' }}
           >
             <Beaker className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Simulation</span>
-          </button>}
+            <span className="inline">Simulation</span>
+          </Link>}
 
           <div className="w-px h-5 bg-sp-ink/10" />
 
           <RunEngineButton />
+            </div>
+          </details>
 
           <div className="w-px h-5 bg-sp-ink/10" />
 
@@ -190,7 +194,7 @@ export function HeaderBar() {
             }}
           >
             <Save className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Save</span>
+            <span className="inline">Save</span>
           </button>
 
           <button
@@ -198,9 +202,9 @@ export function HeaderBar() {
             className="flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs text-sp-muted hover:text-sp-ink hover:bg-sp-ink/[0.05] transition-all duration-150"
           >
             <Home className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Your Sapiens</span>
+            <span className="inline">Your Sapiens</span>
           </button>
-          <button onClick={() => void logout()} title={`Sign out ${user?.username ?? ''}`} className="flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs text-sp-muted transition hover:bg-red-400/[.06] hover:text-sp-danger"><LogOut className="h-3.5 w-3.5" /><span className="hidden sm:inline">Sign out</span></button>
+          <button onClick={() => void logout()} title={`Sign out ${user?.username ?? ''}`} className="flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs text-sp-muted transition hover:bg-red-400/[.06] hover:text-sp-danger"><LogOut className="h-3.5 w-3.5" /><span className="inline">Sign out</span></button>
         </div>
       </div>
     </header>

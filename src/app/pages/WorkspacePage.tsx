@@ -1,3 +1,4 @@
+import '../../styles/workspace-refresh.css';
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router';
 import { toast } from 'sonner';
@@ -22,7 +23,7 @@ function TabRow({
   setTab: (t: RightTab) => void;
 }) {
   const TABS = [
-    { id: 'awareness' as RightTab, label: 'Awareness', icon: <Eye className="w-3 h-3" />, activeColor: 'var(--sp-accent, #67e8f9)', activeBg: 'rgb(var(--sp-accent-rgb, 34 211 238) / 0.12)', activeBorder: 'rgb(var(--sp-accent-rgb, 34 211 238) / 0.25)' },
+    { id: 'awareness' as RightTab, label: 'On my mind', icon: <Eye className="w-3 h-3" />, activeColor: 'var(--sp-accent, #67e8f9)', activeBg: 'rgb(var(--sp-accent-rgb, 34 211 238) / 0.12)', activeBorder: 'rgb(var(--sp-accent-rgb, 34 211 238) / 0.25)' },
     { id: 'memory'   as RightTab, label: 'Working Memory', icon: <BrainCircuit className="w-3 h-3" />, activeColor: 'var(--sp-accent, #c4b5fd)', activeBg: 'rgb(var(--sp-accent-rgb, 124 58 237) / 0.15)', activeBorder: 'rgb(var(--sp-accent-rgb, 124 58 237) / 0.3)' },
     { id: 'goals'    as RightTab, label: 'Goals',    icon: <Target    className="w-3 h-3" />, activeColor: 'var(--sp-accent, #86efac)', activeBg: 'rgb(var(--sp-accent-rgb) / .12)', activeBorder: 'rgb(var(--sp-accent-rgb) / .3)' },
   ] as const;
@@ -38,7 +39,7 @@ function TabRow({
         <button
           key={t.id}
           onClick={() => setTab(t.id)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] transition-all duration-150"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-all duration-150"
           style={
             tab === t.id
               ? { background: t.activeBg, border: `1px solid ${t.activeBorder}`, color: t.activeColor }
@@ -64,6 +65,7 @@ export function WorkspacePage() {
   const announced = useRef<string | null>(null);
   const { user } = useAuth();
   const [rightTab, setRightTab] = useState<RightTab>('awareness');
+  const [contextOpen, setContextOpen] = useState(false);
 
   const currentSapiens = useSapiensStore((state) => state.currentSapiens);
 
@@ -106,16 +108,18 @@ export function WorkspacePage() {
       </div>
 
       {/* ── Panel grid ── */}
-      <div className="relative z-10 flex-1 min-h-0 p-2 gap-3 grid grid-cols-1 lg:grid-cols-12">
+      <div className="relative z-10 flex-1 min-h-0 p-3 sm:p-5 gap-5 grid grid-cols-1 lg:grid-cols-12">
 
         {/* MAIN — Chat and attachments */}
-        <div className="min-h-[38rem] lg:col-span-8 lg:min-h-0">
+        <div className="h-[min(34rem,75dvh)] min-h-[26rem] lg:h-auto lg:col-span-8 lg:min-h-0">
           <ChatWindow />
         </div>
 
         {/* RIGHT — Tab row + active panel */}
-        <div className="min-h-[38rem] flex flex-col gap-2 lg:col-span-4 lg:min-h-0">
+        <div className="flex flex-col gap-3 lg:col-span-4 lg:min-h-0">
 
+          <button className="flex items-center justify-between rounded-xl border border-sp-line bg-sp-panel px-4 py-3 text-sm text-sp-ink lg:hidden" aria-expanded={contextOpen} aria-controls="workspace-context" onClick={() => setContextOpen(value => !value)}><span>On {currentSapiens.name}’s mind</span><span>{contextOpen ? 'Hide' : 'Explore'}</span></button>
+          <div id="workspace-context" className={`${contextOpen ? 'flex' : 'hidden'} min-h-0 flex-1 flex-col gap-3 lg:flex`}>
           {/* Tab pill row */}
           <TabRow tab={rightTab} setTab={setRightTab} />
 
@@ -124,6 +128,7 @@ export function WorkspacePage() {
             {rightTab === 'awareness' && <AwarenessPanel />}
             {rightTab === 'memory'   && <MemoryPanel />}
             {rightTab === 'goals'    && <GoalsPanel sapienId={parseInt(currentSapiens.id, 10)} />}
+          </div>
           </div>
         </div>
       </div>

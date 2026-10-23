@@ -360,26 +360,24 @@ function EmptyState({ name, onHint }: { name: string; onHint: (h: string) => voi
   const hints = [
     'I have an idea I’d like to explore.',
     'Help me think through a question.',
-    'Let’s look at a different perspective.',
-    'I’d like to share some background.',
   ];
   return (
-    <div className="flex flex-col items-center justify-center h-full px-8 select-none text-center">
-      <SapiensPresence size={88} className="mb-4" />
+    <div className="flex flex-col items-center justify-center h-full px-5 py-5 text-center">
+      <SapiensPresence size={64} className="mb-3" />
 
-      <p className="text-sp-ink mb-2">Talk with{' '}
+      <p className="text-sp-ink text-2xl font-semibold mb-2">Talk with{' '}
         <span style={{ background: 'linear-gradient(90deg, var(--sp-accent, #c4b5fd), var(--sp-accent, #a5b4fc))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
           {name}
         </span>
       </p>
-      <p className="text-xs text-sp-muted mb-7 max-w-[260px] leading-relaxed">
-        Bring a question, an idea or something that matters to you. Start here with the same AI individual.
+      <p className="text-sm text-sp-muted mb-5 max-w-[340px] leading-relaxed">
+        A question, a fresh idea, or a little context. Start wherever you are.
       </p>
 
-      <div className="grid grid-cols-2 gap-2 w-full max-w-xs">
+      <div className="grid grid-cols-2 gap-2 w-full max-w-sm">
         {hints.map((h) => (
           <button key={h} onClick={() => onHint(h)}
-            className="flex items-start gap-2 px-3 py-2.5 rounded-xl text-left text-[11px] leading-relaxed text-sp-muted
+            className="flex items-start gap-2 px-3 py-2.5 rounded-xl text-left text-sm leading-relaxed text-sp-muted
               hover:text-sp-ink transition-all duration-200 group"
             style={{ background: 'rgb(var(--sp-ink-rgb, 255 255 255) / 0.03)', border: '1px solid rgb(var(--sp-ink-rgb, 255 255 255) / 0.07)' }}
             onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgb(var(--sp-accent-rgb, 124 58 237) / 0.3)'; }}
@@ -583,7 +581,7 @@ export function ChatWindow() {
   const userCount = msgs.filter((m) => m.role === 'user').length;
 
   return (
-    <div className="h-full flex rounded-2xl overflow-hidden relative"
+    <div className="workspace-conversation h-full flex rounded-2xl overflow-hidden relative"
       style={{
         background: 'rgb(var(--sp-panel-rgb, 8 12 22) / 0.85)',
         border: '1px solid rgb(var(--sp-accent-rgb, 124 58 237) / 0.22)',
@@ -802,7 +800,7 @@ export function ChatWindow() {
           <button
             onClick={() => send('chat')}
             disabled={!input.trim() || isProcessing}
-            title="Send via /api/chat (Enter)"
+            title="Send message (Enter)" aria-label="Send message"
             className="flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200 active:scale-95 disabled:cursor-not-allowed"
             style={{
               background: input.trim() && !isProcessing ? 'var(--sp-action, #7434ce)' : 'rgb(var(--sp-ink-rgb, 255 255 255) / 0.05)',
