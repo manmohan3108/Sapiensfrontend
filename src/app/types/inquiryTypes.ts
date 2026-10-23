@@ -41,8 +41,15 @@ export interface InquiryPage {
   count: number;
   limit: number;
   has_more: boolean;
+  total?: number;
+  offset?: number;
+  processing?: { available: boolean; counts?: Record<string, number>; recent_jobs?: Array<{
+    id: string; status: string; run_id: string | null; parent_job_id: string | null;
+    supplied_count: number; eligible_at: string | null; updated_at: string; retries: number;
+    results: Array<{ subject?: string; status?: string; reason?: string; questions: string[] }>;
+  }> };
   subset_only: true;
-  ordering: 'created_at_desc_within_subset';
+  ordering: 'created_at_desc_within_subset' | 'created_at_desc';
   filters: Partial<InquiryFilters>;
   summary: { states: Record<string, number>; sources: Record<string, number>; channels?: Record<string, number>; delivery_states?: Record<string, number> };
   items: InquiryRecord[];

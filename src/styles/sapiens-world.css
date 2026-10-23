@@ -72,3 +72,18 @@
  .world-node-wait{top:-10px;left:12px;transform:none}
  .world-mobile-exchange{font-size:11px;gap:8px 18px;line-height:1.4}
 }
+
+@media(max-width:1020px){.world-node-button.has-no-caption .world-node-title{grid-row:1/3;align-self:center}}
+
+/* A visible travelling spotlight follows the current exchange; text never moves. */
+.world-link-pair path{transition:opacity .45s,stroke-width .45s}
+.sapiens-world[data-flow-node="people"] [data-wire="people"]>path:not(.world-signal),
+.sapiens-world[data-flow-node="information"] [data-wire="information"]>path:not(.world-signal),
+.sapiens-world[data-flow-node="tools"] [data-wire="tools"]>path:not(.world-signal),
+.sapiens-world[data-flow-node="feedback"] [data-wire="feedback"]>path:not(.world-signal){opacity:.95;stroke-width:2}
+.sapiens-world[data-exchange-state="overview"][data-flow-node="people"] .world-node-people .world-node-button,
+.sapiens-world[data-exchange-state="overview"][data-flow-node="information"] .world-node-information .world-node-button,
+.sapiens-world[data-exchange-state="overview"][data-flow-node="tools"] .world-node-tools .world-node-button,
+.sapiens-world[data-exchange-state="overview"][data-flow-node="feedback"] .world-node-feedback .world-node-button{background:var(--node-tint);border-color:color-mix(in srgb,var(--node-color) 28%,transparent);box-shadow:0 8px 28px color-mix(in srgb,var(--node-color) 9%,transparent)}
+.world-node-button{transition:background .6s,border-color .6s,box-shadow .6s}
+.sapiens-world[data-exchange-state="pending"] .world-link-pair.is-waiting .world-return{opacity:.2}

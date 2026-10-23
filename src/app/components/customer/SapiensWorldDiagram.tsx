@@ -4,10 +4,10 @@ import { SapiensBrandMark } from './SapiensBrandMark';
 import '../../../styles/sapiens-world.css';
 
 const interactions = [
-  { id: 'people', title: 'People', action: 'Clarify what’s missing.', index: 0, color: '#a94130', tint: '#ffe4d5', out: 'Ask to clarify', back: 'Listen & understand', why: 'A plan is missing Maya’s availability.', from: 'Sapiens asks Maya', example: '“When are you usually free?”', waiting: 'Waits for Maya. No answer assumed.', reveal: 'See Maya’s reply', source: 'Maya replies', answer: '“Weekdays, after six.”', change: 'Understands her availability.', carry: 'Keeps this context for future plans; checks if it changes.', alternative: 'If her reply is unclear', unclear: '“It depends on the day.”', retry: 'Asks which days work, instead of guessing.', aspect: 'understanding' },
+  { id: 'people', title: 'People', action: '', index: 0, color: '#a94130', tint: '#ffe4d5', out: 'Interacts with people', back: 'Listens and understands', why: 'A plan is missing Maya’s availability.', from: 'Sapiens asks Maya', example: '“When are you usually free?”', waiting: 'Waits for Maya. No answer assumed.', reveal: 'See Maya’s reply', source: 'Maya replies', answer: '“Weekdays, after six.”', change: 'Understands her availability.', carry: 'Keeps this context for future plans; checks if it changes.', alternative: 'If her reply is unclear', unclear: '“It depends on the day.”', retry: 'Asks which days work, instead of guessing.', aspect: 'understanding' },
   { id: 'information', title: 'Information', action: 'Fill gaps in understanding.', index: 1, color: '#80601a', tint: '#fff0ba', out: 'Look for evidence', back: 'Check what it finds', why: 'Its information may be out of date.', from: 'Sapiens checks the current source', example: '“Is this place still open on Sunday?”', waiting: 'Checks before relying on old information.', reveal: 'See the evidence', source: 'The current opening hours', answer: '“Closed on Sundays.”', change: 'Revises its understanding.', carry: 'Uses the updated hours when considering options.', alternative: 'If sources disagree', unclear: 'Two sources list different hours.', retry: 'Seeks confirmation before treating either as fact.', aspect: 'understanding' },
   { id: 'tools', title: 'Tools', action: 'Turn intent into action.', index: 2, color: '#286957', tint: '#d9ecdf', out: 'Act with permission', back: 'Check the result', why: 'An agreed plan needs a calendar update.', from: 'With your approval, Sapiens acts', example: 'Sends the agreed time to the calendar.', waiting: 'Waits for confirmation from the tool.', reveal: 'See the tool result', source: 'The calendar confirms', answer: '“Event updated.”', change: 'Knows the action succeeded.', carry: 'Uses the confirmed result to decide what to do next.', alternative: 'If the action fails', unclear: '“Calendar unavailable.”', retry: 'Reports the failure and reconsiders the next step.', aspect: 'goals' },
-  { id: 'feedback', title: 'Outcomes & feedback', action: 'Learn from what happened.', index: 3, color: '#a63d5c', tint: '#f9dfe7', out: 'Follow up', back: 'Compare & reflect', why: 'A completed action may not have helped.', from: 'Sapiens follows up with Maya', example: '“Did the reminder arrive at a useful time?”', waiting: 'Asks about the outcome, beyond task completion.', reveal: 'See the feedback', source: 'Maya explains', answer: '“Too late. I had already left.”', change: 'Reconsiders its timing.', carry: 'Remembers to check when a reminder would be useful.', alternative: 'If feedback is unclear', unclear: '“It was fine, I guess.”', retry: 'Asks what helped before changing its approach.', aspect: 'memory' },
+  { id: 'feedback', title: 'Outcomes & feedback', action: '', index: 3, color: '#a63d5c', tint: '#f9dfe7', out: 'Checks the outcome', back: 'Reflects and learns', why: 'Sending a reminder is not enough; did it help?', from: 'Sapiens follows up with Maya', example: '“Did the reminder arrive at a useful time?”', waiting: 'Asks about the outcome, beyond task completion.', reveal: 'See the feedback', source: 'Maya explains', answer: '“Too late. I had already left.”', change: 'Learns that the timing did not help.', carry: 'Remembers to check when a reminder would be useful.', alternative: 'If feedback is unclear', unclear: '“It was fine, I guess.”', retry: 'Asks what helped before changing its approach.', aspect: 'memory' },
 ] as const;
 
 const aspects = [
@@ -23,6 +23,7 @@ export function SapiensWorldDiagram() {
   const [selected, setSelected] = useState<string | null>(null);
   const [response, setResponse] = useState<'pending' | 'received' | 'unclear'>('pending');
   const [entered, setEntered] = useState(false);
+  const [flowing, setFlowing] = useState<string | null>(null);
   const [geometry, setGeometry] = useState({ width: 1200, height: 600, wires: [] as Wire[], outcome: '', outcomeX: 0, outcomeY: 0 });
   const ref = useRef<HTMLDivElement>(null);
   const id = useId().replace(/:/g, '');
@@ -72,37 +73,31 @@ export function SapiensWorldDiagram() {
     if (!map || !entered) return;
     const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
     let animations: Animation[] = [];
-    const stop = () => { animations.forEach(animation => animation.cancel()); animations = []; };
+    let ambient: Animation[] = [];
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let beat = 0;
+    const stopCycle = () => { clearTimeout(timer); animations.forEach(animation => animation.cancel()); animations = []; };
+    const stop = () => { stopCycle(); ambient.forEach(animation => animation.cancel()); ambient = []; };
     const play = () => {
-      stop();
+      stopCycle();
       if (preference.matches || document.hidden) return;
       const animate = (selector: string, frames: Keyframe[], duration: number, delay = 0) => {
         map.querySelectorAll(selector).forEach(element => animations.push(element.animate(frames, { duration, delay, easing: 'ease-in-out' })));
       };
-      // One finite sequence: initiate, exchange, then absorb the experience.
-      // Only artwork moves; labels, hit targets and SVG endpoints stay fixed.
-      animate('.world-core-brand img', [
-        { transform: 'translateY(0) rotate(-2deg) scale(1)' },
-        { transform: 'translateY(-7px) rotate(5deg) scale(1.09)', offset: .28 },
-        { transform: 'translateY(3px) rotate(-4deg) scale(1.02)', offset: .65 },
-        { transform: 'translateY(0) rotate(0) scale(1)' },
-      ], 4800);
-      animate('.world-core-halo', [
-        { transform: 'translate(-50%,-50%) scale(.85)', opacity: .4 },
-        { transform: 'translate(-50%,-50%) scale(1.35)', opacity: 1, offset: .35 },
-        { transform: 'translate(-50%,-50%) scale(1)', opacity: 1 },
-      ], 4600);
+      // Cycle through the exchanges without changing the user's selected example.
+      const route = selected ?? interactions[beat++ % interactions.length].id;
+      setFlowing(route);
       const pulse = [{ transform: 'translate(-50%,-50%) scale(.6)', opacity: 0 }, { opacity: .65, offset: .2 }, { transform: 'translate(-50%,-50%) scale(1.45)', opacity: 0 }];
       animate('.world-core-ripple:not(.world-core-ripple-return)', pulse, 1600, 100);
       if (!selected || response !== 'pending') animate('.world-core-ripple-return', pulse, 1500, 3100);
       const signal = [{ strokeDashoffset: '100', opacity: 0 }, { opacity: 1, offset: .15 }, { opacity: 1, offset: .85 }, { strokeDashoffset: '0', opacity: 0 }];
-      interactions.filter(item => !selected || item.id === selected).forEach((item, index) => {
+      interactions.filter(item => item.id === route).forEach((item, index) => {
         const delay = index * 140;
         if (!selected || response === 'pending') animate(`[data-wire="${item.id}"] .world-signal:not(.world-signal-back)`, signal, 1100, 400 + delay);
         if (!selected || response !== 'pending') animate(`[data-wire="${item.id}"] .world-signal-back`, signal, 1100, (selected ? 500 : 2100) + delay);
         animate(`.world-node-${item.id} .world-art`, [
           { transform: 'translateY(0) rotate(0) scale(1)' },
-          { transform: 'translateY(-10px) rotate(-3deg) scale(1.055)', offset: .4 },
+          { transform: 'translateY(-15px) rotate(-5deg) scale(1.08)', offset: .4 },
           { transform: 'translateY(0) rotate(0) scale(1)' },
         ], 1800, 1000 + delay);
         const aspect = selected && response === 'pending' ? 'attention' : item.aspect;
@@ -114,15 +109,41 @@ export function SapiensWorldDiagram() {
           { transform: 'scale(1)', boxShadow: '0 0 0 0 transparent' },
         ], 1000, 3300 + delay);
       });
-      if (!selected || (response !== 'pending' && (selected === 'tools' || selected === 'feedback'))) animate('.world-outcome-signal', signal, 1100, 1700);
-      animate('.world-node.is-selected .world-mobile-exchange svg', [
+      if ((!selected || response !== 'pending') && (route === 'tools' || route === 'feedback')) animate('.world-outcome-signal', signal, 1100, 1700);
+      animate(`.world-node-${route} .world-mobile-exchange svg`, [
         { transform: 'translateX(0)', opacity: .5 }, { transform: 'translateX(5px)', opacity: 1 }, { transform: 'translateX(0)', opacity: 1 },
       ], 1600, 500);
+      if (!selected) timer = setTimeout(play, 5000);
     };
-    play();
-    preference.addEventListener('change', play);
-    document.addEventListener('visibilitychange', play);
-    return () => { stop(); preference.removeEventListener('change', play); document.removeEventListener('visibilitychange', play); };
+    const start = () => {
+      stop();
+      setFlowing(null);
+      if (preference.matches || document.hidden) return;
+      const loop = (selector: string, frames: Keyframe[], duration: number, delay = 0) => {
+        map.querySelectorAll(selector).forEach(element => ambient.push(element.animate(frames, {duration, delay, iterations: Infinity, easing: 'ease-in-out'})));
+      };
+      loop('.world-core-brand img', [
+        {transform:'translateY(0) rotate(-4deg) scale(1)'},
+        {transform:'translateY(-10px) rotate(7deg) scale(1.12)',offset:.45},
+        {transform:'translateY(0) rotate(-4deg) scale(1)'},
+      ], 6000);
+      loop('.world-core-halo', [
+        {transform:'translate(-50%,-50%) scale(.9)',opacity:.6},
+        {transform:'translate(-50%,-50%) scale(1.5)',opacity:1},
+        {transform:'translate(-50%,-50%) scale(.9)',opacity:.6},
+      ], 4500);
+      // The artwork floats; the parent button and all text remain stationary.
+      interactions.forEach((item,index) => loop(`.world-node-${item.id} .world-art`, [
+        {translate:'0 0'},
+        {translate:'0 -7px'},
+        {translate:'0 0'},
+      ], 5600, -index * 1100));
+      play();
+    };
+    start();
+    preference.addEventListener('change', start);
+    document.addEventListener('visibilitychange', start);
+    return () => { stop(); preference.removeEventListener('change', start); document.removeEventListener('visibilitychange', start); };
   }, [entered, selected, response]);
 
   const select = (key: string) => { setSelected(value => value === key ? null : key); setResponse('pending'); };
@@ -145,7 +166,7 @@ export function SapiensWorldDiagram() {
     </div>
   </>;
 
-  return <div className={`sapiens-world${entered ? ' has-entered' : ''}`} data-exchange-state={current ? response : 'overview'} ref={ref} onKeyDown={event => { if (event.key === 'Escape') { setSelected(null); setResponse('pending'); } }}>
+  return <div className={`sapiens-world${entered ? ' has-entered' : ''}`} data-flow-node={entered ? flowing ?? undefined : undefined} data-exchange-state={current ? response : 'overview'} ref={ref} onKeyDown={event => { if (event.key === 'Escape') { setSelected(null); setResponse('pending'); } }}>
     <svg className="world-links" viewBox={`0 0 ${geometry.width} ${geometry.height}`} aria-hidden="true">
       <defs>{interactions.map(item => <marker key={item.id} id={`${id}-${item.id}`} markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M1 1 6 3.5 1 6" fill="none" stroke={item.color} strokeWidth="1.5"/></marker>)}</defs>
       {geometry.wires.map(wire => <g key={wire.id} data-wire={wire.id} className={`world-link-pair${selected === wire.id ? ` is-active${waiting ? ' is-waiting' : ''}` : ''}`} style={{ '--wire-color': wire.color } as CSSProperties}>
@@ -183,10 +204,10 @@ export function SapiensWorldDiagram() {
     </section>
 
     {interactions.map(item => <section key={item.id} className={`world-node world-node-${item.id}${selected === item.id ? ' is-selected' : ''}`} style={{ '--node-color': item.color, '--node-tint': item.tint } as CSSProperties}>
-      <button type="button" className="world-node-button" data-world-node={item.id} aria-pressed={selected === item.id} aria-controls={`${id}-detail ${id}-${item.id}-mobile`} onClick={() => select(item.id)}>
+      <button type="button" className={`world-node-button${item.action ? '' : ' has-no-caption'}`} data-world-node={item.id} aria-pressed={selected === item.id} aria-controls={`${id}-detail ${id}-${item.id}-mobile`} onClick={() => select(item.id)}>
         <span className="world-art" aria-hidden="true" style={{ backgroundPosition: `${item.index % 2 * 100}% ${Math.floor(item.index / 2) * 100}%` }}/>
         {selected === item.id && waiting && <span className="world-node-wait"><Clock3 size={13} aria-hidden="true"/> Awaiting response</span>}
-        <span className="world-node-title">{item.title}<Plus size={16}/></span><span className="world-node-action">{item.action}</span>
+        <span className="world-node-title">{item.title}<Plus size={16}/></span>{item.action && <span className="world-node-action">{item.action}</span>}
       </button>
       <div className="world-mobile-exchange"><span>Sapiens <ArrowRight size={12}/> {item.out}</span><span>{selected === item.id && waiting ? 'Awaiting response' : item.back} <ArrowRight size={12}/> Sapiens</span></div>
       <div className="world-mobile-detail" id={`${id}-${item.id}-mobile`} aria-live="polite" aria-atomic="true">{selected === item.id && detail}</div>

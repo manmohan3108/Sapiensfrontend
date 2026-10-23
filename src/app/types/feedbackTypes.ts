@@ -38,6 +38,8 @@ export interface FeedbackResponse {
   count: number;
   findings: FeedbackFinding[];
   total?: number;
+  offset?: number;
+  has_more?: boolean;
   processing?: { available: boolean; counts?: Record<string, number>; recent_jobs?: Array<{
     id: string; status: string; run_id: string | null; experience_count: number;
     reviewed_count: number; eligible_at: string | null; updated_at: string; retries: number;

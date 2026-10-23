@@ -5,6 +5,7 @@ import { inquiryService } from '../../core/services/inquiryService';
 import type { InquiryDetail, InquiryFilters, InquiryKind, InquiryPage } from '../../types/inquiryTypes';
 import type { ApiError } from '../../types/apiTypes';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '../ui/dialog';
+import { InquiryContext } from './InquiryContext';
 
 const panel = 'rounded-xl border border-white/[.07] bg-white/[.025]';
 const button = 'rounded-lg border border-white/15 px-3 py-2 text-xs text-white/70 hover:bg-white/5 disabled:opacity-40';
@@ -19,13 +20,13 @@ function display(value: unknown): string {
 function timestamp(value: string | null | undefined) {
   if (!value) return 'Not recorded';
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : `${date.toLocaleString()} (${date.toISOString()})`;
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
 }
 function Field({ label, value }: { label: string; value: unknown }) {
   return <div className="min-w-0"><dt className="text-[11px] text-white/40">{label}</dt><dd className="mt-1 whitespace-pre-wrap break-words text-xs leading-5 text-white/80 [overflow-wrap:anywhere]">{display(value)}</dd></div>;
 }
 function Stored({ label, value }: { label: string; value: unknown }) {
-  return <section className={`${panel} p-4`}><h3 className="text-sm text-cyan-100">{label}</h3><pre className="mt-3 max-h-80 overflow-auto whitespace-pre-wrap break-words text-xs leading-5 text-white/70 [overflow-wrap:anywhere]">{display(value)}</pre></section>;
+  return <section className={`${panel} p-4`}><h3 className="text-sm text-cyan-100">{label}</h3><div className="mt-3 max-h-80 overflow-auto whitespace-pre-wrap break-words text-base leading-7 text-white/85 [overflow-wrap:anywhere]">{display(value)}</div></section>;
 }
 function Failure({ status, retry }: { status?: number; retry: () => void }) {
   const message = status === 401 ? 'Session expired. Sign in with an administrator account.'
@@ -37,6 +38,23 @@ function Failure({ status, retry }: { status?: number; retry: () => void }) {
 }
 function Loading() {
   return <div role="status" className="flex min-h-40 items-center justify-center gap-2 text-xs text-white/55"><Loader2 className="h-4 w-4 animate-spin" />Loading stored records…</div>;
+}
+
+function QuestionReviews({ data }: { data: InquiryPage }) {
+  const processing = data.processing;
+  if (!processing) return null;
+  return <details className={`${panel} p-4`}><summary className="cursor-pointer text-sm text-white/70">Background question reviews</summary>
+    <p className="mt-3 text-xs leading-5 text-white/50">Requests collect hourly. A review may produce no questions. Counts are jobs across saved runs, not unique requests or LLM calls. Continuations contain remaining work from an earlier job.</p>
+    {!processing.available ? <p className="mt-3 text-amber-200">Review records are temporarily unavailable.</p> : <>
+      <p className="mt-3 text-sm text-white/70">Queued: {processing.counts?.pending ?? 0} · Recorded as running: {processing.counts?.running ?? 0} · Completed: {processing.counts?.completed ?? 0} · Failed: {processing.counts?.failed ?? 0}</p>
+      {processing.recent_jobs?.map(job => <details key={job.id} className="mt-3 rounded-lg border border-white/10 p-3"><summary className="cursor-pointer text-sm text-white/75">{job.status} · {job.results.length} saved results{job.parent_job_id ? ' · continuation' : ''}</summary>
+        <p className="mt-2 text-xs text-white/50">Eligible from {timestamp(job.eligible_at)} (cognitive time, not guaranteed start). {job.run_id ? `Simulation: ${job.run_id}` : 'Normal runtime'} · {job.retries} retries</p>
+        {job.results.map((result, index) => <div key={index} className="mt-3 border-l-2 border-cyan-300/20 pl-3"><p className="whitespace-pre-wrap text-sm text-white/75">{result.subject || 'Original subject unavailable'}</p><p className="mt-2 text-sm text-cyan-200">{result.questions.length ? `${result.questions.length} questions generated` : 'No questions in this result'} · {result.status || 'Status unknown'}</p><p className="mt-1 text-sm text-white/60">{result.reason || 'No reason retained.'}</p>{result.questions.map((q, i) => <p key={i} className="mt-2 text-sm text-white/80">{q}</p>)}</div>)}
+        {!job.results.length && <p className="mt-2 text-xs text-white/50">No saved result available; this does not establish that no questions were needed.</p>}
+        <Link className="mt-3 inline-block text-xs text-cyan-200 underline" to={jobHref('questioning', job.id)}>Inspect job</Link>
+      </details>)}
+    </>}
+  </details>;
 }
 
 function RecordDetail({ sapienId, kind, id, onQuestion }: { sapienId: string; kind: InquiryKind; id: string; onQuestion: (id: string) => void }) {
@@ -58,7 +76,7 @@ function RecordDetail({ sapienId, kind, id, onQuestion }: { sapienId: string; ki
   }, [sapienId, kind, id, revision]);
   const item = data?.item;
   return <div className="space-y-4">
-    <p className="break-all text-xs text-white/50">{title(kind)} record {id} · Sapien {sapienId}</p>
+    <p className="text-xs text-white/50">{title(kind)} · Sapien {sapienId}</p>
     <button className={button} type="button" onClick={() => { setData(null); setError(null); setRevision(value => value + 1); }}>Refresh detail</button>
     {!data && !error && <Loading />}
     {error && <Failure status={error.status} retry={() => setRevision(value => value + 1)} />}
@@ -66,6 +84,10 @@ function RecordDetail({ sapienId, kind, id, onQuestion }: { sapienId: string; ki
       <p className="text-[11px] text-white/45">Read as of {timestamp(data.as_of)} (real audit time).</p>
       <Stored label={kind === 'curiosity' ? 'Original question' : 'Generated question'} value={kind === 'curiosity' ? item.original_question : item.question} />
       {kind === 'curiosity' && <Stored label="Recommended phrasing" value={item.question} />}
+      <p className="text-sm text-cyan-200">{item.state === 'answered' ? 'Assessed answered' : item.state === 'stale' ? 'Closed without an established answer' : item.state === 'open' ? 'Open question' : 'Status not recorded'}</p>
+      <InquiryContext context={item.context} outcome={item.outcome} />
+      <p className="text-xs leading-5 text-white/50">A generated question is not proof it was sent. An assessed answer is the Sapien’s recorded understanding, not independent verification.</p>
+      <details className={`${panel} p-4`}><summary className="cursor-pointer text-sm text-white/60">Technical details and original records</summary><div className="mt-4 space-y-4">
       <section className={`${panel} p-4`}><dl className="grid gap-4 sm:grid-cols-2">
         <Field label="Assessment state" value={item.state === 'answered' ? 'Assessed answered' : item.state} />
         <Field label="Source" value={item.source} /><Field label="Source handle" value={item.source_handle} />
@@ -87,6 +109,7 @@ function RecordDetail({ sapienId, kind, id, onQuestion }: { sapienId: string; ki
       {kind === 'curiosity' && <><Stored label="Stored attention" value={item.attention} /><Stored label="Observed usage outcome" value={item.usage_outcome} /></>}
       <p className="text-xs leading-5 text-white/45">Generated questions, selected probes, attention requests, reviews, and assessed answers are separate stages. An attention request or asked_at timestamp does not establish recipient delivery. Stored assessments are not independently verified truth. These are the latest retained facts, not a complete event history. Stale means closed without establishing an answer; job completion proves processing, not resolution.</p>
       <p className="text-xs leading-5 text-white/45">Event, review, and expiry dates use cognitive time and may be simulated. They are not compared with the browser clock or real read time to infer expiry. Missing or cleared context is not a fetch error.</p>
+      </div></details>
     </>}
   </div>;
 }
@@ -99,6 +122,7 @@ export function InquiryInspection({ sapienId, kind }: { sapienId: string; kind: 
 function InquiryList({ sapienId, kind }: { sapienId: string; kind: InquiryKind }) {
   const [params] = useSearchParams();
   const [filters, setFilters] = useState<InquiryFilters>(defaults);
+  const [offset, setOffset] = useState(0);
   const [revision, setRevision] = useState(0);
   const [data, setData] = useState<InquiryPage | null>(null);
   const [error, setError] = useState<ApiError | null>(null);
@@ -107,12 +131,12 @@ function InquiryList({ sapienId, kind }: { sapienId: string; kind: InquiryKind }
   const valid = Number.isInteger(filters.limit) && filters.limit >= 1 && filters.limit <= 200
     && filters.source.length <= 256 && filters.source === filters.source.trim();
   const resetContent = () => { requestVersion.current += 1; setData(null); setError(null); setSelected(null); };
-  function change(next: Partial<InquiryFilters>) { resetContent(); setFilters(current => ({ ...current, ...next })); }
+  function change(next: Partial<InquiryFilters>) { resetContent(); setOffset(0); setFilters(current => ({ ...current, ...next })); }
   useEffect(() => {
     let active = true;
     const version = requestVersion.current;
     if (!valid) return;
-    inquiryService.list(sapienId, kind, filters).then(result => {
+    inquiryService.list(sapienId, kind, filters, offset).then(result => {
       if (!active || version !== requestVersion.current) return;
       if (String(result.sapien_id) !== sapienId) {
         setError({ message: 'Scope mismatch' }); return;
@@ -120,11 +144,12 @@ function InquiryList({ sapienId, kind }: { sapienId: string; kind: InquiryKind }
       setData(result);
     }).catch((caught: ApiError) => { if (active && version === requestVersion.current) setError({ message: 'Read failed', status: caught?.status }); });
     return () => { active = false; };
-  }, [sapienId, kind, filters, valid, revision]);
+  }, [sapienId, kind, filters, valid, revision, offset]);
   function refresh() { resetContent(); setRevision(value => value + 1); }
   return <div className="space-y-4">
     <section className={`${panel} p-4`}><h2 className="text-sm text-white/80">{title(kind)} <span className="ml-2 rounded-full border border-cyan-300/20 px-2 py-0.5 text-[10px] text-cyan-100/70">Admin · Read-only</span></h2>
-      <p className="mt-2 text-xs leading-5 text-white/50">Inspect stored {kind === 'questioning' ? 'generated questions' : 'selected probes'} for Sapien {sapienId}. These reads never run engines. Results and summaries describe a bounded subset, ordered by creation time only within that subset.</p>
+      <p className="mt-2 text-base leading-7 text-white/70">{kind === 'questioning' ? 'What is the Sapien trying to understand?' : 'How is the Sapien exploring what it does not know?'}</p>
+      <p className="mt-1 text-xs text-white/45">Saved records · Sapien {sapienId} · No engines run when you inspect this page.</p>
     </section>
     <section className={`${panel} p-4`}><div className="flex flex-wrap items-end gap-3">
       <label className="text-xs text-white/50">State<select className={input} value={filters.state} onChange={event => change({ state: event.target.value as InquiryFilters['state'] })}><option value="">All states</option><option value="open">Open</option><option value="answered">Assessed answered</option><option value="stale">Stale</option></select></label>
@@ -133,7 +158,7 @@ function InquiryList({ sapienId, kind }: { sapienId: string; kind: InquiryKind }
         <label className="text-xs text-white/50">Channel<select className={input} value={filters.channel} onChange={event => change({ channel: event.target.value as InquiryFilters['channel'] })}><option value="">All channels</option>{['user', 'source', 'experiment'].map(value => <option key={value}>{value}</option>)}</select></label>
         <label className="text-xs text-white/50">Attention / review state<select className={input} value={filters.delivery_state} onChange={event => change({ delivery_state: event.target.value as InquiryFilters['delivery_state'] })}><option value="">All states</option><option value="proposed">Proposed</option><option value="attention_requested">Attention requested</option><option value="reviewed">Reviewed</option></select></label>
       </>}
-      <label className="text-xs text-white/50">Subset limit<input className={input} type="number" min={1} max={200} step={1} value={filters.limit || ''} onChange={event => change({ limit: Number(event.target.value) })} /></label>
+      <label className="text-xs text-white/50">Page size<input className={input} type="number" min={1} max={200} step={1} value={filters.limit || ''} onChange={event => change({ limit: Number(event.target.value) })} /></label>
       <button type="button" className={`${button} flex items-center gap-2`} disabled={!valid} onClick={refresh}><RefreshCw className="h-3 w-3" />Refresh</button>
       <button type="button" className={button} onClick={() => change(defaults)}>Reset filters</button>
     </div><p className="mt-3 text-[11px] text-white/40">Filters apply immediately to records for the selected Sapien, including normal and simulation records. Counts describe the returned subset only.</p></section>
@@ -141,16 +166,26 @@ function InquiryList({ sapienId, kind }: { sapienId: string; kind: InquiryKind }
     {valid && !data && !error && <Loading />}
     {error && <Failure status={error.status} retry={refresh} />}
     {data && <>
-      <section className={`${panel} space-y-3 p-4`}><h3 className="text-sm text-white/80">{data.count} records in returned subset</h3>
-        <p className="text-xs text-white/50">Sapien: {sapienId} · Limit: {data.limit} · Read as of {timestamp(data.as_of)} (real time)</p>
-        <p className="text-xs leading-5 text-white/45">{data.has_more ? 'Additional matching records exist outside this subset.' : 'No additional matches reported by this bounded read.'} This is not a global total or a guarantee of the globally newest records.</p>
+      <section className={`${panel} space-y-3 p-4`}><h3 className="text-sm text-white/80">{data.count} records on this page{data.total !== undefined ? ` · ${data.total} matching` : ''}</h3>
+        <p className="text-xs text-white/50">{data.ordering === 'created_at_desc' ? 'Newest first' : 'Legacy bounded selection'} · Read at {timestamp(data.as_of)} (real time)</p>
+        <details><summary className="cursor-pointer text-xs text-white/50">Page breakdown</summary>
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{Object.entries(data.summary).map(([group, counts]) => <div key={group} className="rounded-lg border border-white/[.07] p-3"><h4 className="text-xs text-cyan-100/80">{group.replaceAll('_', ' ')} · subset only</h4><dl className="mt-2 space-y-1 text-xs text-white/60">{Object.entries(counts ?? {}).map(([label, count]) => <div key={label} className="flex justify-between gap-3"><dt className="break-all">{label === 'answered' ? 'Assessed answered' : label.replaceAll('_', ' ')}</dt><dd>{count}</dd></div>)}{!Object.keys(counts ?? {}).length && <div>No counts</div>}</dl></div>)}</div>
+        </details>
       </section>
-      <section className={`${panel} overflow-hidden`}><div className="overflow-x-auto"><table className="w-full min-w-[720px] text-left text-xs"><caption className="p-3 text-left text-white/50">Creation time descending within the returned subset · open a record for full context</caption><thead className="bg-[#0b101c] text-white/40"><tr>{['Question', 'Source', 'Assessment', ...(kind === 'curiosity' ? ['Attention / review'] : []), 'Created', 'Job'].map(label => <th key={label} className="px-3 py-2 font-normal">{label}</th>)}</tr></thead>
-        <tbody>{data.items.map(item => <tr key={item.id} className="border-t border-white/[.06] text-white/70"><td className="max-w-md px-3 py-3"><button type="button" className="whitespace-pre-wrap break-words text-left text-cyan-200 underline" onClick={() => setSelected({ kind, id: item.id })}>{item.question || item.id}</button><p className="mt-1 break-all text-[10px] text-white/35">{item.id}</p></td><td className="max-w-48 break-words px-3 py-3">{display(item.source)}</td><td className="px-3 py-3">{item.state === 'answered' ? 'Assessed answered' : display(item.state)}</td>{kind === 'curiosity' && <td className="px-3 py-3">{display(item.delivery_state)}</td>}<td className="px-3 py-3">{timestamp(item.created_at)}</td><td className="px-3 py-3">{item.job_id ? <Link className="text-cyan-200 underline" to={jobHref(kind, item.job_id)}>Inspect job</Link> : 'Unavailable'}</td></tr>)}</tbody></table></div>
+      {kind === 'questioning' && <QuestionReviews data={data} />}
+      <section className={`${panel} overflow-hidden`}><div className="overflow-x-auto"><table className="w-full min-w-[720px] text-left text-sm"><caption className="p-3 text-left text-white/50">Select a question to see its context and outcome</caption><thead className="bg-[#0b101c] text-white/40"><tr>{['Question', 'Source', 'Assessment', ...(kind === 'curiosity' ? ['Attention / review'] : []), 'Created', 'Job'].map(label => <th key={label} className="px-3 py-2 font-normal">{label}</th>)}</tr></thead>
+        <tbody>{data.items.map(item => <tr key={item.id} className="border-t border-white/[.06] text-white/70">
+          <td className="max-w-md px-4 py-4"><button type="button" className="whitespace-pre-wrap break-words text-left text-base leading-7 text-cyan-100 hover:underline" onClick={() => setSelected({ kind, id: item.id })}>{item.question || 'Question text unavailable'}</button></td>
+          <td className="max-w-48 break-words px-3 py-3">{item.source?.replaceAll('_', ' ') || 'Not recorded'}</td>
+          <td className="px-3 py-3">{item.state === 'answered' ? 'Assessed answered' : item.state === 'open' ? 'Open' : item.state === 'stale' ? 'Closed, unanswered' : 'Unknown'}</td>
+          {kind === 'curiosity' && <td className="px-3 py-3">{display(item.delivery_state)}</td>}
+          <td className="px-3 py-3">{timestamp(item.created_at)}<span className="block text-xs text-white/40">{item.simulation_run_id ? 'Simulation time' : 'Event time'}</span></td>
+          <td className="px-3 py-3">{item.job_id ? <Link className="text-cyan-200 underline" to={jobHref(kind, item.job_id)}>Inspect job</Link> : 'Unavailable'}</td>
+        </tr>)}</tbody></table></div>
         {!data.items.length && <p className="p-8 text-center text-xs leading-5 text-white/50">No stored records returned for this Sapien and these filters. This does not establish that the engine is disabled.</p>}
       </section>
     </>}
+    {data?.total !== undefined && <nav aria-label="Question pages" className="flex items-center justify-between"><button className={button} disabled={offset === 0} onClick={() => { resetContent(); setOffset(Math.max(0, offset - filters.limit)); }}>Previous</button><span className="text-xs text-white/50">Page {Math.floor(offset / filters.limit) + 1}</span><button className={button} disabled={!data.has_more} onClick={() => { resetContent(); setOffset(offset + filters.limit); }}>Next</button></nav>}
     <Dialog open={Boolean(selected)} onOpenChange={open => { if (!open) setSelected(null); }}><DialogContent className="max-h-[90dvh] w-[calc(100%-2rem)] max-w-4xl overflow-y-auto border-white/10 bg-[#09101c] text-white"><DialogTitle>{selected ? title(selected.kind) : title(kind)} details</DialogTitle><DialogDescription className="text-xs text-white/45">Sensitive stored content · read-only administrator inspection</DialogDescription>
       {selected && valid && <RecordDetail key={`${selected.kind}:${selected.id}`} sapienId={sapienId} kind={selected.kind} id={selected.id} onQuestion={id => setSelected({ kind: 'questioning', id })} />}
     </DialogContent></Dialog>

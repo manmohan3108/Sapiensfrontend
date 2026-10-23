@@ -3,8 +3,8 @@ import type { InquiryDetail, InquiryFilters, InquiryKind, InquiryPage } from '..
 
 const endpoint = (sapienId: string, kind: InquiryKind) => `/sapien/${encodeURIComponent(sapienId)}/${kind}/${kind === 'questioning' ? 'questions' : 'probes'}`;
 export const inquiryService = {
-  async list(sapienId: string, kind: InquiryKind, filters: InquiryFilters): Promise<InquiryPage> {
-    const query = new URLSearchParams({ limit: String(filters.limit) });
+  async list(sapienId: string, kind: InquiryKind, filters: InquiryFilters, offset = 0): Promise<InquiryPage> {
+    const query = new URLSearchParams({ limit: String(filters.limit), offset: String(offset) });
     for (const key of ['state', 'source', 'channel', 'delivery_state'] as const) {
       if (kind === 'questioning' && (key === 'channel' || key === 'delivery_state')) continue;
       if (filters[key]) query.set(key, filters[key]);

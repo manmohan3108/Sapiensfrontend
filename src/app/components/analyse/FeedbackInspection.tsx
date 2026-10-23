@@ -9,6 +9,10 @@ const panel = 'rounded-xl border border-white/[.07] bg-white/[.025]';
 const colors: Record<FeedbackState, string> = {
   unrelated: '#94a3b8', ambiguous: '#fcd34d', interpreted: '#67e8f9', superseded: '#c4b5fd',
 };
+const labels: Record<FeedbackState, string> = {
+  unrelated: 'No clear connection', ambiguous: 'Needs interpretation',
+  interpreted: 'Possible lesson', superseded: 'Replaced by a later finding',
+};
 
 function timestamp(value: string | null | undefined) {
   if (!value) return 'Not recorded';
@@ -62,8 +66,14 @@ function Reference({ label, value }: { label: string; value: FeedbackReference }
 }
 
 export function FeedbackInspection({ sapienId }: { sapienId: string }) {
+  return <FeedbackView key={sapienId} sapienId={sapienId} />;
+}
+
+function FeedbackView({ sapienId }: { sapienId: string }) {
   const [states, setStates] = useState<FeedbackState[]>([]);
   const [limit, setLimit] = useState(50);
+  const [offset, setOffset] = useState(0);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [revision, setRevision] = useState(0);
   const [data, setData] = useState<FeedbackResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -71,8 +81,8 @@ export function FeedbackInspection({ sapienId }: { sapienId: string }) {
 
   useEffect(() => {
     let active = true;
-    setLoading(true); setError(null); setData(null);
-    feedbackService.list(sapienId, states, limit).then(result => {
+    setLoading(true); setError(null); setData(null); setSelectedId(null);
+    feedbackService.list(sapienId, states, limit, offset).then(result => {
       if (active) setData(result);
     }).catch((caught: unknown) => {
       if (active) setError({
@@ -81,7 +91,9 @@ export function FeedbackInspection({ sapienId }: { sapienId: string }) {
       });
     }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [sapienId, states, limit, revision]);
+  }, [sapienId, states, limit, revision, offset]);
+
+  const selected = data?.findings.find(finding => finding._id === selectedId) ?? data?.findings[0];
 
   return <div className="space-y-4">
     <section className={`${panel} p-4`}>
@@ -89,37 +101,38 @@ export function FeedbackInspection({ sapienId }: { sapienId: string }) {
         <Eye className="h-4 w-4 text-cyan-200" />
         <h2 className="text-sm text-white/80">Feedback findings</h2>
         <span className="rounded-full border border-cyan-300/20 bg-cyan-300/5 px-2 py-0.5 text-[10px] text-cyan-100/65">Read-only</span>
-        {(data || error?.status === 503) && <span className="text-xs text-white/45">Mode: {data?.mode ?? 'off'}</span>}
+        {data && <span className="text-xs text-white/45">Mode: {data.mode}</span>}
       </div>
-      <p className="mt-2 max-w-3xl text-sm leading-6 text-white/65">What did the Sapien do, what happened afterward, and what could it learn? Each finding is an interpretation—not a proven fact or proof that behavior changed.</p>
+      <p className="mt-2 max-w-3xl text-lg leading-7 text-white/85">What could the Sapien learn from its experience?</p>
       <p className="mt-2 text-xs text-white/45">{!data ? 'Loading Feedback mode.' : data.mode === 'observe' ? 'Observe mode: findings are recorded for inspection, not applied to behavior.' : data.mode === 'off' ? 'Feedback is off. Previously saved findings remain available.' : 'Active mode can make findings available to other engines; it does not prove they were used.'} Evidence below is a saved, possibly shortened snapshot.</p>
     </section>
 
-    <section className={`${panel} p-4`} aria-label="Feedback filters">
+    <details className={`${panel} p-4`} aria-label="Feedback filters"><summary className="cursor-pointer text-sm text-white/65">Filter findings · {states.length ? states.map(state => labels[state]).join(', ') : 'All findings'}</summary>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <fieldset><legend className="mb-2 text-xs text-white/50">States (none selected means all)</legend>
           <div className="flex flex-wrap gap-2">{FEEDBACK_STATES.map(state => <label key={state} className="flex cursor-pointer items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-xs text-white/65">
-            <input type="checkbox" checked={states.includes(state)} onChange={event => setStates(current => event.target.checked ? [...current, state] : current.filter(item => item !== state))} className="accent-cyan-300" />{state}
+            <input type="checkbox" checked={states.includes(state)} onChange={event => { setOffset(0); setStates(current => event.target.checked ? [...current, state] : current.filter(item => item !== state)); }} className="accent-cyan-300" />{labels[state]}
           </label>)}</div>
         </fieldset>
         <div className="flex items-end gap-2">
-          <label className="text-xs text-white/50"><span className="mb-2 block">Result limit</span><select value={limit} onChange={event => setLimit(Number(event.target.value))} className="rounded-lg border border-white/10 bg-[#0b1220] px-3 py-2 text-white/70">{[10, 25, 50, 100].map(value => <option key={value} value={value}>{value}</option>)}</select></label>
+          <label className="text-xs text-white/50"><span className="mb-2 block">Page size</span><select value={limit} onChange={event => { setOffset(0); setLimit(Number(event.target.value)); }} className="rounded-lg border border-white/10 bg-[#0b1220] px-3 py-2 text-white/70">{[10, 25, 50, 100].map(value => <option key={value} value={value}>{value}</option>)}</select></label>
           <button type="button" onClick={() => setRevision(value => value + 1)} disabled={loading} className="flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-xs text-white/65 disabled:opacity-40"><RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />Refresh</button>
         </div>
       </div>
-      <p className="mt-3 text-[11px] text-white/35">{data?.total !== undefined ? `Showing the newest ${data.count} of ${data.total} matching findings.` : 'Showing a bounded set of saved findings.'}</p>
-    </section>
+      <p className="mt-3 text-xs text-white/50">{data?.total !== undefined ? `${data.count} on this page · ${data.total} matching findings` : 'Saved findings'}</p>
+    </details>
+    <button type="button" disabled={loading} onClick={() => setRevision(value => value + 1)} className="flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-sm text-white/70 disabled:opacity-40"><RefreshCw className="h-4 w-4" />Refresh findings</button>
 
     {loading && <div role="status" className="flex min-h-40 items-center justify-center gap-2 text-xs text-white/45"><Loader2 className="h-4 w-4 animate-spin" />Loading feedback findings…</div>}
     {error && <div role="alert" className="rounded-xl border border-amber-300/20 bg-amber-300/5 p-4 text-xs">
-      <div className="flex items-center gap-2 text-amber-100"><AlertCircle className="h-4 w-4" /><h3>{error.status === 503 ? 'Feedback engine unavailable · mode off' : error.status === 400 ? 'Invalid feedback filters' : 'Could not load feedback'}</h3></div>
+      <div className="flex items-center gap-2 text-amber-100"><AlertCircle className="h-4 w-4" /><h3>{error.status === 503 ? 'Saved feedback temporarily unavailable' : error.status === 400 ? 'Invalid feedback filters' : 'Could not load feedback'}</h3></div>
       <p className="mt-2 break-words text-white/50">{error.message}</p>
       <p className="mt-2 text-white/40">{error.status === 503 ? 'Ask an administrator to check engine availability, then retry.' : error.status === 400 ? 'Clear the state filters and retry.' : 'Check your connection or retry the request.'}</p>
       <button type="button" onClick={() => { if (error.status === 400) setStates([]); setRevision(value => value + 1); }} className="mt-3 rounded-lg border border-white/15 px-3 py-2 text-white/70">{error.status === 400 ? 'Clear filters and retry' : 'Retry'}</button>
     </div>}
-    {data?.processing?.available && <section className={`${panel} p-4`} aria-label="Feedback processing">
-      <h3 className="text-sm text-white/80">Review processing</h3>
-      <p className="mt-2 text-xs leading-5 text-white/50">New experiences collect until the next cognitive-hour boundary. Large windows are reviewed in smaller batches. These are saved jobs across all runs, not a live runtime status. A completed review may find nothing to report.</p>
+    {data?.processing?.available && <details className={`${panel} p-4`} aria-label="Feedback processing">
+      <summary className="cursor-pointer text-sm text-white/65">Background reviews and diagnostics</summary>
+      <p className="mt-2 text-xs leading-5 text-white/50">New experiences collect until the next cognitive-hour boundary. These counts are saved jobs across all runs, not unique experiences or LLM calls. Continuations overlap earlier job inputs. A completed review may find nothing to report; historical empty results are not always retained.</p>
       <div className="mt-3 flex flex-wrap gap-4 text-sm text-white/75">{['pending', 'running', 'completed', 'failed'].map(status => <span key={status}>{status === 'pending' ? 'Queued' : status === 'running' ? 'Recorded as processing' : status === 'completed' ? 'Completed' : 'Failed'}: {data.processing?.counts?.[status] ?? 0}</span>)}</div>
       <details className="mt-3"><summary className="cursor-pointer text-xs text-cyan-100/65">Recent review jobs</summary>
         <ul className="mt-2 space-y-3">{data.processing.recent_jobs?.map(job => <li key={job.id} className="rounded border border-white/10 p-3 text-xs text-white/65">
@@ -128,19 +141,27 @@ export function FeedbackInspection({ sapienId }: { sapienId: string }) {
           <p className="mt-1 break-all">{job.run_id ? `Simulation ${job.run_id}` : 'Normal runtime'}</p>
         </li>)}</ul>
       </details>
-    </section>}
+    </details>}
     {data && <section aria-label="Returned feedback findings" className="space-y-3">
       <p role="status" className="text-xs text-white/45">{data.count} findings returned · Sapiens {data.sapien_id}</p>
       {!data.findings.length && <div className={`${panel} p-10 text-center text-xs text-white/45`}>No findings returned for these filters.</div>}
-      {data.findings.map(finding => <article key={finding._id} className={`${panel} p-4`}>
+      <div className="grid items-start gap-4 lg:grid-cols-[minmax(240px,1fr)_minmax(0,2fr)]">
+      {!!data.findings.length && <nav aria-label="Select a feedback finding" className={`${panel} max-h-[70vh] overflow-auto p-2`}>
+        {data.findings.map(finding => <button type="button" key={finding._id} onClick={() => setSelectedId(finding._id)} aria-pressed={selected?._id === finding._id} className={`mb-2 w-full rounded-lg border p-4 text-left transition-colors ${selected?._id === finding._id ? 'border-cyan-300/40 bg-cyan-300/10' : 'border-transparent hover:bg-white/5'}`}>
+          <span className="text-xs" style={{ color: colors[finding.state] }}>{labels[finding.state] || finding.state}</span>
+          <p className="mt-2 line-clamp-3 text-sm leading-6 text-white/85">{finding.meaning || 'No interpretation recorded'}</p>
+          <p className="mt-2 text-xs text-white/45">{timestamp(finding.created_at)}</p>
+        </button>)}
+      </nav>}
+      {selected && [selected].map(finding => <article key={finding._id} className={`${panel} p-5 sm:p-6`}>
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <span className="rounded-full border px-2 py-1 text-[11px]" style={{ color: colors[finding.state] ?? '#94a3b8', borderColor: `${colors[finding.state] ?? '#94a3b8'}40` }}>{finding.state}</span>
+          <span className="rounded-full border px-2 py-1 text-xs" style={{ color: colors[finding.state] ?? '#94a3b8', borderColor: `${colors[finding.state] ?? '#94a3b8'}40` }}>{labels[finding.state] || finding.state}</span>
           <span className="text-xs text-white/45">Confidence: {Number.isFinite(finding.confidence) ? finding.confidence : 'Not recorded'}</span>
         </div>
-        <h3 className="mt-3 text-xs text-cyan-200/80">What Feedback concluded</h3>
-        <p className="mt-1 whitespace-pre-wrap break-words text-sm leading-6 text-white/75">{finding.meaning || 'No interpretation recorded.'}</p>
+        <h3 className="mt-4 text-sm text-cyan-200/80">Recorded interpretation</h3>
+        <p className="mt-2 whitespace-pre-wrap break-words text-lg leading-8 text-white/90">{finding.meaning || 'No interpretation recorded.'}</p>
         <p className="mt-2 text-xs text-white/45">{finding.state === 'ambiguous' ? 'The relationship is uncertain.' : finding.state === 'interpreted' ? 'A possible lesson was identified; review the evidence below.' : finding.state === 'superseded' ? 'A later interpretation has replaced this one.' : 'No relevant relationship was established.'} Confidence is the model’s estimate, not measured accuracy.</p>
-        <div className="mt-4 grid gap-3 lg:grid-cols-2">
+        <div className="mt-5 grid gap-4">
           <Reference label="1. What the Sapien did" value={finding.activity} />
           <Reference label="2. What happened afterward" value={finding.experience} />
         </div>
@@ -154,6 +175,8 @@ export function FeedbackInspection({ sapienId }: { sapienId: string }) {
           </dl>
         </details>
       </article>)}
+      </div>
+      {data.total !== undefined && <nav aria-label="Feedback pages" className="flex items-center justify-between pt-3"><button type="button" disabled={offset === 0 || loading} onClick={() => setOffset(Math.max(0, offset - limit))} className="rounded-lg border border-white/15 px-4 py-2 text-sm text-white/70 disabled:opacity-40">Previous</button><span className="text-xs text-white/50">Page {Math.floor(offset / limit) + 1} · {data.total} findings</span><button type="button" disabled={!data.has_more || loading} onClick={() => setOffset(offset + limit)} className="rounded-lg border border-white/15 px-4 py-2 text-sm text-white/70 disabled:opacity-40">Next</button></nav>}
     </section>}
   </div>;
 }
