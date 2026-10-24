@@ -20,6 +20,14 @@ const value = (input: unknown) => typeof input === 'string' ? input : input == n
 const jsonObject = (input: unknown) => { if (input && typeof input === 'object') return input as Record<string, unknown>; if (typeof input !== 'string') return {}; try { const parsed = JSON.parse(input); return parsed && typeof parsed === 'object' ? parsed as Record<string, unknown> : {}; } catch { return {}; } };
 const jiraActionName = (tool: string) => ({ jira_get_issue: 'Read issue', jira_get_comments: 'Read comments', jira_add_comment: 'Added comment', jira_list_transitions: 'Checked available transitions', jira_transition_issue: 'Changed issue status', jira_update_issue: 'Updated issue fields', jira_get_metadata: 'Read Jira metadata' } as Record<string, string>)[tool] || statusName(tool || 'Jira action');
 const jiraActionKind = (tool: string) => ['jira_add_comment', 'jira_transition_issue', 'jira_update_issue'].includes(tool) ? 'Change' : 'Read';
+const recordedAt = (value?: string | null) => value ? Date.parse(value) || 0 : 0;
+const sortChatsByRecentActivity = (people: WorldEmployee[]) => [...people].sort((left, right) => {
+  const leftMessages = (left.direct_sent ?? 0) + (left.direct_received ?? 0);
+  const rightMessages = (right.direct_sent ?? 0) + (right.direct_received ?? 0);
+  if (!!leftMessages !== !!rightMessages) return rightMessages ? 1 : -1;
+  const activityDifference = recordedAt(right.last_activity_at) - recordedAt(left.last_activity_at);
+  return activityDifference || left.name.localeCompare(right.name);
+});
 
 function JiraPortal({ runId, eventCount }: { runId: string; eventCount: number }) {
   const [overview, setOverview] = useState<WorldOverview | null>(null);
@@ -195,7 +203,7 @@ function JiraPortal({ runId, eventCount }: { runId: string; eventCount: number }
     const failed = body.is_error === true;
     const issueKey = item.issue_key || value(args.issue_key);
     return { item, body, tool, args, result, failed, issueKey };
-  });
+  }).sort((left, right) => recordedAt(right.item.event.occurred_at) - recordedAt(left.item.event.occurred_at) || right.item.event.sequence - left.item.event.sequence);
   const actionTools = [...new Set(actionRows.map(row => row.tool).filter(Boolean))].sort();
   const actionIssues = [...new Set(actionRows.map(row => row.issueKey).filter(Boolean))].sort();
   const normalizedActionSearch = actionSearch.trim().toLowerCase();
@@ -411,7 +419,7 @@ function ChatPortal({ runId, eventCount }: { runId: string; eventCount: number }
       simulationService.worldEmployees(runId, { through: overview.through, limit: 100 }, controller.signal),
       simulationService.worldChannels(runId, { through: overview.through, limit: 100 }, controller.signal),
     ]).then(([peoplePage, channelPage]) => {
-      const people = peoplePage.items.filter(person => person.person_id !== overview.participant_id);
+      const people = sortChatsByRecentActivity(peoplePage.items.filter(person => person.person_id !== overview.participant_id));
       setEmployees(people);
       setChannels(channelPage.items);
       setSelected(current => {
@@ -458,7 +466,7 @@ function ChatPortal({ runId, eventCount }: { runId: string; eventCount: number }
   }, [load]);
 
   const normalizedSearch = search.trim().toLowerCase();
-  const visibleEmployees = employees.filter(person => !normalizedSearch || person.name.toLowerCase().includes(normalizedSearch) || person.person_id.toLowerCase().includes(normalizedSearch));
+  const visibleEmployees = sortChatsByRecentActivity(employees.filter(person => !normalizedSearch || person.name.toLowerCase().includes(normalizedSearch) || person.person_id.toLowerCase().includes(normalizedSearch)));
   const visibleChannels = channels.filter(item => !normalizedSearch || item.title.toLowerCase().includes(normalizedSearch) || item.channel_id.toLowerCase().includes(normalizedSearch));
   const conversationTitle = selectedType === 'channel' ? channel?.title || selectedId : employee?.name || selectedId;
   const directCountsAvailable = employee?.direct_sent != null && employee?.direct_received != null;
