@@ -2,6 +2,8 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { ArrowDown, ArrowUpRight, Check } from 'lucide-react';
 import { ApproachComparison } from './ApproachComparison';
 import { SapiensWorldDiagram } from './SapiensWorldDiagram';
+import { useCorePointerResponse } from './useCorePointerResponse';
+import { BreathingCore } from './BreathingCore';
 import '../../../styles/layered-direction.css';
 import '../../../styles/layered-experience.css';
 
@@ -16,6 +18,7 @@ const capabilities = [
 
 function ExperienceOpening({ cta }: { cta: ReactNode }) {
   const scene = useRef<HTMLDivElement>(null);
+  useCorePointerResponse(scene);
   useEffect(() => {
     const node = scene.current;
     if (!node) return;
@@ -69,7 +72,7 @@ function ExperienceOpening({ cta }: { cta: ReactNode }) {
     </div>
     <div className="experience-scene experience-capability-scene" ref={scene}>
       <div className="experience-scene-top"><span>ONE INDIVIDUAL / MANY CONNECTIONS</span><span>Concept preview</span></div>
-      <div className="experience-hero-core" aria-hidden="true"><img src="/concepts/sapiens-core-orange.png" width="440" height="440" alt=""/></div>
+      <div className="experience-hero-core" aria-hidden="true"><span className="experience-core-response"><BreathingCore/></span></div>
       <ul className="experience-capabilities" aria-label="The behaviours we are building toward">{capabilities.map((item) => <li key={item.label}><span className="experience-art-depth" aria-hidden="true"><span className="experience-art-surface"/><span className="experience-capability-art" style={{ backgroundImage: `url(${item.image})`, backgroundPosition: item.position, backgroundSize: item.size }}/></span><span>{item.label}</span></li>)}</ul>
       <div className="experience-scene-caption"><p>One continuing identity connects it all.</p></div>
     </div>

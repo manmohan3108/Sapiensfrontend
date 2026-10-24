@@ -168,25 +168,25 @@ export function SapiensWorldDiagram() {
 
   return <div className={`sapiens-world${entered ? ' has-entered' : ''}`} data-flow-node={entered ? flowing ?? undefined : undefined} data-exchange-state={current ? response : 'overview'} ref={ref} onKeyDown={event => { if (event.key === 'Escape') { setSelected(null); setResponse('pending'); } }}>
     <svg className="world-links" viewBox={`0 0 ${geometry.width} ${geometry.height}`} aria-hidden="true">
-      <defs>{interactions.map(item => <marker key={item.id} id={`${id}-${item.id}`} markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M1 1 6 3.5 1 6" fill="none" stroke={item.color} strokeWidth="1.5"/></marker>)}</defs>
-      {geometry.wires.map(wire => <g key={wire.id} data-wire={wire.id} className={`world-link-pair${selected === wire.id ? ` is-active${waiting ? ' is-waiting' : ''}` : ''}`} style={{ '--wire-color': wire.color } as CSSProperties}>
+      <defs>{interactions.map(item => <marker key={item.id} id={`${id}-${item.id}`} markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M1 1 6 3.5 1 6" fill="none" stroke={`var(--world-${item.id}-color, ${item.color})`} strokeWidth="1.5"/></marker>)}</defs>
+      {geometry.wires.map(wire => <g key={wire.id} data-wire={wire.id} className={`world-link-pair${selected === wire.id ? ` is-active${waiting ? ' is-waiting' : ''}` : ''}`} style={{ '--wire-color': `var(--world-${wire.id}-color, ${wire.color})` } as CSSProperties}>
         <path d={wire.out} markerEnd={`url(#${id}-${wire.id})`}/><path d={wire.back} className="world-return" markerEnd={`url(#${id}-${wire.id})`}/>
         <path d={wire.out} className="world-signal" pathLength="100"/><path d={wire.back} className="world-signal world-signal-back" pathLength="100"/>
       </g>)}
       <path className="world-outcome-link" d={geometry.outcome} markerEnd={`url(#${id}-feedback)`}/>
       <path className="world-outcome-signal" d={geometry.outcome} pathLength="100"/>
     </svg>
-    {geometry.wires.map(wire => { const item = interactions.find(entry => entry.id === wire.id)!; return <div key={wire.id} className="world-edge-label" style={{ left: wire.x, top: wire.y, color: wire.color }} aria-hidden="true"><span>{item.out}</span><span>{selected === item.id && waiting ? 'Awaiting response' : item.back}</span></div>; })}
+    {geometry.wires.map(wire => { const item = interactions.find(entry => entry.id === wire.id)!; return <div key={wire.id} className="world-edge-label" style={{ left: wire.x, top: wire.y, color: `var(--world-${wire.id}-color, ${wire.color})` }} aria-hidden="true"><span>{item.out}</span><span>{selected === item.id && waiting ? 'Awaiting response' : item.back}</span></div>; })}
     <span className="world-outcome-label" style={{ left: geometry.outcomeX, top: geometry.outcomeY }} aria-hidden="true">What happened?</span>
 
     <section className="world-individual" aria-label="Inside Sapiens: one persistent individual">
       <header><span>ONE CONTINUING INDIVIDUAL</span><h3>Sapiens</h3></header>
       <div className="world-inner">
-        {aspects.map(aspect => <div key={aspect.id} style={{ '--aspect-color': aspect.color, '--aspect-tint': aspect.tint } as CSSProperties} className={`world-aspect world-aspect-${aspect.id}${activeAspect === aspect.id || (!!current && response === 'received' && aspect.id === 'memory') ? ' is-active' : ''}`}><span className="world-aspect-icon" aria-hidden="true"><aspect.icon size={20} strokeWidth={1.6}/></span><h4>{aspect.title}</h4><p>{aspect.text}</p></div>)}
+        {aspects.map(aspect => <div key={aspect.id} style={{ '--aspect-color': `var(--world-${aspect.id}-color, ${aspect.color})`, '--aspect-tint': `var(--world-${aspect.id}-tint, ${aspect.tint})` } as CSSProperties} className={`world-aspect world-aspect-${aspect.id}${activeAspect === aspect.id || (!!current && response === 'received' && aspect.id === 'memory') ? ' is-active' : ''}`}><span className="world-aspect-icon" aria-hidden="true"><aspect.icon size={20} strokeWidth={1.6}/></span><h4>{aspect.title}</h4><p>{aspect.text}</p></div>)}
         <div className="world-core-space">
           {/* Connections occupy only this corridor, never the text rows. */}
           <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-            {aspects.map(aspect => <g key={aspect.id} data-inner-wire={aspect.id} className={`world-inner-wire${activeAspect === aspect.id || (!!current && response === 'received' && aspect.id === 'memory') ? ' is-active' : ''}`} style={{ '--aspect-color': aspect.color } as CSSProperties}>
+            {aspects.map(aspect => <g key={aspect.id} data-inner-wire={aspect.id} className={`world-inner-wire${activeAspect === aspect.id || (!!current && response === 'received' && aspect.id === 'memory') ? ' is-active' : ''}`} style={{ '--aspect-color': `var(--world-${aspect.id}-color, ${aspect.color})` } as CSSProperties}>
               <path d={aspect.path}/>
               <path key={`${aspect.id}-${selected}`} className="world-inner-signal" d={aspect.path} pathLength="100"/>
               <ellipse cx={aspect.x} cy={aspect.y} rx=".85" ry="1.8"/>
@@ -203,7 +203,7 @@ export function SapiensWorldDiagram() {
       </div>
     </section>
 
-    {interactions.map(item => <section key={item.id} className={`world-node world-node-${item.id}${selected === item.id ? ' is-selected' : ''}`} style={{ '--node-color': item.color, '--node-tint': item.tint } as CSSProperties}>
+    {interactions.map(item => <section key={item.id} className={`world-node world-node-${item.id}${selected === item.id ? ' is-selected' : ''}`} style={{ '--node-color': `var(--world-${item.id}-color, ${item.color})`, '--node-tint': `var(--world-${item.id}-tint, ${item.tint})` } as CSSProperties}>
       <button type="button" className={`world-node-button${item.action ? '' : ' has-no-caption'}`} data-world-node={item.id} aria-pressed={selected === item.id} aria-controls={`${id}-detail ${id}-${item.id}-mobile`} onClick={() => select(item.id)}>
         <span className="world-art" aria-hidden="true" style={{ backgroundPosition: `${item.index % 2 * 100}% ${Math.floor(item.index / 2) * 100}%` }}/>
         {selected === item.id && waiting && <span className="world-node-wait"><Clock3 size={13} aria-hidden="true"/> Awaiting response</span>}

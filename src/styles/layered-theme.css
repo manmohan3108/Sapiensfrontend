@@ -1,0 +1,143 @@
+/* Theme tokens are confined to this design direction. The existing site toggle
+   persists the preference; other pages keep their own palette and styles. */
+.direction-page.direction-layered {
+  color-scheme: light;
+  --paper: #faf9f3;
+  --ink: #283329;
+  --muted: #566151;
+  --quiet: #626d5b;
+  --line: #d4dacb;
+  --panel: #f0f2e8;
+  --soft: #e7eddf;
+  --raised: #fffdf8;
+  --accent: #a83f20;
+  --button: #b44725;
+  --button-hover: #90371c;
+  --on-button: #fffaf2;
+  --contact: #e5ecd9;
+  --individual: #edf2e5;
+  --thesis: #214b3a;
+  --success: #345c42;
+  --warning: #805b25;
+}
+.dark .direction-page.direction-layered {
+  color-scheme: dark;
+  --paper: #151a17;
+  --ink: #f2f1e7;
+  --muted: #b8c4b5;
+  --quiet: #a3b39f;
+  --line: #3d4d40;
+  --panel: #1e2821;
+  --soft: #29382c;
+  --raised: #263229;
+  --accent: #ffb086;
+  --button: #ffb086;
+  --button-hover: #ffc5a5;
+  --on-button: #271c15;
+  --contact: #1c2a21;
+  --individual: #202c23;
+  --thesis: #193d2e;
+  --success: #a9d2a8;
+  --warning: #edc67f;
+  --world-people-color: #f3ae94;
+  --world-people-tint: #3a2b25;
+  --world-information-color: #b1cf94;
+  --world-information-tint: #283725;
+  --world-tools-color: #edca7f;
+  --world-tools-tint: #3b3322;
+  --world-feedback-color: #edacc2;
+  --world-feedback-tint: #3b2b34;
+  --world-attention-color: #edca7f;
+  --world-attention-tint: #433923;
+  --world-understanding-color: #a3cfb4;
+  --world-understanding-tint: #2b4033;
+  --world-memory-color: #edacc2;
+  --world-memory-tint: #44303b;
+  --world-goals-color: #f3b88e;
+  --world-goals-tint: #453427;
+}
+
+/* Shared surfaces and readable secondary text in both palettes. */
+.direction-page.direction-layered :is(.experience-design-picker, .experience-section-nav) { background: var(--panel); border-color: var(--line); }
+.direction-page.direction-layered .layered-theme-toggle { flex-shrink: 0; width: 44px; height: 44px; border: 1px solid var(--line); border-radius: 50%; background: var(--panel); color: var(--ink); }
+.direction-page.direction-layered .layered-theme-toggle:hover { background: var(--soft); color: var(--accent); }
+.direction-page.direction-layered .direction-cta { background: var(--button); color: var(--on-button)!important; }
+.direction-page.direction-layered .direction-cta:hover { background: var(--button-hover); }
+.direction-page.direction-layered :is(.experience-opening-copy h1 span, .experience-section-nav a:hover, .sapiens-focus .compact-label, .compact-heading h2 em) { color: var(--accent); }
+.direction-page.direction-layered .experience-kicker i { background: var(--accent); }
+.direction-page.direction-layered :is(.experience-opening-copy>p, .world-heading p, .experience-scroll-cue, .experience-section-nav a, .experience-design-picker>summary, .experience-scene-top, .experience-scene-caption, .spectrum-contact p, .spectrum-footer p, .compact-footnote p, .shared-ground) { color: var(--muted); }
+.direction-page.direction-layered :is(.experience-opening-copy>small, .experience-section-nav a>span, .experience-system-footer) { color: var(--quiet); }
+.direction-page.direction-layered .experience-section-nav a[aria-current] { color: var(--ink); border-bottom-color: var(--accent); }
+.direction-page.direction-layered :is(.experience-scene-caption, .experience-technical, .experience-scroll-cue svg, .spectrum-contact address a, .compact-footnote, .compact-architecture figcaption) { border-color: var(--line); }
+.direction-page.direction-layered :is(.experience-system-footer button, .experience-capabilities li, .sapiens-world) { color: var(--ink); }
+.direction-page.direction-layered .experience-capabilities li>span:last-child { background: var(--paper); }
+.direction-page.direction-layered .experience-design-picker nav button { color: var(--muted); border-color: var(--line); background: var(--paper); }
+.direction-page.direction-layered .experience-design-picker nav button[aria-current] { color: var(--on-button); background: var(--button); border-color: var(--button); }
+.direction-page.direction-layered .experience-thesis { background: var(--thesis); }
+.direction-page.direction-layered .world-section { background: var(--paper); border-color: var(--line); }
+.direction-page.direction-layered .world-edge-label span { background: var(--paper); }
+.direction-page.direction-layered .world-individual { background: var(--individual); border-color: var(--line); box-shadow: inset 0 0 0 7px color-mix(in srgb,var(--raised) 30%,transparent); }
+.direction-page.direction-layered .spectrum-contact { background: var(--contact); border-color: var(--line); }
+
+/* Exchange states, internal processes and diagram lines. */
+.direction-page.direction-layered :is(.world-individual>header>span, .world-aspect p, .world-rest, .world-node-action, .world-core-detail>span:last-child, .world-core-detail p, .world-mobile-detail p, .world-exchange-reason, .world-exchange-message>span, .world-alternative) { color: var(--muted); }
+.direction-page.direction-layered :is(.world-rest, .world-change, .world-mobile-exchange) { border-color: var(--line); }
+.direction-page.direction-layered .world-aspect.is-active { background: var(--raised); }
+.direction-page.direction-layered :is(.world-exchange-message, .world-mobile-detail:not(:empty)) { background: var(--raised); color: var(--ink); border-color: var(--line); }
+.direction-page.direction-layered .world-reply { background: var(--raised); color: var(--ink); border-color: var(--line); }
+.direction-page.direction-layered .world-reply:hover { background: var(--soft); }
+.direction-page.direction-layered :is(.world-change, .world-mobile-loop) { color: var(--success); }
+.direction-page.direction-layered :is(.world-wait-state, .world-change.is-uncertain) { color: var(--warning); }
+.direction-page.direction-layered .world-node-wait { color: var(--warning); background: var(--raised); border-color: var(--line); }
+.direction-page.direction-layered .world-outcome-label { color: var(--world-feedback-color,#a63d5c); }
+.direction-page.direction-layered :is(.world-outcome-link, .world-outcome-signal) { stroke: var(--world-feedback-color,#a63d5c); }
+.direction-page.direction-layered :is(a,button,summary):focus-visible { outline-color: var(--accent); }
+@media(max-width:1020px) {
+  .direction-page.direction-layered .world-node { border-color: var(--line); }
+}
+
+/* Expanded architecture follows the same tokens as its parent page. */
+.direction-page.direction-layered .architecture-dialog { background: var(--paper); color: var(--ink); border-color: var(--line); }
+.direction-page.direction-layered .experience-dialog-header { background: var(--panel); border-color: var(--line); }
+.direction-page.direction-layered .experience-dialog-header button { color: var(--ink); border-color: var(--line); }
+.direction-page.direction-layered .experience-dialog-header button:hover { background: var(--soft); }
+.direction-page.direction-layered :is(.architecture-intro>span, .architecture-key, .architecture-processes header p, .architecture-process summary>span>span, .architecture-continuity p, .architecture-status) { color: var(--muted); }
+.direction-page.direction-layered :is(.architecture-processes, .architecture-process, .architecture-key i) { border-color: var(--line); }
+.direction-page.direction-layered .architecture-key i { border-top-color: var(--muted); }
+.direction-page.direction-layered .architecture-example { color: var(--accent); border-color: var(--accent); }
+.direction-page.direction-layered .architecture-continuity { background: var(--individual); }
+.dark .direction-layered .architecture-process:nth-of-type(1) summary>svg { stroke: var(--world-attention-color); }
+.dark .direction-layered .architecture-process:nth-of-type(2) summary>svg { stroke: var(--world-understanding-color); }
+.dark .direction-layered .architecture-process:nth-of-type(3) summary>svg { stroke: var(--world-memory-color); }
+.dark .direction-layered .architecture-process:nth-of-type(4) summary>svg { stroke: var(--world-goals-color); }
+
+/* Dark artwork supports retain the six colours without glaring pale panels. */
+.dark .direction-layered .experience-capabilities li:nth-child(1) .experience-art-surface { background: #55382e; }
+.dark .direction-layered .experience-capabilities li:nth-child(2) .experience-art-surface { background: #4b4128; }
+.dark .direction-layered .experience-capabilities li:nth-child(3) .experience-art-surface { background: #35492e; }
+.dark .direction-layered .experience-capabilities li:nth-child(4) .experience-art-surface { background: #4c3e23; }
+.dark .direction-layered .experience-capabilities li:nth-child(5) .experience-art-surface { background: #364437; }
+.dark .direction-layered .experience-capabilities li:nth-child(6) .experience-art-surface { background: #4b323d; }
+.dark .direction-layered .experience-art-surface { box-shadow: 0 10px 0 #00000024; }
+.dark .direction-layered .experience-core-sculpture { filter: drop-shadow(0 12px 22px #cf74442b); }
+.dark .direction-layered > .landing-cursor-trail { mix-blend-mode: screen; }
+.dark .direction-layered > .landing-cursor-trail .landing-cursor-blob-large { opacity: .12; }
+.dark .direction-layered > .landing-cursor-trail .landing-cursor-blob-small { opacity: .18; }
+
+/* Optional comparison uses the same readable palette, including its SVG. */
+.direction-page.direction-layered .compact-architecture { background: var(--panel); border-color: var(--line); }
+.direction-page.direction-layered .compact-status { color: var(--muted); border-color: var(--line); }
+.dark .direction-layered .system-node text { fill: var(--ink); }
+.dark .direction-layered .system-attention rect { fill: var(--world-attention-tint); stroke: var(--world-attention-color); }
+.dark .direction-layered .system-understanding rect { fill: var(--world-understanding-tint); stroke: var(--world-understanding-color); }
+.dark .direction-layered .system-memory rect { fill: var(--world-memory-tint); stroke: var(--world-memory-color); }
+.dark .direction-layered .system-goals rect { fill: var(--world-goals-tint); stroke: var(--world-goals-color); }
+.dark .direction-layered .system-core { fill: #365541; }
+.dark .direction-layered .system-core-ring { fill: #283c2e; }
+.dark .direction-layered .system-link { stroke: #94b68b; }
+.dark .direction-layered .system-orbit { stroke: #607a59; }
+
+@media(max-width:600px) {
+  .direction-page.direction-layered .direction-header { flex-wrap: wrap; }
+  .direction-page.direction-layered .direction-header nav { gap: 8px; flex-wrap: wrap; align-items: center; }
+}

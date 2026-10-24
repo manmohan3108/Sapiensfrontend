@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { ExperienceDialog } from '../components/customer/ExperienceDialog';
 import { LayeredStudy } from '../components/customer/LayeredStudy';
+import { LandingCursorTrail } from '../components/customer/LandingCursorTrail';
+import { ThemeToggle } from '../components/ThemeToggle';
 import { SapiensBrandMark } from '../components/customer/SapiensBrandMark';
 import { ProductStudyHero } from '../components/customer/ProductStudyHero';
 import { Link, useSearchParams } from 'react-router';
@@ -8,7 +10,9 @@ import { ArrowUpRight, ArrowDown, ArrowRight, MessageCircle, Brain, Target, Pape
 import { useLandingMotion } from '../components/customer/useLandingMotion';
 import { SapiensExperienceGraph } from '../components/customer/SapiensExperienceGraph';
 import { useAuth } from '../contexts/AuthContext';
+import { PublicLandingPage } from './PublicLandingPage';
 import '../../styles/landing-directions.css';
+import '../../styles/layered-theme.css';
 
 const directions = [
   { id: 'editorial', name: 'Editorial / Human', note: 'Warm paper · expressive serif · illustrated narrative' },
@@ -18,15 +22,36 @@ const directions = [
   { id: 'living', name: 'Living / Expressive', note: 'Bold composition · vivid sculpture · unfolding relationships' },
   { id: 'studio', name: 'Product / Studio', note: 'Product first · warm paper and vermilion · interactive walkthrough' },
   { id: 'layered', name: 'Color / Layers', note: 'Full-color chapters · editorial imagery · layered scrolling' },
+  { id: 'original', name: 'Original / Homepage', note: 'The previous homepage · original identity and flowchart' },
 ];
 const support = 'We’re building AI that notices, asks questions, develops understanding and acts—connecting what it encounters with what comes next.';
 const relevance = 'An individual you can return to, around the ideas, interests and goals that matter to you.';
 function Sculpture({ className = '' }: { className?: string }) { return <img className={`direction-sculpture ${className}`} src="/concepts/sapiens-amber.png" width="1024" height="1024" alt="An amber and coral sculpture with translucent folds surrounding a luminous pearl core." />; }
 
 export function LandingDirectionsPage() {
-  const [graphOpen, setGraphOpen] = useState(false);
-  const [params, setParams] = useSearchParams();
+  const [params] = useSearchParams();
   const direction = directions.find(d => d.id === params.get('view')) ?? directions[0];
+  if (direction.id === 'original') return <>
+    <DesignDirectionPicker direction={direction}/>
+    <PublicLandingPage/>
+  </>;
+  return <DirectionLanding key={direction.id} direction={direction}/>;
+}
+
+export function LayeredLandingPage() {
+  return <DirectionLanding direction={directions.find(d => d.id === 'layered')!} homepage/>;
+}
+
+function DesignDirectionPicker({ direction }: { direction: typeof directions[number] }) {
+  const [, setParams] = useSearchParams();
+  const choices = <nav aria-label="Choose a design direction">{directions.map((d,i) => <button key={d.id} aria-current={d.id === direction.id ? 'page' : undefined} onClick={() => setParams({view:d.id})}><span>{String(i+1).padStart(2,'0')}</span>{d.name}</button>)}</nav>;
+  return direction.id === 'layered'
+    ? <details className="experience-design-picker"><summary><span>DESIGN STUDY / 07</span>Compare directions <Plus size={13}/></summary>{choices}</details>
+    : <aside className="direction-review" aria-label="Design preview controls"><div><span className="direction-review-label">SAPIENS / DESIGN STUDIES</span><p>Eight directions. Same story.</p></div>{choices}</aside>;
+}
+
+function DirectionLanding({ direction, homepage = false }: { direction: typeof directions[number]; homepage?: boolean }) {
+  const [graphOpen, setGraphOpen] = useState(false);
   const isSpectrum = direction.id === 'continuity' || direction.id === 'rainbow';
   const isComplete = isSpectrum || direction.id === 'studio' || direction.id === 'layered';
   const motionRef = useLandingMotion();
@@ -36,16 +61,12 @@ export function LandingDirectionsPage() {
   const cta = <Link className="direction-cta" to={destination}>{action}<ArrowUpRight size={18} /></Link>;
   const howLink = direction.id === 'layered' ? <a href="#layered-chapters">How it works</a> : <a href="#direction-idea">How it works</a>;
   return <div ref={motionRef} className={`direction-page direction-${direction.id}${isSpectrum ? ' direction-spectrum' : ''}`}>
+    {direction.id === 'layered' && !graphOpen && <LandingCursorTrail/>}
     <a href="#direction-main" className="direction-skip">Skip to content</a>
-    {direction.id === 'layered' ? <details className="experience-design-picker"><summary><span>DESIGN STUDY / 07</span>Compare directions <Plus size={13}/></summary><nav aria-label="Choose a design direction">{directions.map((d,i) => <button key={d.id} aria-current={d.id === direction.id ? 'page' : undefined} onClick={() => { setParams({view:d.id}); }}><span>0{i+1}</span>{d.name}</button>)}</nav></details> : <>    <aside className="direction-review" aria-label="Design preview controls">
-      <div><span className="direction-review-label">SAPIENS / DESIGN STUDIES</span><p>Seven directions. Same story.</p></div>
-      <nav aria-label="Choose a design direction">{directions.map((d,i) => <button key={d.id} aria-current={d.id === direction.id ? 'page' : undefined} onClick={() => { setParams({view:d.id}); }}><span>0{i+1}</span>{d.name}</button>)}</nav>
-
-    </aside>
-</>}
+    {!homepage && <DesignDirectionPicker direction={direction}/>}
     {graphOpen && <ExperienceDialog onClose={() => setGraphOpen(false)}/>}
     <div className="direction-design">
-      <header className="direction-header"><Link className="direction-brand" to="/" aria-label="Sapiens home">{direction.id === 'layered' ? <><SapiensBrandMark/>Sapiens</> : <>sapiens<span aria-hidden="true">✳</span></>}</Link><nav aria-label="Main navigation">{isComplete && <a href="#direction-product">Product</a>}{howLink}{isComplete && <a href="#direction-contact">Contact us</a>}<Link to={user ? destination : '/login'}>{user ? 'Your Sapiens' : 'Sign in'}<ArrowUpRight size={15}/></Link></nav></header>
+      <header className="direction-header"><Link className="direction-brand" to="/" aria-label="Sapiens home">{direction.id === 'layered' ? <><SapiensBrandMark/>Sapiens</> : <>sapiens<span aria-hidden="true">✳</span></>}</Link><nav aria-label="Main navigation">{isComplete && <a href="#direction-product">Product</a>}{howLink}{isComplete && <a href="#direction-contact">Contact us</a>}{direction.id === 'layered' && <ThemeToggle className="layered-theme-toggle"/>}<Link to={user ? destination : '/login'}>{user ? 'Your Sapiens' : 'Sign in'}<ArrowUpRight size={15}/></Link></nav></header>
       <main id="direction-main">
         {direction.id === 'layered' && <LayeredStudy cta={cta} onOpenGraph={() => setGraphOpen(true)}/> }
         {direction.id === 'studio' && <ProductStudyHero cta={cta}/> }
@@ -75,7 +96,7 @@ export function LandingDirectionsPage() {
           <section id="direction-contact" className="spectrum-contact" aria-labelledby="contact-title"><div className="direction-wrap"><div><span className="direction-eyebrow">CONTACT US</span><h2 id="contact-title">Let’s talk.</h2><p>Questions, ideas, or feedback about Sapiens?</p></div><address><a href="mailto:manmohan2566@gmail.com">manmohan2566@gmail.com<ArrowUpRight size={20}/></a><a href="tel:+919980637645">+91 99806 37645<ArrowUpRight size={20}/></a></address></div></section>
           <footer className="spectrum-footer direction-wrap"><div><span className="direction-brand">{direction.id === 'layered' ? <><SapiensBrandMark/>Sapiens</> : <>sapiens<span aria-hidden="true">✳</span></>}</span><p>Sapiens · An AI individual</p></div><nav aria-label="Footer navigation"><a href="#direction-product">Product</a>{howLink}<a href="#direction-contact">Contact us</a></nav><p>Sapiens is AI and can make mistakes.</p></footer>
         </>}
-        <section className="direction-end direction-wrap"><div><span className="direction-eyebrow">END OF DESIGN PREVIEW</span><p>{direction.note}</p></div><a href="#direction-main">Back to the top <ArrowRight size={17}/></a></section>
+        {!homepage && <section className="direction-end direction-wrap"><div><span className="direction-eyebrow">END OF DESIGN PREVIEW</span><p>{direction.note}</p></div><a href="#direction-main">Back to the top <ArrowRight size={17}/></a></section>}
       </main>
     </div>
   </div>;
