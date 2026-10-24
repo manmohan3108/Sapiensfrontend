@@ -79,7 +79,7 @@ function ExperienceOpening({ cta }: { cta: ReactNode }) {
   </section>;
 }
 
-export function LayeredStudy({ cta, onOpenGraph }: { cta: ReactNode; onOpenGraph: () => void }) {
+export function LayeredStudy({ cta, onOpenGraph, showSectionNav = true }: { cta: ReactNode; onOpenGraph: () => void; showSectionNav?: boolean }) {
   const layers = useRef<HTMLDivElement>(null);
   const [activeSection, setActiveSection] = useState(0);
   useEffect(() => {
@@ -96,8 +96,10 @@ export function LayeredStudy({ cta, onOpenGraph }: { cta: ReactNode; onOpenGraph
       const coverage = (element: HTMLElement) => Math.max(0, Math.min(1, (viewport - element.getBoundingClientRect().top) / viewport));
       root.style.setProperty('--opening-recede', preference.matches ? '0' : String(coverage(idea)));
       root.style.setProperty('--idea-recede', preference.matches ? '0' : String(coverage(system)));
-      const readingLine = Math.max(100, viewport * .3);
-      setActiveSection(system.getBoundingClientRect().top <= readingLine ? 2 : idea.getBoundingClientRect().top <= readingLine ? 1 : 0);
+      if (showSectionNav) {
+        const readingLine = Math.max(100, viewport * .3);
+        setActiveSection(system.getBoundingClientRect().top <= readingLine ? 2 : idea.getBoundingClientRect().top <= readingLine ? 1 : 0);
+      }
     };
     const schedule = () => { if (!frame) frame = requestAnimationFrame(update); };
     const measure = () => {
@@ -120,11 +122,11 @@ export function LayeredStudy({ cta, onOpenGraph }: { cta: ReactNode; onOpenGraph
       window.removeEventListener('resize', measure);
       preference.removeEventListener('change', schedule);
     };
-  }, []);
-  return <div className="layered-experience experience-scroll-stack" ref={layers}>
-    <nav className="experience-section-nav" aria-label="Explore Sapiens sections">
+  }, [showSectionNav]);
+  return <div className={`layered-experience experience-scroll-stack${showSectionNav ? '' : ' experience-without-section-nav'}`} ref={layers}>
+    {showSectionNav && <nav className="experience-section-nav" aria-label="Explore Sapiens sections">
       {[['direction-product', 'Meet Sapiens'], ['direction-idea', 'The idea'], ['layered-chapters', 'The system']].map(([target, label], index) => <a key={target} href={`#${target}`} aria-current={activeSection === index ? 'location' : undefined}><span aria-hidden="true">0{index + 1}</span>{label}</a>)}
-    </nav>
+    </nav>}
     <span className="experience-scroll-target" id="direction-product" aria-hidden="true"/>
     <div className="experience-opening-sheet"><ExperienceOpening cta={cta}/></div>
     <span className="experience-scroll-target" id="direction-idea" aria-hidden="true"/>

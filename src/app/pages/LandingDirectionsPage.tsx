@@ -68,7 +68,7 @@ function DirectionLanding({ direction, homepage = false }: { direction: typeof d
     <div className="direction-design">
       <header className="direction-header"><Link className="direction-brand" to="/" aria-label="Sapiens home">{direction.id === 'layered' ? <><SapiensBrandMark/>Sapiens</> : <>sapiens<span aria-hidden="true">✳</span></>}</Link><nav aria-label="Main navigation">{isComplete && <a href="#direction-product">Product</a>}{howLink}{isComplete && <a href="#direction-contact">Contact us</a>}{direction.id === 'layered' && <ThemeToggle className="layered-theme-toggle"/>}<Link to={user ? destination : '/login'}>{user ? 'Your Sapiens' : 'Sign in'}<ArrowUpRight size={15}/></Link></nav></header>
       <main id="direction-main">
-        {direction.id === 'layered' && <LayeredStudy cta={cta} onOpenGraph={() => setGraphOpen(true)}/> }
+        {direction.id === 'layered' && <LayeredStudy cta={cta} onOpenGraph={() => setGraphOpen(true)} showSectionNav={!homepage}/> }
         {direction.id === 'studio' && <ProductStudyHero cta={cta}/> }
         {(direction.id === 'editorial' || isSpectrum) && <>
           <section className="editorial-hero direction-wrap">

@@ -200,7 +200,8 @@
 
 /* Full-page sheets: each incoming section travels over the pinned previous one.
    Native scrolling is retained, including scrolling backwards and anchor links. */
-.experience-scroll-stack { position:relative; isolation:isolate; overflow:clip; }
+.experience-scroll-stack { --section-nav-offset:56px; position:relative; isolation:isolate; overflow:clip; }
+.experience-without-section-nav { --section-nav-offset:0px; }
 .experience-section-nav {
   position:sticky; top:0; z-index:5; height:56px; display:flex; justify-content:center; gap:36px;
   background:#faf9f3; border-block:1px solid #d9dfd1;
@@ -210,17 +211,17 @@
 .experience-section-nav a[aria-current] { color:#214b3a; border-bottom-color:#214b3a; font-weight:650; }
 .experience-section-nav a:hover { color:#b44725; }
 .experience-section-nav a:focus-visible,.experience-scroll-cue:focus-visible { outline:2px solid #b44725; outline-offset:-3px; }
-.experience-scroll-target { display:block; height:0; scroll-margin-top:56px; }
+.experience-scroll-target { display:block; height:0; scroll-margin-top:var(--section-nav-offset); }
 .experience-scroll-cue { display:inline-flex; align-items:center; gap:12px; margin-top:24px; min-height:44px; font-size:12px; color:#526153; }
 .experience-scroll-cue svg { border-bottom:1px solid #a8b49a; padding-bottom:3px; height:22px; }
-.experience-scroll-stack #layered-chapters { scroll-margin-top:64px; }
+.experience-scroll-stack #layered-chapters { scroll-margin-top:calc(var(--section-nav-offset) + 8px); }
 .experience-opening-sheet { position:relative; background:var(--paper); }
 .experience-scroll-stack .experience-thesis { position:relative; z-index:2; }
 .experience-scroll-stack .world-section { position:relative; z-index:3; padding-bottom:30px; }
 @media(prefers-reduced-motion:no-preference) {
   .experience-scroll-stack .experience-opening-sheet {
     position:sticky;
-    top:min(56px,calc(100svh - var(--opening-sheet-height,780px)));
+    top:min(var(--section-nav-offset),calc(100svh - var(--opening-sheet-height,780px)));
     z-index:1;
     min-height:calc(100svh - 116px);
     display:grid;
@@ -234,7 +235,7 @@
   }
   .experience-scroll-stack .experience-thesis {
     position:sticky;
-    top:min(56px,calc(100svh - var(--idea-sheet-height,500px)));
+    top:min(var(--section-nav-offset),calc(100svh - var(--idea-sheet-height,500px)));
     min-height:clamp(320px,44svh,480px);
     align-content:center;
     gap:28px 70px;
