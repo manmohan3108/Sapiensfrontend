@@ -1,0 +1,48 @@
+.experience-dialog.architecture-dialog {
+  width: min(1320px, calc(100vw - 32px));
+  background: #faf9f3;
+  color: #303d33;
+  border-color: #c3cfb6;
+}
+.architecture-dialog .experience-dialog-header { background: #faf9f3; border-color: #d9dfd1; }
+.architecture-dialog .experience-dialog-header h2 { font-family: 'Source Sans 3', sans-serif; font-weight: 600; }
+.architecture-dialog .architecture-dialog-content { overflow-y: auto; overscroll-behavior: contain; min-height: 0; padding: 24px 28px 32px; }
+.sapiens-architecture .architecture-intro { max-width: 760px; margin: 0 auto 18px; text-align: center; }
+.sapiens-architecture .architecture-intro p { font-size: 18px; line-height: 1.45; margin: 0 0 8px; }
+.sapiens-architecture .architecture-intro>span { font-size: 13px; color: #5b6859; }
+.sapiens-architecture .architecture-key { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px 28px; margin-bottom: 20px; font-size: 12px; color: #526153; }
+.sapiens-architecture .architecture-key>span { display: flex; gap: 8px; align-items: center; }
+.sapiens-architecture .architecture-key i { display: inline-block; width: 24px; border-top: 2px solid #526153; }
+.sapiens-architecture .architecture-key .architecture-key-return { border-top-style: dashed; }
+.sapiens-architecture .architecture-processes { max-width: 880px; margin: 28px auto 0; border-top: 1px solid #d9dfd1; padding-top: 28px; }
+.sapiens-architecture .architecture-processes header { margin-bottom: 18px; }
+.sapiens-architecture .architecture-processes h3 { font-size: 26px; font-weight: 600; letter-spacing: -.025em; margin: 0 0 8px; }
+.sapiens-architecture .architecture-processes header p { color: #5b6859; font-size: 14px; line-height: 1.5; }
+.sapiens-architecture .architecture-process { border-bottom: 1px solid #d9dfd1; }
+.sapiens-architecture .architecture-process summary { display: flex; gap: 16px; align-items: center; padding: 18px 4px; cursor: pointer; list-style: none; }
+.sapiens-architecture .architecture-process summary::-webkit-details-marker { display: none; }
+.sapiens-architecture .architecture-process summary>svg { flex-shrink: 0; }
+.sapiens-architecture .architecture-process summary>span:first-of-type { display: grid; gap: 4px; }
+.sapiens-architecture .architecture-process summary strong { font-size: 16px; font-weight: 600; }
+.sapiens-architecture .architecture-process summary>span>span { font-size: 14px; line-height: 1.4; color: #5b6859; }
+.sapiens-architecture .architecture-expand { margin-left: auto; font-size: 23px; }
+.sapiens-architecture .architecture-process[open] .architecture-expand { transform: rotate(45deg); }
+.sapiens-architecture .architecture-process summary:focus-visible { outline: 2px solid #b44725; outline-offset: 3px; }
+.sapiens-architecture .architecture-process-body { padding: 0 36px 20px 41px; font-size: 15px; line-height: 1.6; max-width: 76ch; }
+.sapiens-architecture .architecture-example { margin-top: 12px; border-left: 2px solid #b44725; padding-left: 14px; color: #75482e; font-size: 14px; }
+.sapiens-architecture .architecture-continuity { max-width: 880px; margin: 24px auto 0; padding: 20px; border-radius: 14px; background: #edf2e5; }
+.sapiens-architecture .architecture-continuity h3 { font-size: 17px; font-weight: 600; margin: 0 0 8px; }
+.sapiens-architecture .architecture-continuity p { font-size: 14px; line-height: 1.6; max-width: 80ch; color: #526153; }
+.sapiens-architecture .architecture-status { max-width: 880px; margin: 18px auto 0; font-size: 12px; line-height: 1.5; color: #64705e; }
+@media (min-width: 1021px) {
+  .architecture-dialog .sapiens-world { grid-template-columns: minmax(140px,1fr) minmax(310px,1.65fr) minmax(140px,1fr); column-gap: 108px; }
+  .architecture-dialog .world-edge-label { width: 104px; font-size: 11px; }
+}
+@media (max-width: 600px) {
+  .experience-dialog.architecture-dialog { width: 100%; }
+  .architecture-dialog .architecture-dialog-content { padding: 20px 16px 28px; }
+  .sapiens-architecture .architecture-intro { text-align: left; }
+  .sapiens-architecture .architecture-key { justify-content: flex-start; }
+  .sapiens-architecture .architecture-process summary { gap: 12px; }
+  .sapiens-architecture .architecture-process-body { padding-left: 0; padding-right: 0; }
+}
