@@ -4,7 +4,7 @@ import { LayeredStudy } from '../components/customer/LayeredStudy';
 import { SapiensBrandMark } from '../components/customer/SapiensBrandMark';
 import { ProductStudyHero } from '../components/customer/ProductStudyHero';
 import { Link, useSearchParams } from 'react-router';
-import { ArrowUpRight, ArrowDown, ArrowRight, MessageCircle, Brain, Target, Paperclip } from 'lucide-react';
+import { ArrowUpRight, ArrowDown, ArrowRight, MessageCircle, Brain, Target, Paperclip, Plus } from 'lucide-react';
 import { useLandingMotion } from '../components/customer/useLandingMotion';
 import { SapiensExperienceGraph } from '../components/customer/SapiensExperienceGraph';
 import { useAuth } from '../contexts/AuthContext';
@@ -37,11 +37,12 @@ export function LandingDirectionsPage() {
   const howLink = direction.id === 'layered' ? <a href="#layered-chapters">How it works</a> : <a href="#direction-idea">How it works</a>;
   return <div ref={motionRef} className={`direction-page direction-${direction.id}${isSpectrum ? ' direction-spectrum' : ''}`}>
     <a href="#direction-main" className="direction-skip">Skip to content</a>
-    <aside className="direction-review" aria-label="Design preview controls">
+    {direction.id === 'layered' ? <details className="experience-design-picker"><summary><span>DESIGN STUDY / 07</span>Compare directions <Plus size={13}/></summary><nav aria-label="Choose a design direction">{directions.map((d,i) => <button key={d.id} aria-current={d.id === direction.id ? 'page' : undefined} onClick={() => { setParams({view:d.id}); }}><span>0{i+1}</span>{d.name}</button>)}</nav></details> : <>    <aside className="direction-review" aria-label="Design preview controls">
       <div><span className="direction-review-label">SAPIENS / DESIGN STUDIES</span><p>Seven directions. Same story.</p></div>
       <nav aria-label="Choose a design direction">{directions.map((d,i) => <button key={d.id} aria-current={d.id === direction.id ? 'page' : undefined} onClick={() => { setParams({view:d.id}); }}><span>0{i+1}</span>{d.name}</button>)}</nav>
 
     </aside>
+</>}
     {graphOpen && <ExperienceDialog onClose={() => setGraphOpen(false)}/>}
     <div className="direction-design">
       <header className="direction-header"><Link className="direction-brand" to="/" aria-label="Sapiens home">{direction.id === 'layered' ? <><SapiensBrandMark/>Sapiens</> : <>sapiens<span aria-hidden="true">✳</span></>}</Link><nav aria-label="Main navigation">{isComplete && <a href="#direction-product">Product</a>}{howLink}{isComplete && <a href="#direction-contact">Contact us</a>}<Link to={user ? destination : '/login'}>{user ? 'Your Sapiens' : 'Sign in'}<ArrowUpRight size={15}/></Link></nav></header>

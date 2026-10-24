@@ -1,0 +1,14 @@
+{
+  "tool": "Built-in image_gen",
+  "reference": "sapiens-world-3d.png",
+  "assets": [
+    {
+      "file": "sapiens-hero-curiosity-3d.png",
+      "prompt": "Use case: stylized-concept. Create a single isolated 3D illustration asset for a website: curiosity represented by a warm gold brass telescope tilted upward on a short coral-orange tripod, with a tiny cream star suspended above its lens. Match the tactile polished clay 3D miniature style of the provided reference image: warm cream, coral, brass gold, subtle sage accents, rounded forms, soft studio illumination, soft contact shadow. The supplied image is STYLE REFERENCE ONLY; do not reproduce its characters or sheet layout. One simple cohesive object centered, fills 80% of a square canvas, generous clean margin, readable at 80 pixels. True transparent background. No letters, numerals, labels, borders, emoji glyphs, flat icons, or extra surrounding scene."
+    },
+    {
+      "file": "sapiens-hero-waiting-3d.png",
+      "prompt": "Use case: stylized-concept. Create a single isolated 3D illustration asset for a website: knowing when to wait represented by a small hourglass with cream sand, warm coral-orange end caps and a tactile sage green support frame. Match the polished clay 3D miniature style of the provided reference image: cream, coral, brass gold, sage accents, rounded forms, soft studio illumination and subtle contact shadow. The supplied image is STYLE REFERENCE ONLY; do not reproduce its characters or sheet layout. One simple cohesive object centered in a three-quarter view, fills 80% of a square canvas with clean margins, readable at 80 pixels. True transparent background. No letters, numerals, labels, borders, emoji glyphs, flat icons, or extra surrounding scene."
+    }
+  ]
+}

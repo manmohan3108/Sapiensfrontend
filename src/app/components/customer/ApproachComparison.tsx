@@ -18,7 +18,7 @@ export function ApproachComparison() {
           <figcaption><strong>Past experience → present decisions</strong><span>The aim: use what happened before to help decide what deserves attention now.</span></figcaption>
         </figure>
       </div>
-      <div className="compact-footnote"><p>This explains our design focus, not an exclusive capability or a proven advantage over other AI.</p><a href="#direction-product">Available today <ArrowUpRight size={17}/></a></div>
+      <div className="compact-footnote"><p>This explains our design focus, not an exclusive capability or a proven advantage over other AI.</p><a href="#direction-product">Meet Sapiens <ArrowUpRight size={17}/></a></div>
       <details className="approach-sources"><summary>What supports this explanation?</summary><p>Other agents already support memory, tool use, planning, evaluation, revision and modular design. Sapiens’ description reflects the architecture we’re developing. A meaningful product comparison would need named systems, matched tasks and measured results; none are claimed here.</p><p>Sources checked October 2026: <a href="https://claude.com/resources/guides/building-effective-ai-agents/common-architecture-patterns" target="_blank" rel="noreferrer">Anthropic’s architecture guide</a> and <a href="https://www.anthropic.com/research/building-effective-agents" target="_blank" rel="noreferrer">Building effective agents</a>.</p></details>
     </section>
   );
