@@ -27,6 +27,9 @@
 .workspace-shell ::selection { background:var(--sp-action); color:var(--sp-on-action); }
 .workspace-header { flex-shrink:0; display:flex; align-items:center; justify-content:space-between; gap:16px; padding:12px 20px; border-bottom:1px solid var(--sp-line); background:var(--sp-bg); z-index:40; }
 .workspace-identity,.workspace-header-actions { display:flex; align-items:center; gap:12px; }
+.workspace-directory-link { display:inline-flex; align-items:center; gap:7px; min-height:40px; padding:8px 10px; border:1px solid var(--sp-line); border-radius:6px; color:var(--sp-ink); font-size:14px; white-space:nowrap; flex-shrink:0; }
+.workspace-directory-link:hover { background:var(--sp-recessed); }
+.workspace-header>.workspace-identity { flex:1; }
 .workspace-identity { min-width:0; }
 .workspace-identity-text { min-width:0; }
 .workspace-identity-text h1 { margin:0; font:500 23px/1.15 'Source Serif 4',Georgia,serif; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -124,6 +127,7 @@
 }
 @media(max-width:600px) {
   .workspace-header { flex-wrap:wrap; padding:8px 12px; gap:6px; }
+  .workspace-directory-link { flex-basis:100%; justify-content:flex-start; min-height:36px; padding:4px 0; border:0; font-size:14px; }
   .workspace-identity { flex:1; }
   .workspace-identity-text h1 { font-size:21px; }
   .workspace-identity-text p { max-width:23ch; font-size:12px; }

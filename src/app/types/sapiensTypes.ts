@@ -28,10 +28,6 @@ export interface LoadSapiensRequest {
   sapiensId: string;
 }
 
-export interface SaveSapiensRequest {
-  sapiensId: string;
-}
-
 export interface LearnFolderRequest {
   sapiensId: string;
   files: File[];

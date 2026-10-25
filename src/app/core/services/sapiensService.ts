@@ -4,7 +4,6 @@ import {
   CreateSapiensRequest,
   CreateSapiensResponse,
   LoadSapiensRequest,
-  SaveSapiensRequest,
   LearnFolderRequest,
   UploadAcceptance,
   TextInputRequest,
@@ -87,10 +86,6 @@ class SapiensService {
       { sapiens_id: request.sapiensId }
     );
     return response.data;
-  }
-
-  async saveSapiens(request: SaveSapiensRequest): Promise<void> {
-    await apiClient.post(API_ENDPOINTS.saveSapiens(request.sapiensId));
   }
 
   async uploadFolder(request: LearnFolderRequest): Promise<UploadAcceptance> {

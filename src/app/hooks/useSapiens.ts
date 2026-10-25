@@ -82,22 +82,6 @@ export function useSapiens() {
     [setStatus, setCurrentSapiens, navigate, user?.role, reset]
   );
 
-  // ── Save ────────────────────────────────────────────────────────────────────
-  const saveSapiens = useCallback(async () => {
-    if (!currentSapiens) {
-      logger.warn('No current Sapiens to save');
-      return;
-    }
-    try {
-      setStatus('loading');
-      await sapiensService.saveSapiens({ sapiensId: currentSapiens.id });
-      setStatus('idle');
-    } catch (error) {
-      logger.error('Failed to save Sapiens', error);
-      setStatus('error');
-    }
-  }, [currentSapiens, setStatus]);
-
   // ── Upload files ─────────────────────────────────────────────────────────────
   const uploadFiles = useCallback(
     async (files: File[]) => {
@@ -302,7 +286,6 @@ export function useSapiens() {
     chatSessionId,
     createSapiens,
     loadSapiens,
-    saveSapiens,
     uploadFiles,
     sendTextInput,
     sendUserSignal,
