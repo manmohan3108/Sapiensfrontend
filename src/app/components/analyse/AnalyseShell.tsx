@@ -53,7 +53,7 @@ export function AnalyseShell({ section, name, sapienId, go, onWorkspace, onDirec
     </nav>
     <button type="button" className="analyse-directory" onClick={() => { setMobileOpen(false); onDirectory(); }}><ArrowLeft size={16} />Your Sapiens</button>
   </>;
-  return <div className="analyse-shell">
+  return <div className="analyse-shell" data-analyse-section={section}>
     <a className="analyse-skip" href="#analyse-content">Skip to content</a>
     <aside className="analyse-sidebar">{navigation}</aside>
     <Dialog.Root open={mobileOpen} onOpenChange={setMobileOpen}>

@@ -1,26 +1,28 @@
 /* Admin Analyse only. Portalled diagnostics inherit the same tokens while this
    shell is mounted; no palette changes escape to the customer workspace. */
 body:has(.analyse-shell) {
-  --an-bg:#171b1a; --an-panel:#202623; --an-raised:#29312d; --an-ink:#f0eee5;
-  --an-muted:#b4beb6; --an-line:#465149; --an-accent:#e7b48c; --an-soft:#e7b48c12;
-  --an-success:#a9d0b3; --an-warning:#edca86; --an-danger:#ffaaa0; --an-grid:#c8cfbc08;
+  --an-bg:#543225; --an-panel:#62422f; --an-raised:#76513b; --an-ink:#fff2d8;
+  --an-muted:#e0cbb4; --an-line:#a47c5d; --an-accent:#f4d68c; --an-soft:#f4d68c14;
+  --an-success:#a9d0b3; --an-warning:#edca86; --an-danger:#ffaaa0; --an-grid:#f6d9a914;
   --sp-bg:var(--an-bg); --sp-panel:var(--an-panel); --sp-ink:var(--an-ink); --sp-muted:var(--an-muted);
-  --sp-line:var(--an-line); --sp-accent:var(--an-accent); --sp-accent-rgb:231 180 140;
+  --sp-line:var(--an-line); --sp-accent:var(--an-accent); --sp-accent-rgb:244 214 140;
   --sp-success:var(--an-success); --sp-warning:var(--an-warning); --sp-danger:var(--an-danger);
   --sp-action:var(--an-accent); --sp-on-action:var(--an-bg);
-  --sp-ink-rgb:240 238 229; --sp-panel-rgb:32 38 35; --sp-recessed:var(--an-raised);
+  --sp-ink-rgb:255 242 216; --sp-panel-rgb:98 66 47; --sp-recessed:var(--an-raised);
   --background:var(--an-bg); --foreground:var(--an-ink); --card:var(--an-panel); --card-foreground:var(--an-ink);
   --muted:var(--an-raised); --muted-foreground:var(--an-muted); --border:var(--an-line); --input:var(--an-line);
   --accent:var(--an-raised); --accent-foreground:var(--an-ink); --primary:var(--an-accent); --primary-foreground:var(--an-bg);
   --popover:var(--an-panel); --popover-foreground:var(--an-ink); --ring:var(--an-accent);
+  --an-edge:#3e291f; --an-grid-major:#f6d9a920;
   color-scheme:dark;
 }
 html.light body:has(.analyse-shell) {
-  --an-bg:#f0eee7; --an-panel:#fffdf6; --an-raised:#e7e6dc; --an-ink:#29352f;
-  --an-muted:#58665c; --an-line:#bdc2b6; --an-accent:#8d4b28; --an-soft:#8d4b280b;
-  --an-success:#28633e; --an-warning:#795a13; --an-danger:#a1342a; --an-grid:#53604c0a;
-  --sp-accent-rgb:141 75 40;
-  --sp-ink-rgb:41 53 47; --sp-panel-rgb:255 253 246;
+  --an-bg:#f2e2cf; --an-panel:#fff4e5; --an-raised:#ecd4b9; --an-ink:#482e23;
+  --an-muted:#72513b; --an-line:#ba9370; --an-accent:#894521; --an-soft:#8945210c;
+  --an-success:#28633e; --an-warning:#795a13; --an-danger:#a1342a; --an-grid:#8b4e2d13;
+  --sp-accent-rgb:137 69 33;
+  --sp-ink-rgb:72 46 35; --sp-panel-rgb:255 244 229;
+  --an-edge:#ead5bc; --an-grid-major:#8b4e2d20;
   color-scheme:light;
 }
 .analyse-shell, .analyse-mobile-nav { font-family:'Source Sans 3',sans-serif; color:var(--an-ink); background:var(--an-bg); font-size:15px; line-height:1.5; }
@@ -134,3 +136,11 @@ body:has(.analyse-shell) .analyse-content :is(button,input,select)[class*="h-8"]
 body:has(.analyse-shell) .analyse-content .recharts-text { fill:var(--an-muted); font-size:12px; }
 body:has(.analyse-shell) .analyse-content .recharts-cartesian-grid line { stroke:var(--an-line); }
 .analyse-content-embedded>div { background:var(--an-bg)!important; }
+
+/* Shared copper backgrounds only; diagnostic layouts and behaviour stay intact. */
+.analyse-sidebar, .analyse-header, .analyse-mobile-nav { background:var(--an-edge); }
+.analyse-content {
+  background-color:var(--an-bg);
+  background-image:linear-gradient(var(--an-grid-major) 1px,transparent 1px),linear-gradient(90deg,var(--an-grid-major) 1px,transparent 1px),linear-gradient(var(--an-grid) 1px,transparent 1px),linear-gradient(90deg,var(--an-grid) 1px,transparent 1px);
+  background-size:96px 96px,96px 96px,24px 24px,24px 24px;
+}
