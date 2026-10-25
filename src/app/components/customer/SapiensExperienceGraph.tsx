@@ -76,7 +76,7 @@ export function SapiensExperienceGraph({ identityImage = identity, showControls 
     {EXPERIENCE_ANIMATION_ENABLED && showControls && <button type="button" className="experience-play" onClick={() => motionRef.current?.dispatchEvent(new Event('experience-replay'))}>Play / replay the diagram <span aria-hidden="true">↗</span></button>}
     <svg className="experience-desktop" data-experience-scene="desktop" viewBox="0 0 1000 880" role="img" aria-labelledby={`${id}-title ${id}-description`}>
       <title id={`${id}-title`}>Initiative, interaction and reflection around one Sapiens</title>
-      <desc id={`${id}-description`}>The rounded boundary is Sapiens, one AI individual. Attention and curiosity notice what matters, ask questions and seek answers. Understanding connects information to make sense of a situation. Memory and experience carry relevant context and outcomes forward. Goals and reflection guide what to pursue and reconsider the approach. Sleep and consolidation is a quiet phase that connects experiences and strengthens what matters. Outside are people, information, tools, and outcomes and feedback. Sapiens takes initiative: noticing a reason to act, asking questions and seeking what is needed. It reaches out, seeks information and takes permitted actions; feedback returns to the individual, while experience informs its next interaction. This graph explains the Sapiens concept.</desc>
+      <desc id={`${id}-description`}>The rounded boundary is Sapiens, one AI individual. Attention and curiosity notice what matters, ask questions and seek answers. Understanding connects information to make sense of a situation. Memory and experience carry relevant context and outcomes forward. Goals and reflection guide what to pursue and reconsider the approach. Sleep-like consolidation connects experiences and strengthens what matters while Sapiens remains active. Outside are people, information, tools, and outcomes and feedback. Sapiens takes initiative: noticing a reason to act, asking questions and seeking what is needed. It reaches out, seeks information and takes permitted actions; feedback returns to the individual, while experience informs its next interaction. This graph explains the Sapiens concept.</desc>
       <defs>
         <radialGradient id={`${id}-core-halo`}>
           <stop offset="0" stopColor="var(--cx-violet)" stopOpacity=".65" />
@@ -136,7 +136,7 @@ export function SapiensExperienceGraph({ identityImage = identity, showControls 
         <rect className="experience-motion-wash" x="300" y="730" width="400" height="82" rx="40" data-experience-motion="wash" data-experience-part="sleep" aria-hidden="true" />
         <path className="experience-sleep-divider" d="M300 718Q500 694 700 718" />
         <g transform="translate(392 746) scale(1.2)"><path className="experience-sleep-moon" d={sleepMoon} data-experience-motion="icon" data-experience-part="sleep" /></g>
-        <text className="experience-aspect-title" x="516" y="768" textAnchor="middle">Sleep &amp; consolidation</text>
+        <text className="experience-aspect-title" x="516" y="768" textAnchor="middle">Sleep-like consolidation</text>
         <text className="experience-aspect-description" x="500" y="800" textAnchor="middle">{sleepDescription}</text>
       </g>
     </svg>
@@ -167,7 +167,7 @@ export function SapiensExperienceGraph({ identityImage = identity, showControls 
           <svg className="experience-mobile-sleep-divider" viewBox="0 0 300 20" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path className="experience-sleep-divider" d="M0 14Q150 -10 300 14" /></svg>
           <div className="experience-mobile-sleep-heading">
             <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false" data-experience-motion="icon" data-experience-part="sleep"><path className="experience-sleep-moon" d={sleepMoon} /></svg>
-            <h4>Sleep &amp; consolidation</h4>
+            <h4>Sleep-like consolidation</h4>
           </div>
           <p>{sleepDescription}</p>
         </div>

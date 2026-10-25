@@ -21,7 +21,7 @@ export function SapiensArchitecture() {
   return <div className="sapiens-architecture">
     <div className="architecture-intro">
       <p>The same individual, connected to people, information, tools, and feedback.</p>
-      <span>Select a connection to follow an exchange. Explore the internal processes below.</span>
+      <span>Explore the connections and internal processes below.</span>
     </div>
     <div className="architecture-key" aria-label="Connection legend">
       <span><i aria-hidden="true"/>Reaches out or acts</span>
@@ -35,9 +35,9 @@ export function SapiensArchitecture() {
         <div className="architecture-process-body"><p>{process.explanation}</p><p className="architecture-example">{process.example}</p></div>
       </details>)}
     </section>
-    <aside className="architecture-continuity" aria-label="Between interactions">
-      <h3>Between interactions</h3>
-      <p>Waiting for a reply or permission is part of the process. Quiet periods allow reflection and consolidation, so useful experience can inform what happens next.</p>
+    <aside className="architecture-continuity" aria-label="Sleep-like consolidation">
+      <h3>Sleep-like consolidation</h3>
+      <p>Connects experiences and strengthens what matters while Sapiens remains active.</p>
     </aside>
     <p className="architecture-status">Concept architecture in development · exchanges are illustrative. Actions depend on connected tools and granted permissions.</p>
   </div>;

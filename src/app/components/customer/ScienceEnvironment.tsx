@@ -1,55 +1,20 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 
-// Connections follow the actual artwork positions, including responsive layouts.
+// Static notebook marks keep the hero distinct from the system diagram below.
 export function ScienceScene() {
-  const ref = useRef<SVGSVGElement>(null);
-  const [drawing, setDrawing] = useState({ width: 600, height: 730, paths: [] as string[] });
-  useEffect(() => {
-    const svg = ref.current;
-    const scene = svg?.closest('.experience-capability-scene');
-    if (!svg || !scene) return;
-    let frame = 0;
-    const measure = () => {
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(() => {
-        const bounds = svg.getBoundingClientRect();
-        const core = scene.querySelector('.experience-hero-core')?.getBoundingClientRect();
-        if (!core || !bounds.width || !bounds.height) return;
-        const x = core.left + core.width / 2 - bounds.left;
-        const y = core.top + core.height / 2 - bounds.top;
-        const paths = [...scene.querySelectorAll('.experience-capability-art')].map(element => {
-          const art = element.getBoundingClientRect();
-          const endX = art.left + art.width / 2 - bounds.left;
-          const endY = art.top + art.height / 2 - bounds.top;
-          const midX = x + (endX - x) * .6;
-          return `M${x} ${y}C${midX} ${y} ${midX} ${endY} ${endX} ${endY}`;
-        });
-        setDrawing({ width: bounds.width, height: bounds.height, paths });
-      });
-    };
-    const observer = new ResizeObserver(measure);
-    observer.observe(scene);
-    scene.querySelectorAll('.experience-capabilities li').forEach(element => observer.observe(element));
-    measure();
-    return () => { observer.disconnect(); cancelAnimationFrame(frame); };
-  }, []);
-  return <div className="science-scene" aria-hidden="true"><svg ref={ref} viewBox={`0 0 ${drawing.width} ${drawing.height}`}>
-    <g className="science-plot-ruler">
-      <path d={`M16 65V${drawing.height-55}H${drawing.width-16}`}/>
-      {Array.from({ length: 13 }, (_, i) => {
-        const y = 75 + i * (drawing.height - 140) / 12;
-        return <path key={`y${i}`} d={`M16 ${y}h${i % 3 === 0 ? 10 : 5}`}/>;
-      })}
-      {Array.from({ length: 13 }, (_, i) => {
-        const x = 25 + i * (drawing.width - 50) / 12;
-        return <path key={`x${i}`} d={`M${x} ${drawing.height-55}v${i % 3 === 0 ? -10 : -5}`}/>;
-      })}
-    </g>
-    {drawing.paths.map((d,index) => <g key={index}>
-      <path className="science-connection" d={d}/>
-      <path className="science-connection-signal" d={d} pathLength="100" style={{ animationDelay: `${index * -.8}s`, animationDirection: index % 2 ? 'reverse' : 'normal' }}/>
-    </g>)}
-  </svg><span className="science-map-note">CONNECTION MAP</span></div>;
+  return <div className="science-scene" aria-hidden="true">
+    <svg viewBox="0 0 600 730" preserveAspectRatio="none">
+      <g className="science-plot-ruler">
+        <path d="M16 65V675H584"/>
+        {Array.from({ length: 13 }, (_, i) =>
+          <path key={'y'+i} d={'M16 '+(75+i*48)+'h'+(i%3===0?10:5)}/>
+        )}
+        {Array.from({ length: 13 }, (_, i) =>
+          <path key={'x'+i} d={'M'+(25+i*45)+' 675v'+(i%3===0?-10:-5)}/>
+        )}
+      </g>
+    </svg>
+  </div>;
 }
 
 export function ScienceEnvironment() {

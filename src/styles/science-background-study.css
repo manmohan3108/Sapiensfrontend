@@ -3,7 +3,7 @@
 .science-background-study > svg { position:absolute; fill:none; stroke:var(--science-line); stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; opacity:.8; pointer-events:none; }
 .science-background-study .study-guide { stroke-dasharray:3 5; opacity:.32; stroke-width:1; }
 .science-background-study .study-copper { stroke:var(--accent); }
-.science-background-study .study-amber { stroke:#bd8e32; }
+.science-background-study .study-amber { stroke:var(--science-amber); }
 .science-background-study .study-glass { fill:color-mix(in srgb,var(--science-line) 12%,transparent); }
 .science-background-study .study-dot { fill:var(--accent); }
 .science-background-study text { fill:var(--science-line); stroke:none; font:italic 24px Georgia,serif; }

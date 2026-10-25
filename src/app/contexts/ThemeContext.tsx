@@ -12,18 +12,14 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(() => {
-    // Check localStorage first
-    const stored = localStorage.getItem('sapiens-theme') as Theme | null;
-    if (stored === 'light' || stored === 'dark') {
-      return stored;
+    // Honour a saved choice; new visitors start in dark mode.
+    try {
+      const stored = localStorage.getItem('sapiens-theme');
+      if (stored === 'light' || stored === 'dark') return stored;
+    } catch {
+      // Storage may be blocked; the theme should still work for this visit.
     }
-    
-    // Check system preference
-    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      return 'dark';
-    }
-    
-    return 'light';
+    return 'dark';
   });
 
   useEffect(() => {
@@ -36,7 +32,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     root.classList.add(theme);
     
     // Store in localStorage
-    localStorage.setItem('sapiens-theme', theme);
+    try {
+      localStorage.setItem('sapiens-theme', theme);
+    } catch {
+      // Keep the in-memory choice when persistent storage is unavailable.
+    }
   }, [theme]);
 
   const toggleTheme = () => {

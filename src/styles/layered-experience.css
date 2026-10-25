@@ -167,8 +167,7 @@
 .direction-layered .world-section { background:#faf9f3; border-color:#dde2d5; }
 .direction-layered .world-edge-label span { background:#faf9f3; }
 .direction-layered .world-individual { background:#edf2e5; border-color:#c3cfb6; }
-.direction-layered .world-node-button { background:var(--node-tint); border-color:color-mix(in srgb,var(--node-color) 18%,transparent); }
-.direction-layered .world-node-button:hover { border-color:var(--node-color); }
+.direction-layered .world-node-card { background:var(--node-tint); border-color:color-mix(in srgb,var(--node-color) 18%,transparent); }
 .direction-layered .spectrum-contact { background:#e5ecd9; border-color:#ccd7bb; }
 @media(min-width:851px) and (max-width:1050px) {
   .experience-capabilities { column-gap:72px; }
