@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
-import { ArrowLeft, ArrowRight, Bot, Check, ChevronDown, CircleHelp, FileText, MessageSquare, RefreshCw, Users, FolderKanban, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Bot, Check, ChevronDown, CircleHelp, FileText, MessageSquare, RefreshCw, X } from 'lucide-react';
 import { simulationService } from '../../core/services/simulationService';
 import type { InspectionActivity, InspectionActivityPage, InspectionOverviewDetails, InspectionSpecificationResponse, InspectionStory, SimulationRun } from '../../types/simulationTypes';
 import { Button } from '../ui/button';
@@ -121,22 +121,20 @@ function SimulationIntroduction({ spec, overview, participant, role, base, loadi
   spec: InspectionSpecificationResponse | null; overview: InspectionOverviewDetails | null;
   participant: string; role?: string; base: string; loading: boolean;
 }) {
-  const context = spec?.specification?.overview;
-  const stages = context?.stages || [];
-  const objectives = overview?.objectives || [];
-  const connections = spec?.specification?.connection_seeds.map(connection => connection.name).join(' & ');
+  const stages = spec?.specification?.overview?.stages || [];
+  const checks = stages.length ? stages.map(stage => ({ id: stage.stage_id, title: stage.title }))
+    : (overview?.objectives || []).map(check => ({ id: check.expectation_id, title: check.title }));
+  const connections = spec?.specification?.connection_seeds.map(connection => connection.name).join(' + ');
   return <section className="sv-introduction" aria-labelledby="sv-introduction-title">
-    <div className="sv-intro-heading"><div><p className="sv-eyebrow">Start here</p><h2 id="sv-introduction-title">What is this simulation?</h2></div><Link to={`${base}/test-case`}>Full test case <ArrowRight className="size-4" /></Link></div>
-    <p className="sv-intro-definition">A practice workplace for an AI Sapien. The case supplies situations and simulated teammates; the Sapien decides how to respond.</p>
-    <ol className="sv-setup-flow" aria-label="How the simulation works">
-      <li><Users aria-hidden="true" /><div><strong>Situations unfold</strong><span>Case-defined teammates send messages and respond.</span></div></li>
-      <li><Bot aria-hidden="true" /><div><strong>{participant} decides</strong><span>{role || 'AI participant'} · chooses what to say and do.</span></div></li>
-      <li><FolderKanban aria-hidden="true" /><div><strong>Work happens in simulated tools</strong><span>{connections || 'Connected workplace tools'} · actions and outcomes are recorded.</span></div></li>
-    </ol>
-    <div className="sv-case-brief"><span className="sv-eyebrow">The scenario</span><p>{context?.introduction || context?.mission || (loading ? 'Loading the authored scenario…' : 'The scenario description is unavailable.')}</p></div>
-    <div className="sv-test-heading"><h3>What are we testing?</h3>{context?.purpose && <p>{context.purpose}</p>}</div>
-    {stages.length ? <ol className="sv-test-stages">{stages.map((stage, index) => <li key={stage.stage_id}><span className="sv-test-number">{index + 1}</span><div><h4>{stage.title}</h4><p>{stage.description}</p><details><summary>Exact checks</summary><ul>{stage.expectation_ids.map(id => <li key={id}>{objectives.find(objective => objective.expectation_id === id)?.title || id}</li>)}</ul></details></div></li>)}</ol> : objectives.length ? <ul className="sv-test-fallback">{objectives.map(objective => <li key={objective.expectation_id}>{objective.title}</li>)}</ul> : <p className="sv-meta">{loading ? 'Loading the case’s checks…' : 'The case’s checks are unavailable; no success criteria are inferred.'}</p>}
-    <p className="sv-intro-footnote">These are the intended tests. The recorded story below shows what actually happened.</p>
+    <div className="sv-intro-heading"><h2 id="sv-introduction-title">{participant} joins a simulated team{role ? ` as its ${role}` : ''}.</h2><Link to={`${base}/test-case`}>Test case <ArrowRight className="size-4" /></Link></div>
+    <div className="sv-world-diagram" role="group" aria-label="Simulation setup: teammates talk with the Sapien, who acts in simulated workplace tools">
+      <div className="sv-world-node"><span className="sv-world-art sv-team-art"><svg viewBox="0 0 140 90" fill="none" aria-hidden="true"><path d="M28 64H112M70 55V74" stroke="currentColor" strokeOpacity=".35" /><circle cx="28" cy="26" r="11" fill="currentColor" fillOpacity=".13" stroke="currentColor" /><path d="M9 60V53C9 35 47 35 47 53V60" stroke="currentColor" strokeWidth="1.5" /><circle cx="112" cy="26" r="11" fill="currentColor" fillOpacity=".13" stroke="currentColor" /><path d="M93 60V53C93 35 131 35 131 53V60" stroke="currentColor" strokeWidth="1.5" /><circle cx="70" cy="19" r="13" fill="var(--card)" stroke="currentColor" strokeWidth="1.5" /><path d="M48 60V49C48 30 92 30 92 49V60" fill="var(--card)" stroke="currentColor" strokeWidth="1.5" /><rect x="48" y="70" width="44" height="15" rx="7" fill="currentColor" fillOpacity=".12" /><path d="M59 77H81" stroke="currentColor" strokeOpacity=".5" /></svg></span><strong>Simulated teammates</strong></div>
+      <div className="sv-world-connector" aria-hidden="true"><span>Conversations</span><svg className="sv-world-line" viewBox="0 0 100 24" preserveAspectRatio="none"><path d="M2 12H98M8 6L2 12L8 18M92 6L98 12L92 18" fill="none" stroke="currentColor" strokeWidth="1.5" vectorEffect="non-scaling-stroke" /></svg></div>
+      <div className="sv-world-node sv-world-self"><span className="sv-world-art"><Bot strokeWidth={1.4} aria-hidden="true" /></span><strong>{participant}</strong><small>AI Sapien</small></div>
+      <div className="sv-world-connector" aria-hidden="true"><span>Actions</span><svg className="sv-world-line" viewBox="0 0 100 24" preserveAspectRatio="none"><path d="M2 12H98M8 6L2 12L8 18M92 6L98 12L92 18" fill="none" stroke="currentColor" strokeWidth="1.5" vectorEffect="non-scaling-stroke" /></svg></div>
+      <div className="sv-world-node"><span className="sv-world-art"><svg viewBox="0 0 140 90" fill="none" aria-hidden="true"><rect x="5" y="7" width="130" height="77" rx="8" stroke="currentColor" strokeWidth="1.5" /><path d="M5 24H135M49 24V84M92 24V84" stroke="currentColor" strokeOpacity=".3" /><circle cx="15" cy="16" r="2" fill="currentColor" /><path d="M24 16H53" stroke="currentColor" strokeOpacity=".5" /><g fill="currentColor" fillOpacity=".12" stroke="currentColor" strokeOpacity=".4"><rect x="13" y="33" width="28" height="16" rx="3" /><rect x="13" y="56" width="28" height="16" rx="3" /><rect x="57" y="33" width="27" height="16" rx="3" /><rect x="100" y="33" width="27" height="16" rx="3" /></g><path d="M18 39H34M18 62H33M62 39H77M105 39H120" stroke="currentColor" strokeOpacity=".5" /></svg></span><strong className="capitalize">{connections || 'Workplace tools'}</strong><small>Simulated workspace</small></div>
+    </div>
+    <div className="sv-testing"><span className="sv-eyebrow">Testing</span>{checks.length ? <ol>{checks.slice(0, 3).map((check, index) => <li key={check.id}><span>{index + 1}</span>{check.title}</li>)}</ol> : <p>{loading ? 'Loading…' : 'See the full test case'}</p>}{checks.length > 3 && <Link to={`${base}/test-case`}>+{checks.length - 3} more</Link>}</div>
   </section>;
 }
 
@@ -186,10 +184,10 @@ export function SimulationVisualOverview({ run }: { run: SimulationRun }) {
   const phases = spec?.specification?.overview?.phases || [];
   const now = Date.parse(overview?.run_state?.simulated_time || run.simulated_time);
   return <div className="sv-overview">
-    <header className="sv-header"><div><p className="sv-eyebrow">Simulation · test case</p><h1 className="capitalize">{readable(run.case_id)}<span>.</span></h1><p>{role ? `An AI ${role} working in the ${readable(run.case_id)} simulation.` : 'Follow an AI individual through a simulated workplace.'}</p></div><div className="sv-run-state"><span className="sv-status">{readable(overview?.run_status || run.status)}</span><small>Simulated time · {stamp(overview?.run_state?.simulated_time || run.simulated_time)}</small><Button variant="ghost" size="sm" disabled={loading} onClick={() => setRefresh(value => value + 1)}><RefreshCw className="mr-2 size-3.5" />{loading ? 'Loading…' : 'Refresh'}</Button></div></header>
+    <header className="sv-header"><div><p className="sv-eyebrow">A simulated workplace</p><h1 className="capitalize">{readable(run.case_id)}<span>.</span></h1></div><div className="sv-run-state"><span className="sv-status">{readable(overview?.run_status || run.status)}</span><small>Simulated time · {stamp(overview?.run_state?.simulated_time || run.simulated_time)}</small><Button variant="ghost" size="sm" disabled={loading} onClick={() => setRefresh(value => value + 1)}><RefreshCw className="mr-2 size-3.5" />{loading ? 'Loading…' : 'Refresh'}</Button></div></header>
     {error && <p role="alert" className="sv-inline-error">{error}</p>}
     <SimulationIntroduction spec={spec} overview={overview} participant={participant} role={role} base={base} loading={loading} />
-    <div className="sv-story-intro"><h2>Now see {participant} in action</h2><p>One recorded exchange at a time.</p></div>
+    <div className="sv-story-intro"><h2>What did {participant} do?</h2></div>
     <section className="sv-story" aria-label="Guided response story">
       <div className="sv-story-toolbar"><div><span className="sv-eyebrow">One exchange, step by step</span><p>Read the message. Follow the arrows. Select anyone to see more.</p></div><div className="sv-navigation"><Button variant="outline" size="sm" aria-label="Previous story, newer message" disabled={!index || loading} onClick={() => setIndex(value => value - 1)}><ArrowLeft className="size-4" /><span>Previous</span></Button><span className="sv-story-count">{source ? `${index + 1} / ${sources.length}` : '—'}</span><Button variant="outline" size="sm" aria-label="Next story, older message" disabled={!sources.length || (index >= sources.length - 1 && !page?.has_more) || loading} onClick={() => { if (index < sources.length - 1) setIndex(value => value + 1); else void loadEarlier(true); }}><span>Next</span><ArrowRight className="size-4" /></Button></div></div>
       {source ? <StoryCanvas key={`${run.run_id}:${source.sequence}:${refresh}`} run={run} source={source} people={people} participantName={participant} /> : <div className="sv-empty"><MessageSquare className="size-10" /><h2>{loading ? 'Opening the recorded exchanges…' : 'No incoming messages in this portion'}</h2><p>{loading ? 'The story will appear when the saved evidence is loaded.' : page?.has_more ? 'Load earlier messages to explore another part of the run.' : 'Messages will appear here once recorded. You can still explore the scenario below.'}</p></div>}

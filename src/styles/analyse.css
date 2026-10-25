@@ -1,0 +1,170 @@
+/* Admin Analyse only. Portalled diagnostics inherit the same tokens while this
+   shell is mounted; no palette changes escape to the customer workspace. */
+body:has(.analyse-shell) {
+  --an-bg:#171b1a; --an-panel:#202623; --an-raised:#29312d; --an-ink:#f0eee5;
+  --an-muted:#b4beb6; --an-line:#465149; --an-accent:#e7b48c; --an-soft:#e7b48c12;
+  --an-success:#a9d0b3; --an-warning:#edca86; --an-danger:#ffaaa0; --an-grid:#c8cfbc08;
+  --sp-bg:var(--an-bg); --sp-panel:var(--an-panel); --sp-ink:var(--an-ink); --sp-muted:var(--an-muted);
+  --sp-line:var(--an-line); --sp-accent:var(--an-accent); --sp-accent-rgb:231 180 140;
+  --sp-success:var(--an-success); --sp-warning:var(--an-warning); --sp-danger:var(--an-danger);
+  --sp-action:var(--an-accent); --sp-on-action:var(--an-bg);
+  --sp-ink-rgb:240 238 229; --sp-panel-rgb:32 38 35; --sp-recessed:var(--an-raised);
+  --background:var(--an-bg); --foreground:var(--an-ink); --card:var(--an-panel); --card-foreground:var(--an-ink);
+  --muted:var(--an-raised); --muted-foreground:var(--an-muted); --border:var(--an-line); --input:var(--an-line);
+  --accent:var(--an-raised); --accent-foreground:var(--an-ink); --primary:var(--an-accent); --primary-foreground:var(--an-bg);
+  --popover:var(--an-panel); --popover-foreground:var(--an-ink); --ring:var(--an-accent);
+  color-scheme:dark;
+}
+html.light body:has(.analyse-shell) {
+  --an-bg:#f0eee7; --an-panel:#fffdf6; --an-raised:#e7e6dc; --an-ink:#29352f;
+  --an-muted:#58665c; --an-line:#bdc2b6; --an-accent:#8d4b28; --an-soft:#8d4b280b;
+  --an-success:#28633e; --an-warning:#795a13; --an-danger:#a1342a; --an-grid:#53604c0a;
+  --sp-accent-rgb:141 75 40;
+  --sp-ink-rgb:41 53 47; --sp-panel-rgb:255 253 246;
+  color-scheme:light;
+}
+.analyse-shell, .analyse-mobile-nav { font-family:'Source Sans 3',sans-serif; color:var(--an-ink); background:var(--an-bg); font-size:15px; line-height:1.5; }
+.analyse-shell { display:flex; height:100dvh; overflow:hidden; }
+.analyse-shell *, .analyse-mobile-nav * { box-sizing:border-box; }
+.analyse-shell :is(button,a,input,select,summary):focus-visible,
+body:has(.analyse-shell) [role=dialog] :is(button,a,input,select,summary):focus-visible { outline:2px solid var(--an-accent); outline-offset:3px; }
+.analyse-shell tr[tabindex]:focus-visible { outline:2px solid var(--an-accent); outline-offset:-2px; }
+.analyse-shell button, .analyse-mobile-nav button { cursor:pointer; }
+.analyse-shell button:disabled { cursor:wait; opacity:.6; }
+.analyse-skip { position:fixed; top:-100px; left:16px; z-index:100; padding:12px; background:var(--an-panel); color:var(--an-ink); }
+.analyse-skip:focus { top:12px; }
+.analyse-sidebar { width:236px; flex-shrink:0; display:flex; flex-direction:column; padding:18px 12px 12px; border-right:1px solid var(--an-line); background:var(--an-panel); }
+.analyse-brand { display:flex; gap:10px; align-items:center; padding:0 10px 20px; }
+.analyse-brand .sapiens-brand-mark { width:38px; height:38px; display:block; }
+.analyse-brand img { width:100%; height:100%; object-fit:contain; }
+.analyse-brand strong { display:block; font-family:'Source Serif 4',Georgia,serif; font-size:23px; font-weight:550; letter-spacing:-.5px; }
+.analyse-brand span:not(.sapiens-brand-mark) { display:block; font-size:12px; color:var(--an-muted); }
+.analyse-navigation { overflow:auto; min-height:0; flex:1; padding:2px 4px 10px 0; scrollbar-width:thin; scrollbar-color:var(--an-line) transparent; }
+.analyse-nav-group { margin-top:18px; }
+.analyse-nav-group>p { margin:0 0 5px 12px; font-size:11px; font-weight:600; letter-spacing:.07em; text-transform:uppercase; color:var(--an-muted); }
+.analyse-nav-link { display:flex; align-items:center; gap:10px; width:100%; min-height:36px; padding:7px 12px; border-radius:5px; text-align:left; color:var(--an-muted); border:1px solid transparent; font-size:14px; transition:background 120ms,color 120ms; }
+.analyse-nav-link>span { flex:1; }
+.analyse-nav-link:hover, .analyse-directory:hover { background:var(--an-raised); color:var(--an-ink); }
+.analyse-nav-link[aria-current=page] { color:var(--an-accent); background:var(--an-soft); border-color:var(--an-line); box-shadow:inset 3px 0 var(--an-accent); font-weight:600; }
+.analyse-directory { display:flex; align-items:center; gap:10px; padding:12px; border-top:1px solid var(--an-line); color:var(--an-ink); font-size:14px; }
+.analyse-main { flex:1; display:flex; flex-direction:column; min-width:0; }
+.analyse-header { display:flex; align-items:center; gap:12px; flex-shrink:0; min-height:84px; padding:14px 28px; border-bottom:1px solid var(--an-line); background:var(--an-panel); }
+.analyse-heading { min-width:0; }
+.analyse-heading p { margin:0; color:var(--an-accent); font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.analyse-heading p span { color:var(--an-muted); }
+.analyse-heading h1 { margin:0; font-size:23px; font-weight:550; line-height:1.2; }
+.analyse-header-actions { margin-left:auto; display:flex; align-items:center; gap:10px; }
+.analyse-button { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:9px 12px; min-height:40px; border:1px solid var(--an-line); border-radius:5px; background:var(--an-panel); color:var(--an-ink); font:inherit; font-size:14px; white-space:nowrap; }
+.analyse-button:hover, .analyse-theme-toggle:hover { background:var(--an-raised); }
+.analyse-theme-toggle { border:1px solid var(--an-line); color:var(--an-ink); border-radius:5px; width:40px; height:40px; }
+.analyse-content { min-height:0; flex:1; overflow:auto; padding:26px 28px 40px; scrollbar-color:var(--an-line) transparent; }
+.analyse-content-embedded { padding:0; overflow:hidden; }
+.analyse-menu { display:none; }
+.analyse-mobile-nav { position:fixed; inset:0 auto 0 0; width:min(300px,85vw); z-index:60; display:flex; flex-direction:column; padding:20px 14px 14px; border-right:1px solid var(--an-line); }
+.analyse-nav-scrim { position:fixed; inset:0; z-index:59; background:#0008; }
+.analyse-nav-close { position:absolute; top:16px; right:12px; padding:8px; }
+.analyse-overview { max-width:1440px; margin:auto; }
+.analyse-intro { display:flex; justify-content:space-between; align-items:center; gap:18px; margin-bottom:14px; }
+.analyse-eyebrow { font:11px/1.5 ui-monospace,monospace; text-transform:uppercase; letter-spacing:.11em; color:var(--an-accent); }
+.analyse-intro h2 { font-family:'Source Serif 4',Georgia,serif; font-weight:450; font-size:32px; letter-spacing:-.7px; margin:4px 0 6px; line-height:1.2; }
+.analyse-intro p:last-child { color:var(--an-muted); font-size:15px; }
+.analyse-scope-note { font-size:12px; color:var(--an-muted); margin-bottom:22px; }
+.analyse-overview-grid { display:grid; grid-template-columns:minmax(0,1.2fr) minmax(320px,1fr); gap:20px; align-items:start; }
+.analyse-overview-panel { background:var(--an-panel); border:1px solid var(--an-line); border-radius:8px; padding:20px; min-width:0; }
+.analyse-understanding { border-top:2px solid var(--an-accent); }
+.analyse-panel-heading { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px; margin-bottom:18px; }
+.analyse-panel-heading h3 { display:flex; align-items:center; gap:8px; font-size:17px; font-weight:600; }
+.analyse-panel-heading h3 svg { color:var(--an-accent); }
+.analyse-text-link { display:inline-flex; align-items:center; gap:6px; font-size:13px; color:var(--an-accent); min-height:32px; }
+.analyse-text-link:hover { text-decoration:underline; }
+.analyse-record-meta { display:flex; flex-wrap:wrap; align-items:center; gap:10px; font-size:12px; color:var(--an-muted); }
+.analyse-badge { border:1px solid var(--an-line); border-radius:4px; padding:2px 6px; font-size:12px; color:var(--an-ink); white-space:nowrap; }
+.analyse-understanding-text { font-size:17px; line-height:1.65; margin:16px 0; overflow-wrap:anywhere; }
+.analyse-input-context { border-left:2px solid var(--an-line); padding:2px 0 2px 14px; margin-top:18px; }
+.analyse-input-context p { font-size:14px; line-height:1.6; margin:6px 0; white-space:pre-wrap; overflow-wrap:anywhere; }
+.analyse-input-context>span:last-child { font-size:12px; color:var(--an-muted); }
+.analyse-remaining { font-size:14px; color:var(--an-warning); margin:10px 0; }
+.analyse-panel-footnote { font-size:12px; line-height:1.6; color:var(--an-muted); margin-top:16px; }
+.analyse-section-description { font-size:13px; color:var(--an-muted); margin-bottom:12px; }
+.analyse-job-counts { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; padding:10px 0; }
+.analyse-job-counts strong { display:block; font-size:28px; font-weight:550; font-variant-numeric:tabular-nums; }
+.analyse-job-counts span { display:block; font-size:12px; text-transform:capitalize; color:var(--an-muted); }
+.analyse-overview [data-status=failed] { color:var(--an-danger); }
+.analyse-overview [data-status=completed] { color:var(--an-success); }
+.analyse-overview [data-status=pending] { color:var(--an-warning); }
+.analyse-window { font-size:12px; color:var(--an-muted); margin:12px 0 18px; }
+.analyse-window summary { cursor:pointer; }
+.analyse-window p { margin-top:6px; }
+.analyse-recent-jobs { border-top:1px solid var(--an-line); padding-top:14px; }
+.analyse-recent-jobs>button { display:flex; align-items:center; gap:10px; width:100%; text-align:left; padding:10px 0; border-bottom:1px solid var(--an-line); }
+.analyse-recent-jobs>button:hover { background:var(--an-soft); }
+.analyse-recent-jobs>button>span:first-child { flex:1; min-width:0; }
+.analyse-recent-jobs strong { font-size:14px; font-weight:550; display:block; overflow-wrap:anywhere; }
+.analyse-recent-jobs small { display:block; font-size:12px; color:var(--an-muted); overflow-wrap:anywhere; }
+.analyse-jobs { grid-column:2; grid-row:1 / span 2; }
+.analyse-goals { grid-column:1; }
+.analyse-goal-preview { display:grid; grid-template-columns:1fr; gap:14px; margin:0; padding:0; list-style:none; }
+.analyse-goal-preview li+li { border-top:1px solid var(--an-line); padding-top:14px; }
+.analyse-goal-preview li>div { display:flex; align-items:center; flex-wrap:wrap; gap:8px; font-size:12px; color:var(--an-muted); }
+.analyse-goal-preview p { margin:10px 0; font-size:15px; line-height:1.55; overflow-wrap:anywhere; }
+.analyse-goal-preview li>span { color:var(--an-muted); font-size:12px; }
+.analyse-read-state { padding:24px 0; color:var(--an-muted); font-size:14px; }
+.analyse-read-state strong { color:var(--an-warning); font-weight:550; }
+.analyse-read-state p { margin-top:8px; }
+.analyse-goals-page { height:calc(100dvh - 150px); min-height:420px; }
+@media (max-width:1100px) {
+  .analyse-overview-grid { grid-template-columns:1fr; }
+  .analyse-goals { grid-column:auto; }
+  .analyse-jobs { grid-column:auto; grid-row:auto; }
+  .analyse-goal-preview { grid-template-columns:1fr; gap:12px; }
+  .analyse-goal-preview li+li { padding:12px 0 0; border-left:0; border-top:1px solid var(--an-line); }
+}
+@media (max-width:1023px) {
+  .analyse-sidebar { display:none; }
+  .analyse-menu { display:grid; place-items:center; min-width:40px; min-height:40px; }
+  .analyse-header { padding:12px 16px; }
+  .analyse-content { padding:20px 16px 32px; }
+  .analyse-content-embedded { padding:0; }
+}
+@media (max-width:600px) {
+  .analyse-header { padding:10px; gap:6px; }
+  .analyse-heading h1 { font-size:19px; }
+  .analyse-heading p { font-size:12px; max-width:125px; }
+  .analyse-header-actions { gap:6px; }
+  .analyse-header-actions .analyse-button { padding:8px; font-size:12px; }
+  .analyse-header-actions .analyse-button svg { display:none; }
+  .analyse-content { padding:20px 12px; }
+  .analyse-content-embedded { padding:0; }
+  .analyse-intro { align-items:flex-start; flex-direction:column; }
+  .analyse-intro h2 { font-size:28px; }
+  .analyse-overview-panel { padding:16px; }
+  .analyse-job-counts { gap:8px; }
+  .analyse-job-counts strong { font-size:25px; }
+  .analyse-goals-page { min-height:0; height:calc(100dvh - 130px); }
+}
+@media (prefers-reduced-motion:reduce) { .analyse-shell *, .analyse-mobile-nav * { transition:none!important; animation:none!important; } }
+
+/* Compatibility layer for existing diagnostic components. Their layouts and
+   data behaviour stay intact until each page's dedicated UX pass. */
+body:has(.analyse-shell) :is(.analyse-content,[role=dialog]) { color:var(--an-ink); font-family:'Source Sans 3',sans-serif; }
+body:has(.analyse-shell) [role=dialog]:not(.analyse-mobile-nav) { background:var(--an-panel); border-color:var(--an-line); }
+body:has(.analyse-shell) :is(.analyse-content,[role=dialog]) :is([class*="text-white"],[class*="text-slate-"],[class*="text-gray-"]) { color:var(--an-ink); }
+body:has(.analyse-shell) :is(.analyse-content,[role=dialog]) :is([class*="text-white/2"],[class*="text-white/3"],[class*="text-white/4"],[class*="text-white/5"],[class*="text-white/6"]) { color:var(--an-muted); }
+body:has(.analyse-shell) :is(.analyse-content,[role=dialog]) :is([class*="text-violet-"],[class*="text-indigo-"],[class*="text-purple-"],[class*="text-cyan-"],[class*="text-blue-"],[class*="text-sky-"]) { color:var(--an-accent); }
+body:has(.analyse-shell) :is(.analyse-content,[role=dialog]) :is([class*="text-red-"],[class*="text-rose-"]) { color:var(--an-danger); }
+body:has(.analyse-shell) :is(.analyse-content,[role=dialog]) :is([class*="text-amber-"],[class*="text-yellow-"],[class*="text-orange-"]) { color:var(--an-warning); }
+body:has(.analyse-shell) :is(.analyse-content,[role=dialog]) :is([class*="text-green-"],[class*="text-emerald-"]) { color:var(--an-success); }
+body:has(.analyse-shell) :is(.analyse-content,[role=dialog]) :is([class*="border-white/"],[class*="border-slate-"],[class*="border-violet-"],[class*="border-indigo-"],[class*="border-cyan-"]) { border-color:var(--an-line); }
+body:has(.analyse-shell) :is(.analyse-content,[role=dialog]) :is([class*="bg-white/"],[class*="bg-[#0"],[class*="bg-[#1"],[class*="bg-slate-9"]) { background-color:var(--an-panel); }
+body:has(.analyse-shell) :is(.analyse-content,[role=dialog]) :is([class*="bg-violet-"],[class*="bg-indigo-"],[class*="bg-purple-"],[class*="bg-cyan-"],[class*="bg-blue-"]) { background-color:var(--an-soft); }
+body:has(.analyse-shell) :is(.analyse-content,[role=dialog]) :is([class~="bg-cyan-400"],[class~="bg-violet-400"],[class~="bg-indigo-400"]) { background-color:var(--an-accent); }
+body:has(.analyse-shell) :is(.analyse-content,[role=dialog]) :is(input,textarea,select,option,pre) { background-color:var(--an-bg); color:var(--an-ink); border-color:var(--an-line); }
+body:has(.analyse-shell) :is(.analyse-content,[role=dialog]) ::placeholder { color:var(--an-muted); opacity:1; }
+body:has(.analyse-shell) :is(.analyse-content,[role=dialog]) :is([class*="text-[8px]"],[class*="text-[9px]"],[class*="text-[10px]"],[class*="text-[11px]"]) { font-size:12px; line-height:1.5; }
+body:has(.analyse-shell) :is(.analyse-content,[role=dialog]) :is(th,td) { font-size:13px; line-height:1.5; }
+body:has(.analyse-shell) .analyse-content :is(th,thead) { background:var(--an-panel); }
+body:has(.analyse-shell) .analyse-content :is(button,tr)[class*="hover:bg-"]:hover { background-color:var(--an-raised); }
+body:has(.analyse-shell) .analyse-content :is(button,input,select)[class*="h-8"] { height:auto; min-height:36px; }
+body:has(.analyse-shell) .analyse-content .recharts-text { fill:var(--an-muted); font-size:12px; }
+body:has(.analyse-shell) .analyse-content .recharts-cartesian-grid line { stroke:var(--an-line); }
+.analyse-content-embedded>div { background:var(--an-bg)!important; }

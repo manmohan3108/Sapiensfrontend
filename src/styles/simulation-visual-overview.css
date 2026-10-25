@@ -118,45 +118,41 @@
 @media (max-width: 760px) { .sv-header { flex-direction: column; gap: 14px; } .sv-run-state { flex-direction: row; flex-wrap: wrap; align-items: center; text-align: left; } .sv-stage { grid-template-columns: 1fr; padding: 24px; gap: 12px; } .sv-source { max-width: 420px; width: 100%; margin: auto; } .sv-person { display: grid; grid-template-columns: 46px 1fr; align-items: center; column-gap: 12px; } .sv-person .sv-avatar { grid-row: span 2; } .sv-person .sv-meta { grid-column: 2; } .sv-flow-arrow { justify-content: center; margin: 0; height: 30px; transform: rotate(90deg); } .sv-flow-arrow > span { flex: none; width: 22px; } .sv-step { font-size: 12px; margin-bottom: 14px; } .sv-core { margin-top: 10px; } .sv-destinations { width: 100%; max-width: 420px; margin: auto; } .sv-story-toolbar { flex-wrap: wrap; padding: 16px; } .sv-story-toolbar > div:first-child { width: 100%; } .sv-navigation { margin-left: auto; } .sv-outcome { padding: 16px; } .sv-story-picker { padding: 16px; } .sv-story-picker label { width: 100%; } .sv-evidence { margin: 16px; padding: 16px; } .sv-technical { padding: 14px 16px; } .sv-background > summary { align-items: flex-start; flex-direction: column; gap: 4px; } }
 @media (prefers-reduced-motion: reduce) { .sv-overview *, .sv-overview *::before, .sv-overview *::after { transition: none !important; animation: none !important; } }
 
-/* Explain the case before asking visitors to interpret a recorded exchange. */
-.sv-introduction { margin-bottom: 32px; padding: 24px; border: 1px solid var(--sv-line); border-radius: 18px; background: var(--card); }
-.sv-intro-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-.sv-intro-heading h2 { font-size: 22px; font-weight: 600; margin-top: 6px; }
-.sv-intro-heading a { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--sv-green); }
-.sv-intro-definition { max-width: 760px; font-size: 14px; line-height: 1.65; color: var(--muted-foreground); margin-top: 10px; }
-.sv-setup-flow { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); list-style: none; gap: 28px; margin: 24px 0; }
-.sv-setup-flow > li { display: flex; align-items: flex-start; gap: 12px; position: relative; }
-.sv-setup-flow > li:not(:last-child)::after { content: '→'; position: absolute; right: -21px; top: 10px; color: var(--sv-green); }
-.sv-setup-flow > li > svg { flex-shrink: 0; width: 44px; height: 44px; padding: 10px; border-radius: 50%; color: var(--sv-green); background: color-mix(in srgb,var(--sv-green) 10%,var(--card)); }
-.sv-setup-flow > li:nth-child(2) > svg { color: var(--sv-accent); background: color-mix(in srgb,var(--sv-accent) 12%,var(--card)); }
-.sv-setup-flow strong { display: block; font-size: 14px; font-weight: 600; }
-.sv-setup-flow span { display: block; color: var(--muted-foreground); font-size: 12px; line-height: 1.55; margin-top: 4px; }
-.sv-case-brief { display: grid; grid-template-columns: 120px minmax(0,1fr); gap: 12px; align-items: baseline; padding: 18px 0; border-top: 1px solid var(--sv-line); border-bottom: 1px solid var(--sv-line); }
-.sv-case-brief p { font-size: 15px; line-height: 1.65; }
-.sv-test-heading { margin-top: 20px; }
-.sv-test-heading h3 { font-size: 17px; font-weight: 600; }
-.sv-test-heading p { margin-top: 5px; font-size: 13px; color: var(--muted-foreground); }
-.sv-test-stages { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 22px; list-style: none; margin-top: 18px; }
-.sv-test-stages > li { display: flex; align-items: flex-start; gap: 10px; }
-.sv-test-number { display: grid; place-items: center; width: 26px; height: 26px; flex-shrink: 0; border: 1px solid var(--sv-line); border-radius: 50%; color: var(--sv-accent); font-size: 12px; }
-.sv-test-stages h4 { font-size: 14px; font-weight: 600; }
-.sv-test-stages p { margin-top: 5px; font-size: 13px; line-height: 1.55; color: var(--muted-foreground); }
-.sv-test-stages details { margin-top: 9px; font-size: 12px; }
-.sv-test-stages summary { cursor: pointer; color: var(--sv-green); }
-.sv-test-stages details ul { list-style: disc; padding-left: 16px; margin-top: 8px; }
-.sv-test-stages details li { padding: 4px 0; }
-.sv-test-fallback { list-style: disc; padding-left: 18px; margin-top: 12px; font-size: 14px; }
-.sv-test-fallback li { padding: 5px 0; }
-.sv-intro-footnote { margin-top: 20px; font-size: 12px; color: var(--muted-foreground); }
-.sv-story-intro { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+/* A compact setup diagram; full criteria stay on the Test case page. */
+.sv-introduction { margin-bottom: 30px; padding: 24px; border: 1px solid var(--sv-line); border-radius: 18px; background: var(--card); }
+.sv-intro-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+.sv-intro-heading h2 { max-width: 720px; font-size: clamp(18px,2vw,24px); line-height: 1.4; font-weight: 550; }
+.sv-intro-heading a { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; font-size: 13px; color: var(--sv-green); padding: 5px 0; }
+.sv-world-diagram { display: grid; grid-template-columns: 1fr minmax(40px,.5fr) 1fr minmax(40px,.5fr) 1fr; align-items: center; max-width: 850px; margin: 26px auto; gap: 10px; }
+.sv-world-node { display: flex; flex-direction: column; align-items: center; gap: 9px; text-align: center; }
+.sv-world-art { display: grid; place-items: center; width: 140px; height: 100px; color: var(--sv-green); }
+.sv-world-art svg { width: 140px; height: 90px; }
+.sv-world-self .sv-world-art svg { width: 48px; height: 48px; }
+.sv-world-self .sv-world-art { width: 100px; height: 100px; border-radius: 50%; border: 1px solid color-mix(in srgb,var(--sv-accent) 45%,transparent); outline: 1px dashed color-mix(in srgb,var(--sv-accent) 30%,transparent); outline-offset: 7px; background: color-mix(in srgb,var(--sv-accent) 10%,var(--card)); color: var(--sv-accent); margin-bottom: 5px; }
+.sv-world-node strong { font-size: 14px; font-weight: 600; }
+.sv-world-node small { font-size: 12px; color: var(--muted-foreground); margin-top: -6px; }
+.sv-world-connector { display: flex; flex-direction: column; align-items: center; color: var(--muted-foreground); gap: 2px; margin-top: -25px; }
+.sv-world-connector > span:first-child { font-size: 12px; }
+.sv-world-line { width: 100%; height: 24px; color: var(--sv-green); }
+.sv-testing { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; border-top: 1px solid var(--sv-line); padding-top: 18px; }
+.sv-testing ol { display: flex; flex: 1; flex-wrap: wrap; justify-content: space-between; gap: 14px; list-style: none; }
+.sv-testing li { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.sv-testing li > span { display: grid; place-items: center; width: 24px; height: 24px; flex-shrink: 0; border-radius: 50%; border: 1px solid var(--sv-line); color: var(--sv-accent); font-size: 11px; }
+.sv-testing > a, .sv-testing > p { font-size: 12px; color: var(--muted-foreground); }
+.sv-story-intro { margin-bottom: 14px; }
 .sv-story-intro h2 { font-size: 21px; font-weight: 600; }
-.sv-story-intro p { font-size: 13px; color: var(--muted-foreground); }
-@media (max-width: 760px) {
+@media (max-width: 600px) {
   .sv-introduction { padding: 18px; }
-  .sv-intro-heading { align-items: flex-start; flex-direction: column; gap: 10px; }
-  .sv-setup-flow { grid-template-columns: 1fr; gap: 24px; }
-  .sv-setup-flow > li:not(:last-child)::after { content: '↓'; left: 17px; right: auto; top: auto; bottom: -22px; }
-  .sv-case-brief { grid-template-columns: 1fr; gap: 6px; }
-  .sv-test-stages { grid-template-columns: 1fr; gap: 18px; }
-  .sv-story-intro { flex-direction: column; gap: 5px; }
+  .sv-intro-heading { flex-direction: column; gap: 8px; }
+  .sv-world-diagram { grid-template-columns: 1fr; gap: 12px; margin: 20px auto; }
+  .sv-world-node { flex-direction: row; text-align: left; gap: 14px; flex-wrap: wrap; width: 100%; }
+  .sv-world-art, .sv-world-self .sv-world-art { width: 58px; height: 58px; border-radius: 18px; margin: 0; flex-shrink: 0; }
+  .sv-world-art svg { width: 58px; height: 44px; }
+  .sv-world-self .sv-world-art svg { width: 34px; height: 34px; }
+  .sv-world-self .sv-world-art { border-radius: 50%; outline-offset: 3px; }
+  .sv-world-node small { margin: 0; }
+  .sv-world-connector { flex-direction: row-reverse; justify-content: flex-end; margin: 0; gap: 16px; padding-left: 15px; }
+  .sv-world-line { display: inline-block; width: 28px; height: 24px; transform: rotate(90deg); }
+  .sv-testing { align-items: flex-start; }
+  .sv-testing ol { flex-direction: column; }
 }
