@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
-import { ArrowLeft, ArrowRight, Bot, Check, ChevronDown, CircleHelp, FileText, MessageSquare, RefreshCw, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Bot, Check, ChevronDown, CircleHelp, FileText, MessageSquare, RefreshCw, Users, FolderKanban, X } from 'lucide-react';
 import { simulationService } from '../../core/services/simulationService';
 import type { InspectionActivity, InspectionActivityPage, InspectionOverviewDetails, InspectionSpecificationResponse, InspectionStory, SimulationRun } from '../../types/simulationTypes';
 import { Button } from '../ui/button';
@@ -117,6 +117,29 @@ function StoryCanvas({ run, source, people, participantName }: { run: Simulation
   </>;
 }
 
+function SimulationIntroduction({ spec, overview, participant, role, base, loading }: {
+  spec: InspectionSpecificationResponse | null; overview: InspectionOverviewDetails | null;
+  participant: string; role?: string; base: string; loading: boolean;
+}) {
+  const context = spec?.specification?.overview;
+  const stages = context?.stages || [];
+  const objectives = overview?.objectives || [];
+  const connections = spec?.specification?.connection_seeds.map(connection => connection.name).join(' & ');
+  return <section className="sv-introduction" aria-labelledby="sv-introduction-title">
+    <div className="sv-intro-heading"><div><p className="sv-eyebrow">Start here</p><h2 id="sv-introduction-title">What is this simulation?</h2></div><Link to={`${base}/test-case`}>Full test case <ArrowRight className="size-4" /></Link></div>
+    <p className="sv-intro-definition">A practice workplace for an AI Sapien. The case supplies situations and simulated teammates; the Sapien decides how to respond.</p>
+    <ol className="sv-setup-flow" aria-label="How the simulation works">
+      <li><Users aria-hidden="true" /><div><strong>Situations unfold</strong><span>Case-defined teammates send messages and respond.</span></div></li>
+      <li><Bot aria-hidden="true" /><div><strong>{participant} decides</strong><span>{role || 'AI participant'} · chooses what to say and do.</span></div></li>
+      <li><FolderKanban aria-hidden="true" /><div><strong>Work happens in simulated tools</strong><span>{connections || 'Connected workplace tools'} · actions and outcomes are recorded.</span></div></li>
+    </ol>
+    <div className="sv-case-brief"><span className="sv-eyebrow">The scenario</span><p>{context?.introduction || context?.mission || (loading ? 'Loading the authored scenario…' : 'The scenario description is unavailable.')}</p></div>
+    <div className="sv-test-heading"><h3>What are we testing?</h3>{context?.purpose && <p>{context.purpose}</p>}</div>
+    {stages.length ? <ol className="sv-test-stages">{stages.map((stage, index) => <li key={stage.stage_id}><span className="sv-test-number">{index + 1}</span><div><h4>{stage.title}</h4><p>{stage.description}</p><details><summary>Exact checks</summary><ul>{stage.expectation_ids.map(id => <li key={id}>{objectives.find(objective => objective.expectation_id === id)?.title || id}</li>)}</ul></details></div></li>)}</ol> : objectives.length ? <ul className="sv-test-fallback">{objectives.map(objective => <li key={objective.expectation_id}>{objective.title}</li>)}</ul> : <p className="sv-meta">{loading ? 'Loading the case’s checks…' : 'The case’s checks are unavailable; no success criteria are inferred.'}</p>}
+    <p className="sv-intro-footnote">These are the intended tests. The recorded story below shows what actually happened.</p>
+  </section>;
+}
+
 export function SimulationVisualOverview({ run }: { run: SimulationRun }) {
   const [overview, setOverview] = useState<InspectionOverviewDetails | null>(null);
   const [spec, setSpec] = useState<InspectionSpecificationResponse | null>(null);
@@ -163,15 +186,17 @@ export function SimulationVisualOverview({ run }: { run: SimulationRun }) {
   const phases = spec?.specification?.overview?.phases || [];
   const now = Date.parse(overview?.run_state?.simulated_time || run.simulated_time);
   return <div className="sv-overview">
-    <header className="sv-header"><div><p className="sv-eyebrow">A workplace. An AI colleague. Recorded interactions.</p><h1>See {participant} at work<span>.</span></h1><p>{role ? `An AI ${role} working in the ${readable(run.case_id)} simulation.` : 'Follow an AI individual through a simulated workplace.'}</p></div><div className="sv-run-state"><span className="sv-status">{readable(overview?.run_status || run.status)}</span><small>Simulated time · {stamp(overview?.run_state?.simulated_time || run.simulated_time)}</small><Button variant="ghost" size="sm" disabled={loading} onClick={() => setRefresh(value => value + 1)}><RefreshCw className="mr-2 size-3.5" />{loading ? 'Loading…' : 'Refresh'}</Button></div></header>
+    <header className="sv-header"><div><p className="sv-eyebrow">Simulation · test case</p><h1 className="capitalize">{readable(run.case_id)}<span>.</span></h1><p>{role ? `An AI ${role} working in the ${readable(run.case_id)} simulation.` : 'Follow an AI individual through a simulated workplace.'}</p></div><div className="sv-run-state"><span className="sv-status">{readable(overview?.run_status || run.status)}</span><small>Simulated time · {stamp(overview?.run_state?.simulated_time || run.simulated_time)}</small><Button variant="ghost" size="sm" disabled={loading} onClick={() => setRefresh(value => value + 1)}><RefreshCw className="mr-2 size-3.5" />{loading ? 'Loading…' : 'Refresh'}</Button></div></header>
     {error && <p role="alert" className="sv-inline-error">{error}</p>}
+    <SimulationIntroduction spec={spec} overview={overview} participant={participant} role={role} base={base} loading={loading} />
+    <div className="sv-story-intro"><h2>Now see {participant} in action</h2><p>One recorded exchange at a time.</p></div>
     <section className="sv-story" aria-label="Guided response story">
       <div className="sv-story-toolbar"><div><span className="sv-eyebrow">One exchange, step by step</span><p>Read the message. Follow the arrows. Select anyone to see more.</p></div><div className="sv-navigation"><Button variant="outline" size="sm" aria-label="Previous story, newer message" disabled={!index || loading} onClick={() => setIndex(value => value - 1)}><ArrowLeft className="size-4" /><span>Previous</span></Button><span className="sv-story-count">{source ? `${index + 1} / ${sources.length}` : '—'}</span><Button variant="outline" size="sm" aria-label="Next story, older message" disabled={!sources.length || (index >= sources.length - 1 && !page?.has_more) || loading} onClick={() => { if (index < sources.length - 1) setIndex(value => value + 1); else void loadEarlier(true); }}><span>Next</span><ArrowRight className="size-4" /></Button></div></div>
       {source ? <StoryCanvas key={`${run.run_id}:${source.sequence}:${refresh}`} run={run} source={source} people={people} participantName={participant} /> : <div className="sv-empty"><MessageSquare className="size-10" /><h2>{loading ? 'Opening the recorded exchanges…' : 'No incoming messages in this portion'}</h2><p>{loading ? 'The story will appear when the saved evidence is loaded.' : page?.has_more ? 'Load earlier messages to explore another part of the run.' : 'Messages will appear here once recorded. You can still explore the scenario below.'}</p></div>}
       <div className="sv-story-picker"><label htmlFor="sv-story-select">Browse exchanges</label><select id="sv-story-select" disabled={!sources.length || loading} value={source ? String(index) : ''} onChange={event => setIndex(Number(event.target.value))}>{!sources.length && <option value="">No exchanges loaded</option>}{sources.map((item, position) => <option key={item.record_id} value={position}>{people.get(text(item.payload.sender_id)) || text(item.payload.sender_id)} · {stamp(item.occurred_at)} · {text(item.payload.text).slice(0, 65)}</option>)}</select>{page?.has_more && <Button variant="outline" size="sm" disabled={loading} onClick={() => void loadEarlier()}>{loading ? 'Loading…' : 'Load earlier exchanges'}</Button>}<small>Newest first · {sources.length} exchanges loaded</small></div>
     </section>
     <div className="sv-explore"><h2>Explore the workplace</h2><div>{[['messages', 'Conversations'], ['jira', 'Project board'], ['sapien', 'All activity'], ['results', 'Verified results']].map(([path, title]) => <Link key={path} to={`${base}/${path}`}>{title}<ArrowRight className="size-4" /></Link>)}</div></div>
-    <details className="sv-background"><summary><span>The bigger picture</span><span>Scenario, timeline & checks <ChevronDown className="size-4" /></span></summary><div className="sv-background-content"><p>{spec?.specification?.overview?.introduction || spec?.specification?.overview?.mission || 'Scenario details are not available.'}</p><Link to={`${base}/test-case`}>Read the full scenario →</Link><h3>Project calendar</h3><p className="sv-meta">Time reached is not work completed.</p>{phases.length ? <ol className="sv-phases">{phases.map(phase => { const current = now >= Date.parse(phase.start_at) && now < Date.parse(phase.end_at); return <li key={phase.phase_id} aria-current={current ? 'step' : undefined}><span /><strong>{phase.title}</strong><small>{current ? 'Current period' : now >= Date.parse(phase.end_at) ? 'Earlier period' : 'Upcoming period'}</small></li>; })}</ol> : <p>No phase timeline recorded.</p>}<h3>Independent checks</h3>{overview?.objectives.length ? <ul className="sv-checks">{overview.objectives.map(objective => <li key={objective.expectation_id}><span>{objective.title}</span><strong>{readable(objective.verdict)}</strong></li>)}</ul> : <p>No evaluated checks are available.</p>}<p className="sv-meta">A complete list of unresolved work is not available here. Inspect a story’s assessment or conversations for remaining work.</p></div></details>
+    <details className="sv-background"><summary><span>Timeline & results</span><span>Explore this run <ChevronDown className="size-4" /></span></summary><div className="sv-background-content"><h3>Project calendar</h3><p className="sv-meta">Time reached is not work completed.</p>{phases.length ? <ol className="sv-phases">{phases.map(phase => { const current = now >= Date.parse(phase.start_at) && now < Date.parse(phase.end_at); return <li key={phase.phase_id} aria-current={current ? 'step' : undefined}><span /><strong>{phase.title}</strong><small>{current ? 'Current period' : now >= Date.parse(phase.end_at) ? 'Earlier period' : 'Upcoming period'}</small></li>; })}</ol> : <p>No phase timeline recorded.</p>}<h3>Independent checks</h3>{overview?.objectives.length ? <ul className="sv-checks">{overview.objectives.map(objective => <li key={objective.expectation_id}><span>{objective.title}</span><strong>{readable(objective.verdict)}</strong></li>)}</ul> : <p>No evaluated checks are available.</p>}<p className="sv-meta">A complete list of unresolved work is not available here. Inspect a story’s assessment or conversations for remaining work.</p></div></details>
     <footer className="sv-footer"><span>Recorded activity from this simulation. Snapshot #{overview?.through ?? '—'}{overview?.partial ? ' · Partial evidence' : ''}.</span><Link to={`${base}/diagnostics`}>Technical diagnostics</Link></footer>
   </div>;
 }
