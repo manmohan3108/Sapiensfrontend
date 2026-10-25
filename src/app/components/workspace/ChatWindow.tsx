@@ -1,10 +1,12 @@
+import { ConversationHistory } from './ConversationHistory';
+import { ScienceDetail } from '../customer/ScienceDetail';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import {
   Send, Brain, User, AlertCircle,
   Loader2, ChevronDown, Sparkles, Copy, Check,
   ThumbsUp, ThumbsDown, Star, BookMarked, MinusCircle,
   Database, ChevronRight,
-  History, Plus, RefreshCw, PanelLeftClose, PanelLeftOpen,
+  History, Plus, PanelLeftOpen,
   Paperclip, X,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
@@ -40,7 +42,7 @@ function CopyBtn({ text }: { text: string }) {
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
       }}
-      className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px]
+      className="opacity-100 transition-opacity flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px]
         text-sp-muted hover:text-sp-ink hover:bg-sp-ink/10 border border-transparent hover:border-sp-line"
     >
       {copied ? <Check className="w-2.5 h-2.5 text-sp-success" /> : <Copy className="w-2.5 h-2.5" />}
@@ -137,7 +139,7 @@ function SignalControls({ msg, onSignal }: { msg: ChatMessage; onSignal: (s: Use
   const active = msg.userSignal;
 
   return (
-    <div className="flex items-center gap-1 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+    <div className="flex items-center gap-1 mt-0.5 opacity-100 transition-opacity">
       {SIGNALS.map((s) => {
         const isActive = active === s.id;
         return (
@@ -215,7 +217,7 @@ function MessageBubble({
         {isUser ? (
           <div
             className="w-7 h-7 rounded-full flex items-center justify-center"
-            style={{ background: 'var(--sp-action, #7434ce)', boxShadow: '0 0 12px rgb(var(--sp-accent-rgb, 124 58 237) / 0.4)' }}
+            style={{ background: 'var(--sp-action, #7434ce)', boxShadow: 'none' }}
           >
             <User className="w-3.5 h-3.5 text-sp-on-action" />
           </div>
@@ -225,12 +227,7 @@ function MessageBubble({
             <AlertCircle className="w-3.5 h-3.5 text-sp-danger" />
           </div>
         ) : (
-          <div
-            className="w-7 h-7 rounded-full flex items-center justify-center"
-            style={{ background: 'rgb(var(--sp-accent-rgb, 124 58 237) / 0.2)', border: '1px solid rgb(var(--sp-accent-rgb, 124 58 237) / 0.35)', boxShadow: '0 0 10px rgb(var(--sp-accent-rgb, 124 58 237) / 0.2)' }}
-          >
-            <Brain className="w-3.5 h-3.5 text-sp-accent" />
-          </div>
+          <SapiensPresence size={28} tone="orange" />
         )}
       </div>
 
@@ -239,7 +236,7 @@ function MessageBubble({
         {isUser ? (
           <div
             className="px-4 py-3 rounded-2xl rounded-tr-sm text-sm leading-relaxed text-sp-ink"
-            style={{ background: 'linear-gradient(135deg, rgb(var(--sp-accent-rgb, 124 58 237) / 0.85), rgba(79,70,229,0.85))', border: '1px solid rgb(var(--sp-accent-rgb, 124 58 237) / 0.4)', boxShadow: '0 4px 20px rgb(var(--sp-accent-rgb, 124 58 237) / 0.25)' }}
+            style={{ background: 'var(--sp-recessed)', border: '1px solid var(--sp-line)' }}
           >
             <p className="whitespace-pre-wrap break-words">{msg.content}</p>
           </div>
@@ -283,7 +280,7 @@ function MessageBubble({
         )}
 
         <div className={`flex items-center gap-2 px-1 ${isUser ? 'flex-row-reverse' : ''}`}>
-          <span className="text-[10px] text-sp-muted font-mono opacity-0 group-hover:opacity-100 transition-opacity">
+          <span className="text-[10px] text-sp-muted font-mono opacity-100 transition-opacity">
             {formatTime(msg.timestamp)}
           </span>
           {!msg.isLoading && !isUser && msg.content && <CopyBtn text={msg.content} />}
@@ -294,24 +291,25 @@ function MessageBubble({
 }
 
 // ─── Empty state ──────────────────────────────────────────────────────────────
-function EmptyState({ name, onHint }: { name: string; onHint: (h: string) => void }) {
+function EmptyState({ name, onHint, recent, onResume, loading }: { name: string; onHint: (h: string) => void; recent?: ChatHistoryItem; onResume: () => void; loading: boolean }) {
   const hints = [
     'I have an idea I’d like to explore.',
     'Help me think through a question.',
   ];
   return (
     <div className="flex flex-col items-center justify-center h-full px-5 py-5 text-center">
-      <SapiensPresence size={64} className="mb-3" />
+      <div className="workspace-welcome-art"><ScienceDetail variant="surround" /><SapiensPresence tone="orange" size={70} animated /></div>
 
-      <p className="text-sp-ink text-2xl font-semibold mb-2">Talk with{' '}
+      <p className="workspace-welcome-title">{recent ? 'Continue with' : 'Talk with'}{' '}
         <span style={{ background: 'linear-gradient(90deg, var(--sp-accent, #c4b5fd), var(--sp-accent, #a5b4fc))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
           {name}
         </span>
       </p>
       <p className="text-sm text-sp-muted mb-5 max-w-[340px] leading-relaxed">
-        A question, a fresh idea, or a little context. Start wherever you are.
+        {recent ? "Pick up a conversation, or start with something new." : "Share an idea, ask a question, or tell your Sapien what matters to you."}
       </p>
 
+      {recent && <button className="workspace-resume" onClick={onResume} disabled={loading}><span>Continue your last conversation <span aria-hidden="true">→</span></span><small>{recent.title || 'Untitled conversation'}</small></button>}
       <div className="grid grid-cols-2 gap-2 w-full max-w-sm">
         {hints.map((h) => (
           <button key={h} onClick={() => onHint(h)}
@@ -328,46 +326,6 @@ function EmptyState({ name, onHint }: { name: string; onHint: (h: string) => voi
       </div>
     </div>
   );
-}
-
-function ChatHistorySidebar({ history, historyLoading, historyError, detailLoading, isProcessing, chatSessionId, onRefresh, onNewChat, onSelectChat, onCollapse }: {
-  history: ChatHistoryItem[]; historyLoading: boolean; historyError: string | null; detailLoading: boolean;
-  isProcessing: boolean; chatSessionId: string | null; onRefresh: () => void; onNewChat: () => void;
-  onSelectChat: (threadId: string) => void; onCollapse: () => void;
-}) {
-  return <>
-    <div className="flex items-center justify-between gap-2 px-3 py-3 border-b border-sp-line">
-      <div><p className="text-sm font-semibold text-sp-ink">Chat history</p><p className="text-xs text-sp-muted">Continue a conversation</p></div>
-      <div className="flex items-center gap-1">
-        <button onClick={onRefresh} disabled={historyLoading} title="Refresh history" aria-label="Refresh chat history" className="p-2 rounded-lg text-sp-muted hover:text-sp-accent hover:bg-sp-ink/[0.08] disabled:opacity-40">
-          <RefreshCw className={`w-4 h-4 ${historyLoading ? 'animate-spin' : ''}`} />
-        </button>
-        <button onClick={onCollapse} title="Collapse chat history" aria-label="Collapse chat history" className="p-2 rounded-lg text-sp-muted hover:text-sp-accent hover:bg-sp-ink/[0.08]">
-          <PanelLeftClose className="w-4 h-4" />
-        </button>
-      </div>
-    </div>
-    <div className="p-2">
-      <button onClick={onNewChat} className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium text-sp-ink bg-sp-accent hover:bg-sp-accent transition-colors shadow-lg shadow-violet-950/30">
-        <Plus className="w-4 h-4" /> New chat
-      </button>
-    </div>
-    {historyError && <p className="mx-2 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-sp-danger">{historyError}</p>}
-    <div className="workspace-scrollbar flex-1 min-h-0 overflow-y-auto p-2 pt-1">
-      {historyLoading && history.length === 0 ? (
-        <div className="flex items-center justify-center gap-2 py-10 text-sm text-sp-muted"><Loader2 className="w-4 h-4 animate-spin" /> Loading chats…</div>
-      ) : history.length === 0 ? (
-        <div className="px-3 py-10 text-center"><History className="mx-auto mb-3 h-6 w-6 text-sp-accent" /><p className="text-sm text-sp-muted">No saved chats yet.</p><p className="mt-1 text-xs text-sp-muted">Your conversations will appear here.</p></div>
-      ) : history.map((chat) => (
-        <button key={chat.thread_id} onClick={() => onSelectChat(chat.thread_id)} disabled={detailLoading || isProcessing}
-          className="mb-1 w-full rounded-xl px-3 py-3 text-left hover:bg-sp-accent/10 disabled:opacity-50 transition-colors"
-          style={chat.thread_id === chatSessionId ? { background: 'rgb(var(--sp-accent-rgb, 124 58 237) / 0.16)', border: '1px solid rgb(var(--sp-accent-rgb, 139 92 246) / 0.35)' } : { border: '1px solid transparent' }}>
-          <span className="block truncate text-sm font-medium text-sp-ink">{chat.title || 'Untitled chat'}</span>
-          <span className="mt-1.5 flex items-center justify-between gap-2 text-xs text-sp-muted"><span>{new Date(chat.updated_at).toLocaleDateString()}</span><span>{chat.message_count} messages</span></span>
-        </button>
-      ))}
-    </div>
-  </>;
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
@@ -512,7 +470,7 @@ export function ChatWindow() {
     await sendUserSignal(messageId, signal, msg?.content);
   };
 
-  const userCount = msgs.filter((m) => m.role === 'user').length;
+  const latestChat = [...history].sort((a,b) => (Date.parse(b.updated_at) || 0) - (Date.parse(a.updated_at) || 0))[0];
 
   return (
     <div className="workspace-conversation h-full flex rounded-2xl overflow-hidden relative"
@@ -523,111 +481,30 @@ export function ChatWindow() {
         backdropFilter: 'blur(24px)',
       }}
     >
-      <aside className={`${historyCollapsed ? 'w-14' : 'w-56 xl:w-60'} hidden lg:flex flex-shrink-0 flex-col border-r border-sp-line bg-gradient-to-b from-sp-accent/15 to-sp-ink/20 transition-[width] duration-200`}>
+      <aside className={`workspace-history ${historyCollapsed ? 'is-collapsed' : ''}`}>
         {historyCollapsed ? (
           <div className="flex h-full flex-col items-center gap-2 py-3">
             <button onClick={() => setHistoryCollapsed(false)} title="Expand chat history" aria-label="Expand chat history" className="p-2.5 rounded-xl text-sp-accent bg-sp-accent/10 hover:bg-sp-accent/20 border border-sp-accent/20">
               <PanelLeftOpen className="w-4 h-4" />
             </button>
-            <button onClick={startNewChat} title="New chat" aria-label="New chat" className="p-2.5 rounded-xl text-sp-ink hover:text-sp-ink hover:bg-sp-ink/[0.08]">
+            <button onClick={startNewChat} disabled={isProcessing || detailLoading} title="New chat" aria-label="New chat" className="p-2.5 rounded-xl text-sp-ink hover:text-sp-ink hover:bg-sp-ink/[0.08]">
               <Plus className="w-4 h-4" />
             </button>
           </div>
-        ) : <ChatHistorySidebar history={history} historyLoading={historyLoading} historyError={historyError}
+        ) : <ConversationHistory history={history} historyLoading={historyLoading} historyError={historyError}
           detailLoading={detailLoading} isProcessing={isProcessing} chatSessionId={chatSessionId}
           onRefresh={() => void refreshHistory()} onNewChat={startNewChat} onSelectChat={(id) => void selectChat(id)} onCollapse={() => setHistoryCollapsed(true)} />}
       </aside>
       <div className="min-w-0 flex-1 flex flex-col relative">
-      {/* Violet top accent */}
-      <div style={{ height: '3px', background: 'linear-gradient(90deg, var(--sp-accent, #7c3aed), var(--sp-accent, #4f46e5))', flexShrink: 0 }} />
-
-      {/* ── Header ── */}
-      <div className="flex-shrink-0 relative flex items-center justify-between px-4 py-3"
-        style={{ background: 'rgb(var(--sp-accent-rgb, 124 58 237) / 0.07)', borderBottom: '1px solid rgb(var(--sp-accent-rgb, 124 58 237) / 0.12)' }}>
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="w-8 h-8 rounded-xl flex items-center justify-center"
-            style={{ background: 'rgb(var(--sp-accent-rgb, 124 58 237) / 0.25)', border: '1px solid rgb(var(--sp-accent-rgb, 124 58 237) / 0.35)' }}>
-            <Brain className="w-4 h-4 text-sp-accent" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-sm text-sp-ink">{currentSapiens?.name ?? 'Sapiens'}</p>
-            <p className="text-[10px] text-sp-accent">Your AI individual · Conversation</p>
-          </div>
-          {msgs.length > 0 && (
-            <span className="px-2 py-0.5 rounded-full text-[10px] tabular-nums flex-shrink-0"
-              style={{ background: 'rgb(var(--sp-accent-rgb, 124 58 237) / 0.15)', border: '1px solid rgb(var(--sp-accent-rgb, 124 58 237) / 0.25)', color: 'var(--sp-accent, #c4b5fd)' }}>
-              {userCount} msg{userCount !== 1 ? 's' : ''}
-            </span>
-          )}
-          {chatSessionId && (
-            <span
-              className="hidden lg:flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-mono flex-shrink-0"
-              style={{
-                background: 'rgb(var(--sp-accent-rgb, 6 182 212) / 0.07)',
-                border: '1px solid rgb(var(--sp-accent-rgb, 6 182 212) / 0.15)',
-                color: 'var(--sp-accent, rgb(var(--sp-accent-rgb, 6 182 212) / 0.55))',
-              }}
-            >
-              #{chatSessionId.slice(0, 10)}…
-            </span>
-          )}
+      <div className="workspace-chat-heading">
+        <div><h2>Conversation</h2><p>With {currentSapiens?.name ?? 'Sapiens'}</p></div>
+        <div className="flex items-center gap-2">
+          {isProcessing && <span className="text-sm text-sp-muted"><Loader2 size={14} className="inline animate-spin" /> Processing…</span>}
+          <button onClick={() => setHistoryOpen(open => !open)} aria-expanded={historyOpen} className="workspace-history-toggle"><History size={16} />History</button>
         </div>
-
-        <div className="flex items-center gap-2 flex-shrink-0">
-          {isProcessing && (
-            <span className="flex items-center gap-1.5 text-[11px] text-sp-accent">
-              <Loader2 className="w-3 h-3 animate-spin" /> Thinking…
-            </span>
-          )}
-          {msgs.length > 0 && (
-            <button onClick={startNewChat}
-              className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] text-sp-muted
-                hover:text-sp-danger hover:bg-red-500/10 transition-all border border-transparent hover:border-red-500/15">
-              <Plus className="w-3 h-3" /> New
-            </button>
-          )}
-          <button onClick={() => setHistoryOpen((open) => !open)}
-            className="flex lg:hidden items-center gap-1 px-2 py-1 rounded-lg text-[11px] text-sp-muted hover:text-sp-accent hover:bg-sp-accent/10 transition-all border border-sp-line">
-            <History className="w-3 h-3" /> History
-          </button>
-        </div>
-
-        {historyOpen && (
-          <div className="absolute lg:hidden z-30 top-[calc(100%+6px)] right-3 left-3 sm:left-auto sm:w-80 rounded-xl overflow-hidden"
-            style={{ background: 'rgb(var(--sp-panel-rgb, 10 14 26) / 0.98)', border: '1px solid rgb(var(--sp-accent-rgb, 124 58 237) / 0.28)', boxShadow: '0 18px 45px rgb(var(--sp-shadow-rgb, 0 0 0) / var(--sp-shadow-opacity, 0.55))', backdropFilter: 'blur(18px)' }}>
-            <div className="flex items-center justify-between px-3 py-2 border-b border-sp-line">
-              <span className="text-xs text-sp-muted">Recent chats</span>
-              <div className="flex items-center gap-1">
-                <button onClick={() => void refreshHistory()} disabled={historyLoading} title="Refresh history"
-                  className="p-1.5 rounded-md text-sp-muted hover:text-sp-accent hover:bg-sp-ink/[0.06] disabled:opacity-40">
-                  <RefreshCw className={`w-3 h-3 ${historyLoading ? 'animate-spin' : ''}`} />
-                </button>
-                <button onClick={() => { startNewChat(); setHistoryOpen(false); }}
-                  className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] text-sp-accent bg-sp-accent/10 hover:bg-sp-accent/20">
-                  <Plus className="w-3 h-3" /> New chat
-                </button>
-              </div>
-            </div>
-            {historyError && <p className="px-3 py-2 text-[10px] text-sp-danger border-b border-red-500/10">{historyError}</p>}
-            <div className="max-h-72 overflow-y-auto p-1.5">
-              {historyLoading && history.length === 0 ? (
-                <div className="flex items-center justify-center gap-2 py-8 text-xs text-sp-muted"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading chats…</div>
-              ) : history.length === 0 ? (
-                <p className="py-8 text-center text-xs text-sp-muted">No saved chats yet.</p>
-              ) : history.map((chat) => (
-                <button key={chat.thread_id} onClick={() => void selectChat(chat.thread_id)} disabled={detailLoading || isProcessing}
-                  className="w-full text-left px-3 py-2.5 rounded-lg hover:bg-sp-accent/10 disabled:opacity-50 transition-colors"
-                  style={chat.thread_id === chatSessionId ? { background: 'rgb(var(--sp-accent-rgb, 124 58 237) / 0.13)', border: '1px solid rgb(var(--sp-accent-rgb, 124 58 237) / 0.2)' } : { border: '1px solid transparent' }}>
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="truncate text-xs text-sp-ink">{chat.title || 'Untitled chat'}</span>
-                    <span className="flex-shrink-0 text-[9px] text-sp-muted">{chat.message_count} msgs</span>
-                  </div>
-                  <p className="mt-1 text-[9px] text-sp-muted">{new Date(chat.updated_at).toLocaleString()}</p>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
+        {historyOpen && <div className="workspace-history-popover" onKeyDown={e => { if (e.key === 'Escape') { setHistoryOpen(false); e.currentTarget.parentElement?.querySelector<HTMLButtonElement>('.workspace-history-toggle')?.focus(); } }}>
+          <ConversationHistory history={history} historyLoading={historyLoading} historyError={historyError} detailLoading={detailLoading} isProcessing={isProcessing} chatSessionId={chatSessionId} onRefresh={() => void refreshHistory()} onNewChat={() => { startNewChat(); setHistoryOpen(false); }} onSelectChat={id => void selectChat(id)} onCollapse={() => setHistoryOpen(false)} />
+        </div>}
       </div>
 
       {/* ── Messages ── */}
@@ -637,7 +514,7 @@ export function ChatWindow() {
         <div ref={scrollRef} onScroll={handleScroll}
           className="workspace-scrollbar h-full overflow-y-auto px-5 py-5 space-y-5">
           {msgs.length === 0
-            ? <EmptyState name={currentSapiens?.name ?? 'Sapiens'} onHint={(h) => { setInput(h); textareaRef.current?.focus(); }} />
+            ? <EmptyState name={currentSapiens?.name ?? 'Sapiens'} recent={latestChat} onResume={() => latestChat && void selectChat(latestChat.thread_id)} loading={detailLoading || isProcessing} onHint={(h) => { setInput(h); textareaRef.current?.focus(); }} />
             : (
               <>
                 {msgs.map((m) => (
@@ -704,10 +581,10 @@ export function ChatWindow() {
 
           <textarea ref={textareaRef} value={input} onChange={onInputChange} onKeyDown={onKey}
             onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
-            placeholder={isProcessing ? 'Waiting for response…' : 'Share a thought or ask a question…'}
+            placeholder={isProcessing ? 'Waiting for response…' : `Message ${currentSapiens?.name ?? 'Sapiens'}…`}
             aria-label={`Message ${currentSapiens?.name ?? 'Sapiens'}`}
             disabled={isProcessing} rows={1}
-            className="flex-1 resize-none overflow-hidden bg-transparent border-none outline-none
+            className="flex-1 resize-none overflow-y-auto bg-transparent border-none outline-none
               min-h-[36px] max-h-[140px] px-2 py-2 text-sm text-sp-ink placeholder:text-sp-muted
               leading-relaxed disabled:opacity-40"
             style={{ height: 'auto' }}

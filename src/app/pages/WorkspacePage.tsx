@@ -2,7 +2,7 @@ import '../../styles/workspace-refresh.css';
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router';
 import { toast } from 'sonner';
-import { BrainCircuit, Eye, Target } from 'lucide-react';
+import { BrainCircuit, Eye, Target, Expand, Minimize2, MessageSquare } from 'lucide-react';
 import { HeaderBar } from '../components/workspace/HeaderBar';
 import { AwarenessPanel } from '../components/workspace/AwarenessPanel';
 import { ChatWindow } from '../components/workspace/ChatWindow';
@@ -14,48 +14,11 @@ import { useAuth } from '../contexts/AuthContext';
 
 type RightTab = 'awareness' | 'memory' | 'goals';
 
-// ─── Tab pill row ─────────────────────────────────────────────────────────────
-function TabRow({
-  tab,
-  setTab,
-}: {
-  tab: RightTab;
-  setTab: (t: RightTab) => void;
-}) {
-  const TABS = [
-    { id: 'awareness' as RightTab, label: 'On my mind', icon: <Eye className="w-3 h-3" />, activeColor: 'var(--sp-accent, #67e8f9)', activeBg: 'rgb(var(--sp-accent-rgb, 34 211 238) / 0.12)', activeBorder: 'rgb(var(--sp-accent-rgb, 34 211 238) / 0.25)' },
-    { id: 'memory'   as RightTab, label: 'Working Memory', icon: <BrainCircuit className="w-3 h-3" />, activeColor: 'var(--sp-accent, #c4b5fd)', activeBg: 'rgb(var(--sp-accent-rgb, 124 58 237) / 0.15)', activeBorder: 'rgb(var(--sp-accent-rgb, 124 58 237) / 0.3)' },
-    { id: 'goals'    as RightTab, label: 'Goals',    icon: <Target    className="w-3 h-3" />, activeColor: 'var(--sp-accent, #86efac)', activeBg: 'rgb(var(--sp-accent-rgb) / .12)', activeBorder: 'rgb(var(--sp-accent-rgb) / .3)' },
-  ] as const;
-
-  const active = TABS.find(t => t.id === tab) ?? TABS[0];
-
-  return (
-    <div
-      className="flex-shrink-0 flex items-center gap-1 px-2 py-1.5 rounded-xl"
-      style={{ background: 'rgb(var(--sp-panel-rgb, 8 12 22) / 0.7)', border: '1px solid rgb(var(--sp-ink-rgb, 255 255 255) / 0.07)', backdropFilter: 'blur(12px)' }}
-    >
-      {TABS.map(t => (
-        <button
-          key={t.id}
-          onClick={() => setTab(t.id)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-all duration-150"
-          style={
-            tab === t.id
-              ? { background: t.activeBg, border: `1px solid ${t.activeBorder}`, color: t.activeColor }
-              : { background: 'transparent', border: '1px solid transparent', color: 'var(--sp-muted, rgb(var(--sp-ink-rgb, 255 255 255) / 0.3))' }
-          }
-        >
-          {t.icon}
-          {t.label}
-        </button>
-      ))}
-      <div className="flex-1" />
-      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-        style={{ background: active.activeColor, boxShadow: `0 0 6px color-mix(in srgb, ${active.activeColor} 60%, transparent)`, transition: 'background 0.25s, box-shadow 0.25s' }} />
-    </div>
-  );
-}
+const CONTEXT_TABS = [
+  { id: 'awareness' as RightTab, label: 'On my mind', icon: Eye },
+  { id: 'memory' as RightTab, label: 'Working memory', icon: BrainCircuit },
+  { id: 'goals' as RightTab, label: 'Goals', icon: Target },
+];
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export function WorkspacePage() {
@@ -65,7 +28,9 @@ export function WorkspacePage() {
   const announced = useRef<string | null>(null);
   const { user } = useAuth();
   const [rightTab, setRightTab] = useState<RightTab>('awareness');
+  const [visitedTabs, setVisitedTabs] = useState<RightTab[]>(['awareness']);
   const [contextOpen, setContextOpen] = useState(false);
+  const [contextWide, setContextWide] = useState(false);
 
   const currentSapiens = useSapiensStore((state) => state.currentSapiens);
 
@@ -89,50 +54,26 @@ export function WorkspacePage() {
   if (!currentSapiens) return null;
 
   return (
-    <div className="product-surface workspace-shell min-h-[100dvh] lg:h-screen flex flex-col lg:overflow-hidden">
-
-      {user?.role === 'customer' && <h1 ref={heading} tabIndex={-1} className="sr-only">{currentSapiens.name} workspace</h1>}
-      {/* ── Ambient canvas ── */}
-      <div className="fixed inset-0 pointer-events-none select-none z-0">
-        <div className="absolute -top-60 -left-60 w-[900px] h-[900px] rounded-full"
-          style={{ background: 'radial-gradient(circle, rgb(var(--sp-accent-rgb) / .08) 0%, transparent 60%)' }} />
-        <div className="absolute -bottom-80 -right-40 w-[800px] h-[800px] rounded-full"
-          style={{ background: 'radial-gradient(circle, rgb(var(--sp-accent-rgb) / .05) 0%, transparent 60%)' }} />
-        <div className="absolute top-1/4 left-1/2 w-[500px] h-[500px] rounded-full -translate-x-1/2"
-          style={{ background: 'radial-gradient(circle, rgb(var(--sp-accent-rgb) / .04) 0%, transparent 70%)' }} />
-      </div>
-
-      {/* ── Header ── */}
-      <div className="relative z-30 flex-shrink-0">
-        <HeaderBar />
-      </div>
-
-      {/* ── Panel grid ── */}
-      <div className="relative z-10 flex-1 min-h-0 p-3 sm:p-5 gap-5 grid grid-cols-1 lg:grid-cols-12">
-
-        {/* MAIN — Chat and attachments */}
-        <div className="h-[min(34rem,75dvh)] min-h-[26rem] lg:h-auto lg:col-span-8 lg:min-h-0">
-          <ChatWindow />
-        </div>
-
-        {/* RIGHT — Tab row + active panel */}
-        <div className="flex flex-col gap-3 lg:col-span-4 lg:min-h-0">
-
-          <button className="flex items-center justify-between rounded-xl border border-sp-line bg-sp-panel px-4 py-3 text-sm text-sp-ink lg:hidden" aria-expanded={contextOpen} aria-controls="workspace-context" onClick={() => setContextOpen(value => !value)}><span>On {currentSapiens.name}’s mind</span><span>{contextOpen ? 'Hide' : 'Explore'}</span></button>
-          <div id="workspace-context" className={`${contextOpen ? 'flex' : 'hidden'} min-h-0 flex-1 flex-col gap-3 lg:flex`}>
-          {/* Tab pill row */}
-          <TabRow tab={rightTab} setTab={setRightTab} />
-
-          {/* Active panel — fills full height */}
-          <div className="flex-1 min-h-0">
-            {rightTab === 'awareness' && <AwarenessPanel />}
-            {rightTab === 'memory'   && <MemoryPanel />}
-            {rightTab === 'goals'    && <GoalsPanel sapienId={parseInt(currentSapiens.id, 10)} />}
+    <div className={`product-surface workspace-shell${contextWide ? ' workspace-context-wide' : ''}`}>
+      <HeaderBar headingRef={heading} />
+      <nav className="workspace-mobile-nav" aria-label="Workspace views">
+        <button aria-pressed={!contextOpen} onClick={() => setContextOpen(false)}><MessageSquare size={16} />Conversation</button>
+        <button aria-pressed={contextOpen} onClick={() => setContextOpen(true)}><Eye size={16} />Explore {currentSapiens.name}</button>
+      </nav>
+      <main className="workspace-layout" data-mobile-context={contextOpen}>
+        <section className="workspace-chat-area" aria-label="Conversation"><ChatWindow key={currentSapiens.id} /></section>
+        <aside className="workspace-context-area" aria-label={`Explore ${currentSapiens.name}`}>
+          <div className="workspace-context-heading"><span>Explore {currentSapiens.name}</span><button className="workspace-icon-button workspace-expand" aria-label={contextWide ? 'Restore conversation layout' : 'Expand context panel'} aria-pressed={contextWide} onClick={() => setContextWide(value => !value)}>{contextWide ? <Minimize2 size={16} /> : <Expand size={16} />}</button></div>
+          <nav className="workspace-context-tabs" aria-label="Sapiens context">
+            {CONTEXT_TABS.map(({id, label, icon: Icon}) => <button key={id} aria-pressed={rightTab === id} onClick={() => { setRightTab(id); setVisitedTabs(tabs => tabs.includes(id) ? tabs : [...tabs, id]); }}><Icon size={15} />{label}</button>)}
+          </nav>
+          <div className="workspace-context-content" key={currentSapiens.id}>
+            {visitedTabs.includes('awareness') && <div hidden={rightTab !== 'awareness'} className="workspace-context-view"><AwarenessPanel active={rightTab === 'awareness'} /></div>}
+            {visitedTabs.includes('memory') && <div hidden={rightTab !== 'memory'} className="workspace-context-view"><MemoryPanel active={rightTab === 'memory'} /></div>}
+            {visitedTabs.includes('goals') && <div hidden={rightTab !== 'goals'} className="workspace-context-view"><GoalsPanel compact active={rightTab === 'goals'} sapienId={parseInt(currentSapiens.id, 10)} /></div>}
           </div>
-          </div>
-        </div>
-      </div>
-
+        </aside>
+      </main>
     </div>
   );
 }

@@ -49,7 +49,7 @@ export function useSapiens() {
         };
         setCurrentSapiens(newSapiens);
         setStatus('idle');
-        navigate(user?.role === 'admin' ? '/admin/analyse' : '/workspace');
+        navigate('/workspace');
         return newSapiens;
       } catch (error) {
         logger.error('Failed to create Sapiens', error);
@@ -71,7 +71,7 @@ export function useSapiens() {
         if (!selected) { reset(); throw new Error('This Sapiens is no longer available to your account. Refresh the list.'); }
         setCurrentSapiens(selected);
         setStatus('idle');
-        navigate(user?.role === 'admin' ? '/admin/analyse' : '/workspace');
+        navigate('/workspace');
         return sapiens;
       } catch (error) {
         logger.error('Failed to load Sapiens', error);

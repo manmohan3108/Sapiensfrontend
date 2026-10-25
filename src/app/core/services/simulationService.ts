@@ -1,6 +1,7 @@
+import type { InspectionStory, InspectionOverviewDetails } from '../../types/simulationTypes';
 import { authenticatedFetch, HttpError } from '../auth/authSession';
 import { apiConfig } from '../config/apiConfig';
-import type { CaseCatalog, CaseCreateRequest, DebugGuide, EventPage, InspectionActivityPage, InspectionCollection, InspectionOverview, InspectionPerson, InspectionProgressItem, InspectionQuery, InspectionResults, InspectionSpecificationResponse, ParticipantOutcome, SimulationEvent, SimulationList, SimulationResult, SimulationRun, WorldActivityPage, WorldChannel, WorldCollection, WorldCommentsPage, WorldConnection, WorldEmployee, WorldOverview, WorldQuery, WorldTicket } from '../../types/simulationTypes';
+import type { CaseCatalog, CaseCreateRequest, DebugGuide, EventPage, InspectionActivityPage, InspectionCollection, InspectionPerson, InspectionProgressItem, InspectionQuery, InspectionResults, InspectionSpecificationResponse, ParticipantOutcome, SimulationEvent, SimulationList, SimulationResult, SimulationRun, WorldActivityPage, WorldChannel, WorldCollection, WorldCommentsPage, WorldConnection, WorldEmployee, WorldOverview, WorldQuery, WorldTicket } from '../../types/simulationTypes';
 
 const base = `${apiConfig.baseUrl}/simulations/`;
 const runPath = (id: string) => `runs/${encodeURIComponent(id)}/`;
@@ -17,6 +18,7 @@ async function request<T>(path: string, init: RequestInit = {}, accepted: number
   return response.status === 204 ? undefined as T : response.json() as Promise<T>;
 }
 export const simulationService = {
+  inspectionStory: (id: string, sequence: number, signal?: AbortSignal) => request<InspectionStory>(`${runPath(id)}inspection/story/${sequence}/`, { signal }),
   cases: (signal?: AbortSignal) => request<CaseCatalog>('cases/', { signal }),
   list: (signal?: AbortSignal) => request<SimulationList>('runs/', { signal, cache: 'no-store' }),
   get: (id: string, signal?: AbortSignal) => request<SimulationRun>(runPath(id), { signal }),
@@ -38,7 +40,7 @@ export const simulationService = {
   worldComments: (id: string, values: Pick<WorldQuery, 'through' | 'offset' | 'limit' | 'connection' | 'issue_key'>, signal?: AbortSignal) => request<WorldCommentsPage>(`${runPath(id)}world/comments/${query(values)}`, { signal }),
   worldActivity: (id: string, values?: WorldQuery, signal?: AbortSignal) => request<WorldActivityPage>(`${runPath(id)}world/activity/${query(values)}`, { signal }),
   inspectionSpecification: (id: string, values?: Pick<InspectionQuery, 'through'>, signal?: AbortSignal) => request<InspectionSpecificationResponse>(`${runPath(id)}inspection/specification/${inspectionQuery(values)}`, { signal }),
-  inspectionOverview: (id: string, values?: Pick<InspectionQuery, 'through'>, signal?: AbortSignal) => request<InspectionOverview>(`${runPath(id)}inspection/overview/${inspectionQuery(values)}`, { signal }),
+  inspectionOverview: (id: string, values?: Pick<InspectionQuery, 'through'>, signal?: AbortSignal) => request<InspectionOverviewDetails>(`${runPath(id)}inspection/overview/${inspectionQuery(values)}`, { signal }),
   inspectionTimeline: (id: string, values?: InspectionQuery, signal?: AbortSignal) => request<InspectionActivityPage>(`${runPath(id)}inspection/timeline/${inspectionQuery(values)}`, { signal }),
   inspectionJourney: (id: string, values?: InspectionQuery, signal?: AbortSignal) => request<InspectionActivityPage>(`${runPath(id)}inspection/journey/${inspectionQuery(values)}`, { signal }),
   inspectionPeople: (id: string, values?: Pick<InspectionQuery, 'through' | 'offset' | 'limit'>, signal?: AbortSignal) => request<InspectionCollection<InspectionPerson>>(`${runPath(id)}inspection/people/${inspectionQuery(values)}`, { signal }),

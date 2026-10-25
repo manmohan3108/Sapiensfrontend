@@ -139,7 +139,7 @@ function InspectionJson({ value }: { value: unknown }) {
   return <pre className="max-h-64 overflow-auto whitespace-pre-wrap break-all text-[10px] text-sp-muted">{JSON.stringify(value, null, 2)}</pre>;
 }
 
-function GoalInspection({ detail }: { detail: GoalDetail }) {
+function GoalInspection({ detail, compact = false }: { detail: GoalDetail; compact?: boolean }) {
   const { history, attention, goal } = detail;
   const outcome = attention?.outcome;
   const assessment = inspectionObject(outcome?.assessment);
@@ -154,7 +154,7 @@ function GoalInspection({ detail }: { detail: GoalDetail }) {
     {source != null && <CollapsibleSection title="Source reference (provenance)">
       <InspectionJson value={source} />
     </CollapsibleSection>}
-    <CollapsibleSection title="Goal change history" defaultOpen>
+    <CollapsibleSection title="Goal change history" defaultOpen={!compact}>
       <div className="flex flex-col gap-3 text-[11px] text-sp-muted break-words">
         <p>Up to the latest 100 stored changes, oldest first. This audit trail contains reasons, not full historical snapshots or guaranteed lifetime history.</p>
         {history === undefined ? <p>Change history was not supplied by this API.</p>
@@ -177,7 +177,7 @@ function GoalInspection({ detail }: { detail: GoalDetail }) {
           </>}
       </div>
     </CollapsibleSection>
-    <CollapsibleSection title="Awareness attention" defaultOpen>
+    <CollapsibleSection title="Awareness attention" defaultOpen={!compact}>
       <div className="flex flex-col gap-2 text-[11px] text-sp-muted break-words">
         <p>Current request or latest retained resolution only. A new request may replace the previous resolution.</p>
         {attention === undefined ? <p>Attention details were not supplied by this API.</p>
@@ -226,12 +226,12 @@ interface CommentPopoverProps {
   /** How the trigger renders */
   triggerVariant?: 'icon' | 'pill';
   /** Popover opens upward (for items near bottom) */
-  openUp?: boolean;
+
 }
 
 function CommentPopover({
   sapienId, goalId, scope, stepId, examples, label = 'Add note',
-  onSuccess, overloaded, triggerVariant = 'icon', openUp = false,
+  onSuccess, overloaded, triggerVariant = 'icon',
 }: CommentPopoverProps) {
   const [open, setOpen]         = useState(false);
   const [text, setText]         = useState('');
@@ -287,20 +287,19 @@ function CommentPopover({
   };
 
   const popoverStyle: React.CSSProperties = {
-    position: 'absolute',
-    right: 0,
+    position: 'relative',
     zIndex: 100,
     width: 280,
-    background: 'rgba(10,15,30,0.98)',
+    background: 'var(--sp-panel, #0a0f1e)',
     border: '1px solid rgb(var(--sp-accent-rgb, 129 140 248) / 0.3)',
     borderRadius: 12,
     padding: 12,
     boxShadow: '0 8px 32px rgb(var(--sp-shadow-rgb, 0 0 0) / var(--sp-shadow-opacity, 0.6))',
-    ...(openUp ? { bottom: '100%', marginBottom: 6 } : { top: '100%', marginTop: 6 }),
+    marginTop: 8, maxWidth: '100%',
   };
 
   return (
-    <div ref={wrapRef} style={{ position: 'relative', display: 'inline-block' }}>
+    <div ref={wrapRef} style={{ position: 'relative', display: 'inline-block', maxWidth: '100%' }} onKeyDown={event => { if (event.key === 'Escape') { setOpen(false); wrapRef.current?.querySelector('button')?.focus(); } }}>
       {/* Trigger */}
       {triggerVariant === 'icon' ? (
         <button
@@ -309,7 +308,7 @@ function CommentPopover({
             ? 'Sapien is catching up — comments may take longer to apply.'
             : label}
           className="w-5 h-5 flex items-center justify-center rounded transition-colors flex-shrink-0"
-          style={{ color: open ? 'var(--sp-accent, #818cf8)' : 'rgb(var(--sp-ink-rgb, 255 255 255) / 0.2)' }}
+          style={{ color: open ? 'var(--sp-accent, #818cf8)' : 'var(--sp-muted)' }}
           onMouseEnter={e => { if (!open) (e.currentTarget as HTMLElement).style.color = 'var(--sp-accent, rgb(var(--sp-accent-rgb, 129 140 248) / 0.7))'; }}
           onMouseLeave={e => { if (!open) (e.currentTarget as HTMLElement).style.color = 'var(--sp-muted, rgb(var(--sp-ink-rgb, 255 255 255) / 0.2))'; }}
         >
@@ -323,7 +322,7 @@ function CommentPopover({
           style={{
             background: open ? 'rgb(var(--sp-accent-rgb, 129 140 248) / 0.15)' : 'rgb(var(--sp-ink-rgb, 255 255 255) / 0.05)',
             border: `1px solid ${open ? 'rgb(var(--sp-accent-rgb, 129 140 248) / 0.35)' : 'rgb(var(--sp-ink-rgb, 255 255 255) / 0.1)'}`,
-            color: open ? 'var(--sp-accent, #a5b4fc)' : overloaded ? 'rgba(251,191,36,0.6)' : 'rgb(var(--sp-ink-rgb, 255 255 255) / 0.4)',
+            color: open ? 'var(--sp-accent, #a5b4fc)' : overloaded ? 'var(--sp-warning)' : 'var(--sp-muted)',
           }}
         >
           <MessageSquare className="w-3 h-3" />
@@ -339,6 +338,7 @@ function CommentPopover({
           </p>
           <textarea
             ref={textareaRef}
+            aria-label={`Comment on ${scope}`}
             value={text}
             onChange={e => setText(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) submit(); }}
@@ -472,7 +472,7 @@ function ContextBlock({ ctx, label, highlightAfter }: {
 
 // ── Goal Card ─────────────────────────────────────────────────────────────────
 
-function GoalCard({ goal, sapienId, onClick }: { goal: Goal; sapienId: number; onClick: () => void }) {
+function GoalCard({ goal, sapienId, onClick, compact }: { goal: Goal; sapienId: number; onClick: () => void; compact: boolean }) {
   const { done, total } = planProgress(goal.current_plan);
   const isOverloaded = useSapiensStore(s => s.isOverloaded);
 
@@ -484,6 +484,15 @@ function GoalCard({ goal, sapienId, onClick }: { goal: Goal; sapienId: number; o
 
       {/* Clickable body */}
       <button onClick={onClick} className="w-full text-left p-3 flex flex-col gap-2">
+        {compact ? <>
+        <p className="text-sm text-sp-ink leading-relaxed line-clamp-3">{goal.description}</p>
+        <div className="flex flex-wrap items-center gap-2 text-xs text-sp-muted">
+          <StatusPill status={goal.state} />
+          <span>{goal.retired === true ? 'Retired' : goal.finished === true ? 'Finished' : goal.finished === false ? 'Unfinished' : 'Completion unknown'}</span>
+          {goal.current_plan && <span>{done}/{total} tasks finished</span>}
+        </div>
+        <span className="text-xs text-sp-accent">View goal &amp; next steps →</span>
+        </> : <>
         <div className="flex items-center gap-1.5 flex-wrap">
           <SourceBadge source={goal.source} />
           <StatusPill  status={goal.state} />
@@ -505,6 +514,7 @@ function GoalCard({ goal, sapienId, onClick }: { goal: Goal; sapienId: number; o
             </div>
           )}
         </div>
+        </>}
       </button>
 
       {/* Comment affordance */}
@@ -517,7 +527,6 @@ function GoalCard({ goal, sapienId, onClick }: { goal: Goal; sapienId: number; o
           label="Add note"
           overloaded={isOverloaded}
           triggerVariant="pill"
-          openUp
         />
       </div>
     </div>
@@ -531,11 +540,14 @@ const PLAN_EXAMPLES   = ['This won\'t work. Restart.', 'Step 3 doesn\'t matter f
 const STEP_EXAMPLES   = ['Done.', 'Skip this.', 'Blocked on Alice.'];
 
 function GoalDetailPane({
-  sapienId, goalId, onBack,
+  sapienId, goalId, onBack, active = true, compact = false,
 }: {
-  sapienId: number; goalId: string; onBack: () => void;
+  sapienId: number; goalId: string; onBack: () => void; active?: boolean; compact?: boolean;
 }) {
   const isOverloaded = useSapiensStore(s => s.isOverloaded);
+  const activeRef = useRef(active);
+  activeRef.current = active;
+  const wasActive = useRef(active);
   const [detail, setDetail]     = useState<GoalDetail | null>(null);
   const [loading, setLoading]   = useState(true);
   const [error, setError]       = useState<string | null>(null);
@@ -551,7 +563,7 @@ function GoalDetailPane({
   const delayedFetchesRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   const fetchDetail = useCallback(async (showSpinner = false) => {
-    if (document.visibilityState !== 'visible') return; // don't poll hidden tabs
+    if (document.visibilityState !== 'visible' || !activeRef.current) return; // don't poll hidden views
     const request = ++detailRequestRef.current;
     if (showSpinner) setLoading(true);
     setError(null);
@@ -567,6 +579,8 @@ function GoalDetailPane({
       if (request === detailRequestRef.current) setLoading(false);
     }
   }, [sapienId, goalId]);
+
+  useEffect(() => { if (active && !wasActive.current) void fetchDetail(true); wasActive.current = active; }, [active, fetchDetail]);
 
   // Normal 30s poll (pause while fast-polling is active)
   useEffect(() => {
@@ -630,7 +644,7 @@ function GoalDetailPane({
       <BackBtn onClick={onBack} />
       <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-[11px] text-sp-danger"
         style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
-        <AlertCircle className="w-4 h-4 flex-shrink-0" />{error}
+        <AlertCircle className="w-4 h-4 flex-shrink-0" />{error}<button className="underline" onClick={() => fetchGoals(true)}>Retry</button><button className="underline" onClick={() => fetchGoals(true)}>Retry</button>
       </div>
       <button onClick={() => fetchDetail(true)} className="self-start rounded-lg border border-sp-ink/10 px-3 py-2 text-[11px] text-sp-muted">Retry goal details</button>
     </div>
@@ -639,6 +653,9 @@ function GoalDetailPane({
   if (!detail) return null;
   const { goal, context, current_plan, plan_context } = detail;
   const { done, total } = planProgress(current_plan);
+  const assessment = inspectionObject(detail.attention?.outcome?.assessment);
+  const remaining = typeof assessment.remaining === 'string' ? assessment.remaining : '';
+  const understanding = typeof assessment.understanding === 'string' ? assessment.understanding : '';
 
   return (
     <div className="flex flex-col h-full gap-3 overflow-hidden">
@@ -656,10 +673,7 @@ function GoalDetailPane({
           style={{ background: 'rgb(var(--sp-ink-rgb, 255 255 255) / 0.03)', border: '1px solid rgb(var(--sp-ink-rgb, 255 255 255) / 0.08)' }}>
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-1.5 flex-wrap">
-              <SourceBadge source={goal.source} />
-              <span className="text-[9px] text-sp-muted">Custom state:</span>
-              <StatusPill  status={goal.state} />
-              <Lifecycle record={goal} />
+              <StatusPill status={goal.state} /><Lifecycle record={goal} />
             </div>
             <CommentPopover
               sapienId={sapienId} goalId={goalId} scope="goal"
@@ -667,8 +681,10 @@ function GoalDetailPane({
               triggerVariant="pill" onSuccess={startFastPoll}
             />
           </div>
-          <p className="text-[13px] text-sp-ink leading-snug">{goal.description}</p>
+          <p className="text-base text-sp-ink leading-relaxed">{goal.description}</p>
           {goal.motivation && <p className="text-[11px] text-sp-muted leading-relaxed">{goal.motivation}</p>}
+          {remaining || understanding ? <section className="workspace-goal-next"><p className="text-xs text-sp-muted">Latest recorded assessment{detail.attention?.resolved_at ? ' · ' + fmtDate(detail.attention.resolved_at) : ''}</p><p className="mt-2 text-sm leading-relaxed text-sp-ink">{remaining || understanding}</p><p className="mt-2 text-xs text-sp-muted">Recorded assessment, not confirmation of completion.</p></section> : null}
+          <CollapsibleSection title="Progress, schedule & technical details" defaultOpen={!compact}>
           <div className="text-[10px] text-sp-muted space-y-1">
             <p>Stored finished flag: {goal.finished === null ? 'Unknown' : String(goal.finished)} · Revision: {goal.revision ?? 'Unknown'}</p>
             <p>Updated: {fmtDate(goal.updated_at || '')}</p>
@@ -686,12 +702,11 @@ function GoalDetailPane({
               <span className="text-[9px] text-sp-muted w-14">Priority</span>
               <div className="flex-1"><ThinMeter value={goal.priority} color="var(--sp-accent, #c4b5fd)" /></div>
             </div>
-          </div>
+          </div>          </CollapsibleSection>
         </div>
 
         {error && <p role="alert" className="text-[11px] text-sp-danger">{error}</p>}
-        <RecordDetails record={goal} />
-        <GoalInspection detail={detail} />
+        {compact ? <CollapsibleSection title="Source & audit details"><SourceBadge source={goal.source} /><RecordDetails record={goal} /><GoalInspection detail={detail} compact /></CollapsibleSection> : <><SourceBadge source={goal.source} /><RecordDetails record={goal} /><GoalInspection detail={detail} /></>}
 
         {/* Plan */}
         <div className="rounded-2xl flex flex-col gap-0"
@@ -743,7 +758,7 @@ function GoalDetailPane({
                     {step.id && <CommentPopover
                       sapienId={sapienId} goalId={goalId} scope="step" stepId={step.id}
                       examples={STEP_EXAMPLES} overloaded={isOverloaded}
-                      triggerVariant="icon" onSuccess={startFastPoll} openUp
+                      triggerVariant="icon" onSuccess={startFastPoll}
                     />}
                   </div>
                   <span className="text-[8px] text-sp-muted font-mono mt-0.5 flex-shrink-0">{i + 1}</span>
@@ -810,7 +825,10 @@ function BackBtn({ onClick }: { onClick: () => void }) {
 
 type StatusFilter = 'unfinished' | 'finished' | 'retired';
 
-export function GoalsPanel({ sapienId }: { sapienId: number }) {
+export function GoalsPanel({ sapienId, active = true, compact = false }: { sapienId: number; active?: boolean; compact?: boolean }) {
+  const activeRef = useRef(active);
+  activeRef.current = active;
+  const wasActive = useRef(active);
   const isOverloaded = useSapiensStore(s => s.isOverloaded);
 
   const [goals, setGoals]         = useState<Goal[]>([]);
@@ -824,7 +842,7 @@ export function GoalsPanel({ sapienId }: { sapienId: number }) {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fetchGoals = useCallback(async (showSpinner = false) => {
-    if (document.visibilityState !== 'visible') return;
+    if (document.visibilityState !== 'visible' || !activeRef.current) return;
     const request = ++requestRef.current;
     if (showSpinner) setLoading(true);
     setError(null);
@@ -857,6 +875,8 @@ export function GoalsPanel({ sapienId }: { sapienId: number }) {
     };
   }, [fetchGoals]);
 
+  useEffect(() => { if (active && !wasActive.current) void fetchGoals(true); wasActive.current = active; }, [active, fetchGoals]);
+
   const toggleSource = (s: GoalSource) =>
     setSourceFilters(prev => { const n = new Set(prev); n.has(s) ? n.delete(s) : n.add(s); return n; });
   const sourceOptions = [...new Set([...goals.map(g => g.source), ...sourceFilters])];
@@ -864,11 +884,11 @@ export function GoalsPanel({ sapienId }: { sapienId: number }) {
 
   if (selectedGoalId) {
     return (
-      <div className="h-full rounded-2xl flex flex-col p-4"
+      <div className="workspace-goals h-full rounded-2xl flex flex-col p-4"
         style={{ background: 'rgb(var(--sp-panel-rgb, 8 12 22) / 0.85)', border: '1px solid rgb(var(--sp-ink-rgb, 255 255 255) / 0.08)', backdropFilter: 'blur(20px)', overflow: 'hidden' }}>
         <GoalDetailPane
           key={`${sapienId}:${selectedGoalId}`}
-          sapienId={sapienId} goalId={selectedGoalId}
+          active={active} compact={compact} sapienId={sapienId} goalId={selectedGoalId}
           onBack={() => setSelectedGoalId(null)}
         />
       </div>
@@ -876,7 +896,7 @@ export function GoalsPanel({ sapienId }: { sapienId: number }) {
   }
 
   return (
-    <div className="h-full rounded-2xl flex flex-col overflow-hidden"
+    <div className="workspace-goals h-full rounded-2xl flex flex-col overflow-hidden"
       style={{ background: 'rgb(var(--sp-panel-rgb, 8 12 22) / 0.85)', border: '1px solid rgb(var(--sp-ink-rgb, 255 255 255) / 0.08)', backdropFilter: 'blur(20px)' }}>
 
       {/* Header */}
@@ -885,7 +905,7 @@ export function GoalsPanel({ sapienId }: { sapienId: number }) {
           <span className="text-[12px] font-medium text-sp-ink">Goals</span>
           <div className="flex items-center gap-2">
             {lastFetch && <span className="text-[9px] font-mono text-sp-muted">{lastFetch.toLocaleTimeString()}</span>}
-            <button onClick={() => fetchGoals(true)} disabled={loading}
+            <button onClick={() => fetchGoals(true)} disabled={loading} aria-label="Refresh goals"
               className="w-5 h-5 flex items-center justify-center rounded text-sp-muted hover:text-sp-muted disabled:opacity-40 transition-colors">
               <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
             </button>
@@ -919,7 +939,7 @@ export function GoalsPanel({ sapienId }: { sapienId: number }) {
         </div>
 
         {/* Source chips */}
-        <p className="text-[9px] text-sp-muted mt-2">Up to 30 matching goals · Sources below filter this loaded set</p>
+        <details className="mt-3" open={compact ? undefined : true}><summary className="text-xs text-sp-muted cursor-pointer">Filter by source{sourceFilters.size ? ` (${sourceFilters.size} selected)` : ''}</summary><p className="text-xs text-sp-muted mt-2">Up to 30 matching goals · Filters apply to this loaded set.</p>
         <div className="flex gap-1 flex-wrap mt-2">
           {sourceOptions.map(key => {
             const on = sourceFilters.has(key);
@@ -930,11 +950,11 @@ export function GoalsPanel({ sapienId }: { sapienId: number }) {
                 style={on
                   ? { background: s.bg, border: `1px solid color-mix(in srgb, ${s.color} 25.1%, transparent)`, color: s.color }
                   : { background: 'rgb(var(--sp-ink-rgb, 255 255 255) / 0.03)', border: '1px solid rgb(var(--sp-ink-rgb, 255 255 255) / 0.06)', color: 'var(--sp-muted, rgb(var(--sp-ink-rgb, 255 255 255) / 0.25))' }}>
-                {key || 'Source unspecified'}
+                {key.replace(/_/g, ' ') || 'Source unspecified'}
               </button>
             );
           })}
-        </div>
+        </div></details>
       </div>
 
       {/* List */}
@@ -961,7 +981,7 @@ export function GoalsPanel({ sapienId }: { sapienId: number }) {
         ) : (
           <div className="flex flex-col gap-2">
             {visibleGoals.map(g => (
-              <GoalCard key={g.id} goal={g} sapienId={sapienId} onClick={() => setSelectedGoalId(g.id)} />
+              <GoalCard compact={compact} key={g.id} goal={g} sapienId={sapienId} onClick={() => setSelectedGoalId(g.id)} />
             ))}
           </div>
         )}

@@ -26,7 +26,7 @@ export interface WorldQuery { through?: number; offset?: number; after?: number;
 export interface WorldComment { comment_id: string; issue_key: string; connection: string; author_id: string | null; author_name: string | null; body: string | Record<string, unknown> | null; text: string | null; created_at: string | null; updated_at: string | null; occurred_at: string; observed_at: string; evidence_id: string; sequence: number; operation_id: string | null; state_basis: 'recorded_evidence' }
 export interface WorldCommentsPage extends Omit<WorldBase, 'directory_available'> { coverage: 'recorded_additions'; connection: string; issue_key: string; issue_known: boolean; comment_support: 'available' | 'unknown'; items: WorldComment[]; total: number; next_offset: number; has_more: boolean }
 
-export interface InspectionQuery { through?: number; after?: number; offset?: number; limit?: number; category?: InspectionCategory; person_id?: string; channel_id?: string; connection?: string; issue_key?: string; since?: string; until?: string; week?: number }
+export interface InspectionQuery { order?: 'asc' | 'desc'; before?: number; through?: number; after?: number; offset?: number; limit?: number; category?: InspectionCategory; person_id?: string; channel_id?: string; connection?: string; issue_key?: string; since?: string; until?: string; week?: number }
 export type InspectionCategory = 'message' | 'tool' | 'reaction' | 'scenario' | 'rejection' | 'issue' | 'availability' | 'knowledge' | 'notification' | 'notification_delivery' | 'lifecycle';
 export interface InspectionBase { schema_version: 1; run_id: string; visibility: 'admin_only'; archived: boolean; through: number; latest_at_capture: number; generated_at: string; observed_at?: string | null; simulated_evidence_at?: string | null; state_basis: string; snapshot_scope: 'evidence_prefix'; partial: boolean; specification_available: boolean; participant_id: string | null }
 export interface InspectionActivity { record_id: string; sequence: number; category: InspectionCategory; event_type: string; occurred_at: string; observed_at: string; connection: string | null; person_ids: string[]; channel_id: string | null; issue_key: string | null; rule_id: string | null; event_id: string | null; message_id: string | null; reply_to_message_id: string | null; notification_id: string | null; operation_id: string | null; related_record_ids: string[]; expectation_ids: string[]; simulation_week: number | null; state_basis: string; payload: Record<string, unknown>; arguments: Record<string, unknown> | null; result: Record<string, unknown> | null }
@@ -39,8 +39,24 @@ export interface InspectionCaseSpecification { schema_version: 1; overview: { mi
 export interface InspectionSpecificationResponse extends InspectionBase { specification: InspectionCaseSpecification | null; legacy_guide: DebugGuide | null }
 export interface InspectionObjective { expectation_id: string; title: string; expected_behavior: Record<string, unknown>; observed_behavior: Record<string, unknown> | null; verdict: 'pass' | 'fail' | 'insufficient_evidence' | 'not_evaluated'; evidence_ids: string[]; missing_actions: unknown; state_basis: string }
 export interface InspectionOverview extends InspectionBase { run_status: string; current_phase: InspectionCasePhase | null; phase_basis: string; counts: Record<InspectionCategory, number>; message_summary: { unique_messages: number; deliveries: number }; tool_summary: { calls?: number; errors?: number }; recorded_blockers: InspectionProgressItem[]; unresolved_decisions: unknown; recent_activity: InspectionActivity[]; objectives: InspectionObjective[] }
-export interface InspectionActivityPage extends InspectionBase { items: InspectionActivity[]; has_more: boolean; next_after: number; understanding_verified: false }
+export interface InspectionActivityPage extends InspectionBase { next_before?: number | null; items: InspectionActivity[]; has_more: boolean; next_after: number; understanding_verified: false }
 export interface InspectionPerson extends InspectionPersonSeed { sent: number; received: number; tool_calls: number; last_activity_at: string | null; available_at: string | null; role: string | null; authored_context: string | null; project_context: string | null; organization: string | null; responsibilities: unknown; authority_boundaries: unknown; relationships: unknown; state_basis: string; working_hours: Record<string, unknown> | null; owned_issues: string[] }
 export interface InspectionProgressItem { rule?: Record<string, unknown>; event?: Record<string, unknown>; status: 'fired' | 'waiting' | 'blocked' | 'review_needed' | 'released' | 'unavailable'; state_basis?: string; last_decision?: InspectionActivity | null; condition_status?: 'unavailable'; evidence?: InspectionActivity | null }
 export interface InspectionCollection<T> extends InspectionBase { items: T[]; total: number; next_offset: number; has_more: boolean }
 export interface InspectionResults extends InspectionCollection<InspectionObjective> { evaluation_available: boolean }
+
+export interface InspectionStory {
+  through: number;
+  link_status: 'linked' | 'unavailable' | 'ambiguous';
+  reason: string | null;
+  event: InspectionActivity;
+  beat: null | { id: string; events_truncated: boolean; events: Array<{ sequence: number; stage: string; title: string; summary: string; status: string; occurred_at: string; reference_id: string }>; assessment: Record<string, unknown> };
+  actions: InspectionActivity[];
+  actions_truncated: boolean;
+  missing_operation_ids: string[];
+}
+export interface InspectionOverviewDetails extends InspectionOverview {
+  run_state?: { status: string; detail: string | null; simulated_time: string };
+  evaluation?: { available: boolean; reason: string };
+  participant_summary?: { available: boolean; counts: Record<string, number>; direct_contact_person_ids: string[]; recent_activity: InspectionActivity[] };
+}
