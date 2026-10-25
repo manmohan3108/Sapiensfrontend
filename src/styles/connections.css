@@ -1,0 +1,60 @@
+@import './science-product-theme.css';
+
+/* Connections layout only; palette is shared with the workspace. */
+.connections-page { font-size:15px; line-height:1.5; }
+.connections-header { position:sticky; top:0; z-index:20; border-bottom:1px solid var(--sp-line); background:var(--sp-bg); }
+.connections-header-inner { max-width:1152px; margin:auto; padding:14px 24px; display:flex; justify-content:space-between; align-items:center; gap:16px; }
+.connections-identity { display:flex; align-items:center; gap:12px; min-width:0; }
+.connections-identity .sapiens-brand-mark { display:block; width:38px; flex-shrink:0; }
+.connections-identity img { width:38px; height:38px; object-fit:contain; }
+.connections-identity h1 { font:500 24px/1.2 'Source Serif 4',Georgia,serif; }
+.connections-identity p { font-size:13px; color:var(--sp-muted); }
+.connections-header-actions { display:flex; align-items:center; gap:8px; }
+.connections-header-actions a,.connections-theme-toggle { display:inline-flex; align-items:center; justify-content:center; gap:7px; border:1px solid var(--sp-line); border-radius:6px; min-height:40px; padding:8px 12px; font-size:14px; }
+.connections-theme-toggle { width:40px; padding:8px; }
+.connections-header-actions :is(a,button):hover { background:var(--sp-recessed); }
+.connections-intro { max-width:720px; }
+.connections-intro h2 { font:500 28px/1.25 'Source Serif 4',Georgia,serif; margin-bottom:8px; }
+.connections-intro p { font-size:15px; color:var(--sp-muted); }
+.connections-page section>div>div>h2,.connections-page section>div>h2 { font-size:17px; }
+.connections-page :is(.text-xs,[class*='text-[11px]']) { font-size:14px; line-height:1.5; }
+.connections-page [class*='text-[10px]'] { font-size:12px; line-height:1.5; }
+.connections-page .rounded-2xl { border-radius:10px; }
+.connections-page :is(button,a,input,summary):focus-visible,.connections-dialog :is(button,a,input):focus-visible { outline:2px solid var(--sp-accent); outline-offset:3px; }
+.connections-page button { cursor:pointer; min-height:40px; }
+.connections-page button:disabled { cursor:not-allowed; }
+.connections-page input { accent-color:var(--sp-action); }
+.connections-form { box-shadow:none!important; background:var(--sp-panel)!important; scroll-margin-top:100px; }
+.connections-form h2 { font-size:20px; }
+.connections-form h2:focus { outline:none; }
+.connections-empty { background:var(--sp-panel); display:grid; grid-template-columns:40px minmax(0,1fr); column-gap:14px; align-items:center; }
+.connections-empty>svg { grid-column:1; grid-row:1/4; }
+.connections-empty>:not(svg) { grid-column:2; }
+.connections-empty h3 { margin-top:0; color:var(--sp-ink); font-size:16px; font-weight:600; }
+.connections-text-link { display:inline-flex; align-items:center; gap:7px; margin-top:8px; color:var(--sp-accent); text-decoration:underline; text-underline-offset:3px; width:fit-content; min-height:36px; }
+.connections-account-list { display:grid; gap:14px; }
+.connections-account { background:var(--sp-panel)!important; }
+.connections-account h3 { font-size:17px; }
+.connections-account dd { color:var(--sp-ink); white-space:normal; overflow-wrap:anywhere; }
+.connections-account dl { grid-template-columns:repeat(3,minmax(0,1fr)); margin-top:14px; }
+.connections-account dl>div { grid-column:auto; }
+.connections-account>div:last-child { margin-top:14px; padding-top:12px; }
+#connection-services { scroll-margin-top:100px; }
+.connections-refresh-error { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:12px 16px; border:1px solid var(--sp-danger); color:var(--sp-danger); border-radius:8px; background:var(--sp-panel); }
+.connections-refresh-error button { text-decoration:underline; flex-shrink:0; }
+.connections-dialog { background-image:none!important; background-color:var(--sp-panel)!important; font-size:15px; }
+.connections-dialog .connections-destructive { background:var(--sp-danger); color:var(--sp-bg); }
+.connections-dialog .connections-destructive:hover { filter:brightness(.95); }
+@media(max-width:600px) {
+ .connections-header-inner { padding:12px; gap:8px; }
+ .connections-identity { gap:8px; }
+ .connections-identity .sapiens-brand-mark,.connections-identity img { width:30px; height:30px; }
+ .connections-identity h1 { font-size:21px; }
+ .connections-identity p { font-size:12px; }
+ .connections-header-actions a { padding:8px; }
+ .connections-header-actions a svg { display:none; }
+ .connections-intro h2 { font-size:25px; }
+ .connections-account dl { grid-template-columns:1fr; }
+ .connections-empty { grid-template-columns:28px minmax(0,1fr); padding:18px; }
+}
+@media(prefers-reduced-motion:reduce) { .connections-page * { animation:none!important; transition:none!important; scroll-behavior:auto!important; } }

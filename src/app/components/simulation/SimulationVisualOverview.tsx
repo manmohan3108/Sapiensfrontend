@@ -149,14 +149,16 @@ export function SimulationVisualOverview({ run }: { run: SimulationRun }) {
   const paging = useRef<AbortController | null>(null);
   useEffect(() => {
     const controller = new AbortController();
-    paging.current?.abort(); setLoading(true); setError(''); setOverview(null); setSpec(null); setPage(null); setIndex(0);
+    paging.current?.abort(); setLoading(true); setError(''); setOverview(current => current?.run_id === run.run_id ? current : null); setSpec(current => current?.run_id === run.run_id ? current : null); setPage(null); setIndex(0);
     async function load() {
       const data = await simulationService.inspectionOverview(run.run_id, undefined, controller.signal);
-      const [definition, messages] = await Promise.all([
-        simulationService.inspectionSpecification(run.run_id, { through: data.through }, controller.signal),
-        simulationService.inspectionJourney(run.run_id, { through: data.through, order: 'desc', category: 'message', limit: 40 }, controller.signal),
+      if (!controller.signal.aborted) setOverview(data);
+      await Promise.all([
+        simulationService.inspectionSpecification(run.run_id, { through: data.through }, controller.signal)
+          .then(definition => { if (!controller.signal.aborted) setSpec(definition); }),
+        simulationService.inspectionJourney(run.run_id, { through: data.through, order: 'desc', category: 'message', limit: 40 }, controller.signal)
+          .then(messages => { if (!controller.signal.aborted) setPage(messages); }),
       ]);
-      if (!controller.signal.aborted) { setOverview(data); setSpec(definition); setPage(messages); }
     }
     void load().catch(problem => { if (!controller.signal.aborted) setError(problemText(problem)); }).finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => { controller.abort(); paging.current?.abort(); };
@@ -186,6 +188,7 @@ export function SimulationVisualOverview({ run }: { run: SimulationRun }) {
   return <div className="sv-overview">
     <header className="sv-header"><div><p className="sv-eyebrow">A simulated workplace</p><h1 className="capitalize">{readable(run.case_id)}<span>.</span></h1></div><div className="sv-run-state"><span className="sv-status">{readable(overview?.run_status || run.status)}</span><small>Simulated time · {stamp(overview?.run_state?.simulated_time || run.simulated_time)}</small><Button variant="ghost" size="sm" disabled={loading} onClick={() => setRefresh(value => value + 1)}><RefreshCw className="mr-2 size-3.5" />{loading ? 'Loading…' : 'Refresh'}</Button></div></header>
     {error && <p role="alert" className="sv-inline-error">{error}</p>}
+    <p className="sv-opening">An AI Sapien in a simulated workplace.<span>See how it behaves.</span></p>
     <SimulationIntroduction spec={spec} overview={overview} participant={participant} role={role} base={base} loading={loading} />
     <div className="sv-story-intro"><h2>What did {participant} do?</h2></div>
     <section className="sv-story" aria-label="Guided response story">

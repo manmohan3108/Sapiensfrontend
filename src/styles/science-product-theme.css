@@ -1,0 +1,22 @@
+/* Shared green palette for workspace, connections and their dialogs. */
+.product-surface:is(.workspace-shell,.science-product-theme) {
+  --sp-bg:#f1f5ef; --sp-panel:#fafcf8; --sp-panel-rgb:250 252 248;
+  --sp-ink:#193b39; --sp-ink-rgb:25 59 57; --sp-muted:#506563; --sp-line:#c5d3c7;
+  --sp-recessed:#e7eee5; --sp-accent:#995035; --sp-accent-rgb:153 80 53;
+  --sp-action:#244e42; --sp-on-action:#fffdf4; --sp-success:#27664b; --sp-warning:#8b4c10; --sp-danger:#b33835;
+  --sp-shadow-opacity:.06; --workspace-grid:#3269590c;
+  --background:var(--sp-bg); --foreground:var(--sp-ink); --card:var(--sp-panel); --card-foreground:var(--sp-ink);
+  --muted:var(--sp-recessed); --muted-foreground:var(--sp-muted); --border:var(--sp-line); --ring:var(--sp-accent);
+  --primary:var(--sp-action); --primary-foreground:var(--sp-on-action); --popover:var(--sp-panel); --popover-foreground:var(--sp-ink);
+  color-scheme:light; color:var(--sp-ink); background-color:var(--sp-bg);
+  background-image:linear-gradient(var(--workspace-grid) 1px,transparent 1px),linear-gradient(90deg,var(--workspace-grid) 1px,transparent 1px);
+  background-size:32px 32px; font-family:'Source Sans 3',system-ui,sans-serif;
+
+}
+.dark .product-surface:is(.workspace-shell,.science-product-theme) {
+  --sp-bg:#112c2c; --sp-panel:#1b3937; --sp-panel-rgb:27 57 55;
+  --sp-ink:#f1eedc; --sp-ink-rgb:241 238 220; --sp-muted:#baccc0; --sp-line:#466459;
+  --sp-recessed:#173330; --sp-accent:#f5af8f; --sp-accent-rgb:245 175 143;
+  --sp-action:#e6cd7f; --sp-on-action:#183531; --sp-success:#a2d4ad; --sp-warning:#f3d28a; --sp-danger:#ffb4a7;
+  --sp-shadow-opacity:.12; --workspace-grid:#b7dbb508; color-scheme:dark;
+}

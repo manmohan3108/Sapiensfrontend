@@ -156,3 +156,6 @@
   .sv-testing { align-items: flex-start; }
   .sv-testing ol { flex-direction: column; }
 }
+
+.sv-opening { margin: 0 0 18px; font-size: 16px; line-height: 1.55; }
+.sv-opening span { display: block; color: var(--muted-foreground); font-size: 14px; }
