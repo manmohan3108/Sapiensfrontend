@@ -852,8 +852,13 @@ export function SimulationLabPage() {
     }
   }
   async function control(action: "pause" | "resume" | "stop") {
-    if (run)
-      await mutate(action, () => simulationService.control(run.run_id, action));
+    if (!run || busy || !run.allowed_controls.includes(action)) return;
+    if (action === "stop" && !window.confirm(
+      run.status === "scheduled"
+        ? "Cancel this scheduled simulation? Saved history will be kept."
+        : "Stop this simulation? It cannot be resumed after stopping. Saved history will be kept. To continue later, choose Pause instead.",
+    )) return;
+    await mutate(action, () => simulationService.control(run.run_id, action));
   }
   async function remove() {
     if (
@@ -1120,11 +1125,61 @@ export function SimulationLabPage() {
                 </Link>
               </Button>
             </div>
+            <div className="space-y-3 border-t px-5 py-4 sm:px-7">
+              <div className="flex flex-wrap items-center gap-3" aria-label="Current simulation controls" aria-busy={!!busy}>
+                  {allowed("resume") && (
+                    <Button
+                      className="min-h-11"
+                      disabled={!!busy}
+                      onClick={() => void control("resume")}
+                    >
+                      {busy === "resume" ? "Resuming…" : "Resume simulation"}
+                    </Button>
+                  )}
+                  {allowed("pause") && (
+                    <Button
+                      variant="outline"
+                      className="min-h-11 border-foreground/30"
+                      disabled={!!busy}
+                      onClick={() => void control("pause")}
+                    >
+                      {busy === "pause" ? "Pausing…" : "Pause simulation"}
+                    </Button>
+                  )}
+                  {allowed("stop") && (
+                    <Button
+                      variant="outline"
+                      className="min-h-11 border-red-500/50 text-red-700 hover:bg-red-500/10 dark:text-red-300"
+                      disabled={!!busy}
+                      onClick={() => void control("stop")}
+                    >
+                      {busy === "stop" ? "Stopping…" : run.status === "scheduled"
+                        ? "Cancel scheduled run"
+                        : "Stop simulation"}
+                    </Button>
+                  )}
+              </div>
+              <p className="text-sm text-muted-foreground" role="status">
+                {run.status === "recovery_required"
+                  ? "This run needs recovery review. Saved activity is available in Simulation World; only supported controls are shown."
+                  : !hasLiveRuntime(run)
+                    ? "Saved activity is available in Simulation World. Live controls are unavailable for this run."
+                    : run.paused
+                    ? "Simulation paused. Resume to continue. Pausing does not reset or extend the real-time run budget."
+                    : run.status === "running" && hasLiveRuntime(run)
+                      ? "Pause to review and continue later. Stop ends the run and keeps its recorded history."
+                      : run.status === "scheduled"
+                          ? "This run will start at its scheduled time. Cancel if you no longer want it to start."
+                          : `Run status: ${statusLabel(run.status)}. Available controls appear here.`}
+              </p>
+              {run.start_blocked_reason && <p className="text-sm text-amber-700 dark:text-amber-300">Preparation unavailable: {run.start_blocked_reason}</p>}
+              {run.cleanup_required && <p className="text-sm text-red-700 dark:text-red-300">Cleanup needs review. The Sapiens reservation is still retained.</p>}
+            </div>
             <div className="grid border-t border-violet-500/15 bg-background/45 sm:grid-cols-2 lg:grid-cols-4">
               <div className="flex gap-3 border-b p-4 sm:border-r lg:border-b-0">
                 <CalendarDays className="mt-0.5 size-4 text-violet-500" />
                 <div>
-                  <p className="text-xs text-muted-foreground">Starts</p>
+                  <p className="text-xs text-muted-foreground">Real start time</p>
                   <p className="mt-1 text-sm font-medium">
                     <LiveCountdown
                       value={run.scheduled_start_at}
@@ -1154,9 +1209,9 @@ export function SimulationLabPage() {
               <div className="flex gap-3 border-b p-4 sm:border-b-0 sm:border-r">
                 <Activity className="mt-0.5 size-4 text-violet-500" />
                 <div>
-                  <p className="text-xs text-muted-foreground">World activity</p>
+                  <p className="text-xs text-muted-foreground">Scheduled / pending activity</p>
                   <p className="mt-1 text-sm font-medium">
-                    {run.pending_world_work ?? 0} pending
+                    {run.pending_world_work ?? "—"} items
                   </p>
                 </div>
               </div>
@@ -1208,11 +1263,15 @@ export function SimulationLabPage() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => chooseRun(item.run_id)}
+                          disabled={!!busy}
+                          onClick={() => {
+                            chooseRun(item.run_id);
+                            window.scrollTo({ top: 0, behavior: "instant" });
+                          }}
                         >
-                          Select
+                          View controls
                         </Button>
-                        <Button asChild variant="ghost" size="sm">
+                        <Button asChild variant="outline" size="sm">
                           <Link
                             to={`/admin/simulations/${encodeURIComponent(item.run_id)}/world/overview`}
                           >
@@ -1515,16 +1574,16 @@ export function SimulationLabPage() {
                   <Activity className="size-4" />
                 </span>
                 <span>
-                  <span className="block font-semibold">Simulation controls</span>
+                  <span className="block font-semibold">Advanced settings & diagnostics</span>
                   <span className="block text-xs font-normal text-muted-foreground">
-                    Timing, runtime status and lifecycle controls
+                    Change speed, inspect runtime details or delete saved history
                   </span>
                 </span>
                 <span className="ml-auto text-xs text-muted-foreground group-open:hidden">
-                  Manage
+                  Show details
                 </span>
                 <span className="ml-auto hidden text-xs text-muted-foreground group-open:inline">
-                  Close
+                  Hide details
                 </span>
               </summary>
               <Card className="rounded-none border-x-0 border-b-0 shadow-none">
@@ -1696,34 +1755,6 @@ export function SimulationLabPage() {
                   </div>
                 )}
                 <div className="flex flex-wrap gap-2">
-                  {allowed("resume") && (
-                    <Button
-                      disabled={!!busy}
-                      onClick={() => void control("resume")}
-                    >
-                      Resume simulation
-                    </Button>
-                  )}
-                  {allowed("pause") && (
-                    <Button
-                      variant="outline"
-                      disabled={!!busy}
-                      onClick={() => void control("pause")}
-                    >
-                      Pause simulation
-                    </Button>
-                  )}
-                  {allowed("stop") && (
-                    <Button
-                      variant="outline"
-                      disabled={!!busy}
-                      onClick={() => void control("stop")}
-                    >
-                      {run.status === "scheduled"
-                        ? "Cancel scheduled run"
-                        : "Stop and drain"}
-                    </Button>
-                  )}
                   {allowed("speed") && (
                     <>
                       <Input
@@ -1746,7 +1777,7 @@ export function SimulationLabPage() {
                           )
                         }
                       >
-                        Set speed
+                        {busy === "speed" ? "Applying…" : "Apply speed"}
                       </Button>
                     </>
                   )}
@@ -1762,7 +1793,7 @@ export function SimulationLabPage() {
                         disabled={!!busy}
                         onClick={() => void remove()}
                       >
-                        Delete run
+                        Delete run & history
                       </Button>
                     )
                   )}
