@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router';
 import * as Dialog from '@radix-ui/react-dialog';
 import { ArrowUpRight, Plus, X } from 'lucide-react';
 import { SapiensHomeHeader } from '../components/customer/SapiensHomeHeader';
-import { SapiensIdentityCard } from '../components/customer/SapiensIdentityCard';
+import { SapiensIdentityRow } from '../components/customer/SapiensIdentityRow';
 import { SapiensBrandMark } from '../components/customer/SapiensBrandMark';
 import { SapiensPresence } from '../components/customer/SapiensPresence';
 import { sapiensService } from '../core/services/sapiensService';
@@ -98,9 +98,9 @@ export function CustomerHomePage() {
         : <><section className="home-intro" aria-labelledby="customer-home-title"><div><p className="home-eyebrow">YOUR PERSONAL SPACE</p><h1 id="customer-home-title" ref={heading} tabIndex={-1}>Your Sapiens</h1><p>{list.length === 1 ? 'Continue with your AI individual.' : 'Choose who to continue with.'}</p></div><SapiensBrandMark className="home-intro-core" /></section>
           <h2 className="home-customer-list-title">Your individuals</h2>
           {list.length > 3 && <div className="customer-search"><label htmlFor="sapiens-search">Search your Sapiens</label><input id="sapiens-search" type="search" placeholder="Search by name, focus or ID" value={query} onChange={e => setQuery(e.target.value)} /></div>}
-          {filtered.length === 0 ? <div className="customer-state" role="status"><h2>No Sapiens match your search</h2><button className="customer-secondary" onClick={() => setQuery('')}>Clear search</button></div> : <div className="home-identity-grid">{filtered.map(item => <SapiensIdentityCard individual={item} key={item.id}>
+          {filtered.length === 0 ? <div className="customer-state" role="status"><h2>No Sapiens match your search</h2><button className="customer-secondary" onClick={() => setQuery('')}>Clear search</button></div> : <div className="home-identity-list">{filtered.map(item => <SapiensIdentityRow individual={item} key={item.id}>
             {openError?.id === item.id && <p role="alert">{openError.message}</p>}
-            <button className="customer-primary home-open-button" disabled={opening !== null} onClick={() => void openIndividual(item)}>{opening === item.id ? 'Opening…' : 'Open'}<ArrowUpRight size={17} className="shrink-0" /><span className="sr-only"> {item.name}</span></button></SapiensIdentityCard>)}</div>}
+            <button className="customer-primary home-open-button" disabled={opening !== null} onClick={() => void openIndividual(item)}>{opening === item.id ? 'Opening…' : 'Open'}<ArrowUpRight size={17} className="shrink-0" /><span className="sr-only"> {item.name}</span></button></SapiensIdentityRow>)}</div>}
         </>}
       {unknown && !dialogOpen && <div className="customer-notice" role="status"><strong>Creation outcome unknown.</strong> A refreshed list or matching name does not confirm which request created an individual. We have not repeated the request.<br /><button className="customer-secondary" onClick={showCreation}>Review creation outcome</button></div>}
       {confirmed && !dialogOpen && <div className="customer-notice" role="status">{confirmed.name} was created.<br /><button className="customer-secondary" disabled={opening !== null} onClick={() => void openIndividual(confirmed, true)}>Open {confirmed.name}</button></div>}

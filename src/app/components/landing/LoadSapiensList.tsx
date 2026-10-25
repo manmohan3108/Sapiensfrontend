@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { ArrowRight, Loader2, AlertCircle, RefreshCw, Search, SearchX } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card, CardContent } from '../ui/card';
-import { SapiensIdentityCard } from '../customer/SapiensIdentityCard';
+import { SapiensIdentityRow } from '../customer/SapiensIdentityRow';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { Sapiens } from '../../types/sapiensTypes';
 import { sapiensService } from '../../core/services/sapiensService';
@@ -107,9 +107,9 @@ export function LoadSapiensList() {
             className="h-11 w-full rounded-xl border border-input bg-background pl-10 pr-4 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-sp-accent focus:ring-2 focus:ring-sp-accent/20"
           />
         </div>
-        <div className="home-identity-grid">
+        <div className="home-identity-list">
           {filteredSapiens.map((sapiens) => (
-            <SapiensIdentityCard key={sapiens.id} individual={sapiens} created={formatDateTime(sapiens.createdAt)}>
+            <SapiensIdentityRow key={sapiens.id} individual={sapiens} created={formatDateTime(sapiens.createdAt)}>
               <Button
                 onClick={() => handleLoad(sapiens)}
                 className="home-open-button"
@@ -119,7 +119,7 @@ export function LoadSapiensList() {
                 {loadingId === sapiens.id ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
                 {loadingId === sapiens.id ? 'Opening…' : <>Open <ArrowRight className="ml-2 size-4" /></>}
               </Button>
-            </SapiensIdentityCard>
+            </SapiensIdentityRow>
           ))}
           {filteredSapiens.length === 0 && (
             <div className="flex flex-col items-center rounded-2xl border border-dashed border-border py-10 text-center text-muted-foreground">
