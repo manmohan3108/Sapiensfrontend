@@ -15,6 +15,7 @@ export function useReaderNavigation(selection: unknown) {
 export function sourceName(value?: string) {
   const names: Record<string, string> = {
     awareness_thought: 'Recorded understanding', user: 'User input', chat: 'Conversation',
+    jira: 'Jira', teams: 'Teams', working_memory: 'Working memory',
     memory: 'Memory', engine: 'Engine', stream: 'Activity',
   };
   return value ? names[value.toLowerCase()] ?? value.replace(/[_-]+/g, ' ') : 'Source not supplied';
