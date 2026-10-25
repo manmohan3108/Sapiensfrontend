@@ -1,0 +1,48 @@
+/* Reversible background-only experiment: no selectors style existing elements. */
+.direction-science > .science-background-study {
+  position:absolute; inset:0; z-index:0; overflow:hidden;
+  pointer-events:none; user-select:none; contain:strict;
+}
+.science-background-study > svg {
+  position:absolute; fill:none; stroke:var(--science-line); stroke-width:1.5;
+  opacity:.38; pointer-events:none;
+}
+.science-background-study .science-background-study__points { fill:var(--science-line); stroke:none; }
+.science-background-study > .science-background-study__construction {
+  width:260px; height:312px; left:-105px; top:190px;
+  mask-image:linear-gradient(90deg,#000 40%,transparent 95%);
+}
+.science-background-study > .science-background-study__conic {
+  width:240px; height:360px; right:-95px; top:23%; stroke:var(--accent); opacity:.3;
+  mask-image:linear-gradient(270deg,#000 40%,transparent 95%);
+}
+.science-background-study > .science-background-study__contours {
+  width:240px; height:530px; left:-110px; top:54%; opacity:.34;
+  mask-image:linear-gradient(90deg,#000 65%,transparent);
+}
+.science-background-study > .science-background-study__curve {
+  width:80%; height:54px; left:10%; top:var(--study-curve-top,900px); opacity:.36;
+  mask-image:linear-gradient(90deg,transparent,#000 20%,#000 80%,transparent);
+}
+.science-background-study > .science-background-study__footer {
+  width:540px; height:156px; right:-20px; bottom:10px; opacity:.24;
+  mask-image:linear-gradient(180deg,#000,transparent);
+}
+@media(prefers-reduced-motion:no-preference) {
+  .science-background-study > :is(.science-background-study__contours,.science-background-study__footer) {
+    animation:science-background-study-drift 24s ease-in-out infinite alternate;
+    animation-play-state:paused;
+  }
+  .science-background-study:not(.is-paused) > .is-in-view { animation-play-state:running; }
+}
+@keyframes science-background-study-drift {
+  from { transform:translate3d(0,-6px,0); }
+  to { transform:translate3d(0,6px,0); }
+}
+@media(max-width:850px) {
+  .science-background-study > .science-background-study__construction { left:-125px; opacity:.28; }
+  .science-background-study > .science-background-study__conic { right:-115px; }
+  .science-background-study > .science-background-study__contours { left:-140px; }
+  .science-background-study > .science-background-study__curve { width:90%; left:5%; }
+  .science-background-study > .science-background-study__footer { width:320px; opacity:.2; }
+}

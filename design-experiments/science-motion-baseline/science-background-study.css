@@ -1,0 +1,39 @@
+/* All additions belong to this removable science-only background. */
+.direction-science > .science-background-study { position:absolute; inset:0; z-index:0; overflow:hidden; pointer-events:none; user-select:none; contain:strict; }
+.science-background-study > svg { position:absolute; fill:none; stroke:var(--science-line); stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; opacity:.8; pointer-events:none; }
+.science-background-study .study-guide { stroke-dasharray:3 5; opacity:.32; stroke-width:1; }
+.science-background-study .study-copper { stroke:var(--accent); }
+.science-background-study .study-amber { stroke:#bd8e32; }
+.science-background-study .study-glass { fill:color-mix(in srgb,var(--science-line) 12%,transparent); }
+.science-background-study .study-dot { fill:var(--accent); }
+.science-background-study text { fill:var(--science-line); stroke:none; font:italic 24px Georgia,serif; }
+.science-background-study > .study-orbits { left:var(--study-copy-left); top:var(--study-top); width:var(--study-copy-width); height:var(--study-top-height); max-height:115px; }
+.science-background-study > .study-prism { left:calc(var(--study-copy-left) + 24px); top:var(--study-prism-top); width:200px; height:var(--study-prism-height); max-height:130px; }
+.science-background-study > .study-mobile-prism { display:none; }
+.science-background-study > .study-wave { width:44%; left:48%; height:58px; top:var(--study-wave-top); }
+.science-background-study > .study-pendulum { left:2px; width:var(--study-rail-width); height:260px; top:var(--study-rail-top); }
+.science-background-study > .study-helix { right:2px; width:var(--study-rail-width); height:320px; top:calc(var(--study-rail-top) + 370px); }
+.science-background-study > .study-lab { top:var(--study-lab-top); left:10%; width:80%; height:var(--study-lab-height); max-height:90px; }
+.science-background-study .study-orbital-motion { transform-origin:110px 57px; }
+.science-background-study .study-pendulum-motion { transform-origin:45px 35px; }
+.science-background-study .study-light { stroke:var(--accent); stroke-width:3; stroke-dasharray:9 91; }
+.science-background-study .study-wave-motion { stroke:var(--accent); stroke-width:4; stroke-dasharray:1 99; }
+@media(prefers-reduced-motion:no-preference) {
+ .science-background-study .study-orbital-motion { animation:study-orbit-turn 36s linear infinite; }
+ .science-background-study .study-pendulum-motion { animation:study-pendulum-swing 5s ease-in-out infinite alternate; }
+ .science-background-study .study-light { animation:study-light-travel 7s linear infinite; }
+ .science-background-study .study-wave-motion { animation:study-light-travel 12s linear infinite; }
+ .science-background-study > svg :is(.study-orbital-motion,.study-pendulum-motion,.study-light,.study-wave-motion) { animation-play-state:paused; }
+ .science-background-study:not(.is-paused) > svg.is-in-view :is(.study-orbital-motion,.study-pendulum-motion,.study-light,.study-wave-motion) { animation-play-state:running; }
+}
+@keyframes study-orbit-turn { to { transform:rotate(360deg); } }
+@keyframes study-pendulum-swing { from { transform:rotate(-8deg); } to { transform:rotate(8deg); } }
+@keyframes study-light-travel { to { stroke-dashoffset:-100; } }
+@media(max-width:850px) {
+ .science-background-study > .study-orbits { left:auto; right:6%; width:150px; height:30px; max-height:var(--study-top-height); }
+ .science-background-study > .study-prism { display:none; }
+ .science-background-study > .study-mobile-prism { display:block; left:var(--study-aside-left); top:var(--study-aside-top); width:var(--study-aside-width); max-width:160px; height:90px; }
+ .science-background-study > .study-wave { width:96%; left:2%; }
+ .science-background-study > .study-lab { left:2%; width:96%; }
+}
+

@@ -4,6 +4,7 @@ import { ApproachComparison } from './ApproachComparison';
 import { SapiensWorldDiagram } from './SapiensWorldDiagram';
 import { useCorePointerResponse } from './useCorePointerResponse';
 import { BreathingCore } from './BreathingCore';
+import { ScienceIdeaStudy } from './ScienceIdeaStudy';
 import { WorldAtmosphere, type WorldEnvironment } from './WorldAtmosphere';
 import '../../../styles/layered-direction.css';
 import '../../../styles/layered-experience.css';
@@ -67,9 +68,9 @@ function ExperienceOpening({ cta, environment }: { cta: ReactNode; environment?:
       <span className="experience-kicker"><i/> Meet Sapiens</span>
       <h1 id="experience-title">An AI individual.<br/>Shaped by<br/><span>experience.</span></h1>
       <p>We’re building AI that carries its experiences into what it notices, says, and does next.</p>
-      <div className="experience-actions">{cta}<a href="#layered-chapters">Explore the idea <ArrowDown size={17}/></a></div>
+      <div className="experience-actions">{cta}<a href={environment === 'science' ? '#direction-idea' : '#layered-chapters'}>Explore the idea <ArrowDown size={17}/></a></div>
       <small>Experimental architecture · in development</small>
-      <a className="experience-scroll-cue" href={environment === 'science' ? '#layered-chapters' : '#direction-idea'}>Scroll to explore <ArrowDown size={16} aria-hidden="true"/></a>
+      <a className="experience-scroll-cue" href="#direction-idea">Scroll to explore <ArrowDown size={16} aria-hidden="true"/></a>
     </div>
     <div className="experience-scene experience-capability-scene" ref={scene}>
       {environment && <WorldAtmosphere environment={environment}/>}
@@ -132,6 +133,7 @@ export function LayeredStudy({ cta, onOpenGraph, showSectionNav = true, environm
     <span className="experience-scroll-target" id="direction-product" aria-hidden="true"/>
     <div className="experience-opening-sheet"><ExperienceOpening cta={cta} environment={environment}/></div>
     <span className="experience-scroll-target" id="direction-idea" aria-hidden="true"/>
+    {environment === 'science' && <ScienceIdeaStudy/>}
     {environment !== 'science' && <section className="experience-thesis" aria-labelledby="experience-vision-title"><span>THE IDEA WE’RE BUILDING</span><h2 id="experience-vision-title">An AI individual<br/><em>that behaves more like a human.</em></h2><div><p>We’re building an AI individual that learns from experience, anticipates what’s next, and takes initiative—acting quickly when needed, without always waiting to be asked.</p></div></section>}
     <section className="world-section" id="layered-chapters" aria-labelledby="world-title">
       <header className="world-heading"><div><span className="experience-kicker">EXPLORE THE SYSTEM</span><h2 id="world-title">One individual.<br/>In conversation with the world.</h2></div><p>Explore how Sapiens connects with people,<br/>information, tools, and feedback.</p></header>

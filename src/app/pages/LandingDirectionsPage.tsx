@@ -10,6 +10,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { PublicLandingPage } from './PublicLandingPage';
 import { ForestEnvironment } from '../components/customer/ForestEnvironment';
 import { ScienceEnvironment } from '../components/customer/ScienceEnvironment';
+import { ScienceBackgroundStudy } from '../components/customer/ScienceBackgroundStudy';
 import '../../styles/landing-directions.css';
 import '../../styles/layered-theme.css';
 import '../../styles/world-directions.css';
@@ -62,6 +63,7 @@ function DirectionLanding({ direction, homepage = false }: { direction: Directio
   return <div className={`direction-page direction-layered${environment ? ` direction-${environment} direction-world` : ''}`}>
     {environment === 'forest' && <ForestEnvironment/>}
     {environment === 'science' && <ScienceEnvironment/>}
+    {environment === 'science' && <ScienceBackgroundStudy/>}
     {!graphOpen && <LandingCursorTrail/>}
     <a href="#direction-main" className="direction-skip">Skip to content</a>
     {!homepage && <DesignDirectionPicker direction={direction}/>}
