@@ -1,9 +1,6 @@
 /* Overview-only notebook illustrations and layout. Copper palette is shared in analyse.css. */
 body:has(.analyse-shell[data-analyse-section="overview"]) {
-  --notebook-rule:#f0c58d55; --notebook-figure:#e1b583;
-}
-html.light body:has(.analyse-shell[data-analyse-section="overview"]) {
-  --notebook-rule:#a15a3255; --notebook-figure:#9b633c;
+  --notebook-rule:var(--an-line); --notebook-figure:var(--an-figure);
 }
 .analyse-shell[data-analyse-section="overview"] .analyse-directory-intro { display:flex; align-items:center; justify-content:space-between; gap:24px; min-height:94px; margin-bottom:18px; }
 .analyse-shell[data-analyse-section="overview"] .analyse-directory-intro h2 { font-size:34px; }

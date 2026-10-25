@@ -1,28 +1,28 @@
 /* Admin Analyse only. Portalled diagnostics inherit the same tokens while this
    shell is mounted; no palette changes escape to the customer workspace. */
 body:has(.analyse-shell) {
-  --an-bg:#543225; --an-panel:#62422f; --an-raised:#76513b; --an-ink:#fff2d8;
-  --an-muted:#e0cbb4; --an-line:#a47c5d; --an-accent:#f4d68c; --an-soft:#f4d68c14;
-  --an-success:#a9d0b3; --an-warning:#edca86; --an-danger:#ffaaa0; --an-grid:#f6d9a914;
+  --an-bg:#1e1916; --an-panel:#30251f; --an-raised:#3c2f26; --an-ink:#ebe2d5;
+  --an-muted:#bdb0a3; --an-line:#655247; --an-accent:#deb580; --an-soft:#deb58012;
+  --an-success:#a9d0b3; --an-warning:#edca86; --an-danger:#ffaaa0; --an-grid:#ddba8d06;
   --sp-bg:var(--an-bg); --sp-panel:var(--an-panel); --sp-ink:var(--an-ink); --sp-muted:var(--an-muted);
-  --sp-line:var(--an-line); --sp-accent:var(--an-accent); --sp-accent-rgb:244 214 140;
+  --sp-line:var(--an-line); --sp-accent:var(--an-accent); --sp-accent-rgb:222 181 128;
   --sp-success:var(--an-success); --sp-warning:var(--an-warning); --sp-danger:var(--an-danger);
   --sp-action:var(--an-accent); --sp-on-action:var(--an-bg);
-  --sp-ink-rgb:255 242 216; --sp-panel-rgb:98 66 47; --sp-recessed:var(--an-raised);
+  --sp-ink-rgb:235 226 213; --sp-panel-rgb:48 37 31; --sp-recessed:var(--an-raised);
   --background:var(--an-bg); --foreground:var(--an-ink); --card:var(--an-panel); --card-foreground:var(--an-ink);
   --muted:var(--an-raised); --muted-foreground:var(--an-muted); --border:var(--an-line); --input:var(--an-line);
   --accent:var(--an-raised); --accent-foreground:var(--an-ink); --primary:var(--an-accent); --primary-foreground:var(--an-bg);
   --popover:var(--an-panel); --popover-foreground:var(--an-ink); --ring:var(--an-accent);
-  --an-edge:#3e291f; --an-grid-major:#f6d9a920;
+  --an-figure:#af8a65; --an-edge:#151311; --an-grid-major:#ddba8d0b;
   color-scheme:dark;
 }
 html.light body:has(.analyse-shell) {
-  --an-bg:#f2e2cf; --an-panel:#fff4e5; --an-raised:#ecd4b9; --an-ink:#482e23;
-  --an-muted:#72513b; --an-line:#ba9370; --an-accent:#894521; --an-soft:#8945210c;
-  --an-success:#28633e; --an-warning:#795a13; --an-danger:#a1342a; --an-grid:#8b4e2d13;
-  --sp-accent-rgb:137 69 33;
-  --sp-ink-rgb:72 46 35; --sp-panel-rgb:255 244 229;
-  --an-edge:#ead5bc; --an-grid-major:#8b4e2d20;
+  --an-bg:#efede7; --an-panel:#faf8f2; --an-raised:#e6dfd5; --an-ink:#352e29;
+  --an-muted:#6d5d50; --an-line:#b9a99a; --an-accent:#874a2b; --an-soft:#874a2b0c;
+  --an-success:#28633e; --an-warning:#795a13; --an-danger:#a1342a; --an-grid:#785d4307;
+  --sp-accent-rgb:135 74 43;
+  --sp-ink-rgb:53 46 41; --sp-panel-rgb:250 248 242;
+  --an-figure:#92704f; --an-edge:#e3dfd6; --an-grid-major:#785d430d;
   color-scheme:light;
 }
 .analyse-shell, .analyse-mobile-nav { font-family:'Source Sans 3',sans-serif; color:var(--an-ink); background:var(--an-bg); font-size:15px; line-height:1.5; }
