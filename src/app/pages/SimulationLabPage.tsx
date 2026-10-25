@@ -374,7 +374,8 @@ export function SimulationLabPage() {
   const shortcutId =
     params.get("sapienId") || storedReturnContext?.sapienId || null;
   const shortcutName =
-    params.get("sapienName") || storedReturnContext?.sapienName || null;
+    (params.get("sapienId") === shortcutId ? params.get("sapienName") : null) ||
+    (storedReturnContext?.sapienId === shortcutId ? storedReturnContext?.sapienName : null) || null;
   const requestedView = params.get("view");
   const mainView =
     requestedView === "participant" ||
@@ -959,6 +960,14 @@ export function SimulationLabPage() {
     item.sapien_id == null
       ? null
       : allSapiens.find((sapien) => Number(sapien.id) === item.sapien_id);
+  const worldOverviewPath = (item: SimulationRun) => {
+    const name = sapienForRun(item)?.name ||
+      (String(item.sapien_id) === shortcutId ? shortcutName : null);
+    const query = name && item.sapien_id != null
+      ? `?${new URLSearchParams({ sapienId: String(item.sapien_id), sapienName: name })}`
+      : '';
+    return `/admin/simulations/${encodeURIComponent(item.run_id)}/world/overview${query}`;
+  };
   const participantPhase = run?.participant?.phase
     ? ({
         idle: "Waiting to attach",
@@ -1106,7 +1115,7 @@ export function SimulationLabPage() {
               </div>
               <Button asChild size="lg" className="h-12 w-full px-6 lg:w-auto">
                 <Link
-                  to={`/admin/simulations/${encodeURIComponent(run.run_id)}/world/overview`}
+                  to={worldOverviewPath(run)}
                 >
                   Open Simulation World
                   <ArrowRight className="size-4" />
@@ -1261,7 +1270,7 @@ export function SimulationLabPage() {
                         </Button>
                         <Button asChild variant="outline" size="sm">
                           <Link
-                            to={`/admin/simulations/${encodeURIComponent(item.run_id)}/world/overview`}
+                            to={worldOverviewPath(item)}
                           >
                             Open world <ArrowRight className="size-3.5" />
                           </Link>
@@ -1842,7 +1851,7 @@ export function SimulationLabPage() {
                   <Button
                     onClick={() =>
                       navigate(
-                        `/admin/simulations/${encodeURIComponent(run.run_id)}/world/overview`,
+                        worldOverviewPath(run),
                       )
                     }
                   >

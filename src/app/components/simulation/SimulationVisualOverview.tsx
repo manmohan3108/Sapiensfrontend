@@ -139,7 +139,7 @@ function SimulationIntroduction({ spec, overview, participant, role, base, loadi
   </section>;
 }
 
-export function SimulationVisualOverview({ run }: { run: SimulationRun }) {
+export function SimulationVisualOverview({ run, knownSapienName }: { run: SimulationRun; knownSapienName?: string | null }) {
   const [overview, setOverview] = useState<InspectionOverviewDetails | null>(null);
   const [spec, setSpec] = useState<InspectionSpecificationResponse | null>(null);
   const [page, setPage] = useState<InspectionActivityPage | null>(null);
@@ -179,7 +179,8 @@ export function SimulationVisualOverview({ run }: { run: SimulationRun }) {
     finally { if (!controller.signal.aborted) setLoading(false); }
   }
   const people = new Map((spec?.specification?.scenario.initial_world.people || []).map(person => [person.person_id, person.name]));
-  const participant = people.get(run.participant_id || '') || (run.sapien_id ? `Sapien ${run.sapien_id}` : 'The participant');
+  if (knownSapienName && run.participant_id) people.set(run.participant_id, knownSapienName);
+  const participant = knownSapienName || people.get(run.participant_id || '') || (run.sapien_id ? `Sapien ${run.sapien_id}` : 'The participant');
   const role = spec?.specification?.scenario.initial_world.people.find(person => person.person_id === run.participant_id)?.facts.find(fact => fact.key === 'role')?.text;
   const sources = (page?.items || []).filter(item => item.event_type === 'MessageDelivered' && item.payload.recipient_id === run.participant_id && item.payload.sender_id !== run.participant_id);
   const source = sources[index];
