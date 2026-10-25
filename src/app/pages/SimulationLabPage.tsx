@@ -1228,7 +1228,7 @@ export function SimulationLabPage() {
               <div>
                 <h2 className="text-lg font-semibold">Recent simulations</h2>
                 <p className="text-sm text-muted-foreground">
-                  Switch runs or open a simulation directly.
+                  Open a run to explore its workplace and saved activity.
                 </p>
               </div>
             </div>
@@ -1428,7 +1428,7 @@ export function SimulationLabPage() {
                           {stamp(selectedCase.suggested_start_at)}
                         </output>
                       </div>
-                      <Field label="Initial speed override">
+                      <Field label="Simulation clock speed">
                         <Input
                           type="number"
                           min="0.01"
@@ -1439,7 +1439,7 @@ export function SimulationLabPage() {
                         />
                       </Field>
                       <Field
-                        label={`Wall-time override (≤ ${catalog?.limits.max_wall_seconds}s)`}
+                        label={`Real-time limit (≤ ${catalog?.limits.max_wall_seconds}s)`}
                       >
                         <Input
                           type="number"
@@ -1449,7 +1449,7 @@ export function SimulationLabPage() {
                         />
                       </Field>
                       <Field
-                        label={`Evidence override (≤ ${catalog?.limits.max_records})`}
+                        label={`Saved-record limit (≤ ${catalog?.limits.max_records})`}
                       >
                         <Input
                           type="number"
@@ -1468,7 +1468,7 @@ export function SimulationLabPage() {
                         ? `${catalog.defaults.max_wall_seconds / 3600} real hours`
                         : "—"}
                       ), and {catalog?.defaults.max_records ?? "—"} evidence
-                      records. Clock speed does not accelerate inference.
+                      records. Speed advances the workplace clock, not the Sapien’s thinking.
                     </p>
                   </details>
                   <div className="flex items-center gap-3">
@@ -1483,10 +1483,9 @@ export function SimulationLabPage() {
                           : "Schedule simulation"}
                     </Button>
                     <span className="text-xs text-muted-foreground">
-                      Preparation starts immediately. For new runs, the backend
-                      supplies the execution appointment; the returned
-                      appointment is authoritative. Waiting uses no wall budget,
-                      and existing runs keep their saved appointment.
+                      Preparation starts now; the scheduled start time appears
+                      after creation. Waiting for that time does not use the
+                      run’s real-time budget.
                     </span>
                   </div>
                 </>
@@ -1501,6 +1500,7 @@ export function SimulationLabPage() {
                   ? ` for ${shortcutName || `Sapiens ${shortcutId}`}`
                   : ""}
               </CardTitle>
+              <p className="text-sm text-muted-foreground">Running and past simulations stay here for review.</p>
             </CardHeader>
             <CardContent className="space-y-2">
               {!visibleRuns.length && (

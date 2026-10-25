@@ -26,13 +26,13 @@ const assessmentLabels: Record<string, string> = {
 function UnderstandingStory({ item }: { item: AwarenessHistoryItem }) {
   return <section className="space-y-4" aria-label="Run outcome">
     <div className="rounded-xl border border-white/10 bg-white/[.035] p-5">
-      <p className="text-xs font-medium uppercase tracking-wide text-white/50">Outcome</p>
+      <p className="text-xs font-medium uppercase tracking-wide text-white/50">Sapiens’ assessment</p>
       <h3 className="mt-2 text-xl font-semibold text-white/90">{item.state ? assessmentLabels[item.state] || item.state.replaceAll('_', ' ') : 'No assessment recorded'}</h3>
-      <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-6 text-white/80">{item.remaining || item.understanding || item.focus || 'No outcome description was retained.'}</p>
-      {item.remaining && <p className="mt-2 text-xs text-amber-100/70">This work remains unresolved.</p>}
+      <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-6 text-white/80"><span className="font-medium">{item.remaining ? 'Still needed: ' : item.understanding ? 'Saved understanding: ' : item.focus ? 'Selected focus: ' : ''}</span>{item.remaining || item.understanding || item.focus || 'No outcome description was retained.'}</p>
     </div>
     <details className="border-b border-white/10 pb-4">
-      <summary className="cursor-pointer text-sm font-medium text-white/80">What arrived</summary>
+      <summary className="cursor-pointer text-sm font-medium text-white/80">Input and source</summary>
+      <p className="mt-2 text-sm text-white/60">The message or event saved with this record.</p>
       <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-6 text-white/75">{item.subject?.content || 'The original event was not retained with this record.'}</p>
       {item.subject && <p className="mt-2 text-xs text-white/50">Source: {item.subject.source || 'Unknown'} · {absoluteTime(item.subject.event_at)}</p>}
     </details>
@@ -40,10 +40,10 @@ function UnderstandingStory({ item }: { item: AwarenessHistoryItem }) {
       <summary className="cursor-pointer text-sm font-medium text-white/80">Saved understanding and assessment</summary>
       <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-6 text-white/75">{item.understanding || item.focus || 'No understanding was retained.'}</p>
       {item.reason && <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-6 text-white/65"><strong>Assessment reason: </strong>{item.reason}</p>}
-      <p className="mt-3 text-xs leading-5 text-white/50">Saved interpretation, not independent verification or confirmation of delivery.</p>
+      <p className="mt-3 text-xs leading-5 text-white/50">This is Sapiens’ interpretation, not confirmation that an action succeeded or a message was delivered.</p>
     </details>
     <details className="pb-2">
-      <summary className="cursor-pointer text-xs text-white/55">Record metadata</summary>
+      <summary className="cursor-pointer text-xs text-white/55">Record details</summary>
       <dl className="mt-3 grid gap-3 text-xs text-white/65 sm:grid-cols-2">
         <div><dt>Record ID</dt><dd className="mt-1 break-all font-mono">{item.id}</dd></div>
         <div><dt>Assessment source</dt><dd className="mt-1">{item.source || 'Unknown'}</dd></div>
@@ -55,7 +55,7 @@ function UnderstandingStory({ item }: { item: AwarenessHistoryItem }) {
   </section>;
 }
 function duration(beat: AwarenessBeat) {
-  if (!beat.started_at || !beat.completed_at) return 'In progress';
+  if (!beat.started_at || !beat.completed_at) return 'Timing unavailable';
   const ms = new Date(beat.completed_at).getTime() - new Date(beat.started_at).getTime();
   if (!Number.isFinite(ms) || ms < 0) return 'Timing unavailable';
   return ms < 1000 ? `${ms} ms` : `${(ms / 1000).toFixed(ms < 10_000 ? 1 : 0)} s`;
@@ -123,7 +123,7 @@ function displayEvent(event: AwarenessBeatEvent, index: number) {
 
 function EventTimeline({ events = [], compact = false }: { events?: AwarenessBeatEvent[]; compact?: boolean }) {
   const ordered = [...events].sort((a, b) => (a.sequence ?? Number.MAX_SAFE_INTEGER) - (b.sequence ?? Number.MAX_SAFE_INTEGER));
-  if (!ordered.length) return <p className="rounded-xl border border-dashed border-white/10 p-4 text-center text-[10px] text-white/25">No ordered events were returned for this beat.</p>;
+  if (!ordered.length) return <p className="rounded-xl border border-dashed border-white/10 p-4 text-center text-[10px] text-white/25">No individual steps were saved for this run.</p>;
   if (compact) return <ol className="space-y-3">{ordered.map((event, index) => {
     const display = displayEvent(event, index);
     return <li key={index} className="border-l-2 border-cyan-300/25 pl-4">
@@ -151,11 +151,11 @@ function AssessmentSummary({ beat }: { beat: AwarenessBeat }) {
 }
 
 function CandidateFlow({ beat }: { beat: AwarenessBeat }) {
-  const summary = beat.candidate_summary; if (!summary) return <SummaryBlock title="Candidate selection" value={null} />;
+  const summary = beat.candidate_summary; if (!summary) return <SummaryBlock title="Focus selection" value={null} />;
   const sourceCounts = summary.source_counts || summary.sources || {}; const candidates = summary.bounded_candidates || summary.candidates || [];
   const attention = beat.attention ?? [];
   const winnerText = text(beat.winner) || safeFields(beat.winner).map(item => `${item.key}: ${item.value}`).join(' · ') || 'No winner summary returned';
-  return <section className={`${panel} p-3`}><div className="flex flex-wrap items-center gap-2"><span className="text-[9px] uppercase tracking-[.16em] text-amber-200/55">Candidate → winner</span>{summary.truncated || summary.was_truncated ? <span className="rounded-full bg-amber-400/10 px-2 py-0.5 text-[8px] text-amber-200">Candidate list truncated</span> : null}</div><div className="mt-3 flex flex-wrap items-center gap-2"><span className="rounded-lg border border-white/[.07] bg-white/[.03] px-3 py-2 text-[10px] text-white/48"><b className="font-mono font-normal text-white/75">{summary.collected ?? '—'}</b> collected</span><ChevronRight className="h-3 w-3 text-white/20" /><span className="rounded-lg border border-amber-400/15 bg-amber-400/[.05] px-3 py-2 text-[10px] text-amber-100/55"><b className="font-mono font-normal text-amber-100/80">{summary.held ?? 0}</b> held</span><ChevronRight className="h-3 w-3 text-white/20" /><span className="min-w-0 rounded-lg border border-emerald-400/15 bg-emerald-400/[.05] px-3 py-2 text-[10px] text-emerald-100/65"><Trophy className="mr-1 inline h-3 w-3" />{winnerText}</span></div>{Object.keys(sourceCounts).length > 0 && <div className="mt-3 flex flex-wrap gap-1.5">{Object.entries(sourceCounts).map(([name, count]) => <span key={name} className="rounded-md bg-cyan-400/[.05] px-2 py-1 text-[8px] text-cyan-100/50">{name} <b className="font-mono font-normal text-cyan-200/80">{count}</b></span>)}</div>}{candidates.length > 0 && <div className="mt-3 text-[9px] text-white/28">{candidates.length} bounded candidate summary{candidates.length === 1 ? '' : 'ies'} returned; raw arguments and results are intentionally hidden.</div>}{attention.length > 0 ? <div className="mt-4 overflow-hidden rounded-xl border border-violet-400/10"><div className="border-b border-white/[.05] bg-violet-400/[.04] px-3 py-2"><p className="text-[9px] font-medium text-violet-100/60">Autonomous attention adjustment</p><p className="mt-0.5 text-[8px] text-white/25">Adjusted priority is the controller’s post-habituation ranking value, not the source engine’s salience.</p></div><div className="overflow-x-auto"><table className="w-full min-w-[620px] text-left text-[9px]"><thead className="bg-black/10 text-white/25"><tr><th className="px-3 py-2 font-normal">Source</th><th className="px-3 py-2 font-normal">Handle</th><th className="px-3 py-2 text-right font-normal">Raw source salience</th><th className="px-3 py-2 text-right font-normal">Attention factor</th><th className="px-3 py-2 text-right font-normal">Adjusted priority</th><th className="px-3 py-2 text-right font-normal">Recent attentions</th></tr></thead><tbody>{attention.map((row, index) => { const habituated = row.attention_factor < 1 || row.adjusted_priority < row.raw_salience; return <tr key={`${row.source}-${row.handle}-${index}`} className="border-t border-white/[.04] text-white/48"><td className="px-3 py-2.5">{row.source}</td><td className="max-w-48 truncate px-3 py-2.5 font-mono" title={row.handle}>{row.handle}</td><td className="px-3 py-2.5 text-right font-mono">{row.raw_salience}</td><td className={`px-3 py-2.5 text-right font-mono ${habituated ? 'text-amber-200/75' : ''}`}>{row.attention_factor}</td><td className="px-3 py-2.5 text-right font-mono text-violet-200/75">{row.adjusted_priority}</td><td className="px-3 py-2.5 text-right font-mono">{row.recent_attentions}</td></tr>; })}</tbody></table></div></div> : beat.mode === 'reactive' ? <p className="mt-4 rounded-lg border border-cyan-400/10 bg-cyan-400/[.035] px-3 py-2 text-[9px] text-cyan-100/40">Reactive user focus bypasses autonomous habituation; no attention adjustment rows are expected.</p> : null}</section>;
+  return <section className={`${panel} p-3`}><div className="flex flex-wrap items-center gap-2"><span className="text-[9px] uppercase tracking-[.16em] text-amber-200/55">Possible topics → selected focus</span>{summary.truncated || summary.was_truncated ? <span className="rounded-full bg-amber-400/10 px-2 py-0.5 text-[8px] text-amber-200">Topic list shortened</span> : null}</div><div className="mt-3 flex flex-wrap items-center gap-2"><span className="rounded-lg border border-white/[.07] bg-white/[.03] px-3 py-2 text-[10px] text-white/48"><b className="font-mono font-normal text-white/75">{summary.collected ?? '—'}</b> collected</span><ChevronRight className="h-3 w-3 text-white/20" /><span className="rounded-lg border border-amber-400/15 bg-amber-400/[.05] px-3 py-2 text-[10px] text-amber-100/55"><b className="font-mono font-normal text-amber-100/80">{summary.held ?? 0}</b> held</span><ChevronRight className="h-3 w-3 text-white/20" /><span className="min-w-0 rounded-lg border border-emerald-400/15 bg-emerald-400/[.05] px-3 py-2 text-[10px] text-emerald-100/65"><Trophy className="mr-1 inline h-3 w-3" />{winnerText}</span></div>{Object.keys(sourceCounts).length > 0 && <div className="mt-3 flex flex-wrap gap-1.5">{Object.entries(sourceCounts).map(([name, count]) => <span key={name} className="rounded-md bg-cyan-400/[.05] px-2 py-1 text-[8px] text-cyan-100/50">{name} <b className="font-mono font-normal text-cyan-200/80">{count}</b></span>)}</div>}{candidates.length > 0 && <div className="mt-3 text-[9px] text-white/28">{candidates.length} bounded candidate summary{candidates.length === 1 ? '' : 'ies'} returned; raw arguments and results are intentionally hidden.</div>}{attention.length > 0 ? <div className="mt-4 overflow-hidden rounded-xl border border-violet-400/10"><div className="border-b border-white/[.05] bg-violet-400/[.04] px-3 py-2"><p className="text-[9px] font-medium text-violet-100/60">Autonomous attention adjustment</p><p className="mt-0.5 text-[8px] text-white/25">Compare the original priority with the adjusted priority after recent attention is taken into account.</p></div><div className="overflow-x-auto"><table className="w-full min-w-[620px] text-left text-[9px]"><thead className="bg-black/10 text-white/25"><tr><th className="px-3 py-2 font-normal">Source</th><th className="px-3 py-2 font-normal">Handle</th><th className="px-3 py-2 text-right font-normal">Raw source salience</th><th className="px-3 py-2 text-right font-normal">Attention factor</th><th className="px-3 py-2 text-right font-normal">Adjusted priority</th><th className="px-3 py-2 text-right font-normal">Recent attentions</th></tr></thead><tbody>{attention.map((row, index) => { const habituated = row.attention_factor < 1 || row.adjusted_priority < row.raw_salience; return <tr key={`${row.source}-${row.handle}-${index}`} className="border-t border-white/[.04] text-white/48"><td className="px-3 py-2.5">{row.source}</td><td className="max-w-48 truncate px-3 py-2.5 font-mono" title={row.handle}>{row.handle}</td><td className="px-3 py-2.5 text-right font-mono">{row.raw_salience}</td><td className={`px-3 py-2.5 text-right font-mono ${habituated ? 'text-amber-200/75' : ''}`}>{row.attention_factor}</td><td className="px-3 py-2.5 text-right font-mono text-violet-200/75">{row.adjusted_priority}</td><td className="px-3 py-2.5 text-right font-mono">{row.recent_attentions}</td></tr>; })}</tbody></table></div></div> : beat.mode === 'reactive' ? <p className="mt-4 rounded-lg border border-cyan-400/10 bg-cyan-400/[.035] px-3 py-2 text-[9px] text-cyan-100/40">This run responded directly to an input, so no self-directed attention adjustments are shown.</p> : null}</section>;
 }
 
 function BeatDetails({ beat, latest = false }: { beat: AwarenessBeat; latest?: boolean }) {
@@ -168,7 +168,7 @@ function BeatDetails({ beat, latest = false }: { beat: AwarenessBeat; latest?: b
     <details className={`${panel} p-4`} onToggle={event => setGraphOpen(event.currentTarget.open)}><summary className="cursor-pointer text-sm text-white/65">Explore the technical flow graph</summary>{graphOpen && <div className="mt-4"><AwarenessFlowGraph beat={beat}/></div>}</details>
     <details className={`${panel} p-4`}><summary className="cursor-pointer text-sm text-white/65">Decisions and observed results ({beat.events?.length ?? 0})</summary><div className="mt-4"><EventTimeline events={beat.events}/></div></details>
     <details className={`${panel} p-4`}><summary className="cursor-pointer text-sm text-white/65">Why this information received attention</summary><div className="mt-4"><CandidateFlow beat={beat}/></div></details>
-    <details className={`${panel} p-3`}><summary className="cursor-pointer text-[10px] text-white/40">Supporting diagnostic summaries</summary><div className="mt-3 grid gap-3 md:grid-cols-3"><SummaryBlock title="Preparation" value={beat.preparation} color="#67e8f9"/><SummaryBlock title="Focus formation" value={focusFormation} color="#86efac"/><SummaryBlock title="Curated context" value={beat.curation} color="#c4b5fd"/><AssessmentSummary beat={beat}/><SummaryBlock title="Generated response / final resolution" value={beat.final} color="#86efac"/><SummaryBlock title="Delivery route" value={beat.delivery} color={deliveryStatus?.includes('fail') ? '#fca5a5' : '#7dd3fc'}/></div></details>
+    <details className={`${panel} p-3`}><summary className="cursor-pointer text-[10px] text-white/40">Supporting diagnostic summaries</summary><div className="mt-3 grid gap-3 md:grid-cols-3"><SummaryBlock title="Preparation" value={beat.preparation} color="#67e8f9"/><SummaryBlock title="Focus formation" value={focusFormation} color="#86efac"/><SummaryBlock title="Selected context" value={beat.curation} color="#c4b5fd"/><AssessmentSummary beat={beat}/><SummaryBlock title="Generated response / final resolution" value={beat.final} color="#86efac"/><SummaryBlock title="Delivery route" value={beat.delivery} color={deliveryStatus?.includes('fail') ? '#fca5a5' : '#7dd3fc'}/></div></details>
   </div>;
 }
 
@@ -180,20 +180,20 @@ function RunFlow({ beat }: { beat: AwarenessBeat }) {
   const focusText = text(focus.content) || text(winner.content) || text(beat.winner);
   const context = record(beat.curation).selected_context;
   const contextItems = Array.isArray(context) ? context.map(record) : [];
-  const decisions: Record<string, string> = { act: 'Use a tool', execute_plan: 'Carry out a plan', speak: 'Prepare a reply', hold: 'Pause and wait', think: 'Think further' };
+  const decisions: Record<string, string> = { act: 'Decided to use a tool', execute_plan: 'Decided to carry out a plan', speak: 'Decided to prepare a reply', hold: 'Decided to wait', think: 'Decided to think further' };
   return <div className="space-y-4">
-    <p className="text-sm leading-6 text-white/60">Read from top to bottom. Expand a step for its explanation and evidence.</p>
+    <p className="text-sm leading-6 text-white/60">Follow the recorded decisions and results in order. Open a step to see what was saved.</p>
     <details className="border-b border-white/10 pb-4">
-      <summary className="cursor-pointer text-sm font-medium text-white/75">Starting context</summary>
-      <p className="mt-2 text-sm text-white/65">{beat.mode === 'reactive' ? 'Responding to an incoming event' : beat.mode === 'autonomous' ? 'Self-directed attention' : 'Trigger mode not recorded'} · Source: {beat.trigger_source || 'Unknown'}</p>
+      <summary className="cursor-pointer text-sm font-medium text-white/75">Starting focus and context</summary>
+      <p className="mt-2 text-sm text-white/65">{beat.mode === 'reactive' ? 'Responding to an incoming event' : beat.mode === 'autonomous' ? 'Sapiens selected its own focus' : 'Trigger mode not recorded'} · Source: {beat.trigger_source || 'Unknown'}</p>
       <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-white/80"><span className="font-medium">Focus: </span>{focusText || 'The selected focus text was not retained.'}</p>
-      <details className="mt-3"><summary className="cursor-pointer text-sm text-white/65">Context considered ({contextItems.length} retained items)</summary>
-        <p className="mt-2 text-xs text-white/50">This is the saved context snapshot, not a complete record of what was known in every round.</p>
+      <details className="mt-3"><summary className="cursor-pointer text-sm text-white/65">Information selected for this run ({contextItems.length} saved {contextItems.length === 1 ? 'item' : 'items'})</summary>
+        <p className="mt-2 text-xs text-white/50">These items were selected to help interpret the situation. The saved list may not include information used later.</p>
         {contextItems.length ? <ul className="mt-2 space-y-2">{contextItems.map((item, index) => <li key={index} className="rounded-lg border border-white/10 p-3 text-sm leading-6 text-white/75">{text(item.content) || text(item.summary) || 'Content not retained'}<span className="mt-1 block text-xs text-white/50">Source: {text(item.source) || 'Unknown'}</span></li>)}</ul> : <p className="mt-2 text-sm text-white/55">No context items were retained in this snapshot.</p>}
       </details>
     </details>
-    {!flow ? <div className="space-y-4"><p className="text-sm text-amber-100/80">Grouped rounds are unavailable from this API. The recorded events below show the available sequence.</p><EventTimeline events={beat.events} compact/></div> : <>
-      <p className="text-xs text-white/55">{flow.round_count} recorded decision rounds · {flow.steps.length} recorded steps · Stored event order (not proof of causality)</p>
+    {!flow ? <div className="space-y-4"><p className="text-sm text-amber-100/80">This record has no grouped decision rounds. The saved steps are shown below.</p><EventTimeline events={beat.events} compact/></div> : <>
+      <p className="text-xs text-white/55">{flow.round_count} decision {flow.round_count === 1 ? 'round' : 'rounds'} · {flow.steps.length} saved {flow.steps.length === 1 ? 'step' : 'steps'}. Each round records another choice about what to do next.</p>
       {flow.truncated && <p role="status" className="rounded-lg border border-amber-300/20 p-3 text-sm text-amber-100">Part of this trace was omitted in storage. Round numbers describe only the retained decisions.</p>}
       {!flow.steps.length && <p className="text-sm text-white/60">No individual steps were retained for this run.</p>}
       <ol className="space-y-0">{flow.steps.map((step, index) => {
@@ -204,7 +204,7 @@ function RunFlow({ beat }: { beat: AwarenessBeat }) {
           <span className="absolute -left-[5px] top-1 h-2 w-2 rounded-full bg-cyan-200"/>
           <article className="rounded-xl border border-white/10 p-4">
             <h5 className="text-sm font-medium text-white/90"><span className="mr-2 text-white/45">{index + 1}.</span>{step.title}{step.decision ? ` · ${decisions[step.decision] || step.decision.replaceAll('_', ' ')}` : ''}</h5>
-            <details className="mt-2"><summary className="cursor-pointer text-sm text-white/60">Explanation</summary><p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-white/75">{step.summary}</p></details>
+            <details className="mt-2"><summary className="cursor-pointer text-sm text-white/60">Saved step details</summary><p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-white/75">{step.summary}</p></details>
             {event?.status && <p className="mt-2 text-xs text-white/55">Recorded status: {event.status.replaceAll('_', ' ')}</p>}
             {event && <details className="mt-3"><summary className="cursor-pointer text-xs text-white/60">Inspect this step’s evidence</summary><div className="mt-3"><EventTimeline events={[event]}/></div></details>}
           </article>
@@ -233,16 +233,16 @@ function RelatedCycle({ sapienId, thoughtId }: { sapienId: string; thoughtId: st
   const final = beat?.final;
   const processing = final && typeof final === 'object' ? text(final.status) : null;
   return <section className={`${panel} p-4`} aria-label="Related processing cycle">
-    <h3 className="text-base font-medium text-white/85">Run flow</h3>
+    <h3 className="text-base font-medium text-white/85">Decisions and results</h3>
     {error ? <p role="alert" className="mt-3 text-sm text-red-200">{error} <button className="underline" onClick={() => setAttempt(value => value + 1)}>Retry</button></p>
       : !data ? <p role="status" className="mt-3 text-sm text-white/60">Loading the matching processing cycle…</p>
-      : !beat ? <p className="mt-3 text-sm text-white/60">{data.match_status === 'ambiguous' ? 'Multiple cycles reference this record; none has been selected automatically.' : 'No exact connection is available. The trace may be missing, shortened, or from an older version.'}</p>
+      : !beat ? <p className="mt-3 text-sm text-white/60">{data.match_status === 'ambiguous' ? 'More than one run matches this record, so no step-by-step record is shown.' : 'No matching step-by-step record is available. You can still read the saved understanding above.'}</p>
       : <div className="mt-3 space-y-4">
         <p className="text-sm text-white/75">Processing: {processing?.replaceAll('_', ' ') || 'Status not recorded'} · Task: {beat.assessment?.state ? assessmentLabels[beat.assessment.state] || beat.assessment.state : 'Assessment unavailable'}</p>
-        <p className="text-xs text-white/50">Matched by the saved record ID. Processing completion does not establish task completion or message delivery.</p>
+        <p className="text-xs text-white/50">Processing shows whether this run finished; the task assessment shows whether Sapiens considers the work done.</p>
     
         <RunFlow beat={beat}/>
-        <details className={`${panel} p-3`}><summary className="cursor-pointer text-sm text-white/75">Advanced diagnostics</summary><div className="mt-4"><BeatDetails beat={beat}/></div></details>
+        <details className={`${panel} p-3`}><summary className="cursor-pointer text-sm text-white/75">Technical details</summary><div className="mt-4"><p className="mb-3 text-sm text-white/60">Inspect the saved events, selection details and graph when you need to investigate further.</p><BeatDetails beat={beat}/></div></details>
       </div>}
   </section>;
 }
@@ -286,8 +286,8 @@ export function AwarenessDiagnostics({ sapienId }: { sapienId: string }) {
   if (loading && !data) return <div className="flex min-h-80 items-center justify-center gap-2 text-sm text-white/60"><Loader2 className="h-4 w-4 animate-spin"/>Loading saved understanding…</div>;
   return <div className="mx-auto w-full max-w-5xl space-y-6">
     <header className="flex flex-wrap items-start justify-between gap-4">
-      <div><h2 className="text-lg font-medium text-white/90">Awareness runs</h2>
-        <p className="mt-1 max-w-3xl text-sm leading-6 text-white/60">Start with the outcome, then follow the recorded steps.</p>
+      <div><h2 className="max-w-2xl text-xl font-medium leading-7 text-white/90">See how Sapiens responds to a situation.</h2>
+        <p className="mt-1 max-w-2xl text-sm leading-6 text-white/60">Each run records Sapiens handling an input or choosing its own focus. Select a run to inspect its understanding, decisions and recorded results.</p>
         <details className="mt-2 text-xs leading-5 text-white/50"><summary className="cursor-pointer">About these records</summary><p>Up to 20 recent records. Times include your timezone; simulation times may be ahead of today. Stored text and traces may be shortened.</p></details>
       </div>
       <button onClick={() => void refresh()} disabled={loading} className="flex items-center gap-2 rounded-lg border border-white/15 px-3 py-2 text-sm text-white/75 disabled:opacity-50"><RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`}/>Refresh</button>
@@ -295,10 +295,10 @@ export function AwarenessDiagnostics({ sapienId }: { sapienId: string }) {
     {error && <div role="alert" className="flex items-center gap-2 rounded-xl border border-red-400/20 p-4 text-sm text-red-200"><AlertCircle className="h-4 w-4"/>{error}<button onClick={() => void refresh()} className="ml-auto underline">Retry</button></div>}
     <div className="space-y-5">
       <section className={`${panel} overflow-hidden`} aria-label="Recent understanding">
-        <button type="button" aria-expanded={historyOpen} aria-controls="awareness-history" onClick={() => setHistoryOpen(value => !value)} className="flex w-full items-center justify-between gap-3 p-4 text-left text-sm text-white/80"><span>{selected ? absoluteTime(selected.assessed_at || selected.created_at) : 'Recent runs'}</span><span className="shrink-0 text-cyan-200">{historyOpen ? 'Close history' : 'Change run'}</span></button>
+        <button type="button" aria-expanded={historyOpen} aria-controls="awareness-history" onClick={() => setHistoryOpen(value => !value)} className="flex w-full items-center justify-between gap-3 p-4 text-left text-sm text-white/80"><span>{selected ? absoluteTime(selected.assessed_at || selected.created_at) : 'Recent runs'}</span><span className="shrink-0 text-cyan-200">{historyOpen ? 'Close history' : 'Choose a run'}</span></button>
         <div id="awareness-history" hidden={!historyOpen}>
-        <div className="border-b border-white/10 p-4"><h3 className="text-sm font-medium text-white/80">Recent understanding</h3>
-          <label className="mt-3 flex items-center gap-2 rounded-lg border border-white/15 px-3 py-2"><Search className="h-4 w-4 shrink-0 text-white/50"/><input aria-label="Search recent understanding" value={search} onChange={event => setSearch(event.target.value)} placeholder="Search events or understanding" className="min-w-0 w-full bg-transparent text-sm text-white/80 outline-none"/></label>
+        <div className="border-b border-white/10 p-4"><h3 className="text-sm font-medium text-white/80">Recent runs</h3>
+          <label className="mt-3 flex items-center gap-2 rounded-lg border border-white/15 px-3 py-2"><Search className="h-4 w-4 shrink-0 text-white/50"/><input aria-label="Search recent runs" value={search} onChange={event => setSearch(event.target.value)} placeholder="Search input, understanding or assessment" className="min-w-0 w-full bg-transparent text-sm text-white/80 outline-none"/></label>
         </div>
         <div className="max-h-72 overflow-y-auto">{filteredHistory.map(item => <button key={item.id} onClick={() => { setSelectedId(item.id); setHistoryOpen(false); }} aria-pressed={selected?.id === item.id} className={`block w-full border-b border-white/[.07] p-4 text-left last:border-0 ${selected?.id === item.id ? 'bg-cyan-400/10 ring-1 ring-inset ring-cyan-300/30' : 'hover:bg-white/[.04]'}`}>
           <span className="block text-xs text-white/55">{absoluteTime(item.assessed_at || item.created_at)}</span>
@@ -308,7 +308,7 @@ export function AwarenessDiagnostics({ sapienId }: { sapienId: string }) {
         </div>
       </section>
       <section className="min-w-0 space-y-5" aria-label="Selected understanding">
-        {selected ? <><UnderstandingStory key={selected.id} item={selected}/><RelatedCycle key={`${sapienId}:${selected.id}:${revision}`} sapienId={sapienId} thoughtId={selected.id}/></> : <p className={`${panel} p-6 text-sm text-white/55`}>An event and its saved understanding will appear here when available.</p>}
+        {selected ? <><UnderstandingStory key={selected.id} item={selected}/><RelatedCycle key={`${sapienId}:${selected.id}:${revision}`} sapienId={sapienId} thoughtId={selected.id}/></> : <p className={`${panel} p-6 text-sm text-white/55`}>No runs have been saved yet. Return after Sapiens processes information, then use Refresh to check for records.</p>}
       </section>
     </div>
   </div>;
