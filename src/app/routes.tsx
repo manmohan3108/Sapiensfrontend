@@ -9,7 +9,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { AuthPage } from './pages/AuthPage';
 import { AccessDeniedPage, GuestRoute, ProtectedRoute } from './components/auth/RouteGuards';
 import { useAuth } from './contexts/AuthContext';
-import { LandingDirectionsPage, LayeredLandingPage } from './pages/LandingDirectionsPage';
+import { LandingDirectionsPage, ScienceLandingPage } from './pages/LandingDirectionsPage';
 import { CustomerHomePage } from './pages/CustomerHomePage';
 
 function RoleHome() {
@@ -18,7 +18,7 @@ function RoleHome() {
 }
 
 export const router = createBrowserRouter([
-  { path: '/', Component: LayeredLandingPage, ErrorBoundary },
+  { path: '/', Component: ScienceLandingPage, ErrorBoundary },
   { path: '/design-directions', Component: LandingDirectionsPage, ErrorBoundary },
   { Component: () => <ProtectedRoute selection={false} />, children: [{ path: '/home', Component: RoleHome, ErrorBoundary }] },
   {

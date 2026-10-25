@@ -23,6 +23,7 @@ const directions = [
   { id: 'forest', number: '03', name: 'Living Forest' },
   { id: 'workshop', number: '04', name: 'Curiosity Workshop' },
   { id: 'science', number: '05', name: 'Math & Science' },
+  { id: 'previous-homepage', number: '06', name: 'Previous Homepage / Backup' },
 ] as const;
 type Direction = typeof directions[number];
 
@@ -36,8 +37,8 @@ export function LandingDirectionsPage() {
   return <DirectionLanding key={direction.id} direction={direction}/>;
 }
 
-export function LayeredLandingPage() {
-  return <DirectionLanding direction={directions[0]} homepage/>;
+export function ScienceLandingPage() {
+  return <DirectionLanding direction={directions.find(direction => direction.id === 'science')!} homepage/>;
 }
 
 function DesignDirectionPicker({ direction }: { direction: Direction }) {
@@ -49,7 +50,7 @@ function DesignDirectionPicker({ direction }: { direction: Direction }) {
   )}</nav>;
   return direction.id !== 'original'
     ? <details className="experience-design-picker"><summary><span>DESIGN STUDY / {direction.number} · {direction.name}</span>Compare directions <Plus size={13}/></summary>{choices}</details>
-    : <aside className="direction-review" aria-label="Design preview controls"><div><span className="direction-review-label">SAPIENS / DESIGN STUDIES</span><p>Five directions. Same story.</p></div>{choices}</aside>;
+    : <aside className="direction-review" aria-label="Design preview controls"><div><span className="direction-review-label">SAPIENS / DESIGN STUDIES</span><p>{directions.length} directions. Same story.</p></div>{choices}</aside>;
 }
 
 function DirectionLanding({ direction, homepage = false }: { direction: Direction; homepage?: boolean }) {
@@ -78,7 +79,7 @@ function DirectionLanding({ direction, homepage = false }: { direction: Directio
         </nav>
       </header>
       <main id="direction-main">
-        <LayeredStudy cta={cta} onOpenGraph={() => setGraphOpen(true)} showSectionNav={!homepage && !environment} environment={environment}/>
+        <LayeredStudy cta={cta} onOpenGraph={() => setGraphOpen(true)} showSectionNav={!homepage && !environment && direction.id !== 'previous-homepage'} environment={environment}/>
         <section id="direction-contact" className="spectrum-contact" aria-labelledby="contact-title">
           <div className="direction-wrap">
             <div><span className="direction-eyebrow">CONTACT US</span><h2 id="contact-title">Let’s talk.</h2><p>Questions, ideas, or feedback about Sapiens?</p></div>
