@@ -16,10 +16,10 @@ export function LandingPage() {
     <SapiensHomeHeader onCreate={openCreate} />
     <main id="home-main" className="home-container">
       <section className="home-intro" aria-labelledby="home-title">
-        <div><p className="home-eyebrow">SAPIENS / ADMINISTRATION</p><h1 id="home-title">All Sapiens</h1><p>Open a Sapiens to continue.</p></div>
+        <div><p className="home-eyebrow">SAPIENS / ADMINISTRATION</p><h1 id="home-title">All Sapiens</h1><p>Create an AI individual shaped by experience, or open one to continue.</p></div>
       </section>
       <section className="home-directory" aria-labelledby="home-title">
-        <LoadSapiensList />
+        <LoadSapiensList onCreate={openCreate} />
       </section>
       {showCreate && <section ref={createSectionRef} className="home-create-section" aria-label="Create a Sapiens"><CreateSapiensForm /><button className="home-secondary home-cancel" onClick={() => setShowCreate(false)}>Cancel</button></section>}
     </main>

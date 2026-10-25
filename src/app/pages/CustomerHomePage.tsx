@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 import * as Dialog from '@radix-ui/react-dialog';
-import { ArrowUpRight, Plus, X } from 'lucide-react';
+import { ArrowUpRight, X } from 'lucide-react';
 import { SapiensHomeHeader } from '../components/customer/SapiensHomeHeader';
 import { SapiensIdentityRow } from '../components/customer/SapiensIdentityRow';
+import { SapiensEmptyState } from '../components/customer/SapiensEmptyState';
 import { SapiensBrandMark } from '../components/customer/SapiensBrandMark';
 import { SapiensPresence } from '../components/customer/SapiensPresence';
 import { sapiensService } from '../core/services/sapiensService';
@@ -94,10 +95,10 @@ export function CustomerHomePage() {
     <main id="customer-main" className="customer-container customer-home">
       {loading ? <div className="customer-state" role="status" aria-busy="true"><SapiensPresence tone="orange" size={64} animated className="mx-auto mb-4" />Loading your Sapiens…</div>
         : listError ? <div className="customer-state" role="alert"><h1>We couldn’t load your Sapiens</h1><p>Your list is unavailable right now.</p><button className="customer-secondary" onClick={() => void refresh()}>Try again</button></div>
-        : list.length === 0 ? <section className="customer-empty"><SapiensPresence tone="orange" size={144} animated className="mx-auto mb-4" /><h1 ref={heading} tabIndex={-1}>Create your first Sapiens.</h1><p>An AI individual to explore ideas with. Give it a name, bring what matters to you, and return to the same individual.</p><button className="customer-primary" onClick={showCreation}>Create your Sapiens <Plus size={17} /></button><Link to="/">What is a Sapiens?</Link></section>
-        : <><section className="home-intro" aria-labelledby="customer-home-title"><div><p className="home-eyebrow">YOUR PERSONAL SPACE</p><h1 id="customer-home-title" ref={heading} tabIndex={-1}>Your Sapiens</h1><p>{list.length === 1 ? 'Continue with your AI individual.' : 'Choose who to continue with.'}</p></div><SapiensBrandMark className="home-intro-core" /></section>
-          <h2 className="home-customer-list-title">Your individuals</h2>
-          {list.length > 3 && <div className="customer-search"><label htmlFor="sapiens-search">Search your Sapiens</label><input id="sapiens-search" type="search" placeholder="Search by name, focus or ID" value={query} onChange={e => setQuery(e.target.value)} /></div>}
+        : list.length === 0 ? <SapiensEmptyState onCreate={showCreation} headingRef={heading} />
+        : <><section className="home-intro" aria-labelledby="customer-home-title"><div><p className="home-eyebrow">YOUR PERSONAL SPACE</p><h1 id="customer-home-title" ref={heading} tabIndex={-1}>Your Sapiens</h1><p>Create an AI individual shaped by experience, or open one to continue.</p></div><SapiensBrandMark className="home-intro-core" /></section>
+          <h2 className="sr-only">Your individuals</h2>
+          {list.length > 3 && <div className="customer-search"><label className="sr-only" htmlFor="sapiens-search">Search your Sapiens</label><input id="sapiens-search" type="search" placeholder="Search by name, focus or ID" value={query} onChange={e => setQuery(e.target.value)} /></div>}
           {filtered.length === 0 ? <div className="customer-state" role="status"><h2>No Sapiens match your search</h2><button className="customer-secondary" onClick={() => setQuery('')}>Clear search</button></div> : <div className="home-identity-list">{filtered.map(item => <SapiensIdentityRow individual={item} key={item.id}>
             {openError?.id === item.id && <p role="alert">{openError.message}</p>}
             <button className="customer-primary home-open-button" disabled={opening !== null} onClick={() => void openIndividual(item)}>{opening === item.id ? 'Opening…' : 'Open'}<ArrowUpRight size={17} className="shrink-0" /><span className="sr-only"> {item.name}</span></button></SapiensIdentityRow>)}</div>}

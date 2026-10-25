@@ -9,8 +9,9 @@ import { sapiensService } from '../../core/services/sapiensService';
 import { useSapiens } from '../../hooks/useSapiens';
 import { formatDateTime } from '../../utils/formatters';
 import { SapiensPresence } from '../customer/SapiensPresence';
+import { SapiensEmptyState } from '../customer/SapiensEmptyState';
 
-export function LoadSapiensList() {
+export function LoadSapiensList({ onCreate }: { onCreate: () => void }) {
   const [sapiensList, setSapiensList] = useState<Sapiens[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -80,17 +81,7 @@ export function LoadSapiensList() {
   }
 
   if (sapiensList.length === 0) {
-    return (
-      <Card className="mx-auto max-w-2xl rounded-3xl border-dashed border-border/80 bg-muted/20">
-        <CardContent className="py-12">
-          <div className="flex flex-col items-center justify-center text-muted-foreground">
-            <SapiensPresence tone="orange" size={96} animated className="mb-4" />
-            <p className="mb-1 text-lg font-medium text-foreground">No Sapiens yet</p>
-            <p className="text-sm">Create your first Sapiens below.</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
+    return <SapiensEmptyState admin onCreate={onCreate} />;
   }
 
   return (
