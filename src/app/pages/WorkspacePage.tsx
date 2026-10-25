@@ -1,4 +1,5 @@
 import '../../styles/workspace-refresh.css';
+import '../../styles/workspace-context-reader.css';
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router';
 import { toast } from 'sonner';
@@ -15,8 +16,8 @@ import { useAuth } from '../contexts/AuthContext';
 type RightTab = 'awareness' | 'memory' | 'goals';
 
 const CONTEXT_TABS = [
-  { id: 'awareness' as RightTab, label: 'On my mind', icon: Eye },
-  { id: 'memory' as RightTab, label: 'Working memory', icon: BrainCircuit },
+  { id: 'awareness' as RightTab, label: 'Understanding', icon: Eye },
+  { id: 'memory' as RightTab, label: 'Context', icon: BrainCircuit },
   { id: 'goals' as RightTab, label: 'Goals', icon: Target },
 ];
 

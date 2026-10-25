@@ -1039,7 +1039,8 @@ export function SimulationLabPage() {
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-7xl space-y-5 px-4 py-6">
+      <main className="mx-auto grid max-w-7xl items-start gap-5 px-4 py-6 lg:grid-cols-[minmax(0,1fr)_280px]">
+        <div className="min-w-0 space-y-5">
         <div className="flex flex-col items-start justify-between gap-4 lg:flex-row">
           {shortcutId && (
             <div className="min-w-0 py-2 text-sm">
@@ -1049,19 +1050,7 @@ export function SimulationLabPage() {
               </p>
             </div>
           )}
-          <aside aria-label="About simulation memory" className="w-full rounded-xl border bg-card p-4 lg:ml-auto lg:w-80 lg:shrink-0">
-            <h2 className="flex items-center gap-2 text-sm font-medium">
-              <CircleHelp className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-              What your Sapien remembers
-            </h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Teams and Jira activity stays inside the simulation. Your Sapien keeps what it learns,
-              even after the run ends. When the simulation stops, the Sapien becomes inactive.
-            </p>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Use a separate test Sapien if you don’t want simulation experiences added to an existing Sapien’s memory.
-            </p>
-          </aside>
+
         </div>
         {error && (
           <div
@@ -2253,6 +2242,20 @@ export function SimulationLabPage() {
             )}
           </>
         )}
+        </div>
+          <aside aria-label="About simulation memory" className="self-start rounded-xl border bg-card p-4 lg:sticky lg:top-6">
+            <h2 className="flex items-center gap-2 text-sm font-medium">
+              <CircleHelp className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+              What your Sapien remembers
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              Teams and Jira activity stays inside the simulation. Your Sapien keeps what it learns,
+              even after the run ends. When the simulation stops, the Sapien becomes inactive.
+            </p>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              Use a separate test Sapien if you don’t want simulation experiences added to an existing Sapien’s memory.
+            </p>
+          </aside>
       </main>
     </div>
   );

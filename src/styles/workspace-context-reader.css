@@ -1,0 +1,56 @@
+/* Reading views for the workspace only; diagnostic screens retain their layout. */
+.workspace-shell .context-reader { height:100%; display:flex; flex-direction:column; overflow:hidden; }
+.workspace-shell .context-reader-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; padding:18px 16px 14px; border-bottom:1px solid var(--sp-line); flex-shrink:0; }
+.workspace-shell .context-reader-heading h2,.workspace-shell .context-goals-heading { margin:0; font-size:18px; font-weight:600; line-height:1.25; }
+.workspace-shell .context-reader-heading p { margin:7px 0 0; color:var(--sp-muted); font-size:14px; line-height:1.4; }
+.workspace-shell .context-reader-body { flex:1; min-height:0; overflow-y:auto; padding:16px; }
+.workspace-shell .context-record-caption { display:flex; flex-wrap:wrap; gap:4px 10px; color:var(--sp-muted); font-size:12px; margin-bottom:18px; }
+.workspace-shell .context-record-caption>span { font-weight:600; color:var(--sp-ink); }
+.workspace-shell .context-understanding-path { display:flex; flex-direction:column; gap:0; }
+.workspace-shell .context-path-step { display:grid; grid-template-columns:28px minmax(0,1fr); gap:10px; position:relative; padding-bottom:24px; }
+.workspace-shell .context-path-step:not(:last-child)::after { content:''; position:absolute; left:13px; top:30px; bottom:3px; border-left:1px solid var(--sp-line); }
+.workspace-shell .context-step-icon { width:28px; height:28px; display:flex; align-items:center; justify-content:center; border:1px solid var(--sp-line); border-radius:50%; color:var(--sp-muted); }
+.workspace-shell .context-path-step.is-main .context-step-icon { background:var(--sp-action); color:var(--sp-on-action); border-color:var(--sp-action); }
+.workspace-shell .context-path-step h3 { margin:3px 0 8px; font-size:14px; line-height:1.4; font-weight:600; }
+.workspace-shell .context-record-text p { margin:0; white-space:pre-wrap; overflow-wrap:anywhere; font-size:15px; line-height:1.55; color:var(--sp-ink); }
+.workspace-shell .context-record-text .is-excerpt { display:-webkit-box; -webkit-box-orient:vertical; overflow:hidden; }
+.workspace-shell .context-record-text button,.workspace-shell .context-back { color:var(--sp-accent); font-size:13px; padding:6px 0; min-height:32px; text-align:left; }
+.workspace-shell .context-record-text button:hover { text-decoration:underline; }
+.workspace-shell .context-back { display:flex; align-items:center; gap:7px; margin-bottom:12px; }
+.workspace-shell .context-footnote { margin:8px 0 0; font-size:12px; line-height:1.5; color:var(--sp-muted); }
+.workspace-shell .context-technical { border-top:1px solid var(--sp-line); padding:8px 0; font-size:13px; color:var(--sp-muted); }
+.workspace-shell .context-technical summary { padding:7px 0; cursor:pointer; }
+.workspace-shell .context-technical p { margin:8px 0; line-height:1.5; }
+.workspace-shell .context-technical dl { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:7px 12px; margin:12px 0; }
+.workspace-shell .context-technical dd { color:var(--sp-ink); }
+.workspace-shell .context-related { padding:10px 0; }
+.workspace-shell .context-history { margin-top:20px; }
+.workspace-shell .context-history h3 { font-size:15px; font-weight:600; }
+.workspace-shell .context-history>.context-footnote { margin:4px 0 12px; }
+.workspace-shell .context-list-row { display:flex; align-items:center; gap:10px; width:100%; padding:14px 5px; text-align:left; border-bottom:1px solid var(--sp-line); border-radius:0; transition:background-color 120ms; }
+.workspace-shell .context-list-row:hover { background:var(--sp-recessed); }
+.workspace-shell .context-list-row>div { flex:1; min-width:0; }
+.workspace-shell .context-list-row>svg { flex-shrink:0; color:var(--sp-muted); }
+.workspace-shell .context-list-row small { display:block; color:var(--sp-muted); font-size:12px; margin-top:5px; overflow-wrap:anywhere; }
+.workspace-shell .context-row-excerpt { display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:anywhere; font-size:15px; line-height:1.45; }
+.workspace-shell .context-list-row .context-eyebrow { display:block; color:var(--sp-muted); font-size:12px; margin-bottom:5px; }
+.workspace-shell .context-browser-tools { display:flex; align-items:center; justify-content:space-between; padding:10px 14px 0; gap:8px; color:var(--sp-muted); font-size:12px; }
+.workspace-shell .context-browser-tools button { display:flex; gap:6px; align-items:center; min-height:32px; }
+.workspace-shell .context-topic-filter { display:flex; align-items:center; gap:8px; margin:10px 14px 0; color:var(--sp-muted); font-size:13px; }
+.workspace-shell .context-topic-filter select { flex:1; min-width:0; padding:7px; border:1px solid var(--sp-line); border-radius:5px; background:var(--sp-panel); color:var(--sp-ink); }
+.workspace-shell .context-selected-entry h3 { font-size:15px; font-weight:600; margin-bottom:12px; }
+.workspace-shell .context-goal-mark { align-self:flex-start; margin-top:3px; color:var(--sp-accent); }
+.workspace-shell .context-goal-title { font-size:20px; font-weight:500; line-height:1.35; margin:6px 0 10px; }
+.workspace-shell .context-eyebrow { color:var(--sp-muted); font-size:12px; }
+.workspace-shell .context-goal-update { border-left:2px solid var(--sp-accent); padding:2px 0 2px 12px; margin:18px 0; }
+.workspace-shell .context-goal-update h4 { margin:0 0 8px; font-size:14px; font-weight:600; }
+.workspace-shell .context-goal-summary { gap:10px; }
+.workspace-shell .context-goal-summary>.context-goal-title,.workspace-shell .context-goal-summary>.context-footnote { margin:0; }
+.workspace-shell .context-goal-summary>.context-goal-update { margin:6px 0; }
+.workspace-shell .context-goal-summary>.context-technical { padding:0; }
+.workspace-shell .context-empty { display:flex; flex-direction:column; align-items:flex-start; gap:10px; padding:24px 4px; color:var(--sp-muted); font-size:14px; line-height:1.5; }
+.workspace-shell .context-empty h3 { font-size:17px; color:var(--sp-ink); font-weight:600; }
+.workspace-shell .context-empty button { text-decoration:underline; min-height:36px; }
+.workspace-shell .context-notice { padding:12px 16px; color:var(--sp-danger); font-size:14px; }
+.workspace-shell .context-notice button { margin-left:10px; text-decoration:underline; }
+@media(prefers-reduced-motion:reduce) { .workspace-shell .context-list-row { transition:none; } }
