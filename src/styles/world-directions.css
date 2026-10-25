@@ -1,0 +1,109 @@
+/* Experimental worlds: every selector is opt-in. The root homepage is untouched. */
+.direction-page.direction-world.direction-forest {
+  --paper:#f3f2df; --ink:#213c2b; --muted:#52614b; --quiet:#5d6952;
+  --panel:#e5ead5; --soft:#d9e4c5; --line:#c4d0b4; --raised:#fffced;
+  --accent:#41662e; --button:#315738; --button-hover:#234329; --on-button:#fffced;
+  --thesis:#244c36;
+}
+.dark .direction-page.direction-world.direction-forest {
+  --paper:#10291f; --ink:#f4f2d8; --muted:#c1cfb1; --quiet:#aabc9f;
+  --panel:#1d3829; --soft:#304933; --line:#456348; --raised:#284132;
+  --accent:#d6df90; --button:#d6df90; --button-hover:#e7edb2; --on-button:#213c2b;
+  --thesis:#234c36;
+}
+.direction-page.direction-world.direction-workshop {
+  --paper:#f7ead1; --ink:#3c2925; --muted:#70564b; --quiet:#735c50;
+  --panel:#efdab5; --soft:#ead0a5; --line:#d3b68a; --raised:#fff8e8;
+  --accent:#aa342e; --button:#a5342e; --button-hover:#842823; --on-button:#fff8e8;
+  --thesis:#ab3e34;
+}
+.dark .direction-page.direction-world.direction-workshop {
+  --paper:#302423; --ink:#fff0d4; --muted:#ddc3a9; --quiet:#c8af96;
+  --panel:#45312c; --soft:#573c32; --line:#775242; --raised:#50392e;
+  --accent:#f6be74; --button:#edb872; --button-hover:#f9ce94; --on-button:#392720;
+  --thesis:#82382f;
+}
+.direction-world .experience-opening { max-width:1400px; grid-template-columns:.85fr 1.15fr; gap:44px; padding:48px 48px 64px; }
+.direction-world .experience-opening-copy { position:relative; z-index:2; }
+.direction-world .experience-opening-copy h1 { font-size:clamp(48px,5.1vw,74px); }
+.direction-forest .experience-opening-copy h1 { font-family:'Source Serif 4',Georgia,serif; font-weight:450; letter-spacing:-.055em; line-height:1.04; }
+.direction-forest .experience-opening-copy h1 span { font-style:italic; }
+.direction-workshop .experience-opening-copy h1 { font-weight:650; letter-spacing:-.06em; }
+.direction-world .experience-capability-scene { height:690px; }
+.direction-world .world-atmosphere { position:absolute; inset:-12px -22px -8px; overflow:hidden; z-index:-1; pointer-events:none; isolation:isolate; }
+.direction-forest .world-atmosphere { border-radius:45% 45% 8px 8px / 24% 24% 8px 8px; box-shadow:0 24px 45px #25382020; }
+.direction-workshop .world-atmosphere { border-radius:8px; box-shadow:10px 14px 0 #a6352920,0 25px 48px #4d2c1520; transform:rotate(-2deg); }
+.direction-world .world-atmosphere img { position:absolute; width:100%; height:112%; top:-6%; left:0; object-fit:cover; object-position:center; }
+.direction-world .world-atmosphere-back { transform:translate3d(0,calc(var(--scene-scroll,0) * -22px),0); }
+.direction-world .world-atmosphere-front {
+  mask-image:linear-gradient(to top,#000 0%,transparent 23%,transparent 76%,#000 100%);
+  transform:translate3d(0,calc(var(--scene-scroll,0) * 52px),0) scale(1.04);
+}
+.direction-world .world-atmosphere-light { position:absolute; inset:0; background:radial-gradient(ellipse at 50% 48%,#fff9db88,transparent 65%); }
+.dark .direction-forest .world-atmosphere img { filter:brightness(.46) saturate(.8); }
+.dark .direction-forest .world-atmosphere-light { background:radial-gradient(ellipse at 50% 48%,#efbf5b55,transparent 65%); }
+.dark .direction-workshop .world-atmosphere img { filter:brightness(.57) saturate(.85); }
+.dark .direction-workshop .world-atmosphere-light { background:radial-gradient(ellipse at 65% 30%,#ffd68033,transparent 70%); }
+.direction-world .experience-scene-top { inset:16px 18px auto; }
+.direction-world .experience-scene-top>span { background:var(--raised); color:var(--ink); padding:6px 9px!important; border-radius:2px; }
+.direction-world .experience-scene-top>span:first-child { font-size:8px; letter-spacing:.045em; }
+.direction-world .experience-capabilities { inset:88px 8px 75px; column-gap:126px; row-gap:24px; }
+.direction-world .experience-capabilities li { max-width:154px; font-size:12px; }
+.direction-world .experience-art-surface { display:none; }
+.direction-world .experience-art-depth { width:105px!important; height:92px; }
+.direction-world .experience-capability-scene .experience-capability-art { width:98px; height:98px; }
+.direction-page.direction-world .experience-capabilities li>span:last-child {
+  background:var(--raised); color:var(--ink); border:1px solid var(--line); border-radius:4px;
+  padding:8px 9px; box-shadow:0 5px 12px #18281a12;
+}
+.direction-workshop .experience-capabilities li>span:last-child { border-radius:0; border-top:3px solid #ce6a51; }
+.direction-workshop .experience-capabilities li:nth-child(2n)>span:last-child { border-top-color:#6a8542; }
+.direction-world .experience-capability-scene .experience-hero-core { z-index:1; }
+.direction-world .experience-capability-scene .experience-core-sculpture { width:245px; height:245px; }
+.direction-world .experience-capability-scene .experience-scene-caption { inset:auto 18px 17px; padding:9px 12px; background:var(--raised); color:var(--ink); border:0; border-radius:3px; }
+.direction-world .experience-scene-caption p { color:var(--ink); font-size:12px; }
+.direction-world .experience-scroll-stack .experience-thesis { isolation:isolate; overflow:hidden; min-height:420px; border-radius:0; }
+.direction-forest .experience-thesis:before { content:''; position:absolute; inset:0; z-index:-1; background:linear-gradient(90deg,#244c36 10%,#244c36e8 65%,#244c3699),url('/concepts/forest-clearing.webp') right center/cover; }
+.direction-forest .experience-thesis>h2 { font-family:'Source Serif 4',Georgia,serif; }
+.direction-forest .experience-thesis>h2 em { color:#dfdfa0; }
+.direction-workshop .experience-thesis:before { content:''; position:absolute; inset:0; z-index:-1; opacity:.13; background-image:linear-gradient(#fff5d9 1px,transparent 1px),linear-gradient(90deg,#fff5d9 1px,transparent 1px); background-size:36px 36px; transform:rotate(-6deg) scale(1.3); }
+.direction-workshop .experience-thesis { box-shadow:0 -12px 0 #e0b861!important; }
+.direction-workshop .experience-thesis>span,.direction-workshop .experience-thesis>div p { color:#fff1d9; }
+.direction-workshop .experience-thesis>h2 em { color:#ffdd8e; }
+.direction-world .world-atmosphere-speck { position:absolute; width:5px; height:5px; border-radius:50%; background:#ffdf7c; box-shadow:0 0 14px #ffdf7c; opacity:.7; }
+.direction-world .world-atmosphere-speck-one { left:38%; top:30%; }
+.direction-world .world-atmosphere-speck-two { left:68%; top:65%; animation-delay:-3s!important; }
+.direction-world .world-atmosphere-speck-three { left:25%; top:73%; animation-delay:-5s!important; }
+.direction-workshop .world-atmosphere-speck { display:none; }
+@media(prefers-reduced-motion:no-preference) {
+  .direction-forest .world-atmosphere-speck { animation:forest-drift 7s ease-in-out infinite; animation-play-state:paused; }
+  .direction-forest .is-visible .world-atmosphere-speck { animation-play-state:running; }
+}
+@keyframes forest-drift { 0%,100% { transform:translate3d(0,0,0); opacity:.25; } 50% { transform:translate3d(12px,-22px,0); opacity:.9; } }
+@media(max-width:1100px) and (min-width:851px) {
+  .direction-world .experience-opening { gap:28px; padding-inline:30px; }
+  .direction-world .experience-capabilities { column-gap:75px; inset-inline:0; }
+  .direction-world .experience-capabilities li { font-size:11px; }
+  .direction-world .experience-capability-scene .experience-core-sculpture { width:195px; height:195px; }
+}
+@media(max-width:850px) {
+  .direction-world .experience-opening { grid-template-columns:1fr; padding:36px 24px 44px; gap:42px; max-width:660px; }
+  .direction-world .experience-opening-copy h1 { font-size:clamp(48px,8vw,68px); }
+  .direction-world .world-atmosphere { inset-inline:-8px; }
+  .direction-world .experience-scroll-stack .experience-thesis { min-height:380px; }
+}
+@media(max-width:480px) {
+  .direction-world .experience-capability-scene { height:650px; }
+  .direction-world .experience-capabilities { column-gap:66px; inset:78px 0 72px; row-gap:20px; }
+  .direction-world .experience-capabilities li { font-size:11px; }
+  .direction-world .experience-capabilities li>span:last-child { padding:6px; }
+  .direction-world .experience-art-depth { height:85px; width:88px!important; }
+  .direction-world .experience-capability-scene .experience-capability-art { width:90px; height:90px; }
+  .direction-world .experience-capability-scene .experience-core-sculpture { width:170px; height:170px; }
+  .direction-world .experience-scene-top { inset-inline:8px; gap:4px; }
+  .direction-world .experience-scene-top>span { font-size:7px!important; padding:6px!important; }
+  .direction-world .experience-capability-scene .experience-scene-caption { inset-inline:8px; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .direction-world .world-atmosphere img { transform:none; }
+}

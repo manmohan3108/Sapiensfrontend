@@ -1,0 +1,22 @@
+{
+  "generator": "Built-in image_gen tool",
+  "purpose": "Experimental forest and workshop artwork for design-directions only",
+  "assets": [
+    {
+      "path": "public/concepts/forest-clearing.webp",
+      "prompt": "Use case: stylized-concept. Create a landscape 3:2 editorial illustration for a website hero environment, no text or interface. A beautifully art-directed living forest clearing, painterly gouache with tactile paper grain, sculptural rounded tree trunks and layered fern fronds, moss, a few coral and golden flowers. Strong forest green, pistachio, ochre, warm cream, subtle coral. Frame composition with trees at left and right edges and a sweeping canopy above, richly detailed lower corners, center 50% an open softly sunlit pale cream clearing with very little detail to overlay an animated orange sculpture and small UI labels. Sophisticated illustrated book aesthetic, hand-crafted organic shapes, not photoreal, no fantasy creatures, no humans, no core/blob, no lettering, no logos. Foreground sharply drawn dark leaves at outer edges, distant trunks lighter and atmospheric, clear layered depth. This will be a real website image asset, not a website screenshot."
+    },
+    {
+      "path": "public/concepts/curiosity-workbench.webp",
+      "prompt": "Use case: stylized-concept. Landscape 3:2 illustration for a creative technology website, no text. An inventive curiosity workshop seen from slightly overhead, beautiful handcrafted miniature clay and painted wooden objects on a warm butter-yellow workbench. At the outer edges: coral desk lamp upper right, green notebooks and a terracotta pencil cup left, brass magnifying glass bottom left, a small wooden mechanism and red spool of thread lower right, cut paper shapes, fine graph paper and ruler. A few purposeful thin connecting threads across the edges. CENTER 55% mostly clear pale warm work surface for overlaying an orange animated sculpture and UI. Stylish editorial still life, sophisticated contemporary design studio, tactile clay with grain and gentle shadows. Palette mustard yellow, tomato red, leaf green, dusty pink and cream. Visually very different from a forest; cheerful intelligent playful human-made. No lettering, no readable markings, no people, no robot, no blob/core, no screen, no interface, no watermark. Strong composition with an open center and interesting objects framing it."
+    },
+    {
+      "path": "public/concepts/forest-trees.webp",
+      "prompt": "Use case: stylized-concept. Website parallax overlay asset, landscape 3:2, genuinely transparent background. Paint two beautiful tall woodland trees framing ONLY the extreme left and right edges, thick textured trunks at far left and far right, branches and sparse foliage arching inward at TOP corners. Hand painted gouache with paper grain, moss green, olive, warm bark brown, tiny ochre leaf highlights. The CENTRAL 72 percent must be completely transparent empty space from top to bottom so text and a website remain unobstructed. All solid artwork confined to outermost 14 percent each side, and small top corners. Bottom edge middle completely transparent too. Trees full height, partly cropped by outer frame. Mature art-directed botanical illustration, matching a sunlit illustrated forest, organic asymmetric tree shapes, no sky, no ground background, no white rectangle, no lettering, no people. Standalone transparent tree-frame layer, not a website mockup."
+    },
+    {
+      "path": "public/concepts/forest-ferns.webp",
+      "prompt": "Use case: stylized-concept. Transparent foreground foliage overlay for a website, wide landscape 3:2. Genuine transparent background. Two asymmetric clusters of lush fern fronds, mossy stones, broad dark green leaves and tiny coral wildflowers growing from bottom left and bottom right corners only. Hand-painted gouache botanical illustration with subtle paper texture. Closest ferns large bold silhouettes, warm moss green, olive, pine green, a few gold highlights. Keep the whole upper 65 percent and center 65 percent completely empty transparent. No background, no ground connecting the corners, no rectangle, no text, no interface. Plants confined to bottom corner clusters, leaning outward, cropped by the outer edges. This is a separate front parallax layer for a painted woodland website. Sophisticated and natural, not cartoon clipart."
+    }
+  ]
+}
