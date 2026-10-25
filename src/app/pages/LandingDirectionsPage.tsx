@@ -10,7 +10,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { PublicLandingPage } from './PublicLandingPage';
 import { ForestEnvironment } from '../components/customer/ForestEnvironment';
 import { ScienceEnvironment } from '../components/customer/ScienceEnvironment';
-import { ScienceField } from '../components/customer/ScienceField';
 import '../../styles/landing-directions.css';
 import '../../styles/layered-theme.css';
 import '../../styles/world-directions.css';
@@ -78,7 +77,6 @@ function DirectionLanding({ direction, homepage = false }: { direction: Directio
       </header>
       <main id="direction-main">
         <LayeredStudy cta={cta} onOpenGraph={() => setGraphOpen(true)} showSectionNav={!homepage && !environment} environment={environment}/>
-        {environment === 'science' && <ScienceField study="connections"/>}
         <section id="direction-contact" className="spectrum-contact" aria-labelledby="contact-title">
           <div className="direction-wrap">
             <div><span className="direction-eyebrow">CONTACT US</span><h2 id="contact-title">Let’s talk.</h2><p>Questions, ideas, or feedback about Sapiens?</p></div>
