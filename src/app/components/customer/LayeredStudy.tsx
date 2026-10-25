@@ -6,7 +6,7 @@ import { useCorePointerResponse } from './useCorePointerResponse';
 import { BreathingCore } from './BreathingCore';
 import { WorldAtmosphere, type WorldEnvironment } from './WorldAtmosphere';
 import { ScienceExperienceLoop } from './ScienceExperienceLoop';
-import { ScienceBehaviorFigure } from './ScienceBehaviorFigure';
+import { ScienceField } from './ScienceField';
 import '../../../styles/layered-direction.css';
 import '../../../styles/layered-experience.css';
 
@@ -77,7 +77,7 @@ function ExperienceOpening({ cta, environment }: { cta: ReactNode; environment?:
       {environment && <WorldAtmosphere environment={environment}/>}
       <div className="experience-scene-top"><span>ONE INDIVIDUAL / MANY CONNECTIONS</span><span>Concept preview</span></div>
       <div className="experience-hero-core" aria-hidden="true"><span className="experience-core-response"><BreathingCore/></span></div>
-      <ul className="experience-capabilities" aria-label="The behaviours we are building toward">{capabilities.map((item,index) => <li key={item.label}><span className="experience-art-depth" aria-hidden="true"><span className="experience-art-surface"/>{environment === 'science' && <ScienceBehaviorFigure index={index}/>}<span className="experience-capability-art" style={{ backgroundImage: `url(${item.image})`, backgroundPosition: item.position, backgroundSize: item.size }}/></span><span>{item.label}</span></li>)}</ul>
+      <ul className="experience-capabilities" aria-label="The behaviours we are building toward">{capabilities.map((item) => <li key={item.label}><span className="experience-art-depth" aria-hidden="true"><span className="experience-art-surface"/><span className="experience-capability-art" style={{ backgroundImage: `url(${item.image})`, backgroundPosition: item.position, backgroundSize: item.size }}/></span><span>{item.label}</span></li>)}</ul>
       <div className="experience-scene-caption"><p>One continuing identity connects it all.</p></div>
     </div>
   </section>;
@@ -133,8 +133,9 @@ export function LayeredStudy({ cta, onOpenGraph, showSectionNav = true, environm
     </nav>}
     <span className="experience-scroll-target" id="direction-product" aria-hidden="true"/>
     <div className="experience-opening-sheet"><ExperienceOpening cta={cta} environment={environment}/></div>
+    {environment === 'science' && <ScienceField study="signals"/>}
     <span className="experience-scroll-target" id="direction-idea" aria-hidden="true"/>
-    <section className="experience-thesis" aria-labelledby="experience-vision-title"><span>THE IDEA WE’RE BUILDING</span><h2 id="experience-vision-title">An AI individual<br/><em>that behaves more like a human.</em></h2><div><p>We’re building an AI individual that learns from experience, anticipates what’s next, and takes initiative—acting quickly when needed, without always waiting to be asked.</p></div>{environment === 'science' && <ScienceExperienceLoop/>}</section>
+    <section className="experience-thesis" aria-labelledby="experience-vision-title"><span>THE IDEA WE’RE BUILDING</span><h2 id="experience-vision-title">An AI individual<br/><em>that behaves more like a human.</em></h2><div><p>We’re building an AI individual that learns from experience, anticipates what’s next, and takes initiative—acting quickly when needed, without always waiting to be asked.</p></div>{environment === 'science' && <><ScienceField study="learning"/><ScienceExperienceLoop/></>}</section>
     <section className="world-section" id="layered-chapters" aria-labelledby="world-title">
       <header className="world-heading"><div><span className="experience-kicker">EXPLORE THE SYSTEM</span><h2 id="world-title">One individual.<br/>In conversation with the world.</h2></div><p>Explore how Sapiens connects with people,<br/>information, tools, and feedback.</p></header>
       <SapiensWorldDiagram/>
