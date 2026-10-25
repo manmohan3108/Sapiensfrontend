@@ -1040,32 +1040,29 @@ export function SimulationLabPage() {
         </div>
       </header>
       <main className="mx-auto max-w-7xl space-y-5 px-4 py-6">
-        {shortcutId && (
-          <div className="rounded-lg border border-violet-500/30 bg-violet-500/10 p-3 text-sm">
-            <strong>
-              {shortcutName || `Sapiens ${shortcutId}`} simulations
-            </strong>
-            <span className="block text-xs text-muted-foreground">
-              Showing retained runs only for Sapiens ID {shortcutId}. New
-              simulations are locked to this Sapiens.
-            </span>
-          </div>
-        )}
-        <details className="group rounded-xl border border-amber-500/25 bg-amber-500/[0.06] px-4 py-3 text-sm">
-          <summary className="flex cursor-pointer list-none items-center gap-2 font-medium [&::-webkit-details-marker]:hidden">
-            <AlertTriangle className="size-4 text-amber-500" />
-            Real-memory safety notice
-            <span className="ml-auto text-xs font-normal text-muted-foreground group-open:hidden">
-              Read
-            </span>
-          </summary>
-          <p className="mt-2 max-w-4xl pl-6 text-sm leading-6 text-muted-foreground">
-            Jira and Teams are simulated, but the selected Sapiens uses and
-            modifies its real cognitive memories. Nothing is cloned or reset,
-            and the Sapiens remains inactive after shutdown. A dedicated test
-            Sapiens is recommended, but not required.
-          </p>
-        </details>
+        <div className="flex flex-col items-start justify-between gap-4 lg:flex-row">
+          {shortcutId && (
+            <div className="min-w-0 py-2 text-sm">
+              <strong>{shortcutName || `Sapiens ${shortcutId}`} simulations</strong>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Showing runs for Sapiens ID {shortcutId}. New simulations use this Sapiens.
+              </p>
+            </div>
+          )}
+          <aside aria-label="About simulation memory" className="w-full rounded-xl border bg-card p-4 lg:ml-auto lg:w-80 lg:shrink-0">
+            <h2 className="flex items-center gap-2 text-sm font-medium">
+              <CircleHelp className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+              What your Sapien remembers
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              Teams and Jira activity stays inside the simulation. Your Sapien keeps what it learns,
+              even after the run ends. When the simulation stops, the Sapien becomes inactive.
+            </p>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              Use a separate test Sapien if you don’t want simulation experiences added to an existing Sapien’s memory.
+            </p>
+          </aside>
+        </div>
         {error && (
           <div
             role="alert"
