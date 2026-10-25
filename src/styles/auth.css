@@ -94,9 +94,6 @@
 }
 .auth-science .auth-identity-art:before { display:none; }
 .auth-science .auth-identity-art img { position:absolute; width:70%; height:70%; left:15%; top:9%; object-fit:contain; }
-.auth-science .auth-science-drawing { position:absolute; inset:0; width:100%; height:100%; stroke:var(--auth-art-line); stroke-width:1.2; opacity:.7; }
-.auth-science .auth-science-guide { opacity:.5; }
-.auth-science .auth-science-point { fill:var(--cx-violet); stroke:none; }
 .auth-science .customer-eyebrow { font-family:ui-monospace,Consolas,monospace; font-size:11px; color:var(--cx-violet); letter-spacing:.12em; }
 .auth-science .auth-introduction h2 { font:500 clamp(34px,3.5vw,46px)/1.1 'Source Serif 4',Georgia,serif; letter-spacing:-1.2px; max-width:18ch; }
 .auth-science .auth-story-description { font-size:17px; line-height:1.6; max-width:38ch; }
@@ -120,7 +117,6 @@
   .auth-science .auth-layout { gap:24px; padding-top:24px; }
   .auth-science .auth-identity-art { width:88px; margin:0; background:none; }
   .auth-science .auth-identity-art img { width:94%; height:94%; left:3%; top:3%; }
-  .auth-science .auth-science-drawing { display:none; }
   .auth-science .auth-introduction h2 { font-size:25px; letter-spacing:-.5px; }
   .auth-science .auth-form-shell { padding:24px; }
 }

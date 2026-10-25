@@ -4,6 +4,7 @@ import { AlertCircle, Eye, EyeOff, Loader2, LockKeyhole } from 'lucide-react';
 import { authErrorMessage, useAuth } from '../contexts/AuthContext';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { useLandingMotion } from '../components/customer/useLandingMotion';
+import { ScienceDetail } from '../components/customer/ScienceDetail';
 import { SapiensBrandMark } from '../components/customer/SapiensBrandMark';
 import '../../styles/customer.css';
 import '../../styles/auth.css';
@@ -46,7 +47,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
     <main className="customer-container auth-layout">
       <section className="auth-introduction" aria-label="About Sapiens">
         <div className="auth-identity-art" data-motion-scene aria-hidden="true">
-          <svg className="auth-science-drawing" viewBox="0 0 300 300" fill="none" focusable="false"><path className="auth-science-guide" d="M20 65V20H65M235 20H280V65M280 235V280H235M65 280H20V235M20 250H280"/><path d="M32 250C65 215 92 285 125 250S185 215 215 250S248 285 270 250"/><circle className="auth-science-point" cx="125" cy="250" r="3"/></svg>
+          <ScienceDetail variant="auth" />
           <img src="/concepts/sapiens-core-orange.png" width="440" height="440" alt="" />
         </div>
         <div className="auth-story-copy">

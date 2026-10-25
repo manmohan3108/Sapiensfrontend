@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { LoadSapiensList } from '../components/landing/LoadSapiensList';
 import { CreateSapiensForm } from '../components/landing/CreateSapiensForm';
 import { SapiensHomeHeader } from '../components/customer/SapiensHomeHeader';
+import { ScienceDetail } from '../components/customer/ScienceDetail';
 import '../../styles/home-science.css';
 
 export function LandingPage() {
@@ -17,6 +18,7 @@ export function LandingPage() {
     <main id="home-main" className="home-container">
       <section className="home-intro" aria-labelledby="home-title">
         <div><p className="home-eyebrow">SAPIENS / ADMINISTRATION</p><h1 id="home-title">All Sapiens</h1><p>Create an AI individual shaped by experience, or open one to continue.</p></div>
+        <ScienceDetail />
       </section>
       <section className="home-directory" aria-labelledby="home-title">
         <LoadSapiensList onCreate={openCreate} />

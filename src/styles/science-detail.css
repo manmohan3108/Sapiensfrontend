@@ -1,0 +1,26 @@
+.science-detail { --detail-line:var(--home-muted,var(--auth-art-line,#466459)); --detail-accent:var(--home-accent,var(--cx-violet,#ac442e)); pointer-events:none; user-select:none; flex-shrink:0; }
+.science-detail svg { display:block; width:100%; height:100%; overflow:visible; stroke:var(--detail-line); stroke-width:1.25; }
+.science-detail-guide { opacity:.35; stroke-width:1; }
+.science-detail-construction { opacity:.6; }
+.science-detail-curve { stroke:var(--detail-line); opacity:.75; stroke-width:1.6; }
+.science-detail-dot,.science-detail-tracer { fill:var(--detail-accent); stroke:none; }
+.science-detail-bob { fill:var(--detail-accent); stroke:var(--detail-accent); }
+.science-detail--wave { width:170px; height:60px; }
+.science-detail--auth { position:absolute; inset:0; }
+.science-detail--surround { position:absolute; inset:0; }
+.science-detail-swing { transform-origin:0 0; }
+@media(prefers-reduced-motion:no-preference) {
+  .science-detail [data-motion-started=true] .science-detail-swing { animation:science-detail-pendulum 4.8s ease-in-out infinite alternate; }
+  .science-detail [data-motion-started=true] .science-detail-tracer { offset-path:path('M20 35C40 -1 60 -1 80 35S120 71 140 35S170 8 186 25'); cx:0; cy:0; animation:science-detail-trace 12s linear infinite; }
+  .science-detail [data-motion-active=false] :is(.science-detail-swing,.science-detail-tracer) { animation-play-state:paused; }
+}
+@keyframes science-detail-pendulum { from { transform:rotate(-14deg); } to { transform:rotate(14deg); } }
+@keyframes science-detail-trace { to { offset-distance:100%; } }
+.home-empty-art { position:relative; display:grid; place-items:center; width:min(280px,100%); height:112px; margin-bottom:10px; }
+.sapiens-home-screen .home-empty .home-empty-art .sapiens-brand-mark { width:80px; height:80px; margin:0; }
+.home-intro-illustration { display:flex; align-items:center; gap:14px; flex-shrink:0; }
+@media(max-width:760px) {
+  .home-intro>.science-detail--wave { width:76px; height:40px; }
+  .home-intro-illustration .science-detail--wave { display:none; }
+}
+@media(max-width:800px) { .auth-science .science-detail--auth { display:none; } }
