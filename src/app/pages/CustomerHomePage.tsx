@@ -2,13 +2,16 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 import * as Dialog from '@radix-ui/react-dialog';
 import { ArrowUpRight, Plus, X } from 'lucide-react';
-import { CustomerHeader } from '../components/customer/CustomerHeader';
+import { SapiensHomeHeader } from '../components/customer/SapiensHomeHeader';
+import { SapiensIdentityCard } from '../components/customer/SapiensIdentityCard';
+import { SapiensBrandMark } from '../components/customer/SapiensBrandMark';
 import { SapiensPresence } from '../components/customer/SapiensPresence';
 import { sapiensService } from '../core/services/sapiensService';
 import { useSapiensStore } from '../core/state/sapiensStore';
 import type { Sapiens } from '../types/sapiensTypes';
 import { validateCreation, creationFailureIsDefinitive } from '../core/customer/creation';
 import '../../styles/customer.css';
+import '../../styles/home-science.css';
 
 export function CustomerHomePage() {
   const navigate = useNavigate();
@@ -87,23 +90,24 @@ export function CustomerHomePage() {
   const inspectHome = () => { setDialogOpen(false); void refresh(); };
   const filtered = list.filter(item => [item.name, item.role, item.id].some(value => value?.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())));
 
-  return <div className="customer-surface"><a className="customer-skip" href="#customer-main">Skip to content</a><CustomerHeader />
+  return <div className="customer-surface sapiens-home-screen"><a className="customer-skip" href="#customer-main">Skip to content</a><SapiensHomeHeader onCreate={showCreation} />
     <main id="customer-main" className="customer-container customer-home">
-      {loading ? <div className="customer-state" role="status" aria-busy="true"><SapiensPresence size={64} animated className="mx-auto mb-4" />Loading your Sapiens…</div>
+      {loading ? <div className="customer-state" role="status" aria-busy="true"><SapiensPresence tone="orange" size={64} animated className="mx-auto mb-4" />Loading your Sapiens…</div>
         : listError ? <div className="customer-state" role="alert"><h1>We couldn’t load your Sapiens</h1><p>Your list is unavailable right now.</p><button className="customer-secondary" onClick={() => void refresh()}>Try again</button></div>
-        : list.length === 0 ? <section className="customer-empty"><SapiensPresence size={144} animated className="mx-auto mb-4" /><h1 ref={heading} tabIndex={-1}>Create your first Sapiens.</h1><p>An AI individual to explore ideas with. Give it a name, bring what matters to you, and return to the same individual.</p><button className="customer-primary" onClick={showCreation}>Create your Sapiens <Plus size={17} /></button><Link to="/">What is a Sapiens?</Link></section>
-        : <><div className="customer-home-heading"><div className="flex items-center gap-3 min-w-0"><SapiensPresence size={48} /><div><h1 ref={heading} tabIndex={-1}>Your Sapiens</h1><p>{list.length === 1 ? 'Continue with your AI individual.' : 'Choose who to continue with.'}</p></div></div><button className="customer-secondary" onClick={showCreation}><Plus size={17} />Create a Sapiens</button></div>
+        : list.length === 0 ? <section className="customer-empty"><SapiensPresence tone="orange" size={144} animated className="mx-auto mb-4" /><h1 ref={heading} tabIndex={-1}>Create your first Sapiens.</h1><p>An AI individual to explore ideas with. Give it a name, bring what matters to you, and return to the same individual.</p><button className="customer-primary" onClick={showCreation}>Create your Sapiens <Plus size={17} /></button><Link to="/">What is a Sapiens?</Link></section>
+        : <><section className="home-intro" aria-labelledby="customer-home-title"><div><p className="home-eyebrow">YOUR PERSONAL SPACE</p><h1 id="customer-home-title" ref={heading} tabIndex={-1}>Your Sapiens</h1><p>{list.length === 1 ? 'Continue with your AI individual.' : 'Choose who to continue with.'}</p></div><SapiensBrandMark className="home-intro-core" /></section>
+          <h2 className="home-customer-list-title">Your individuals</h2>
           {list.length > 3 && <div className="customer-search"><label htmlFor="sapiens-search">Search your Sapiens</label><input id="sapiens-search" type="search" placeholder="Search by name, focus or ID" value={query} onChange={e => setQuery(e.target.value)} /></div>}
-          {filtered.length === 0 ? <div className="customer-state" role="status"><h2>No Sapiens match your search</h2><button className="customer-secondary" onClick={() => setQuery('')}>Clear search</button></div> : <div className="customer-grid">{filtered.map(item => <article className="identity-card" key={item.id}><span className="identity-monogram" aria-hidden="true">{Array.from(item.name)[0]?.toUpperCase()}</span><h2>{item.name}</h2><p>Sapien ID {item.id}{item.role ? ` · ${item.role}` : ''}</p>
+          {filtered.length === 0 ? <div className="customer-state" role="status"><h2>No Sapiens match your search</h2><button className="customer-secondary" onClick={() => setQuery('')}>Clear search</button></div> : <div className="home-identity-grid">{filtered.map(item => <SapiensIdentityCard individual={item} key={item.id}>
             {openError?.id === item.id && <p role="alert">{openError.message}</p>}
-            <button className="customer-primary" disabled={opening !== null} onClick={() => void openIndividual(item)}>{opening === item.id ? 'Opening…' : `Open ${item.name}`}<ArrowUpRight size={17} className="shrink-0" /></button></article>)}</div>}
+            <button className="customer-primary home-open-button" disabled={opening !== null} onClick={() => void openIndividual(item)}>{opening === item.id ? 'Opening…' : 'Open'}<ArrowUpRight size={17} className="shrink-0" /><span className="sr-only"> {item.name}</span></button></SapiensIdentityCard>)}</div>}
         </>}
       {unknown && !dialogOpen && <div className="customer-notice" role="status"><strong>Creation outcome unknown.</strong> A refreshed list or matching name does not confirm which request created an individual. We have not repeated the request.<br /><button className="customer-secondary" onClick={showCreation}>Review creation outcome</button></div>}
       {confirmed && !dialogOpen && <div className="customer-notice" role="status">{confirmed.name} was created.<br /><button className="customer-secondary" disabled={opening !== null} onClick={() => void openIndividual(confirmed, true)}>Open {confirmed.name}</button></div>}
     </main>
     <Dialog.Root open={dialogOpen} onOpenChange={value => { if (!busy.current && !opening) setDialogOpen(value); }}>
-      <Dialog.Portal><Dialog.Overlay className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm" /><Dialog.Content className="customer-surface customer-dialog fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 border p-8 shadow-2xl" onOpenAutoFocus={event => { if (!confirmed && !unknown) { event.preventDefault(); nameInput.current?.focus(); } }} onCloseAutoFocus={event => { event.preventDefault(); (trigger.current?.isConnected ? trigger.current : heading.current)?.focus(); }}>
-        <SapiensPresence size={40} className="mb-3" />
+      <Dialog.Portal><Dialog.Overlay className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm" /><Dialog.Content className="customer-surface sapiens-home-screen customer-dialog fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 border p-8 shadow-2xl" onOpenAutoFocus={event => { if (!confirmed && !unknown) { event.preventDefault(); nameInput.current?.focus(); } }} onCloseAutoFocus={event => { event.preventDefault(); (trigger.current?.isConnected ? trigger.current : heading.current)?.focus(); }}>
+        <SapiensPresence tone="orange" size={40} className="mb-3" />
         <Dialog.Title className="customer-form-title">{confirmed ? `${confirmed.name} was created` : 'Create your Sapiens'}</Dialog.Title>
         <Dialog.Description className="customer-form-description mt-3">{confirmed ? 'Open this Sapiens to continue. You won’t create another.' : 'Name your AI individual. After creation, we’ll open its workspace.'}</Dialog.Description>
         <button className="customer-icon-button absolute right-3 top-3" aria-label="Close creation" disabled={creating || opening !== null} onClick={() => setDialogOpen(false)}><X size={18} /></button>

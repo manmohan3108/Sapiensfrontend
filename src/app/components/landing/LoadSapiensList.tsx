@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { ArrowRight, Loader2, AlertCircle, RefreshCw, Search, SearchX } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card, CardContent } from '../ui/card';
-import { Badge } from '../ui/badge';
+import { SapiensIdentityCard } from '../customer/SapiensIdentityCard';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { Sapiens } from '../../types/sapiensTypes';
 import { sapiensService } from '../../core/services/sapiensService';
@@ -54,7 +54,7 @@ export function LoadSapiensList() {
       <Card className="mx-auto max-w-2xl rounded-3xl border-border/70">
         <CardContent className="py-14" aria-live="polite" aria-busy="true">
           <div className="flex flex-col items-center justify-center text-muted-foreground">
-            <SapiensPresence size={64} animated className="mb-3" />
+            <SapiensPresence tone="orange" size={64} animated className="mb-3" />
             <p className="font-medium">Loading your Sapiens…</p>
           </div>
         </CardContent>
@@ -84,7 +84,7 @@ export function LoadSapiensList() {
       <Card className="mx-auto max-w-2xl rounded-3xl border-dashed border-border/80 bg-muted/20">
         <CardContent className="py-12">
           <div className="flex flex-col items-center justify-center text-muted-foreground">
-            <SapiensPresence size={96} animated className="mb-4" />
+            <SapiensPresence tone="orange" size={96} animated className="mb-4" />
             <p className="mb-1 text-lg font-medium text-foreground">No Sapiens yet</p>
             <p className="text-sm">Create your first Sapiens below.</p>
           </div>
@@ -94,8 +94,8 @@ export function LoadSapiensList() {
   }
 
   return (
-    <Card className="mx-auto max-w-3xl rounded-3xl border-border/70 shadow-lg shadow-slate-950/5">
-      <CardContent className="pt-6">
+    <div className="home-directory-content">
+      <div>
         <div className="relative mb-4">
           <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <input
@@ -107,37 +107,19 @@ export function LoadSapiensList() {
             className="h-11 w-full rounded-xl border border-input bg-background pl-10 pr-4 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-sp-accent focus:ring-2 focus:ring-sp-accent/20"
           />
         </div>
-        <div className="space-y-3">
+        <div className="home-identity-grid">
           {filteredSapiens.map((sapiens) => (
-            <div
-              key={sapiens.id}
-              className="flex flex-col gap-4 rounded-2xl border border-border p-4 transition-all hover:border-sp-accent hover:bg-accent sm:flex-row sm:items-center sm:justify-between dark:hover:border-sp-accent dark:hover:bg-accent/20"
-            >
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <h3 className="font-medium truncate">
-                    {sapiens.name}
-                  </h3>
-                  {sapiens.role && (
-                    <Badge variant="secondary" className="text-xs">
-                      {sapiens.role}
-                    </Badge>
-                  )}
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Sapien ID {sapiens.id} · Created {formatDateTime(sapiens.createdAt)}
-                </p>
-              </div>
-              
+            <SapiensIdentityCard key={sapiens.id} individual={sapiens} created={formatDateTime(sapiens.createdAt)}>
               <Button
                 onClick={() => handleLoad(sapiens)}
-                className="w-full bg-sp-action text-white hover:bg-[var(--sapiens-action-hover)] sm:ml-4 sm:w-auto"
+                className="home-open-button"
+                aria-label={loadingId === sapiens.id ? `Opening ${sapiens.name}` : `Open ${sapiens.name}`}
                 disabled={loadingId !== null}
               >
                 {loadingId === sapiens.id ? <Loader2 className="mr-2 size-4 animate-spin" /> : null}
                 {loadingId === sapiens.id ? 'Opening…' : <>Open <ArrowRight className="ml-2 size-4" /></>}
               </Button>
-            </div>
+            </SapiensIdentityCard>
           ))}
           {filteredSapiens.length === 0 && (
             <div className="flex flex-col items-center rounded-2xl border border-dashed border-border py-10 text-center text-muted-foreground">
@@ -147,7 +129,7 @@ export function LoadSapiensList() {
             </div>
           )}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

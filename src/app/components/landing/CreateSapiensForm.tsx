@@ -56,7 +56,7 @@ export function CreateSapiensForm({ onNameChange }: CreateSapiensFormProps) {
   return (
     <Card className="mx-auto max-w-xl rounded-3xl border-border/70 bg-card/90 shadow-xl shadow-violet-950/5 backdrop-blur">
       <CardHeader>
-        <SapiensPresence size={40} />
+        <SapiensPresence tone="orange" size={40} />
         <CardTitle className="text-2xl">Create your Sapiens</CardTitle>
         <CardDescription>
           Choose a name and, optionally, what you’d like to explore together.
@@ -123,7 +123,7 @@ export function CreateSapiensForm({ onNameChange }: CreateSapiensFormProps) {
           
           <Button
             type="submit"
-            className="h-11 w-full bg-sp-action text-white hover:bg-[var(--sapiens-action-hover)]"
+            className="home-open-button h-11 w-full"
             disabled={!name.trim() || isCreating}
           >
             {isCreating ? <Loader2 className="mr-2 size-4 animate-spin" /> : <ArrowRight className="mr-2 size-4" />}
