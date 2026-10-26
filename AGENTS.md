@@ -2,6 +2,24 @@
 
 These are the agreed design guidelines for extending the current Sapiens theme to other pages, one page at a time. They are a flexible reference, not a rigid template. Use judgment to adjust the layout, illustrations, density and interactions to each page's purpose. Prefer a clear, usable result over mechanically following these notes. Explicit user instructions take precedence.
 
+## Required design skills across this repository
+
+Apply these skills to UI/UX work on every page and shared component, including admin, customer, authentication, landing and design-direction screens. This applies to other tasks and chats working in this repository as well.
+
+- **`frontend-design`**: Read its `SKILL.md` before planning or implementing UI changes. Use it to make deliberate decisions about hierarchy, layout, typography, spacing and wording, rather than repeating generic cards or decorative patterns.
+- **`web-design-guidelines`**: Read its `SKILL.md` and follow its guideline-fetching workflow when reviewing existing UI and before completing UI changes. Check the changed interface for usability, accessibility, responsive behaviour, interaction states and navigation; fix relevant findings within the task's scope.
+
+Find these skills through the session's available-skills catalogue. On this machine they are installed at:
+
+- `C:/Users/Manmohan Mahapatra/.codex/skills/frontend-design/SKILL.md`
+- `C:/Users/Manmohan Mahapatra/.codex/skills/web-design-guidelines/SKILL.md`
+
+Use the equivalent installed paths in other environments. If a skill is unavailable, state that limitation and follow this reference; do not claim to have used it or install dependencies without authorization.
+
+These skills support the agreed Sapiens design, not a new theme for each task. Preserve existing shared tokens, components, typography and page-specific palettes, including copper for Analyse and green for customer/workspace screens. Explicit user instructions and this project's design decisions take precedence over generic skill recommendations. Adapt the guidance to each page rather than following it mechanically, and do not broaden a focused task into an unrelated redesign.
+
+Use visual verification where available and distinguish it from code or render tests. These skills do not authorize starting localhost, committing, pushing or deploying; follow the user's instructions for those actions. Tasks without a UI/UX impact do not need a design pass.
+
 ## 1. One consistent theme
 
 Use consistent colours, backgrounds, grid treatment and controls across admin and customer pages. Differences should reflect their tasks and permissions. Reuse shared components and theme tokens where practical; avoid separate palettes drifting apart.
@@ -47,6 +65,19 @@ Prefer rows for directories and repeated records. Use cards when grouping inform
 ## 7. Clear, brief wording
 
 Explain what the user can do next. Introduce Sapiens briefly when useful, especially in empty states: a persistent AI individual shaped by experience. Avoid vague slogans, unexplained concepts and claims beyond the product's actual behaviour. Distinguish concepts in development from available functionality when relevant.
+
+### Writing explanations from the reader's perspective
+
+Use the following as flexible defaults, not a mandatory copy template. Adapt the amount, tone and placement of text to the page's audience and task. A technical admin screen can use precise terminology; a familiar control may need only a short label. Do not force an introduction, full sentence, example or explanation into every section. Relax these preferences when another approach is clearer, while keeping factual accuracy and supported behaviour non-negotiable.
+
+- Give context before unfamiliar concepts. When needed, briefly explain what the page is for, why it matters, what the reader is seeing or what they can do next. Do not assume they know our internal architecture.
+- Make the subject and source clear. Explain who acted, what information prompted it and what happened when those details are available and relevant. Avoid context-free questions such as “What matters now?” when readers cannot tell whose perspective they represent.
+- Explain the purpose where it is not obvious, rather than merely naming an action or capability. Use recorded reasons when describing actual events; do not invent motivation or missing context.
+- Prefer concrete, natural wording over vague slogans, unexplained internal labels or fragmented lists. Keep established names consistent, and add a brief explanation beside them when useful.
+- Keep explanations proportional. A prominent purpose sentence can orient a new reader; smaller help beside an unfamiliar section or control can explain the rest. Preserve useful detail, but avoid long paragraphs, repeated explanations, extra cards or excessive spacing just to hold text. Let clear visuals and interactions do some of the explaining.
+- Describe only what the system supports and the record establishes. Distinguish a proposed action from execution, a prepared reply from a sent reply, and a tool result from successful completion or a learned lesson. Keep deeper technical detail available when relevant without making it the first thing everyone must read.
+
+For example, “To see how a Sapien behaves at work, we place it in a simulated workplace” gives a Simulation page a clear purpose. Use this as an example of helpful context, not wording to repeat on unrelated pages. Judge the final copy by whether the intended reader can understand and use that particular screen, not by whether every guideline appears in it.
 
 ## 8. Design every state
 

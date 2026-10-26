@@ -1,6 +1,8 @@
 /* Overview only: an index of diagnostic tools, using the shared Analyse tokens. */
 .analyse-shell[data-analyse-section="overview"] .analyse-content {
-  background-image:none;
+  /* Inherit the shared copper notebook grid; soften it behind the directory. */
+  --an-grid:color-mix(in srgb,var(--an-accent) 2%,transparent);
+  --an-grid-major:color-mix(in srgb,var(--an-accent) 4%,transparent);
   padding:24px 28px 32px;
 }
 .analyse-overview { max-width:1440px; margin-inline:auto; }

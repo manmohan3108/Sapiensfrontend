@@ -128,6 +128,28 @@ assert(detailHtml.includes('their text is not included'),'Unavailable lesson tex
 assert(detailHtml.indexOf('What it learned')<detailHtml.indexOf('Tool documentation'));
 assert(all(tree).some(n=>n.type==='details'&&html(n).includes('Long tool documentation')),'Documentation is secondary to learning');
 
+// The detail view keeps source evidence accessible, with an explicit return path.
+const evidenceRecord={id:'ev-1',available:true,content:'Channel ID was required.',provenance:{server:'teams',tool:'read_channel_messages'}};
+h.reset(['lessons','',0,{key:'58/profile-1',attempt:0,data:{profile:{...profile,lessons:[{guidance:'Use the channel ID.'}]},evidence:[evidenceRecord]}}]);
+const renderToolDetail=()=>{h.begin();return tools.Detail({sapienId:'58',profileId:'profile-1',close(){}});};
+tree=renderToolDetail();
+find(tree,n=>n.type==='button'&&n.props.children==='Evidence').props.onClick();
+assert(html(renderToolDetail()).includes('Channel ID was required.'));
+tree=renderToolDetail();find(tree,n=>n.type==='button'&&n.props.children==='What it learned').props.onClick();
+assert(html(renderToolDetail()).includes('Use the channel ID.'));
+assert.equal(find(renderToolDetail(),n=>n.type==='button'&&n.props.children==='What it learned').props['aria-pressed'],true);
+for(const [query,total,expected] of [
+  ['',0,'No saved tool learning yet'],['q=missing',0,'No tools match these filters'],['offset=25',2,'No tools on this page'],
+]) {
+  const queryKey=query?query+'&limit=25':'limit=25';
+  h.reset(['server','',0,{key:'58?'+queryKey,attempt:0,data:{items:[],total,offset:query.includes('offset')?25:0,limit:25,next_offset:null,configured_mode:'active',as_of:null}}]);
+  h.params=new URLSearchParams(query);
+  tree=tools.ToolLearningInspection({sapienId:'58'});
+  assert(html(tree).includes(expected));
+}
+h.reset(['server','',0,{key:'58?limit=25',attempt:0,error:{status:503,message:'Unavailable'}}]);
+assert(html(tools.ToolLearningInspection({sapienId:'58'})).includes('Stored-data inspection is unavailable'));
+
 const usage=await load('components/workspace/LlmUsageDialog.tsx',hooks,'export {UsageKindSection};');
 h.reset();
 tree=usage.UsageKindSection({kind:'llm',sapienId:'58',sapienName:'Sapien 58',compactDetails:true,onRetry(){},state:{loading:false,errors:[],global:null,sapien:{today:'2026-10-26',today_total:4,today_by_tier:{},today_by_purpose:{conversation:4},history:[{date:'2026-10-26',total:4}]}}});

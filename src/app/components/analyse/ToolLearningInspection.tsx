@@ -5,6 +5,7 @@ import { Link, useSearchParams } from 'react-router';
 import { toolLearningService as service } from '../../core/services/toolLearningService';
 import type { LearningEvidence, LearningPage, ToolLesson, ToolProfile } from '../../types/toolLearningTypes';
 import type { ApiError } from '../../types/apiTypes';
+import '../../../styles/analyse-tool-learning.css';
 
 const panel = 'rounded-xl border border-white/10 bg-white/[.025] p-4';
 const control = 'rounded-lg border border-white/15 bg-[#0b1220] px-3 py-2 text-xs text-white/80 disabled:opacity-40';
@@ -161,21 +162,25 @@ function Usage({ sapienId, profileId }: { sapienId: string; profileId: string })
 
 function Detail({ sapienId, profileId, close }: { sapienId: string; profileId: string; close: () => void }) {
   const reader = useRef<HTMLElement>(null);
+  const content = useRef<HTMLDivElement>(null);
   useEffect(() => { reader.current?.focus(); }, []);
   const [tab, setTab] = useState('lessons');
   const [evidence, setEvidence] = useState('');
   const read = useRead(`${sapienId}/${profileId}`, () => service.detail(sapienId, profileId));
-  return <section ref={reader} tabIndex={-1} className={`${panel} min-w-0 space-y-4`} aria-label="Selected tool learning">
-    <div className="flex flex-wrap justify-between gap-3"><h3 className="text-sm text-cyan-200">Saved learning</h3><div className="flex gap-2"><button className={control} onClick={read.retry}>Refresh detail</button><button className={control} onClick={close}>Back to tools</button></div></div>
+  return <section ref={reader} tabIndex={-1} className="analyse-learning-reader" aria-label="Selected tool learning">
+    <div className="analyse-learning-reader-actions"><button className={control} onClick={close}>← Back to tools</button><button className={control} onClick={read.retry} disabled={read.loading}>Refresh detail</button></div>
     <Status {...read} />{read.data && <>
-      <header className="analyse-learning-identity"><p>{serviceName(read.data.profile.server)}</p><h3>{toolName(read.data.profile.tool)}</h3><div>Exact tool: <code>{read.data.profile.tool}</code> · Server: <code>{read.data.profile.server}</code></div></header>
-      <p className="break-all text-xs text-white/50">{scopeName(read.data.profile.scope)} · Revision {read.data.profile.revision} · Updated {time(read.data.profile.updated_at)}</p>
-      <div role="group" aria-label="Detail views" className="flex flex-wrap gap-2">{['lessons', 'evidence', 'revisions', 'usage'].map(value => <button key={value} aria-pressed={tab === value} className={`${control} ${tab === value ? 'ring-1 ring-cyan-300' : ''}`} onClick={() => { setTab(value); setEvidence(''); }}>{({ lessons: 'What it learned', evidence: 'Evidence', revisions: 'Earlier versions', usage: 'Use of guidance' })[value]}</button>)}</div>
-      {tab === 'lessons' && (read.data.profile.lesson_count > 0 && !read.data.profile.lessons?.length ? <p className={panel}>This profile records {read.data.profile.lesson_count} lessons, but their text is not included in this response. Check earlier versions for saved guidance.</p> : <Lessons lessons={read.data.profile.lessons} onEvidence={id => { setEvidence(id); setTab('evidence'); }} />)}
+      <header className="analyse-learning-identity"><p>{serviceName(read.data.profile.server)}</p><h2>{toolName(read.data.profile.tool)}</h2><div>Exact tool: <code translate="no">{read.data.profile.tool}</code></div></header>
+      <p className="analyse-learning-record-meta">{scopeName(read.data.profile.scope)} · {read.data.profile.lesson_count} {read.data.profile.lesson_count === 1 ? 'saved lesson' : 'saved lessons'}</p>
+      <div role="group" aria-label="Detail views" className="analyse-learning-views">{(['lessons', 'evidence', 'revisions', 'usage'] as const).map(value => <button type="button" key={value} aria-pressed={tab === value} onClick={() => { setTab(value); setEvidence(''); }}>{({ lessons: 'What it learned', evidence: 'Evidence', revisions: 'Earlier versions', usage: 'Use of guidance' })[value]}</button>)}</div>
+      <div ref={content} tabIndex={-1} className="analyse-learning-view-content" aria-label="Saved learning details">
+      {tab === 'lessons' && (read.data.profile.lesson_count > 0 && !read.data.profile.lessons?.length ? <p className={panel}>This profile records {read.data.profile.lesson_count} lessons, but their text is not included in this response. Check earlier versions for saved guidance.</p> : <Lessons lessons={read.data.profile.lessons} onEvidence={id => { setEvidence(id); setTab('evidence'); requestAnimationFrame(() => content.current?.focus()); }} />)}
       {tab === 'evidence' && <>{evidence && <button className={control} onClick={() => setEvidence('')}>Show all loaded evidence</button>}<Evidence items={read.data.evidence} selected={evidence} /></>}
       {tab === 'revisions' && <History sapienId={sapienId} profileId={profileId} currentLessons={read.data.profile.lessons} />}
       {tab === 'usage' && <Usage sapienId={sapienId} profileId={profileId} />}
+      </div>
       {read.data.profile.description && <details className="analyse-tool-documentation"><summary>Tool documentation</summary><p>{read.data.profile.description}</p></details>}
+      <p className="analyse-learning-record-meta">Server: <code translate="no">{read.data.profile.server}</code> · Revision {read.data.profile.revision} · Updated {time(read.data.profile.updated_at)}</p>
       <Raw value={read.data.profile} />
     </>}
   </section>;
@@ -183,6 +188,7 @@ function Detail({ sapienId, profileId, close }: { sapienId: string; profileId: s
 
 export function ToolLearningInspection({ sapienId }: { sapienId: string }) {
   const opener = useRef<HTMLButtonElement | null>(null);
+  const list = useRef<HTMLElement>(null);
   const [params, setParams] = useSearchParams();
   const [groupBy, setGroupBy] = useState('server');
   const [formError, setFormError] = useState('');
@@ -223,11 +229,13 @@ export function ToolLearningInspection({ sapienId }: { sapienId: string }) {
     groups.set(key, [...(groups.get(key) || []), row]);
   }
   const localDate = (value: string | null) => { if (!value) return ''; const date = new Date(value); return Number.isNaN(date.getTime()) ? '' : new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16); };
-  return <div className="space-y-4 text-white/75">
-    <div className="analyse-page-purpose"><p>See what Sapiens learned from using tools, organised by service and the specific tool it used.</p><div className="analyse-purpose-meta"><span>{read.data ? `Current mode: ${read.data.configured_mode} · Read ${time(read.data.as_of)} (not historical run mode)` : 'Reading saved records; runtime is unchanged.'}</span><Link to="/admin/analyse/engine-jobs?engine_name=tool_learning_engine">Learning jobs & failures →</Link></div></div>
+  const hasFilters = ['q', 'scope', 'server', 'tool', 'has_lessons', 'since', 'until'].some(key => params.has(key));
+  const sortLabel = ({ updated_at: 'Updated', documented_at: 'Documented', server: 'Service / server', tool: 'Tool' } as Record<string, string>)[params.get('sort') || 'updated_at'] || 'Updated';
+  return <div className="analyse-tool-learning space-y-4 text-white/75">
+    <div className="analyse-learning-intro"><p className="analyse-page-purpose">See what Sapiens learned from each service and the tools within it.</p><Link to="/admin/analyse/engine-jobs?engine_name=tool_learning_engine">Learning jobs & failures</Link></div>
 <form key={params.toString()} onSubmit={apply} className="space-y-3" aria-label="Tool learning filters">
     <AnalyseControls filters={['server', 'tool', 'has_lessons', 'since', 'until'].filter(key => params.has(key)).map(key => ({ label: key.replaceAll('_', ' ') + ': ' + params.get(key), onRemove: () => setParams(current => { const next = new URLSearchParams(current); next.delete(key); next.delete('offset'); next.delete('profile'); return next; }) }))} primary={<>        <label className="text-xs">Search lessons/tools<input name="q" maxLength={160} defaultValue={params.get('q') || ''} className={`${control} mt-1 w-full`} placeholder="Guidance, conditions or tool name" /></label>        <label className="text-xs">Scope<select name="scopeChoice" defaultValue={!params.has('scope') ? 'all' : params.get('scope') ? 'run' : 'live'} className={`${control} mt-1 w-full`}><option value="all">All saved scopes</option><option value="live">Normal / live</option><option value="run">Specific simulation run</option></select></label>
-        <label className="text-xs analyse-run-filter">Run ID (for specific run)<input name="run" maxLength={256} defaultValue={params.get('scope') || ''} className={`${control} mt-1 w-full`} placeholder="run-…" /></label><button className={control}>Apply filters</button><button type="button" className={control} onClick={() => setParams(new URLSearchParams())}>Clear</button></>} summary={`${params.has('scope') ? scopeName(params.get('scope') || '') : 'All saved scopes'} · Sort: ${params.get('sort') || 'updated_at'} ${params.get('direction') || 'desc'}`} onRefresh={read.retry} busy={read.loading}>
+        <label className="text-xs analyse-run-filter">Run ID (for specific run)<input name="run" maxLength={256} defaultValue={params.get('scope') || ''} className={`${control} mt-1 w-full`} placeholder="run-…" /></label><button className={control}>Apply filters</button><button type="button" className={control} onClick={() => setParams(new URLSearchParams())}>Clear</button></>} summary={`${params.has('scope') ? scopeName(params.get('scope') || '') : 'All saved scopes'} · ${sortLabel}, ${params.get('direction') === 'asc' ? 'ascending' : 'descending'}`} onRefresh={read.retry} busy={read.loading}>
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
 
@@ -240,15 +248,15 @@ export function ToolLearningInspection({ sapienId }: { sapienId: string }) {
       <div className="flex flex-wrap items-center gap-2"><label className="text-xs">Sort <select name="sort" defaultValue={params.get('sort') || 'updated_at'} className={control}><option value="updated_at">Updated</option><option value="documented_at">Documented</option><option value="server">Server</option><option value="tool">Tool</option></select></label><label className="text-xs">Order <select name="direction" defaultValue={params.get('direction') || 'desc'} className={control}><option value="desc">Descending</option><option value="asc">Ascending</option></select></label></div>
     </AnalyseControls>{formError && <p role="alert" className="mt-2 text-sm text-amber-200">{formError}</p>}</form>
     <Status {...read} />
-    <div className={`analyse-tool-layout grid items-start gap-4 ${selected ? 'has-detail xl:grid-cols-2' : ''}`}>
-      <section className="min-w-0" aria-label="Tool profiles">{read.data && <>
+    <div className={`analyse-tool-layout ${selected ? 'has-detail' : ''}`}>
+      <section ref={list} tabIndex={-1} className="min-w-0" aria-label="Tool profiles">{read.data && <>
         <Paging page={read.data} onPage={offset => update('offset', String(offset))} />
-        <label className="text-xs text-white/50">Group this page by <select className={control} value={groupBy} onChange={event => setGroupBy(event.target.value)}><option value="server">Service / server</option><option value="scope">Scope</option><option value="none">No grouping</option></select></label>
-        <p className="my-3 text-xs text-white/40">Select a tool to read its saved lessons and supporting evidence.</p>
-        {!read.data.items.length && <p className={panel}>No saved tool profiles match these filters.</p>}
-        {[...groups].map(([group, rows]) => <section key={group} className="mb-4"><h3 className="analyse-learning-group">{groupBy === 'server' ? serviceName(group) : group}<small>{rows.length} {rows.length === 1 ? 'tool' : 'tools'} on this page</small></h3><div className="analyse-tool-rows">{rows.map(row => <button key={row.id} aria-pressed={selected === row.id} className="analyse-tool-row analyse-learning-row" onClick={event => { opener.current = event.currentTarget; update('profile', row.id); }}><span className="analyse-learning-tool"><strong>{toolName(row.tool)}</strong><small>{serviceName(row.server)} · {scopeName(row.scope)}</small><code>{row.tool}</code></span><LessonPreview profile={row} /><span className="analyse-learning-count">{row.lesson_count} {row.lesson_count === 1 ? 'lesson' : 'lessons'}<small>Open →</small></span></button>)}</div></section>)}
+        <div className="analyse-learning-list-tools"><label>Group by <select className={control} value={groupBy} onChange={event => setGroupBy(event.target.value)}><option value="server">Service / server</option><option value="scope">Scope</option><option value="none">No grouping</option></select></label><span>Select a tool to read its lessons.</span></div>
+        {!read.data.items.length && <div className="analyse-learning-empty"><h2>{read.data.total > 0 ? 'No tools on this page' : hasFilters ? 'No tools match these filters' : 'No saved tool learning yet'}</h2><p>{read.data.total > 0 ? 'Use Previous or refresh to return to available records.' : hasFilters ? 'Try a different search or clear the filters.' : 'Tools and their lessons will appear here when learning records are saved.'}</p>{hasFilters && <button className={control} onClick={() => setParams(new URLSearchParams())}>Clear filters</button>}</div>}
+        {[...groups].map(([group, rows]) => <section key={group} className="analyse-learning-service"><h2 className="analyse-learning-group">{groupBy === 'server' ? serviceName(group) : group}<small>{rows.length} {rows.length === 1 ? 'record' : 'records'} on this page</small></h2><div className="analyse-tool-rows">{rows.map(row => <button type="button" key={row.id} aria-pressed={selected === row.id} className="analyse-tool-row analyse-learning-row" onClick={event => { opener.current = event.currentTarget; update('profile', row.id); }}><span className="analyse-learning-tool"><strong>{toolName(row.tool)}</strong><small>{groupBy !== 'server' && `${serviceName(row.server)} · `}{scopeName(row.scope)}</small></span><LessonPreview profile={row} /><span className="analyse-learning-count">{row.lesson_count} {row.lesson_count === 1 ? 'lesson' : 'lessons'}<small>{selected === row.id ? 'Selected' : 'Read lessons →'}</small></span></button>)}</div></section>)}
       </>}</section>
-      {selected && <Detail key={`${sapienId}/${selected}`} sapienId={sapienId} profileId={selected} close={() => { update('profile', null); requestAnimationFrame(() => opener.current?.focus()); }} />}
+      {selected && <Detail key={`${sapienId}/${selected}`} sapienId={sapienId} profileId={selected} close={() => { update('profile', null); requestAnimationFrame(() => { if (opener.current?.isConnected) opener.current.focus(); else list.current?.focus(); }); }} />}
     </div>
+    {read.data && <details className="analyse-learning-snapshot"><summary>About these records</summary><p>Current configured mode: {read.data.configured_mode}. Snapshot read {time(read.data.as_of)}. This mode describes the current configuration, not historical runs. Live writes can shift results between pages.</p></details>}
   </div>;
 }

@@ -1,0 +1,72 @@
+/* Tool Learning layout. All colours come from the shared Analyse theme. */
+.analyse-tool-learning { max-width:1440px; margin-inline:auto; }
+.analyse-shell .analyse-learning-intro { display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:8px 24px; }
+.analyse-shell .analyse-learning-intro>a { color:var(--an-accent); font-size:13px; text-decoration:underline; text-underline-offset:3px; }
+.analyse-shell .analyse-tool-layout { display:grid; grid-template-columns:minmax(0,1fr); align-items:start; gap:28px; }
+.analyse-shell .analyse-tool-layout.has-detail { grid-template-columns:minmax(280px,2fr) minmax(0,3fr); }
+.analyse-shell .analyse-learning-reader { min-width:0; padding:20px 24px; background:var(--an-panel); border:1px solid var(--an-line); border-radius:6px; }
+.analyse-shell .analyse-learning-reader-actions { display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px; margin-bottom:22px; }
+.analyse-shell .analyse-learning-record-meta { color:var(--an-muted); font-size:13px; line-height:1.6; overflow-wrap:anywhere; margin:10px 0 16px; }
+.analyse-shell .analyse-learning-views { display:flex; flex-wrap:wrap; gap:0 16px; border-bottom:1px solid var(--an-line); }
+.analyse-shell .analyse-learning-views button { min-height:44px; padding:9px 0; border-bottom:2px solid transparent; color:var(--an-muted); font-size:14px; }
+.analyse-shell .analyse-learning-views button:hover { color:var(--an-ink); }
+.analyse-shell .analyse-learning-views button[aria-pressed=true] { color:var(--an-accent); border-bottom-color:var(--an-accent); font-weight:600; }
+.analyse-shell .analyse-learning-view-content { padding-block:8px 20px; }
+.analyse-shell .analyse-learning-view-content:focus-visible { outline:2px solid var(--an-accent); outline-offset:3px; }
+.analyse-shell .analyse-learning-list-tools { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:6px 16px; color:var(--an-muted); font-size:13px; }
+.analyse-shell .analyse-learning-list-tools select { margin-left:5px; }
+.analyse-shell .analyse-learning-service { margin-bottom:24px; }
+.analyse-shell .analyse-learning-snapshot { color:var(--an-muted); font-size:13px; line-height:1.6; }
+.analyse-shell .analyse-learning-snapshot summary { cursor:pointer; width:fit-content; }
+.analyse-shell .analyse-learning-snapshot p { max-width:80ch; margin-top:8px; }
+.analyse-shell .analyse-learning-empty { padding:28px 0; }
+.analyse-shell .analyse-learning-empty h2 { font-size:18px; color:var(--an-ink); }
+.analyse-shell .analyse-learning-empty p { font-size:14px; color:var(--an-muted); margin:6px 0 14px; }
+.analyse-shell .analyse-tool-learning .analyse-controls-primary>label:first-child { flex:1 1 240px; }
+@media(max-width:1279px) {
+  .analyse-shell .analyse-tool-layout.has-detail { grid-template-columns:minmax(0,1fr); }
+  .analyse-shell .analyse-tool-layout.has-detail>section[aria-label="Tool profiles"] { display:none; }
+}
+@media(max-width:650px) {
+  .analyse-shell .analyse-learning-reader { padding:16px; }
+  .analyse-shell .analyse-learning-views { gap:0 12px; }
+}
+.analyse-shell .analyse-tool-rows { border-block:1px solid var(--an-line); }
+.analyse-shell .analyse-tool-row { display:grid; grid-template-columns:minmax(0,1fr) auto auto; align-items:center; gap:12px; width:100%; padding:12px; text-align:left; border-bottom:1px solid var(--an-line); font-size:14px; }
+.analyse-shell .analyse-tool-row:last-child { border-bottom:0; }
+.analyse-shell .analyse-tool-row:is(:hover,[aria-pressed=true]) { background:var(--an-soft); }
+.analyse-shell .analyse-tool-row[aria-pressed=true] { box-shadow:inset 3px 0 var(--an-accent); }
+.analyse-shell .analyse-tool-row small { display:block; font-size:12px; color:var(--an-muted); }
+.analyse-shell .analyse-tool-row strong { overflow-wrap:anywhere; font-weight:600; }
+.analyse-shell .analyse-learning-group { display:flex; align-items:baseline; flex-wrap:wrap; gap:8px 12px; margin:16px 0 8px; color:var(--an-ink); font-size:17px; font-weight:600; }
+.analyse-shell .analyse-learning-group small { color:var(--an-muted); font-size:12px; font-weight:400; }
+.analyse-shell .analyse-tool-row.analyse-learning-row { grid-template-columns:minmax(150px,1fr) minmax(0,2fr) auto; gap:20px; padding:14px 12px; }
+.analyse-shell .analyse-learning-tool { min-width:0; }
+.analyse-shell .analyse-learning-tool strong { display:block; font-size:15px; }
+.analyse-shell .analyse-learning-preview { min-width:0; line-height:1.55; color:var(--an-ink); }
+.analyse-shell .analyse-learning-preview>span { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:3; overflow:hidden; overflow-wrap:anywhere; }
+.analyse-shell .analyse-learning-count { white-space:nowrap; text-align:right; color:var(--an-muted); font-size:12px; }
+.analyse-shell .analyse-learning-count small { color:var(--an-accent); margin-top:4px; }
+.analyse-shell .analyse-learning-row:focus-visible { outline:2px solid var(--an-accent); outline-offset:-3px; }
+.analyse-shell .analyse-learning-identity { overflow-wrap:anywhere; }
+.analyse-shell .analyse-learning-identity>p { color:var(--an-accent); font-size:14px; font-weight:600; }
+.analyse-shell .analyse-learning-identity h2 { color:var(--an-ink); font-size:22px; line-height:1.3; margin:4px 0 8px; }
+.analyse-shell .analyse-learning-identity>div { color:var(--an-muted); font-size:12px; }
+.analyse-shell .analyse-learned-lessons { list-style:none; padding:0; margin:0; }
+.analyse-shell .analyse-learned-lessons>li { display:grid; grid-template-columns:24px minmax(0,1fr); gap:10px; padding:18px 0; border-bottom:1px solid var(--an-line); }
+.analyse-shell .analyse-lesson-number { color:var(--an-accent); font-size:13px; padding-top:3px; }
+.analyse-shell .analyse-lesson-guidance { font-size:16px; line-height:1.65; color:var(--an-ink); white-space:pre-wrap; overflow-wrap:anywhere; }
+.analyse-shell .analyse-lesson-context { margin-top:8px; font-size:14px; line-height:1.6; color:var(--an-muted); white-space:pre-wrap; overflow-wrap:anywhere; }
+.analyse-shell .analyse-lesson-context strong { font-weight:600; color:var(--an-ink); }
+.analyse-shell .analyse-lesson-references { display:flex; flex-wrap:wrap; align-items:center; gap:8px 14px; margin-top:10px; font-size:12px; color:var(--an-muted); }
+.analyse-shell .analyse-lesson-references:empty { display:none; }
+.analyse-shell .analyse-lesson-references summary,.analyse-shell .analyse-tool-documentation summary { cursor:pointer; }
+.analyse-shell .analyse-tool-documentation { color:var(--an-muted); font-size:13px; }
+.analyse-shell .analyse-tool-documentation p { margin-top:8px; white-space:pre-wrap; overflow-wrap:anywhere; line-height:1.6; }
+.analyse-shell .has-detail .analyse-tool-row.analyse-learning-row { grid-template-columns:minmax(0,1fr) auto; gap:10px; }
+.analyse-shell .has-detail .analyse-learning-preview { grid-column:1 / -1; grid-row:2; }
+@media(max-width:650px) {
+  .analyse-shell .analyse-tool-row.analyse-learning-row { grid-template-columns:minmax(0,1fr) auto; gap:10px; }
+  .analyse-shell .analyse-learning-preview { grid-column:1 / -1; grid-row:2; }
+  .analyse-shell .analyse-tool-row.analyse-learning-row>.analyse-learning-count { grid-column:2; grid-row:1; }
+}
