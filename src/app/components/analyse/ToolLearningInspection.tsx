@@ -31,19 +31,39 @@ function LessonPreview({ profile }: { profile: ToolProfile }) {
 
 // Each caller supplies a key covering all request inputs. Ignore late responses
 // and hide old data immediately when the key changes (including Sapien switches).
-function useRead<T>(key: string, load: () => Promise<T>) {
+function useRead<T>(key: string, load: (signal: AbortSignal) => Promise<T>) {
   const [attempt, setAttempt] = useState(0);
   const [state, setState] = useState<{ key: string; attempt: number; data?: T; error?: ApiError }>();
   useEffect(() => {
     let active = true;
-    load().then(data => { if (active) setState({ key, attempt, data }); })
+    const controller = new AbortController();
+    load(controller.signal).then(data => { if (active) setState({ key, attempt, data }); })
       .catch((error: ApiError) => { if (active) setState({ key, attempt, error }); });
-    return () => { active = false; };
+    return () => { active = false; controller.abort(); };
     // The key, not the render-created loader, defines the request identity.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key, attempt]);
   const current = state?.key === key && state.attempt === attempt ? state : undefined;
-  return { data: current?.data, error: current?.error, loading: !current, retry: () => setAttempt(n => n + 1) };
+  return { data: current?.data, error: current?.error, loading: !current, version: attempt, retry: () => setAttempt(n => n + 1) };
+}
+
+function ServiceSelector({ sapienId, version, selected, visibleServices, onSelect }: {
+  sapienId: string; version: number; selected: string | null; visibleServices: string[]; onSelect: (server: string | null) => void;
+}) {
+  const read = useRead(`${sapienId}/services/${version}`, signal => service.services(sapienId, signal));
+  // Keep known choices usable while scanning, but never present them as a
+  // complete catalogue until the all-pages request has finished successfully.
+  const servers = [...new Set([...(read.data || []), ...visibleServices, ...(selected === null ? [] : [selected])])]
+    .sort((a, b) => serviceName(a).localeCompare(serviceName(b)) || a.localeCompare(b));
+  return <section className="analyse-service-selector" aria-label="Filter by service">
+    <div className="analyse-service-options" role="group" aria-label="Services">
+      <button type="button" aria-pressed={selected === null} onClick={() => onSelect(null)}>All services</button>
+      {servers.map(server => <button type="button" key={server} aria-pressed={selected === server} onClick={() => onSelect(server)}>{serviceName(server)}{servers.some(other => other !== server && serviceName(other) === serviceName(server)) && <small>{server}</small>}</button>)}
+    </div>
+    {read.loading && <p role="status">Finding services across all saved records…</p>}
+    {read.error && <p role="alert">Could not load the full service list. Only known services are shown. <button type="button" onClick={read.retry}>Retry service list</button></p>}
+    {read.data && <p>Services from all saved records. Search and scope still filter the results below.</p>}
+  </section>;
 }
 
 function Status({ loading, error, retry }: { loading: boolean; error?: ApiError; retry: () => void }) {
@@ -190,7 +210,6 @@ export function ToolLearningInspection({ sapienId }: { sapienId: string }) {
   const opener = useRef<HTMLButtonElement | null>(null);
   const list = useRef<HTMLElement>(null);
   const [params, setParams] = useSearchParams();
-  const [groupBy, setGroupBy] = useState('server');
   const [formError, setFormError] = useState('');
   const query = new URLSearchParams();
   for (const name of ['q', 'scope', 'server', 'tool', 'has_lessons', 'sort', 'direction', 'since', 'until', 'offset']) {
@@ -207,7 +226,8 @@ export function ToolLearningInspection({ sapienId }: { sapienId: string }) {
     setFormError('');
     const form = new FormData(event.currentTarget);
     const next = new URLSearchParams();
-    for (const key of ['q', 'server', 'tool', 'has_lessons', 'sort', 'direction']) {
+    if (params.has('server')) next.set('server', params.get('server')!);
+    for (const key of ['q', 'tool', 'has_lessons', 'sort', 'direction']) {
       const value = String(form.get(key) || '').trim(); if (value) next.set(key, value);
     }
     const scope = String(form.get('scopeChoice'));
@@ -225,7 +245,7 @@ export function ToolLearningInspection({ sapienId }: { sapienId: string }) {
   }
   const groups = new Map<string, NonNullable<typeof read.data>['items']>();
   for (const row of read.data?.items || []) {
-    const key = groupBy === 'scope' ? scopeName(row.scope) : groupBy === 'server' ? row.server : 'All tools on this page';
+    const key = row.server;
     groups.set(key, [...(groups.get(key) || []), row]);
   }
   const localDate = (value: string | null) => { if (!value) return ''; const date = new Date(value); return Number.isNaN(date.getTime()) ? '' : new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16); };
@@ -233,13 +253,13 @@ export function ToolLearningInspection({ sapienId }: { sapienId: string }) {
   const sortLabel = ({ updated_at: 'Updated', documented_at: 'Documented', server: 'Service / server', tool: 'Tool' } as Record<string, string>)[params.get('sort') || 'updated_at'] || 'Updated';
   return <div className="analyse-tool-learning space-y-4 text-white/75">
     <div className="analyse-learning-intro"><p className="analyse-page-purpose">See what Sapiens learned from each service and the tools within it.</p><Link to="/admin/analyse/engine-jobs?engine_name=tool_learning_engine">Learning jobs & failures</Link></div>
+    <ServiceSelector sapienId={sapienId} version={read.version} selected={params.get('server')} visibleServices={[...groups.keys()]} onSelect={server => setParams(current => { const next = new URLSearchParams(current); if (server === null) next.delete('server'); else next.set('server', server); next.delete('offset'); next.delete('profile'); return next; })} />
 <form key={params.toString()} onSubmit={apply} className="space-y-3" aria-label="Tool learning filters">
-    <AnalyseControls filters={['server', 'tool', 'has_lessons', 'since', 'until'].filter(key => params.has(key)).map(key => ({ label: key.replaceAll('_', ' ') + ': ' + params.get(key), onRemove: () => setParams(current => { const next = new URLSearchParams(current); next.delete(key); next.delete('offset'); next.delete('profile'); return next; }) }))} primary={<>        <label className="text-xs">Search lessons/tools<input name="q" maxLength={160} defaultValue={params.get('q') || ''} className={`${control} mt-1 w-full`} placeholder="Guidance, conditions or tool name" /></label>        <label className="text-xs">Scope<select name="scopeChoice" defaultValue={!params.has('scope') ? 'all' : params.get('scope') ? 'run' : 'live'} className={`${control} mt-1 w-full`}><option value="all">All saved scopes</option><option value="live">Normal / live</option><option value="run">Specific simulation run</option></select></label>
+    <AnalyseControls filters={['tool', 'has_lessons', 'since', 'until'].filter(key => params.has(key)).map(key => ({ label: key.replaceAll('_', ' ') + ': ' + params.get(key), onRemove: () => setParams(current => { const next = new URLSearchParams(current); next.delete(key); next.delete('offset'); next.delete('profile'); return next; }) }))} primary={<>        <label className="text-xs">Search lessons/tools<input name="q" maxLength={160} defaultValue={params.get('q') || ''} className={`${control} mt-1 w-full`} placeholder="Guidance, conditions or tool name" /></label>        <label className="text-xs">Scope<select name="scopeChoice" defaultValue={!params.has('scope') ? 'all' : params.get('scope') ? 'run' : 'live'} className={`${control} mt-1 w-full`}><option value="all">All saved scopes</option><option value="live">Normal / live</option><option value="run">Specific simulation run</option></select></label>
         <label className="text-xs analyse-run-filter">Run ID (for specific run)<input name="run" maxLength={256} defaultValue={params.get('scope') || ''} className={`${control} mt-1 w-full`} placeholder="run-…" /></label><button className={control}>Apply filters</button><button type="button" className={control} onClick={() => setParams(new URLSearchParams())}>Clear</button></>} summary={`${params.has('scope') ? scopeName(params.get('scope') || '') : 'All saved scopes'} · ${sortLabel}, ${params.get('direction') === 'asc' ? 'ascending' : 'descending'}`} onRefresh={read.retry} busy={read.loading}>
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
 
-        <label className="text-xs">Server (exact)<input name="server" maxLength={256} defaultValue={params.get('server') || ''} className={`${control} mt-1 w-full`} /></label>
         <label className="text-xs">Tool (exact)<input name="tool" maxLength={256} defaultValue={params.get('tool') || ''} className={`${control} mt-1 w-full`} /></label>
         <label className="text-xs">Learning<select name="has_lessons" defaultValue={params.get('has_lessons') || ''} className={`${control} mt-1 w-full`}><option value="">All profiles</option><option value="true">Has lessons</option><option value="false">No lessons yet</option></select></label>
 
@@ -251,9 +271,8 @@ export function ToolLearningInspection({ sapienId }: { sapienId: string }) {
     <div className={`analyse-tool-layout ${selected ? 'has-detail' : ''}`}>
       <section ref={list} tabIndex={-1} className="min-w-0" aria-label="Tool profiles">{read.data && <>
         <Paging page={read.data} onPage={offset => update('offset', String(offset))} />
-        <div className="analyse-learning-list-tools"><label>Group by <select className={control} value={groupBy} onChange={event => setGroupBy(event.target.value)}><option value="server">Service / server</option><option value="scope">Scope</option><option value="none">No grouping</option></select></label><span>Select a tool to read its lessons.</span></div>
         {!read.data.items.length && <div className="analyse-learning-empty"><h2>{read.data.total > 0 ? 'No tools on this page' : hasFilters ? 'No tools match these filters' : 'No saved tool learning yet'}</h2><p>{read.data.total > 0 ? 'Use Previous or refresh to return to available records.' : hasFilters ? 'Try a different search or clear the filters.' : 'Tools and their lessons will appear here when learning records are saved.'}</p>{hasFilters && <button className={control} onClick={() => setParams(new URLSearchParams())}>Clear filters</button>}</div>}
-        {[...groups].map(([group, rows]) => <section key={group} className="analyse-learning-service"><h2 className="analyse-learning-group">{groupBy === 'server' ? serviceName(group) : group}<small>{rows.length} {rows.length === 1 ? 'record' : 'records'} on this page</small></h2><div className="analyse-tool-rows">{rows.map(row => <button type="button" key={row.id} aria-pressed={selected === row.id} className="analyse-tool-row analyse-learning-row" onClick={event => { opener.current = event.currentTarget; update('profile', row.id); }}><span className="analyse-learning-tool"><strong>{toolName(row.tool)}</strong><small>{groupBy !== 'server' && `${serviceName(row.server)} · `}{scopeName(row.scope)}</small></span><LessonPreview profile={row} /><span className="analyse-learning-count">{row.lesson_count} {row.lesson_count === 1 ? 'lesson' : 'lessons'}<small>{selected === row.id ? 'Selected' : 'Read lessons →'}</small></span></button>)}</div></section>)}
+        {[...groups].map(([group, rows]) => <section key={group} className="analyse-learning-service"><h2 className="analyse-learning-group">{serviceName(group)}<small>{rows.length} {rows.length === 1 ? 'record' : 'records'} on this page</small></h2><div className="analyse-tool-rows">{rows.map(row => <button type="button" key={row.id} aria-pressed={selected === row.id} className="analyse-tool-row analyse-learning-row" onClick={event => { opener.current = event.currentTarget; update('profile', row.id); }}><span className="analyse-learning-tool"><strong>{toolName(row.tool)}</strong><small>{scopeName(row.scope)}</small></span><LessonPreview profile={row} /><span className="analyse-learning-count">{row.lesson_count} {row.lesson_count === 1 ? 'lesson' : 'lessons'}<small>{selected === row.id ? 'Selected' : 'Read lessons →'}</small></span></button>)}</div></section>)}
       </>}</section>
       {selected && <Detail key={`${sapienId}/${selected}`} sapienId={sapienId} profileId={selected} close={() => { update('profile', null); requestAnimationFrame(() => { if (opener.current?.isConnected) opener.current.focus(); else list.current?.focus(); }); }} />}
     </div>

@@ -81,11 +81,11 @@ tree=renderJobs();find(tree,n=>n.type==='form').props.onSubmit({preventDefault()
 assert.equal(h.values[1].filters.status,'failed');assert.deepEqual(h.values[1].cursors,[null]);
 for (const variant of [{...jobPage,jobs:[],summary:[],total:0},null]) {h.reset([{...defaults},{filters:{...defaults},cursors:[null],revision:0},variant,null,!variant,[]]); assert(html(renderJobs()).includes('Creation window'));}
 
-const tools=await load('components/analyse/ToolLearningInspection.tsx',hooks,'export {Lessons, LessonPreview, Detail, serviceName, toolName};');
-h.reset(['server','',0,undefined]);
+const tools=await load('components/analyse/ToolLearningInspection.tsx',hooks,'export {Lessons, LessonPreview, Detail, ServiceSelector, serviceName, toolName};');
+h.reset(['',0,undefined]);
 tree=tools.ToolLearningInspection({sapienId:'58'});controls=find(tree,n=>n.type===Controls);
 assert(primaryNames(controls).includes('q'));assert(primaryNames(controls).includes('scopeChoice'));
-assert(all(controls.props.children).some(n=>n.props.name==='server'),'Exact server remains mounted in advanced filters');
+assert(!all(controls.props.children).some(n=>n.props.name==='server'),'Service selection replaces the duplicate exact-server filter');
 const form=find(tree,n=>n.type==='form');
 const NativeFormData=globalThis.FormData;
 globalThis.FormData=class {constructor(values){this.values=values;}get(key){return this.values[key]??null;}};
@@ -93,8 +93,60 @@ form.props.onSubmit({preventDefault(){},currentTarget:{q:'calendar',scopeChoice:
 assert.equal(h.params.get('scope'),'','An empty scope means normal/live, not all scopes');assert.equal(h.params.get('q'),'calendar');
 h.params=new URLSearchParams();
 form.props.onSubmit({preventDefault(){},currentTarget:{scopeChoice:'run',run:''}});
-assert.equal(h.params.toString(),'');assert.match(h.values[1],/run ID/,'Invalid run selection remains a visible validation error');
+assert.equal(h.params.toString(),'');assert.match(h.values[0],/run ID/,'Invalid run selection remains a visible validation error');
 globalThis.FormData=NativeFormData;
+
+// The actual service catalogue walks every page, not the current filtered list.
+let serviceCalls=[];
+globalThis.analyseTest.toolApi={get:async (url,{signal}={})=>{
+  assert(signal);serviceCalls.push(url);
+  const query=new URL(url,'https://example.test').searchParams;
+  assert.equal(query.get('sort'),'server');assert.equal(query.has('scope'),false);assert.equal(query.has('q'),false);
+  assert.equal(query.has('server'),false);
+  const offset=Number(query.get('offset'));
+  return {data:{items:offset===0?[{server:'jira'}]:offset===25?[{server:'jira'}]:[{server:'teams'}],next_offset:offset===0?25:offset===25?50:null}};
+}};
+const {toolLearningService:toolApi}=await load('core/services/toolLearningService.ts','const apiClient=globalThis.analyseTest.toolApi;');
+assert.deepEqual(await toolApi.services('58',new AbortController().signal),['jira','teams']);
+assert.equal(serviceCalls.length,3,'Teams on the last page is discovered');
+const catalogue={key:'58/services/0',attempt:0,data:['jira','teams']};
+let chosenService;
+h.reset([0,catalogue]);
+tree=tools.ServiceSelector({sapienId:'58',version:0,selected:'jira',visibleServices:['jira'],onSelect:value=>chosenService=value});
+assert(html(tree).includes('Microsoft Teams'),'Teams remains visible while only Jira results are displayed');
+find(tree,n=>n.type==='button'&&n.props.children?.[0]==='Microsoft Teams').props.onClick();assert.equal(chosenService,'teams');
+find(tree,n=>n.type==='button'&&n.props.children==='All services').props.onClick();assert.equal(chosenService,null);
+h.reset(['',0,undefined]);h.params=new URLSearchParams('server=jira&q=channel&scope=run-2&offset=25&profile=old');
+tree=tools.ToolLearningInspection({sapienId:'58'});
+find(tree,n=>n.type===tools.ServiceSelector).props.onSelect('teams');
+assert.equal(h.params.get('server'),'teams');assert.equal(h.params.get('offset'),null);assert.equal(h.params.get('profile'),null);
+assert.equal(h.params.get('q'),'channel');assert.equal(h.params.get('scope'),'run-2');
+globalThis.FormData=class {constructor(values){this.values=values;}get(key){return this.values[key]??null;}};
+h.begin();tree=tools.ToolLearningInspection({sapienId:'58'});
+find(tree,n=>n.type==='form').props.onSubmit({preventDefault(){},currentTarget:{q:'reply',scopeChoice:'live'}});
+assert.equal(h.params.get('server'),'teams','Applying filters preserves the selected service');
+globalThis.FormData=NativeFormData;
+assert(!html(tree).includes('Group by'));
+h.reset([0,{key:'58/services/0',attempt:0,error:{message:'Failure'}}]);
+tree=tools.ServiceSelector({sapienId:'58',version:0,selected:'jira',visibleServices:['jira'],onSelect(){}});
+assert(html(tree).includes('Could not load the full service list'));
+find(tree,n=>n.type==='button'&&n.props.children==='Retry service list').props.onClick();assert.equal(h.values[0],1);
+// A later-page failure must not be mistaken for a complete Jira-only catalogue.
+globalThis.analyseTest.toolApi.get=async url=>{
+  if(new URL(url,'https://example.test').searchParams.get('offset')==='0')return {data:{items:[{server:'jira'}],next_offset:25}};
+  throw new Error('Second page failed');
+};
+await assert.rejects(()=>toolApi.services('58',new AbortController().signal),/Second page failed/);
+globalThis.analyseTest.toolApi.get=async()=>({data:{items:[],next_offset:0}});
+await assert.rejects(()=>toolApi.services('58',new AbortController().signal),/finish reading/);
+const cancelled=new AbortController();cancelled.abort();
+await assert.rejects(()=>toolApi.services('58',cancelled.signal),{name:'AbortError'});
+const midScan=new AbortController();let midScanCalls=0;
+globalThis.analyseTest.toolApi.get=async()=>{midScanCalls++;midScan.abort();return {data:{items:[{server:'jira'}],next_offset:25}};};
+await assert.rejects(()=>toolApi.services('58',midScan.signal),{name:'AbortError'});
+assert.equal(midScanCalls,1,'Leaving the page stops further catalogue requests');
+h.reset([0,catalogue]);
+assert(!html(tools.ServiceSelector({sapienId:'59',version:0,selected:null,visibleServices:[],onSelect(){}})).includes('Microsoft Teams'),'A new Sapien never shows the previous catalogue');
 
 // Lesson wording is saved evidence, not inferred from documentation or counts.
 assert.equal(tools.serviceName('microsoft-teams'),'Microsoft Teams');
@@ -115,7 +167,7 @@ for(const [profile,expected] of [
   [{lesson_count:1,lessons:[{guidance:'Use the issue key.'}]},'Use the issue key.'],
 ]) assert(html(tools.LessonPreview({profile})).includes(expected));
 const profile={id:'profile-1',server:'teams',tool:'read_channel_messages',scope:'',revision:2,lesson_count:1,updated_at:null,description:'Long tool documentation'};
-h.reset(['server','',0,{key:'58?limit=25',attempt:0,data:{items:[{...profile,lessons:[{guidance:'Use the channel ID.'}]}],total:1,offset:0,limit:25,next_offset:null,configured_mode:'active',as_of:null}}]);
+h.reset(['',0,{key:'58?limit=25',attempt:0,data:{items:[{...profile,lessons:[{guidance:'Use the channel ID.'}]}],total:1,offset:0,limit:25,next_offset:null,configured_mode:'active',as_of:null}}]);
 tree=tools.ToolLearningInspection({sapienId:'58'});
 assert(html(tree).includes('Use the channel ID.'));assert(html(tree).includes('Microsoft Teams'));
 find(tree,n=>n.type==='button'&&n.props.className?.includes('analyse-learning-row')).props.onClick({currentTarget:{focus(){}}});
@@ -142,12 +194,12 @@ for(const [query,total,expected] of [
   ['',0,'No saved tool learning yet'],['q=missing',0,'No tools match these filters'],['offset=25',2,'No tools on this page'],
 ]) {
   const queryKey=query?query+'&limit=25':'limit=25';
-  h.reset(['server','',0,{key:'58?'+queryKey,attempt:0,data:{items:[],total,offset:query.includes('offset')?25:0,limit:25,next_offset:null,configured_mode:'active',as_of:null}}]);
+  h.reset(['',0,{key:'58?'+queryKey,attempt:0,data:{items:[],total,offset:query.includes('offset')?25:0,limit:25,next_offset:null,configured_mode:'active',as_of:null}}]);
   h.params=new URLSearchParams(query);
   tree=tools.ToolLearningInspection({sapienId:'58'});
   assert(html(tree).includes(expected));
 }
-h.reset(['server','',0,{key:'58?limit=25',attempt:0,error:{status:503,message:'Unavailable'}}]);
+h.reset(['',0,{key:'58?limit=25',attempt:0,error:{status:503,message:'Unavailable'}}]);
 assert(html(tools.ToolLearningInspection({sapienId:'58'})).includes('Stored-data inspection is unavailable'));
 
 const usage=await load('components/workspace/LlmUsageDialog.tsx',hooks,'export {UsageKindSection};');

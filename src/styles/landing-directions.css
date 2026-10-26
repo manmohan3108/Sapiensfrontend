@@ -12,3 +12,7 @@
 @media(max-width:800px){.spectrum-contact>.direction-wrap{gap:32px}.spectrum-footer{flex-wrap:wrap}.direction-review nav{display:grid;grid-template-columns:1fr 1fr}}
 @media(max-width:600px){.spectrum-contact>.direction-wrap{grid-template-columns:1fr}.spectrum-contact{padding-block:40px}.spectrum-contact h2{font-size:44px}.spectrum-footer{align-items:start;flex-direction:column;gap:20px}}
 @media(max-width:1000px){.direction-review{flex-wrap:wrap}}
+
+/* Keep the public header logo the same size on landing and content pages. */
+.direction-header .sapiens-brand-mark { display: inline-grid; place-items: center; flex-shrink: 0; width: 46px; height: 46px; }
+.direction-header .sapiens-brand-mark > img { display: block; width: 100%; height: 100%; object-fit: contain; }

@@ -13,8 +13,13 @@
 .analyse-shell .analyse-learning-views button[aria-pressed=true] { color:var(--an-accent); border-bottom-color:var(--an-accent); font-weight:600; }
 .analyse-shell .analyse-learning-view-content { padding-block:8px 20px; }
 .analyse-shell .analyse-learning-view-content:focus-visible { outline:2px solid var(--an-accent); outline-offset:3px; }
-.analyse-shell .analyse-learning-list-tools { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:6px 16px; color:var(--an-muted); font-size:13px; }
-.analyse-shell .analyse-learning-list-tools select { margin-left:5px; }
+.analyse-shell .analyse-service-options { display:flex; flex-wrap:wrap; gap:8px; }
+.analyse-shell .analyse-service-options button { min-height:40px; max-width:100%; padding:8px 14px; border:1px solid var(--an-line); border-radius:5px; background:var(--an-bg); color:var(--an-ink); font-size:14px; overflow-wrap:anywhere; text-align:left; }
+.analyse-shell .analyse-service-options button:hover { background:var(--an-raised); }
+.analyse-shell .analyse-service-options button[aria-pressed=true] { border-color:var(--an-accent); background:var(--an-soft); color:var(--an-accent); box-shadow:inset 0 -2px var(--an-accent); font-weight:600; }
+.analyse-shell .analyse-service-options small { display:block; font-size:12px; font-weight:400; }
+.analyse-shell .analyse-service-selector>p { color:var(--an-muted); font-size:13px; margin:8px 0 0; }
+.analyse-shell .analyse-service-selector>p button { min-height:36px; color:var(--an-accent); text-decoration:underline; padding-inline:6px; }
 .analyse-shell .analyse-learning-service { margin-bottom:24px; }
 .analyse-shell .analyse-learning-snapshot { color:var(--an-muted); font-size:13px; line-height:1.6; }
 .analyse-shell .analyse-learning-snapshot summary { cursor:pointer; width:fit-content; }
