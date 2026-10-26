@@ -3,13 +3,30 @@ import { useEffect, useRef, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { toolLearningService as service } from '../../core/services/toolLearningService';
-import type { LearningEvidence, LearningPage, ToolLesson } from '../../types/toolLearningTypes';
+import type { LearningEvidence, LearningPage, ToolLesson, ToolProfile } from '../../types/toolLearningTypes';
 import type { ApiError } from '../../types/apiTypes';
 
 const panel = 'rounded-xl border border-white/10 bg-white/[.025] p-4';
 const control = 'rounded-lg border border-white/15 bg-[#0b1220] px-3 py-2 text-xs text-white/80 disabled:opacity-40';
 const time = (value?: string | null) => value ? new Date(value).toLocaleString() : 'Not recorded';
 const scopeName = (scope: string) => scope || 'Normal / live';
+
+// Only explicit aliases get a product name; custom server IDs remain intact.
+function serviceName(server: string) {
+  const names: Record<string, string> = { teams: 'Microsoft Teams', microsoft_teams: 'Microsoft Teams', ms_teams: 'Microsoft Teams', jira: 'Jira', slack: 'Slack', github: 'GitHub' };
+  return names[server.toLowerCase().replace(/[ -]/g, '_')] || server || 'Service not recorded';
+}
+
+function toolName(tool: string) {
+  const spaced = tool.replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/[_./:-]+/g, ' ').trim();
+  return spaced ? spaced[0].toUpperCase() + spaced.slice(1) : 'Tool not recorded';
+}
+
+function LessonPreview({ profile }: { profile: ToolProfile }) {
+  const first = profile.lessons?.find(lesson => typeof lesson === 'string' ? lesson.trim() : lesson.guidance?.trim());
+  const text = typeof first === 'string' ? first : first?.guidance;
+  return <span className="analyse-learning-preview">{text ? <><small>Saved lesson{typeof first === 'string' || first?._truncated ? ' · preview' : ''}</small><span>{text}</span></> : profile.lesson_count > 0 ? <span>View {profile.lesson_count} saved {profile.lesson_count === 1 ? 'lesson' : 'lessons'} →</span> : <span>No learned guidance yet</span>}</span>;
+}
 
 // Each caller supplies a key covering all request inputs. Ignore late responses
 // and hide old data immediately when the key changes (including Sapien switches).
@@ -53,12 +70,21 @@ function StoredFields({ value }: { value: unknown }) {
 
 function Lessons({ lessons = [], onEvidence }: { lessons?: (ToolLesson | string)[]; onEvidence?: (id: string) => void }) {
   if (!lessons.length) return <p className={panel}>No learned guidance stored for this version. Tool documentation alone is not a lesson.</p>;
-  return <div className="space-y-3">{lessons.map((lesson, index) => typeof lesson === 'string' ? <p key={index} className="text-xs text-amber-200">Lesson preview: {lesson}</p> : <article className={panel} key={index}>
-    <h4 className="mb-3 text-xs text-cyan-200">Lesson {index + 1}</h4>
-    {lesson._truncated && <p className="text-amber-200">Additional lesson data was truncated.</p>}
-    <dl className="space-y-3"><Field label="Guidance">{lesson.guidance}</Field><Field label="When it applies">{lesson.conditions}</Field><Field label="Limits / uncertainty">{lesson.uncertainty}</Field><Field label="Model-reported confidence (not measured success)">{typeof lesson.confidence === 'number' ? lesson.confidence.toFixed(2) : 'Not recorded'}</Field></dl>
-    {onEvidence && <div className="mt-3 flex flex-wrap gap-2">{lesson.evidence_ids?.map((id, i) => id === '[truncated]' ? <span key={i} className="text-xs text-amber-200">More references omitted from preview</span> : <button className={control} key={id} onClick={() => onEvidence(id)}>Evidence {i + 1}</button>)}</div>}
-  </article>)}</div>;
+  return <ol className="analyse-learned-lessons">{lessons.map((lesson, index) => <li key={index}>
+    <span className="analyse-lesson-number">{index + 1}</span>
+    <div className="min-w-0">
+      <p className="analyse-lesson-guidance">{typeof lesson === 'string' ? lesson : lesson.guidance || 'Guidance text not included in this record.'}</p>
+      {typeof lesson === 'string' ? <p className="analyse-inline-note">Saved preview</p> : <>
+        {lesson.conditions && <p className="analyse-lesson-context"><strong>When:</strong> {lesson.conditions}</p>}
+        {lesson.uncertainty && <p className="analyse-lesson-context"><strong>Limits:</strong> {lesson.uncertainty}</p>}
+        {lesson._truncated && <p className="analyse-inline-note">This lesson preview is truncated.</p>}
+        <div className="analyse-lesson-references">
+          {onEvidence && lesson.evidence_ids?.map((id, i) => id === '[truncated]' ? <span key={i}>More references omitted from preview</span> : <button className={control} key={`${id}-${i}`} onClick={() => onEvidence(id)}>View evidence {i + 1}</button>)}
+          {typeof lesson.confidence === 'number' && <details><summary>Reported confidence</summary><p>{lesson.confidence.toFixed(2)} · Model-reported, not measured success.</p></details>}
+        </div>
+      </>}
+    </div>
+  </li>)}</ol>;
 }
 
 function Evidence({ items, selected }: { items: LearningEvidence[]; selected?: string }) {
@@ -140,16 +166,16 @@ function Detail({ sapienId, profileId, close }: { sapienId: string; profileId: s
   const [evidence, setEvidence] = useState('');
   const read = useRead(`${sapienId}/${profileId}`, () => service.detail(sapienId, profileId));
   return <section ref={reader} tabIndex={-1} className={`${panel} min-w-0 space-y-4`} aria-label="Selected tool learning">
-    <div className="flex flex-wrap justify-between gap-3"><h3 className="text-sm text-cyan-200">Tool detail</h3><div className="flex gap-2"><button className={control} onClick={read.retry}>Refresh detail</button><button className={control} onClick={close}>Back to tools</button></div></div>
+    <div className="flex flex-wrap justify-between gap-3"><h3 className="text-sm text-cyan-200">Saved learning</h3><div className="flex gap-2"><button className={control} onClick={read.retry}>Refresh detail</button><button className={control} onClick={close}>Back to tools</button></div></div>
     <Status {...read} />{read.data && <>
-      <h3 className="break-words text-lg text-white/90">{read.data.profile.server} / {read.data.profile.tool}</h3>
+      <header className="analyse-learning-identity"><p>{serviceName(read.data.profile.server)}</p><h3>{toolName(read.data.profile.tool)}</h3><div>Exact tool: <code>{read.data.profile.tool}</code> · Server: <code>{read.data.profile.server}</code></div></header>
       <p className="break-all text-xs text-white/50">{scopeName(read.data.profile.scope)} · Revision {read.data.profile.revision} · Updated {time(read.data.profile.updated_at)}</p>
-      <p className="whitespace-pre-wrap text-sm text-white/65">{read.data.profile.description}</p>
-      <div role="group" aria-label="Detail views" className="flex flex-wrap gap-2">{['lessons', 'evidence', 'revisions', 'usage'].map(value => <button key={value} aria-pressed={tab === value} className={`${control} capitalize ${tab === value ? 'ring-1 ring-cyan-300' : ''}`} onClick={() => { setTab(value); setEvidence(''); }}>{value}</button>)}</div>
-      {tab === 'lessons' && <Lessons lessons={read.data.profile.lessons} onEvidence={id => { setEvidence(id); setTab('evidence'); }} />}
+      <div role="group" aria-label="Detail views" className="flex flex-wrap gap-2">{['lessons', 'evidence', 'revisions', 'usage'].map(value => <button key={value} aria-pressed={tab === value} className={`${control} ${tab === value ? 'ring-1 ring-cyan-300' : ''}`} onClick={() => { setTab(value); setEvidence(''); }}>{({ lessons: 'What it learned', evidence: 'Evidence', revisions: 'Earlier versions', usage: 'Use of guidance' })[value]}</button>)}</div>
+      {tab === 'lessons' && (read.data.profile.lesson_count > 0 && !read.data.profile.lessons?.length ? <p className={panel}>This profile records {read.data.profile.lesson_count} lessons, but their text is not included in this response. Check earlier versions for saved guidance.</p> : <Lessons lessons={read.data.profile.lessons} onEvidence={id => { setEvidence(id); setTab('evidence'); }} />)}
       {tab === 'evidence' && <>{evidence && <button className={control} onClick={() => setEvidence('')}>Show all loaded evidence</button>}<Evidence items={read.data.evidence} selected={evidence} /></>}
       {tab === 'revisions' && <History sapienId={sapienId} profileId={profileId} currentLessons={read.data.profile.lessons} />}
       {tab === 'usage' && <Usage sapienId={sapienId} profileId={profileId} />}
+      {read.data.profile.description && <details className="analyse-tool-documentation"><summary>Tool documentation</summary><p>{read.data.profile.description}</p></details>}
       <Raw value={read.data.profile} />
     </>}
   </section>;
@@ -198,7 +224,7 @@ export function ToolLearningInspection({ sapienId }: { sapienId: string }) {
   }
   const localDate = (value: string | null) => { if (!value) return ''; const date = new Date(value); return Number.isNaN(date.getTime()) ? '' : new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16); };
   return <div className="space-y-4 text-white/75">
-    <div className="analyse-page-purpose"><p>Inspect lessons from tool use and the evidence behind them.</p><div className="analyse-purpose-meta"><span>{read.data ? `Current mode: ${read.data.configured_mode} · Read ${time(read.data.as_of)} (not historical run mode)` : 'Reading saved records; runtime is unchanged.'}</span><Link to="/admin/analyse/engine-jobs?engine_name=tool_learning_engine">Learning jobs & failures →</Link></div></div>
+    <div className="analyse-page-purpose"><p>See what Sapiens learned from using tools, organised by service and the specific tool it used.</p><div className="analyse-purpose-meta"><span>{read.data ? `Current mode: ${read.data.configured_mode} · Read ${time(read.data.as_of)} (not historical run mode)` : 'Reading saved records; runtime is unchanged.'}</span><Link to="/admin/analyse/engine-jobs?engine_name=tool_learning_engine">Learning jobs & failures →</Link></div></div>
 <form key={params.toString()} onSubmit={apply} className="space-y-3" aria-label="Tool learning filters">
     <AnalyseControls filters={['server', 'tool', 'has_lessons', 'since', 'until'].filter(key => params.has(key)).map(key => ({ label: key.replaceAll('_', ' ') + ': ' + params.get(key), onRemove: () => setParams(current => { const next = new URLSearchParams(current); next.delete(key); next.delete('offset'); next.delete('profile'); return next; }) }))} primary={<>        <label className="text-xs">Search lessons/tools<input name="q" maxLength={160} defaultValue={params.get('q') || ''} className={`${control} mt-1 w-full`} placeholder="Guidance, conditions or tool name" /></label>        <label className="text-xs">Scope<select name="scopeChoice" defaultValue={!params.has('scope') ? 'all' : params.get('scope') ? 'run' : 'live'} className={`${control} mt-1 w-full`}><option value="all">All saved scopes</option><option value="live">Normal / live</option><option value="run">Specific simulation run</option></select></label>
         <label className="text-xs analyse-run-filter">Run ID (for specific run)<input name="run" maxLength={256} defaultValue={params.get('scope') || ''} className={`${control} mt-1 w-full`} placeholder="run-…" /></label><button className={control}>Apply filters</button><button type="button" className={control} onClick={() => setParams(new URLSearchParams())}>Clear</button></>} summary={`${params.has('scope') ? scopeName(params.get('scope') || '') : 'All saved scopes'} · Sort: ${params.get('sort') || 'updated_at'} ${params.get('direction') || 'desc'}`} onRefresh={read.retry} busy={read.loading}>
@@ -217,10 +243,10 @@ export function ToolLearningInspection({ sapienId }: { sapienId: string }) {
     <div className={`analyse-tool-layout grid items-start gap-4 ${selected ? 'has-detail xl:grid-cols-2' : ''}`}>
       <section className="min-w-0" aria-label="Tool profiles">{read.data && <>
         <Paging page={read.data} onPage={offset => update('offset', String(offset))} />
-        <label className="text-xs text-white/50">Group displayed page by <select className={control} value={groupBy} onChange={event => setGroupBy(event.target.value)}><option value="server">Server</option><option value="scope">Scope</option><option value="none">No grouping</option></select></label>
-        <p className="my-3 text-xs text-white/40">Counts below cover this page only. Live writes can shift pages; refresh for the latest state.</p>
+        <label className="text-xs text-white/50">Group this page by <select className={control} value={groupBy} onChange={event => setGroupBy(event.target.value)}><option value="server">Service / server</option><option value="scope">Scope</option><option value="none">No grouping</option></select></label>
+        <p className="my-3 text-xs text-white/40">Select a tool to read its saved lessons and supporting evidence.</p>
         {!read.data.items.length && <p className={panel}>No saved tool profiles match these filters.</p>}
-        {[...groups].map(([group, rows]) => <section key={group} className="mb-4"><h3 className="mb-2 break-all text-xs text-cyan-200">{group} · {rows.length} on this page</h3><div className="analyse-tool-rows">{rows.map(row => <button key={row.id} aria-pressed={selected === row.id} className="analyse-tool-row" onClick={event => { opener.current = event.currentTarget; update('profile', row.id); }}><span><strong>{row.tool}</strong><small>{row.server} · {scopeName(row.scope)}</small></span><span>{row.lesson_count} lessons<small>Revision {row.revision}</small></span><span><small>Updated</small>{time(row.updated_at)}</span></button>)}</div></section>)}
+        {[...groups].map(([group, rows]) => <section key={group} className="mb-4"><h3 className="analyse-learning-group">{groupBy === 'server' ? serviceName(group) : group}<small>{rows.length} {rows.length === 1 ? 'tool' : 'tools'} on this page</small></h3><div className="analyse-tool-rows">{rows.map(row => <button key={row.id} aria-pressed={selected === row.id} className="analyse-tool-row analyse-learning-row" onClick={event => { opener.current = event.currentTarget; update('profile', row.id); }}><span className="analyse-learning-tool"><strong>{toolName(row.tool)}</strong><small>{serviceName(row.server)} · {scopeName(row.scope)}</small><code>{row.tool}</code></span><LessonPreview profile={row} /><span className="analyse-learning-count">{row.lesson_count} {row.lesson_count === 1 ? 'lesson' : 'lessons'}<small>Open →</small></span></button>)}</div></section>)}
       </>}</section>
       {selected && <Detail key={`${sapienId}/${selected}`} sapienId={sapienId} profileId={selected} close={() => { update('profile', null); requestAnimationFrame(() => opener.current?.focus()); }} />}
     </div>

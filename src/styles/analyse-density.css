@@ -35,6 +35,39 @@
 .analyse-shell .analyse-tool-row[aria-pressed=true] { box-shadow:inset 3px 0 var(--an-accent); }
 .analyse-shell .analyse-tool-row small { display:block; font-size:12px; color:var(--an-muted); }
 .analyse-shell .analyse-tool-row strong { overflow-wrap:anywhere; font-weight:600; }
+.analyse-shell .analyse-learning-group { display:flex; align-items:baseline; flex-wrap:wrap; gap:8px 12px; margin:16px 0 8px; color:var(--an-ink); font-size:17px; font-weight:600; }
+.analyse-shell .analyse-learning-group small { color:var(--an-muted); font-size:12px; font-weight:400; }
+.analyse-shell .analyse-tool-row.analyse-learning-row { grid-template-columns:minmax(150px,1fr) minmax(0,2fr) auto; gap:20px; padding:16px; }
+.analyse-shell .analyse-learning-tool { min-width:0; }
+.analyse-shell .analyse-learning-tool strong { display:block; font-size:15px; }
+.analyse-shell .analyse-learning-tool code { display:block; margin-top:4px; font-size:11px; color:var(--an-muted); overflow-wrap:anywhere; }
+.analyse-shell .analyse-learning-preview { min-width:0; line-height:1.55; color:var(--an-ink); }
+.analyse-shell .analyse-learning-preview>span { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:3; overflow:hidden; overflow-wrap:anywhere; }
+.analyse-shell .analyse-learning-count { white-space:nowrap; text-align:right; color:var(--an-muted); font-size:12px; }
+.analyse-shell .analyse-learning-count small { color:var(--an-accent); margin-top:4px; }
+.analyse-shell .analyse-learning-row:focus-visible { outline:2px solid var(--an-accent); outline-offset:-3px; }
+.analyse-shell .analyse-learning-identity { overflow-wrap:anywhere; }
+.analyse-shell .analyse-learning-identity>p { color:var(--an-accent); font-size:14px; font-weight:600; }
+.analyse-shell .analyse-learning-identity h3 { color:var(--an-ink); font-size:22px; line-height:1.3; margin:4px 0 8px; }
+.analyse-shell .analyse-learning-identity>div { color:var(--an-muted); font-size:12px; }
+.analyse-shell .analyse-learned-lessons { list-style:none; padding:0; margin:0; }
+.analyse-shell .analyse-learned-lessons>li { display:grid; grid-template-columns:24px minmax(0,1fr); gap:10px; padding:18px 0; border-bottom:1px solid var(--an-line); }
+.analyse-shell .analyse-lesson-number { color:var(--an-accent); font-size:13px; padding-top:3px; }
+.analyse-shell .analyse-lesson-guidance { font-size:16px; line-height:1.65; color:var(--an-ink); white-space:pre-wrap; overflow-wrap:anywhere; }
+.analyse-shell .analyse-lesson-context { margin-top:8px; font-size:14px; line-height:1.6; color:var(--an-muted); white-space:pre-wrap; overflow-wrap:anywhere; }
+.analyse-shell .analyse-lesson-context strong { font-weight:600; color:var(--an-ink); }
+.analyse-shell .analyse-lesson-references { display:flex; flex-wrap:wrap; align-items:center; gap:8px 14px; margin-top:10px; font-size:12px; color:var(--an-muted); }
+.analyse-shell .analyse-lesson-references:empty { display:none; }
+.analyse-shell .analyse-lesson-references summary,.analyse-shell .analyse-tool-documentation summary { cursor:pointer; }
+.analyse-shell .analyse-tool-documentation { color:var(--an-muted); font-size:13px; }
+.analyse-shell .analyse-tool-documentation p { margin-top:8px; white-space:pre-wrap; overflow-wrap:anywhere; line-height:1.6; }
+.analyse-shell .has-detail .analyse-tool-row.analyse-learning-row { grid-template-columns:minmax(0,1fr) auto; gap:10px; }
+.analyse-shell .has-detail .analyse-learning-preview { grid-column:1 / -1; grid-row:2; }
+@media(max-width:650px) {
+  .analyse-shell .analyse-tool-row.analyse-learning-row { grid-template-columns:minmax(0,1fr) auto; gap:10px; }
+  .analyse-shell .analyse-learning-preview { grid-column:1 / -1; grid-row:2; }
+  .analyse-shell .analyse-tool-row.analyse-learning-row>.analyse-learning-count { grid-column:2; grid-row:1; }
+}
 .analyse-shell .analyse-goal-row { display:flex; align-items:center; gap:12px; padding:12px; border-bottom:1px solid var(--an-line); }
 .analyse-shell .analyse-goal-open { flex:1; min-width:0; text-align:left; }
 .analyse-shell .analyse-goal-open strong { display:block; font-size:15px; font-weight:500; line-height:1.5; }

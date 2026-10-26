@@ -10,6 +10,7 @@ import { AuthPage } from './pages/AuthPage';
 import { AccessDeniedPage, GuestRoute, ProtectedRoute } from './components/auth/RouteGuards';
 import { useAuth } from './contexts/AuthContext';
 import { LandingDirectionsPage, ScienceLandingPage } from './pages/LandingDirectionsPage';
+import { ResearchPage } from './pages/ResearchPage';
 import { CustomerHomePage } from './pages/CustomerHomePage';
 import { YourSapiensLink } from './components/navigation/YourSapiensLink';
 
@@ -20,6 +21,7 @@ function RoleHome() {
 
 export const router = createBrowserRouter([
   { path: '/', Component: ScienceLandingPage, ErrorBoundary },
+  { path: '/research', Component: ResearchPage, ErrorBoundary },
   { path: '/design-directions', Component: LandingDirectionsPage, ErrorBoundary },
   { Component: () => <ProtectedRoute selection={false} />, children: [{ path: '/home', Component: RoleHome, ErrorBoundary }] },
   { Component: () => <ProtectedRoute selection={false} />, children: [{ path: '/access-denied', Component: AccessDeniedPage, ErrorBoundary }] },
@@ -71,3 +73,4 @@ export const router = createBrowserRouter([
     ),
   },
 ]);
+

@@ -16,6 +16,7 @@ import '../../styles/layered-theme.css';
 import '../../styles/world-directions.css';
 import '../../styles/forest-environment.css';
 import '../../styles/science-direction.css';
+import '../../styles/research.css';
 
 const directions = [
   { id: 'layered', number: '01', name: 'Color / Layers' },
@@ -73,13 +74,14 @@ function DirectionLanding({ direction, homepage = false }: { direction: Directio
       <header className="direction-header">
         <Link className="direction-brand" to="/" aria-label="Sapiens home"><SapiensBrandMark/>Sapiens</Link>
         <nav aria-label="Main navigation">
-          <a href="#direction-product">Product</a>{howLink}<a href="#direction-contact">Contact us</a>
+          <a href="#direction-product">Product</a>{howLink}<Link to="/research">Research</Link><a href="#direction-contact">Contact us</a>
           <ThemeToggle className="layered-theme-toggle"/>
           <Link to={user ? destination : '/login'}>{user ? 'Your Sapiens' : 'Sign in'}<ArrowUpRight size={15}/></Link>
         </nav>
       </header>
       <main id="direction-main">
         <LayeredStudy cta={cta} onOpenGraph={() => setGraphOpen(true)} showSectionNav={!homepage && !environment && direction.id !== 'previous-homepage'} environment={environment}/>
+        <div className="direction-wrap research-entry"><Link to="/research">Explore the research<ArrowUpRight size={18} aria-hidden="true"/></Link></div>
         <section id="direction-contact" className="spectrum-contact" aria-labelledby="contact-title">
           <div className="direction-wrap">
             <div><span className="direction-eyebrow">CONTACT US</span><h2 id="contact-title">Let’s talk.</h2><p>Questions, ideas, or feedback about Sapiens?</p></div>
@@ -88,10 +90,11 @@ function DirectionLanding({ direction, homepage = false }: { direction: Directio
         </section>
         <footer className="spectrum-footer direction-wrap">
           <div><span className="direction-brand"><SapiensBrandMark/>Sapiens</span><p>Sapiens · An AI individual</p></div>
-          <nav aria-label="Footer navigation"><a href="#direction-product">Product</a>{howLink}<a href="#direction-contact">Contact us</a></nav>
+          <nav aria-label="Footer navigation"><a href="#direction-product">Product</a>{howLink}<Link to="/research">Research</Link><a href="#direction-contact">Contact us</a></nav>
           <p>Sapiens is AI and can make mistakes.</p>
         </footer>
       </main>
     </div>
   </div>;
 }
+

@@ -80,18 +80,20 @@ export function AnalysePage() {
   useEffect(() => { if (!currentSapiens) navigate('/admin'); }, [currentSapiens, navigate]);
   useEffect(() => { if (section === 'usage') setUsageOpen(true); }, [section]);
   if (!currentSapiens) return null;
-  const go = (id: AnalyseSection, params?: Record<string, string>) => {
-    if (id === 'usage') { setUsageOpen(true); return; }
+  const hrefFor = (id: AnalyseSection, params?: Record<string, string>) => {
     if (id === 'simulation') {
       const returnTo = (section === 'overview' ? '/admin/analyse' : '/admin/analyse/' + section) + (scopeParams.size ? '?' + scopeParams : '');
-      navigate('/admin/simulations?sapienId=' + encodeURIComponent(currentSapiens.id) + '&sapienName=' + encodeURIComponent(currentSapiens.name) + '&returnTo=' + encodeURIComponent(returnTo));
-      return;
+      return '/admin/simulations?sapienId=' + encodeURIComponent(currentSapiens.id) + '&sapienName=' + encodeURIComponent(currentSapiens.name) + '&returnTo=' + encodeURIComponent(returnTo);
     }
     const query = params ? '?' + new URLSearchParams(params) : '';
-    navigate((id === 'overview' ? '/admin/analyse' : '/admin/analyse/' + id) + query);
+    return (id === 'overview' ? '/admin/analyse' : '/admin/analyse/' + id) + query;
+  };
+  const go = (id: AnalyseSection, params?: Record<string, string>) => {
+    if (id === 'usage') { setUsageOpen(true); return; }
+    navigate(hrefFor(id, params));
   };
   return <AnalyseShell section={section} name={currentSapiens.name} sapienId={currentSapiens.id} go={go}>
-    {section === 'overview' && <AnalyseOverview go={go} />}
+    {section === 'overview' && <AnalyseOverview go={go} hrefFor={hrefFor} />}
     {section === 'awareness' && <AwarenessAnalysis sapienId={currentSapiens.id} />}
     {section === 'working-memory' && <WorkingMemoryAnalysis key={currentSapiens.id} sapienId={Number(currentSapiens.id)} openEngram={() => go('engram')} />}
     {section === 'goals' && <div className="analyse-goals-page"><GoalsPanel inspection sapienId={Number(currentSapiens.id)} /></div>}

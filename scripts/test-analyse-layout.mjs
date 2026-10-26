@@ -40,6 +40,19 @@ const find = (tree, predicate) => { const node = all(tree).find(predicate); asse
 const html = tree => renderToStaticMarkup(tree);
 const primaryNames = toolbar => all(toolbar.props.primary).filter(n=>n.type==='input'||n.type==='select').map(n=>n.props.name||n.props['aria-label']||n.props.placeholder);
 
+const {ANALYSE_GROUPS}=await load('components/analyse/AnalyseShell.tsx',hooks);
+globalThis.analyseTest.groups=ANALYSE_GROUPS;
+const {AnalyseOverview}=await load('components/analyse/AnalyseOverview.tsx',hooks+'const ANALYSE_GROUPS=globalThis.analyseTest.groups;');
+let overviewAction='';
+const overview=AnalyseOverview({go:id=>overviewAction=id,hrefFor:id=>id==='simulation'?'/admin/simulations?sapienId=58&returnTo=%2Fadmin%2Fanalyse':'/admin/analyse/'+id});
+const overviewHtml=html(overview);
+assert.equal((overviewHtml.match(/<a /g)||[]).length,13,'Overview destinations are native links');
+assert.equal((overviewHtml.match(/<button /g)||[]).length,1,'Only the usage dialog is a button');
+assert.equal(all(overview).filter(n=>n.type==='h2').length,4);
+for(const group of ANALYSE_GROUPS)for(const item of group.items)assert(overviewHtml.includes(item.label.replaceAll('&','&amp;')));
+find(overview,n=>n.type==='button').props.onClick();assert.equal(overviewAction,'usage');
+assert(overviewHtml.includes('sapienId=58'));assert(!overviewHtml.includes('notebook-figure'));
+
 h.reset(); let refreshes=0, removed=0;
 const props={summary:'All sources',primary:React.createElement('input',{'aria-label':'Search',defaultValue:'query'}),children:React.createElement('input',{name:'source',defaultValue:'teams'}),onRefresh:()=>refreshes++,filters:[{label:'Source: Teams',onRemove:()=>removed++}]};
 const toolbar=()=>{h.begin();return ControlledToolbar(props);};
@@ -68,7 +81,7 @@ tree=renderJobs();find(tree,n=>n.type==='form').props.onSubmit({preventDefault()
 assert.equal(h.values[1].filters.status,'failed');assert.deepEqual(h.values[1].cursors,[null]);
 for (const variant of [{...jobPage,jobs:[],summary:[],total:0},null]) {h.reset([{...defaults},{filters:{...defaults},cursors:[null],revision:0},variant,null,!variant,[]]); assert(html(renderJobs()).includes('Creation window'));}
 
-const tools=await load('components/analyse/ToolLearningInspection.tsx',hooks);
+const tools=await load('components/analyse/ToolLearningInspection.tsx',hooks,'export {Lessons, LessonPreview, Detail, serviceName, toolName};');
 h.reset(['server','',0,undefined]);
 tree=tools.ToolLearningInspection({sapienId:'58'});controls=find(tree,n=>n.type===Controls);
 assert(primaryNames(controls).includes('q'));assert(primaryNames(controls).includes('scopeChoice'));
@@ -82,6 +95,38 @@ h.params=new URLSearchParams();
 form.props.onSubmit({preventDefault(){},currentTarget:{scopeChoice:'run',run:''}});
 assert.equal(h.params.toString(),'');assert.match(h.values[1],/run ID/,'Invalid run selection remains a visible validation error');
 globalThis.FormData=NativeFormData;
+
+// Lesson wording is saved evidence, not inferred from documentation or counts.
+assert.equal(tools.serviceName('microsoft-teams'),'Microsoft Teams');
+assert.equal(tools.serviceName('custom-jira-proxy'),'custom-jira-proxy','Unknown server IDs must not be assigned a guessed provider');
+assert.equal(tools.toolName('read_channel_messages'),'Read channel messages');
+const learned=html(tools.Lessons({lessons:[{guidance:'Use the channel ID, not its display name.',conditions:'When reading channel messages.',uncertainty:'Private channels were not tested.',evidence_ids:['ev-1','[truncated]'],confidence:0.8}],onEvidence(){}}));
+assert(learned.includes('Use the channel ID, not its display name.'));
+assert(learned.includes('Private channels were not tested.'));
+assert(!learned.includes('Not recorded'),'Missing lesson fields do not add placeholder clutter');
+assert(learned.includes('not measured success'));
+let openedEvidence='';
+tree=tools.Lessons({lessons:[{guidance:'Saved guidance',evidence_ids:['ev-1','[truncated]']}],onEvidence:id=>openedEvidence=id});
+find(tree,n=>n.type==='button').props.onClick();assert.equal(openedEvidence,'ev-1');
+assert.equal(all(tree).filter(n=>n.type==='button').length,1,'Truncated reference markers cannot open evidence');
+for(const [profile,expected] of [
+  [{lesson_count:2},'View 2 saved lessons'],
+  [{lesson_count:0},'No learned guidance yet'],
+  [{lesson_count:1,lessons:[{guidance:'Use the issue key.'}]},'Use the issue key.'],
+]) assert(html(tools.LessonPreview({profile})).includes(expected));
+const profile={id:'profile-1',server:'teams',tool:'read_channel_messages',scope:'',revision:2,lesson_count:1,updated_at:null,description:'Long tool documentation'};
+h.reset(['server','',0,{key:'58?limit=25',attempt:0,data:{items:[{...profile,lessons:[{guidance:'Use the channel ID.'}]}],total:1,offset:0,limit:25,next_offset:null,configured_mode:'active',as_of:null}}]);
+tree=tools.ToolLearningInspection({sapienId:'58'});
+assert(html(tree).includes('Use the channel ID.'));assert(html(tree).includes('Microsoft Teams'));
+find(tree,n=>n.type==='button'&&n.props.className?.includes('analyse-learning-row')).props.onClick({currentTarget:{focus(){}}});
+assert.equal(h.params.get('profile'),'profile-1','Opening saved learning preserves the profile selection route');
+h.reset(['lessons','',0,{key:'58/profile-1',attempt:0,data:{profile,evidence:[]}}]);
+tree=tools.Detail({sapienId:'58',profileId:'profile-1',close(){}});
+const detailHtml=html(tree);
+assert(detailHtml.includes('Microsoft Teams'));assert(detailHtml.includes('Exact tool:'));
+assert(detailHtml.includes('their text is not included'),'Unavailable lesson text must not be called no learning');
+assert(detailHtml.indexOf('What it learned')<detailHtml.indexOf('Tool documentation'));
+assert(all(tree).some(n=>n.type==='details'&&html(n).includes('Long tool documentation')),'Documentation is secondary to learning');
 
 const usage=await load('components/workspace/LlmUsageDialog.tsx',hooks,'export {UsageKindSection};');
 h.reset();

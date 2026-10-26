@@ -1,54 +1,51 @@
-/* Overview directory only. Keep the shared Analyse palette and navigation. */
-body:has(.analyse-shell[data-analyse-section="overview"]) {
-  --notebook-rule:var(--an-line); --notebook-figure:var(--an-figure);
+/* Overview only: an index of diagnostic tools, using the shared Analyse tokens. */
+.analyse-shell[data-analyse-section="overview"] .analyse-content {
+  background-image:none;
+  padding:24px 28px 32px;
 }
-.analyse-shell[data-analyse-section="overview"] .analyse-content { padding:16px 28px 24px; }
-.analyse-shell[data-analyse-section="overview"] .analyse-directory-intro {
-  display:flex; align-items:baseline; flex-wrap:wrap; gap:4px 18px; margin-bottom:14px;
+.analyse-overview { max-width:1440px; margin-inline:auto; }
+.analyse-overview .analyse-index-purpose {
+  margin:0 0 28px; color:var(--an-muted); font-size:17px; line-height:1.5;
 }
-.analyse-shell[data-analyse-section="overview"] .analyse-directory-intro h2 { font-size:25px; margin:0; }
-.analyse-shell[data-analyse-section="overview"] .analyse-directory-intro p { margin:0; font-size:14px; }
-.analyse-shell[data-analyse-section="overview"] .analyse-tool-groups { gap:14px; }
-.analyse-shell[data-analyse-section="overview"] .analyse-tool-group {
-  display:block; padding-top:8px; border-color:var(--notebook-rule);
+.analyse-overview .analyse-index-groups {
+  display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:28px 40px;
 }
-.analyse-shell[data-analyse-section="overview"] .analyse-notebook-margin {
-  display:flex; align-items:center; gap:10px; min-height:28px; margin-bottom:6px;
+.analyse-overview .analyse-index-group { min-width:0; }
+.analyse-overview .analyse-index-group h2 {
+  margin:0 0 12px; padding-bottom:10px; border-bottom:1px solid var(--an-line);
+  color:var(--an-ink); font:500 21px/1.35 'Source Serif 4',Georgia,serif; text-wrap:balance;
 }
-.analyse-shell[data-analyse-section="overview"] .analyse-notebook-index {
-  font:11px/1.4 ui-monospace,monospace; letter-spacing:.08em; color:var(--an-accent);
+.analyse-overview .analyse-index-group ul { list-style:none; padding:0; margin:0; }
+.analyse-overview .analyse-index-group li+li { margin-top:2px; }
+.analyse-overview .analyse-index-entry {
+  display:flex; align-items:flex-start; gap:12px; width:100%; min-height:60px;
+  padding:12px 10px; border:0; border-radius:5px; background:transparent;
+  color:var(--an-ink); font:inherit; text-align:left; text-decoration:none; touch-action:manipulation;
 }
-.analyse-shell[data-analyse-section="overview"] .analyse-notebook-margin h3 {
-  font:500 17px/1.3 'Source Serif 4',Georgia,serif; color:var(--an-ink); margin:0;
+.analyse-overview .analyse-index-icon { flex-shrink:0; margin-top:3px; color:var(--an-accent); }
+.analyse-overview .analyse-index-copy { min-width:0; }
+.analyse-overview .analyse-index-copy strong {
+  display:flex; align-items:center; gap:8px; font-size:16px; line-height:1.4; font-weight:600;
 }
-.analyse-shell[data-analyse-section="overview"] .analyse-notebook-figure {
-  display:block; width:48px; height:28px; margin-left:auto; stroke:var(--notebook-figure);
-  stroke-width:1.5; pointer-events:none; user-select:none; flex-shrink:0;
+.analyse-overview .analyse-index-copy>span {
+  display:block; margin-top:4px; max-width:54ch; color:var(--an-muted); font-size:14px; line-height:1.5; overflow-wrap:anywhere;
 }
-.analyse-notebook-figure .notebook-guide { stroke-dasharray:3 4; opacity:.65; }
-.analyse-notebook-figure circle { fill:var(--an-bg); }
-.analyse-notebook-figure text { fill:var(--notebook-figure); stroke:none; font:italic 18px Georgia,serif; }
-.analyse-shell[data-analyse-section="overview"] .analyse-tool-grid {
-  grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px;
+.analyse-overview .analyse-index-entry:hover,
+.analyse-overview .analyse-index-entry:focus-visible { background:var(--an-soft); }
+.analyse-overview .analyse-index-entry:hover strong { color:var(--an-accent); text-decoration:underline; text-underline-offset:3px; }
+.analyse-overview .analyse-index-entry:focus-visible { outline:2px solid var(--an-accent); outline-offset:2px; }
+@media(min-width:1600px) {
+  .analyse-overview .analyse-index-groups { grid-template-columns:repeat(4,minmax(0,1fr)); gap:28px; }
+  .analyse-overview .analyse-index-group h2 { min-height:68px; display:flex; align-items:flex-end; }
 }
-.analyse-shell[data-analyse-section="overview"] .analyse-tool-tile {
-  gap:3px; padding:9px 12px; border-radius:4px; border-color:var(--notebook-rule);
-  box-shadow:none; justify-content:flex-start;
+@media(max-width:1100px) and (min-width:1024px), (max-width:650px) {
+  .analyse-overview .analyse-index-groups { grid-template-columns:1fr; gap:24px; }
 }
-.analyse-shell[data-analyse-section="overview"] .analyse-tool-heading { gap:8px; }
-.analyse-shell[data-analyse-section="overview"] .analyse-tool-description { font-size:14px; line-height:1.4; }
-.analyse-shell[data-analyse-section="overview"] .analyse-tool-tile:hover {
-  border-color:var(--an-accent); box-shadow:inset 3px 0 var(--an-accent);
+@media(max-width:1023px) {
+  .analyse-shell[data-analyse-section="overview"] .analyse-content { padding:20px 16px 28px; }
 }
-@media (max-width:1023px) {
-  .analyse-shell[data-analyse-section="overview"] .analyse-content { padding:16px 16px 24px; }
-}
-@media (max-width:760px) {
-  .analyse-shell[data-analyse-section="overview"] .analyse-tool-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
-}
-@media (max-width:480px) {
-  .analyse-shell[data-analyse-section="overview"] .analyse-content { padding:16px 12px 24px; }
-  .analyse-shell[data-analyse-section="overview"] .analyse-directory-intro h2 { font-size:23px; }
-  .analyse-shell[data-analyse-section="overview"] .analyse-tool-grid { grid-template-columns:1fr; gap:6px; }
-  .analyse-shell[data-analyse-section="overview"] .analyse-tool-tile { padding:10px 12px; }
+@media(max-width:650px) {
+  .analyse-overview .analyse-index-purpose { font-size:16px; margin-bottom:22px; }
+  .analyse-overview .analyse-index-group h2 { font-size:20px; margin-bottom:6px; }
+  .analyse-overview .analyse-index-entry { padding-block:10px; }
 }
