@@ -141,7 +141,7 @@ export function EngramPage({ embedded = false }: { embedded?: boolean } = {}) {
       <div className="relative z-10 flex-1 min-h-0 flex flex-col gap-3 p-2 sm:p-3 lg:flex-row lg:overflow-hidden">
 
         {/* Main content area */}
-        <div className="flex-1 min-w-0 overflow-y-auto rounded-2xl px-3 py-4 sm:px-5"
+        <div className="engram-results-scroll flex-1 min-w-0 overflow-y-auto rounded-2xl px-3 py-4 sm:px-5"
           style={{
             background: 'rgba(8,12,22,0.85)',
             border: `1px solid ${accent}20`,
@@ -151,10 +151,10 @@ export function EngramPage({ embedded = false }: { embedded?: boolean } = {}) {
           }}
         >
           {/* Section header */}
-          <div className="engram-main-heading flex items-center gap-2 mb-5 pb-3" style={{ borderBottom: `1px solid ${accent}15` }}>
+          {!embedded && <div className="engram-main-heading flex items-center gap-2 mb-5 pb-3" style={{ borderBottom: `1px solid ${accent}15` }}>
             <span style={{ color: accent }}>{TABS.find(t => t.id === tab)?.icon}</span>
             <h2 className="text-sm text-white/80">{TABS.find(t => t.id === tab)?.label}</h2>
-          </div>
+          </div>}
 
           {tab === 'dashboard' && <EngramDashboard sapienId={sapienId} />}
           {tab === 'browse'    && <EngramBrowse    sapienId={sapienId} onOpenInGraph={openInGraph} />}

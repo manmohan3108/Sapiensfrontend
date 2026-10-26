@@ -1,4 +1,4 @@
-import { RecordText, recordDate, useReaderNavigation } from './ContextReader';
+import { RecordText, recordDate, useListReaderNavigation } from './ContextReader';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { toast } from 'sonner';
 import {
@@ -473,11 +473,15 @@ function ContextBlock({ ctx, label, highlightAfter }: {
 
 // ── Goal Card ─────────────────────────────────────────────────────────────────
 
-function GoalCard({ goal, sapienId, onClick, compact }: { goal: Goal; sapienId: number; onClick: () => void; compact: boolean }) {
+function GoalCard({ goal, sapienId, onClick, compact, inspection = false }: { goal: Goal; sapienId: number; onClick: () => void; compact: boolean; inspection?: boolean }) {
   const { done, total } = planProgress(goal.current_plan);
   const isOverloaded = useSapiensStore(s => s.isOverloaded);
 
-  if (compact) return <button className="context-list-row context-goal-row" onClick={onClick}>
+  if (inspection) return <article className="analyse-goal-row">
+    <button type="button" data-record-id={goal.id} onClick={onClick} className="analyse-goal-open"><strong>{goal.description}</strong><span><Lifecycle record={goal} /><StatusPill status={goal.state} /><span>{goal.current_plan ? done + '/' + total + ' steps finished' : 'No plan recorded'}</span>{goal.progress !== null && <span>Reported progress: {Math.round(goal.progress * 100)}%</span>}</span></button>
+    <CommentPopover sapienId={sapienId} goalId={goal.id} scope="goal" examples={['This is lower priority now.', 'Deadline moved to next week.', 'Blocked on external dependency.']} label="Add note" overloaded={isOverloaded} triggerVariant="pill" />
+  </article>;
+  if (compact) return <button data-record-id={goal.id} className="context-list-row context-goal-row" onClick={onClick}>
     <span className="context-goal-mark" aria-hidden="true">{goal.finished === true ? <CheckCircle2 size={18} /> : <Circle size={18} />}</span>
     <div><span className="context-row-excerpt">{goal.description}</span><small>{goal.retired === true ? 'Retired' : goal.finished === true ? 'Finished' : goal.finished === false ? 'Open' : 'Completion not supplied'}{goal.current_plan ? ' · ' + done + '/' + total + ' steps finished' : ''}</small></div><ChevronRight size={16} />
   </button>;
@@ -488,7 +492,7 @@ function GoalCard({ goal, sapienId, onClick, compact }: { goal: Goal; sapienId: 
       onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgb(var(--sp-ink-rgb, 255 255 255) / 0.07)'; (e.currentTarget as HTMLElement).style.background = 'rgb(var(--sp-ink-rgb, 255 255 255) / 0.03)'; }}>
 
       {/* Clickable body */}
-      <button onClick={onClick} className="w-full text-left p-3 flex flex-col gap-2">
+      <button data-record-id={goal.id} onClick={onClick} className="w-full text-left p-3 flex flex-col gap-2">
 
         <div className="flex items-center gap-1.5 flex-wrap">
           <SourceBadge source={goal.source} />
@@ -537,9 +541,9 @@ const PLAN_EXAMPLES   = ['This won\'t work. Restart.', 'Step 3 doesn\'t matter f
 const STEP_EXAMPLES   = ['Done.', 'Skip this.', 'Blocked on Alice.'];
 
 function GoalDetailPane({
-  sapienId, goalId, onBack, active = true, compact = false,
+  sapienId, goalId, onBack, active = true, compact = false, inspection = false,
 }: {
-  sapienId: number; goalId: string; onBack: () => void; active?: boolean; compact?: boolean;
+  sapienId: number; goalId: string; onBack: () => void; active?: boolean; compact?: boolean; inspection?: boolean;
 }) {
   const isOverloaded = useSapiensStore(s => s.isOverloaded);
   const activeRef = useRef(active);
@@ -629,7 +633,7 @@ function GoalDetailPane({
 
   if (loading && !detail) return (
     <div className="flex flex-col h-full">
-      <BackBtn onClick={onBack} autoFocus={compact} />
+      <BackBtn onClick={onBack} autoFocus={compact || inspection} />
       <div role="status" className="flex-1 flex items-center justify-center gap-2 text-sm text-sp-muted">
         <Loader2 className="w-5 h-5 animate-spin text-sp-muted" />Loading goal details…
       </div>
@@ -675,7 +679,8 @@ function GoalDetailPane({
             <section className="context-goal-update"><h4>{remaining ? 'What is still needed' : 'Latest understanding'}</h4>{remaining || understanding ? <><RecordText text={remaining || understanding} /><p className="context-footnote">Recorded {recordDate(detail.attention?.resolved_at)} · An assessment, not a confirmed outcome.</p></> : <p className="context-footnote">No assessment has been supplied for this goal yet.</p>}</section>
           </> : <><div className="flex items-center gap-1.5"><StatusPill status={goal.state} /><Lifecycle record={goal} /></div><p className="text-base text-sp-ink">{goal.description}</p>{goal.motivation && <p className="text-sm text-sp-muted">{goal.motivation}</p>}</>}
           <CommentPopover sapienId={sapienId} goalId={goalId} scope="goal" examples={GOAL_EXAMPLES} label={compact ? 'Add information' : 'Comment'} overloaded={isOverloaded} triggerVariant="pill" onSuccess={startFastPoll} />
-          <CollapsibleSection title="Progress, schedule & technical details" defaultOpen={!compact}>
+          {inspection && <div className="analyse-goal-current"><p>{goal.progress === null ? 'Progress not reported' : 'Reported progress: ' + Math.round(goal.progress * 100) + '%'} · {done}/{total} planned steps finished</p>{(remaining || understanding) && <><h4>{remaining ? 'What is still needed' : 'Latest recorded understanding'}</h4><RecordText text={remaining || understanding} /><p className="context-footnote">Recorded {recordDate(detail.attention?.resolved_at)} · An assessment, not a confirmed outcome.</p></>}</div>}
+          <CollapsibleSection title="Progress, schedule & technical details" defaultOpen={!compact && !inspection}>
           <div className="text-[10px] text-sp-muted space-y-1">
             <div className="flex gap-2"><StatusPill status={goal.state} /><Lifecycle record={goal} /></div>
             <p>Stored finished flag: {goal.finished === null ? 'Unknown' : String(goal.finished)} · Revision: {goal.revision ?? 'Unknown'}</p>
@@ -698,7 +703,7 @@ function GoalDetailPane({
         </div>
 
         {error && <p role="alert" className="text-[11px] text-sp-danger">{error}</p>}
-        {!compact && <><SourceBadge source={goal.source} /><RecordDetails record={goal} /><GoalInspection detail={detail} /></>}
+        {!compact && !inspection && <><SourceBadge source={goal.source} /><RecordDetails record={goal} /><GoalInspection detail={detail} /></>}
 
         {/* Plan */}
         <div className="rounded-2xl flex flex-col gap-0"
@@ -798,7 +803,7 @@ function GoalDetailPane({
           </div>
         </div>
 
-        {compact && <CollapsibleSection title="Source & audit details"><SourceBadge source={goal.source} /><RecordDetails record={goal} /><GoalInspection detail={detail} compact /></CollapsibleSection>}
+        {(compact || inspection) && <CollapsibleSection title="Source & audit details"><SourceBadge source={goal.source} /><RecordDetails record={goal} /><GoalInspection detail={detail} compact /></CollapsibleSection>}
         {/* Context sections */}
         <ContextBlock ctx={context}      label="What Sapien knows about this goal" highlightAfter={lastCommentAt || undefined} />
         <ContextBlock ctx={plan_context} label="What Sapien knows about this plan" highlightAfter={lastCommentAt || undefined} />
@@ -820,7 +825,7 @@ function BackBtn({ onClick, autoFocus = false }: { onClick: () => void; autoFocu
 
 type StatusFilter = 'unfinished' | 'finished' | 'retired';
 
-export function GoalsPanel({ sapienId, active = true, compact = false }: { sapienId: number; active?: boolean; compact?: boolean }) {
+export function GoalsPanel({ sapienId, active = true, compact = false, inspection = false }: { sapienId: number; active?: boolean; compact?: boolean; inspection?: boolean }) {
   const activeRef = useRef(active);
   activeRef.current = active;
   const wasActive = useRef(active);
@@ -833,7 +838,7 @@ export function GoalsPanel({ sapienId, active = true, compact = false }: { sapie
   const [statusFilter, setStatusFilter]   = useState<StatusFilter>('unfinished');
   const [sourceFilters, setSourceFilters] = useState<Set<GoalSource>>(new Set());
   const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
-  const readerRef = useReaderNavigation(selectedGoalId);
+  const { container: readerRef, list: listRef, remember } = useListReaderNavigation(selectedGoalId, sapienId);
   const [lastFetch, setLastFetch] = useState<Date | null>(null);
   const requestRef = useRef(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -885,7 +890,7 @@ export function GoalsPanel({ sapienId, active = true, compact = false }: { sapie
         style={{ background: 'rgb(var(--sp-panel-rgb, 8 12 22) / 0.85)', border: '1px solid rgb(var(--sp-ink-rgb, 255 255 255) / 0.08)', backdropFilter: 'blur(20px)', overflow: 'hidden' }}>
         <GoalDetailPane
           key={`${sapienId}:${selectedGoalId}`}
-          active={active} compact={compact} sapienId={sapienId} goalId={selectedGoalId}
+          active={active} compact={compact} inspection={inspection} sapienId={sapienId} goalId={selectedGoalId}
           onBack={() => setSelectedGoalId(null)}
         />
       </div>
@@ -899,7 +904,7 @@ export function GoalsPanel({ sapienId, active = true, compact = false }: { sapie
       {/* Header */}
       <div className="flex-shrink-0 px-4 py-3" style={{ borderBottom: '1px solid rgb(var(--sp-ink-rgb, 255 255 255) / 0.06)' }}>
         <div className="flex items-center justify-between mb-3">
-          <div>{compact ? <><h2 data-reader-heading tabIndex={-1} className="context-goals-heading">What {sapienName} is working towards</h2><p className="context-footnote">Open a goal to see what is needed next.</p></> : <span className="text-[12px] font-medium text-sp-ink">Goals</span>}</div>
+          <div>{compact ? <><h2 data-reader-heading tabIndex={-1} className="context-goals-heading">What {sapienName} is working towards</h2><p className="context-footnote">Open a goal to see what is needed next.</p></> : <span data-reader-heading tabIndex={-1} className="text-[12px] font-medium text-sp-ink">Goals</span>}</div>
           <div className="flex items-center gap-2">
             {lastFetch && !compact && <span className="text-[9px] font-mono text-sp-muted">{lastFetch.toLocaleTimeString()}</span>}
             <button onClick={() => fetchGoals(true)} disabled={loading} aria-label="Refresh goals"
@@ -935,6 +940,7 @@ export function GoalsPanel({ sapienId, active = true, compact = false }: { sapie
           ))}
         </div>
 
+        {inspection && sourceFilters.size > 0 && <div className="analyse-goal-filter-chips">{[...sourceFilters].map(source => <button type="button" key={source} className="analyse-filter-chip" aria-label={'Remove source ' + source} onClick={() => toggleSource(source)}>{source.replaceAll('_', ' ')} ×</button>)}</div>}
         {/* Source chips */}
         <details className="mt-3"><summary className="text-xs text-sp-muted cursor-pointer">Filter by source{sourceFilters.size ? ` (${sourceFilters.size} selected)` : ''}</summary><p className="text-xs text-sp-muted mt-2">Up to 30 matching goals · Filters apply to this loaded set.</p>
         <div className="flex gap-1 flex-wrap mt-2">
@@ -955,7 +961,7 @@ export function GoalsPanel({ sapienId, active = true, compact = false }: { sapie
       </div>
 
       {/* List */}
-      <div className="flex-1 min-h-0 overflow-y-auto px-3 py-3">
+      <div ref={listRef} className="flex-1 min-h-0 overflow-y-auto px-3 py-3">
         {loading && goals.length === 0 ? (
           <div role="status" className="flex items-center justify-center gap-2 h-24 text-sm text-sp-muted">
             <Loader2 className="w-5 h-5 animate-spin text-sp-muted" />
@@ -979,7 +985,7 @@ export function GoalsPanel({ sapienId, active = true, compact = false }: { sapie
         ) : (
           <div className={compact ? 'context-goals-list' : 'flex flex-col gap-2'}>
             {visibleGoals.map(g => (
-              <GoalCard compact={compact} key={g.id} goal={g} sapienId={sapienId} onClick={() => setSelectedGoalId(g.id)} />
+              <GoalCard compact={compact} inspection={inspection} key={g.id} goal={g} sapienId={sapienId} onClick={() => { remember(g.id); setSelectedGoalId(g.id); }} />
             ))}
           </div>
         )}

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { ChevronLeft, ChevronRight, Share2 } from 'lucide-react';
 import { engramService } from '../../core/services/engramService';
 import type { EngramUnit, MemoryType, UnitsListResponse } from '../../types/engramTypes';
@@ -20,6 +20,9 @@ const TYPE_COLOR: Record<string, string> = {
 const PAGE_SIZE = 50;
 
 export function EngramBrowse({ sapienId, onOpenInGraph }: { sapienId: number; onOpenInGraph?: (id: string) => void }) {
+  const [search, setSearch] = useState('');
+  const listRef = useRef<HTMLDivElement>(null);
+  const savedList = useRef<{ scroll: HTMLElement; top: number; id: string } | null>(null);
   const [filterType, setFilterType] = useState<MemoryType | ''>('');
   const [page, setPage]             = useState(1);
   const [data, setData]             = useState<UnitsListResponse | null>(null);
@@ -46,6 +49,10 @@ export function EngramBrowse({ sapienId, onOpenInGraph }: { sapienId: number; on
   useEffect(() => { setPage(1); }, [filterType]);
 
   const openDetail = (id: string) => {
+    if (!selectedId) {
+      const scroll = listRef.current?.closest<HTMLElement>('.engram-results-scroll');
+      if (scroll) savedList.current = { scroll, top: scroll.scrollTop, id };
+    }
     if (selectedId) setDetailStack(s => [...s, selectedId]);
     setSelectedId(id);
   };
@@ -56,6 +63,13 @@ export function EngramBrowse({ sapienId, onOpenInGraph }: { sapienId: number; on
     setSelectedId(prev);
   };
 
+  useEffect(() => {
+    if (!selectedId && savedList.current) {
+      const {scroll, top, id} = savedList.current;
+      const button = [...(listRef.current?.querySelectorAll<HTMLButtonElement>('[data-memory-id]') || [])].find(node => node.dataset.memoryId === id);
+      button?.focus({ preventScroll: true }); scroll.scrollTop = top;
+    }
+  }, [selectedId]);
   if (selectedId) {
     return (
       <EngramUnitDetail
@@ -67,10 +81,11 @@ export function EngramBrowse({ sapienId, onOpenInGraph }: { sapienId: number; on
     );
   }
 
+  const visible = (data?.results || []).filter(unit => unit && (!search.trim() || [unit.content, unit.id].some(value => value?.toLowerCase().includes(search.trim().toLowerCase()))));
   const totalPages = data ? Math.ceil(data.total / PAGE_SIZE) : 1;
 
   return (
-    <div className="space-y-4">
+    <div ref={listRef} className="space-y-4">
       {/* Filter bar */}
       <div className="flex items-center gap-2 flex-wrap">
         {TYPES.map(t => (
@@ -94,16 +109,17 @@ export function EngramBrowse({ sapienId, onOpenInGraph }: { sapienId: number; on
         )}
       </div>
 
+      <label className="analyse-memory-search">Search this page<input value={search} onChange={event => setSearch(event.target.value)} placeholder="Memory content or ID" /><span>{visible.length} of {data?.results.length ?? 0} loaded memories · search applies to this page only</span></label>
       {loading && <CenteredLoader />}
       {!loading && error && <ErrorBox msg={error} />}
 
       {!loading && !error && data && (
         <>
-          {data.results.length === 0 ? (
-            <div className="flex items-center justify-center h-32 text-sm text-white/25">No units found.</div>
+          {visible.length === 0 ? (
+            <div className="flex items-center justify-center h-32 text-sm text-white/25">{data.results.length ? 'No memories on this page match your search.' : 'No units found.'}</div>
           ) : (
             <div className="space-y-1.5">
-              {data.results.filter(Boolean).map(unit => (
+              {visible.map(unit => (
                 <UnitRow key={unit.id} unit={unit} onClick={() => openDetail(unit.id)} onOpenInGraph={onOpenInGraph} />
               ))}
             </div>
@@ -153,7 +169,7 @@ function UnitRow({ unit, onClick, onOpenInGraph }: { unit: EngramUnit; onClick: 
         className="mt-1 w-2 h-2 rounded-full flex-shrink-0"
         style={{ background: color, boxShadow: `0 0 6px ${color}60` }}
       />
-      <button onClick={onClick} className="flex-1 min-w-0 text-left">
+      <button data-memory-id={unit.id} onClick={onClick} className="flex-1 min-w-0 text-left">
         <p className="text-[11px] text-white/65 leading-relaxed break-words line-clamp-2">{preview}</p>
       </button>
       <div className="flex flex-col items-end gap-1 flex-shrink-0">

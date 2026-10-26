@@ -88,7 +88,7 @@ function RecordDetail({ sapienId, kind, id, onQuestion }: { sapienId: string; ki
       <p className="text-sm text-cyan-200">{item.state === 'answered' ? 'Assessed answered' : item.state === 'stale' ? 'Closed without an established answer' : item.state === 'open' ? 'Open question' : 'Status not recorded'}</p>
       <InquiryContext context={item.context} outcome={item.outcome} />
       <p className="text-xs leading-5 text-white/50">A generated question is not proof it was sent. An assessed answer is the Sapien’s recorded understanding, not independent verification.</p>
-      <details className={`${panel} p-4`}><summary className="cursor-pointer text-sm text-white/60">Technical details and original records</summary><div className="mt-4 space-y-4">
+      <details className={`${panel} p-4`}><summary className="cursor-pointer text-sm text-white/60">Full context, outcome & technical details</summary><div className="mt-4 space-y-4">
       <section className={`${panel} p-4`}><dl className="grid gap-4 sm:grid-cols-2">
         <Field label="Assessment state" value={item.state === 'answered' ? 'Assessed answered' : item.state} />
         <Field label="Source" value={item.source} /><Field label="Source handle" value={item.source_handle} />
@@ -105,11 +105,12 @@ function RecordDetail({ sapienId, kind, id, onQuestion }: { sapienId: string; ki
         <div>Stored job: {item.job_id ? <Link className="break-all text-cyan-200 underline" to={jobHref(kind, item.job_id)}>{item.job_id}</Link> : 'Unavailable — no explicit job ID retained'}</div>
         {kind === 'curiosity' && <div>Questioning reference: {item.question_record_id ? <button type="button" className="break-all text-cyan-200 underline" onClick={() => onQuestion(item.question_record_id!)}>{item.question_record_id}</button> : 'Unavailable — no explicit question record ID retained'}</div>}
       </section>
+
+      <p className="text-xs leading-5 text-white/45">Generated questions, selected probes, attention requests, reviews, and assessed answers are separate stages. An attention request or asked_at timestamp does not establish recipient delivery. Stored assessments are not independently verified truth. These are the latest retained facts, not a complete event history. Stale means closed without establishing an answer; job completion proves processing, not resolution.</p>
+      <p className="text-xs leading-5 text-white/45">Event, review, and expiry dates use cognitive time and may be simulated. They are not compared with the browser clock or real read time to infer expiry. Missing or cleared context is not a fetch error.</p>
       <Stored label="Source context" value={item.context} />
       <Stored label="Assessed answer / evidence (stored outcome)" value={item.outcome} />
       {kind === 'curiosity' && <><Stored label="Stored attention" value={item.attention} /><Stored label="Observed usage outcome" value={item.usage_outcome} /></>}
-      <p className="text-xs leading-5 text-white/45">Generated questions, selected probes, attention requests, reviews, and assessed answers are separate stages. An attention request or asked_at timestamp does not establish recipient delivery. Stored assessments are not independently verified truth. These are the latest retained facts, not a complete event history. Stale means closed without establishing an answer; job completion proves processing, not resolution.</p>
-      <p className="text-xs leading-5 text-white/45">Event, review, and expiry dates use cognitive time and may be simulated. They are not compared with the browser clock or real read time to infer expiry. Missing or cleared context is not a fetch error.</p>
       </div></details>
     </>}
   </div>;
@@ -148,12 +149,13 @@ function InquiryList({ sapienId, kind }: { sapienId: string; kind: InquiryKind }
   }, [sapienId, kind, filters, valid, revision, offset]);
   function refresh() { resetContent(); setRevision(value => value + 1); }
   return <div className="space-y-4">
-    <section className={`${panel} analyse-intro-compact`}><h2 className="text-sm text-white/80">{title(kind)} <span className="ml-2 rounded-full border border-cyan-300/20 px-2 py-0.5 text-[10px] text-cyan-100/70">Admin · Read-only</span></h2>
-      <p className="mt-2 text-base leading-7 text-white/70">{kind === 'questioning' ? 'What is the Sapien trying to understand?' : 'How is the Sapien exploring what it does not know?'}</p>
-      <p className="mt-1 text-xs text-white/45">Saved records · Sapien {sapienId} · No engines run when you inspect this page.</p>
-    </section>
-    <AnalyseControls label="Filters" summary={[filters.state || 'All states', filters.source && `Source: ${filters.source}`, kind === 'curiosity' && filters.channel, kind === 'curiosity' && filters.delivery_state, `${filters.limit} per page`].filter(Boolean).join(' · ')} onRefresh={refresh} busy={!valid || (!data && !error)}><div className="flex flex-wrap items-end gap-3">
-      <label className="text-xs text-white/50">State<select className={input} value={filters.state} onChange={event => change({ state: event.target.value as InquiryFilters['state'] })}><option value="">All states</option><option value="open">Open</option><option value="answered">Assessed answered</option><option value="stale">Stale</option></select></label>
+    <p className="analyse-page-purpose">{kind === 'questioning' ? 'Review the questions Sapiens investigated, their context and recorded outcomes.' : 'Review the information gaps Sapiens identified and how they were assessed.'} <span className="analyse-inline-note">Read-only inspection.</span></p>
+    <AnalyseControls primary={<label className="text-xs text-white/50">State<select className={input} value={filters.state} onChange={event => change({ state: event.target.value as InquiryFilters['state'] })}><option value="">All states</option><option value="open">Open</option><option value="answered">Assessed answered</option><option value="stale">Stale</option></select></label>} filters={[
+      ...(filters.source ? [{ label: 'Source: ' + filters.source, onRemove: () => change({ source: '' }) }] : []),
+      ...(kind === 'curiosity' && filters.channel ? [{ label: 'Channel: ' + filters.channel, onRemove: () => change({ channel: '' }) }] : []),
+      ...(kind === 'curiosity' && filters.delivery_state ? [{ label: 'Review: ' + filters.delivery_state, onRemove: () => change({ delivery_state: '' }) }] : [])
+    ]} summary={`Normal and simulation records · ${filters.limit} per page`} onRefresh={refresh} busy={!valid || (!data && !error)}><div className="flex flex-wrap items-end gap-3">
+
       <label className="text-xs text-white/50">Source (exact match)<input className={input} maxLength={256} value={filters.source} onChange={event => change({ source: event.target.value })} placeholder="All sources" /></label>
       {kind === 'curiosity' && <>
         <label className="text-xs text-white/50">Channel<select className={input} value={filters.channel} onChange={event => change({ channel: event.target.value as InquiryFilters['channel'] })}><option value="">All channels</option>{['user', 'source', 'experiment'].map(value => <option key={value}>{value}</option>)}</select></label>
@@ -166,14 +168,8 @@ function InquiryList({ sapienId, kind }: { sapienId: string; kind: InquiryKind }
     {valid && !data && !error && <Loading />}
     {error && <Failure status={error.status} retry={refresh} />}
     {data && <>
-      <section className={`${panel} space-y-3 p-4`}><h3 className="text-sm text-white/80">{data.count} records on this page{data.total !== undefined ? ` · ${data.total} matching` : ''}</h3>
-        <p className="text-xs text-white/50">{data.ordering === 'created_at_desc' ? 'Newest first' : 'Legacy bounded selection'} · Read at {timestamp(data.as_of)} (real time)</p>
-        <details><summary className="cursor-pointer text-xs text-white/50">Page breakdown</summary>
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{Object.entries(data.summary).map(([group, counts]) => <div key={group} className="rounded-lg border border-white/[.07] p-3"><h4 className="text-xs text-cyan-100/80">{group.replaceAll('_', ' ')} · subset only</h4><dl className="mt-2 space-y-1 text-xs text-white/60">{Object.entries(counts ?? {}).map(([label, count]) => <div key={label} className="flex justify-between gap-3"><dt className="break-all">{label === 'answered' ? 'Assessed answered' : label.replaceAll('_', ' ')}</dt><dd>{count}</dd></div>)}{!Object.keys(counts ?? {}).length && <div>No counts</div>}</dl></div>)}</div>
-        </details>
-      </section>
-      {kind === 'questioning' && <QuestionReviews data={data} />}
-      <section className={`${panel} overflow-hidden`}><div className="overflow-x-auto"><table className="w-full min-w-[720px] text-left text-sm"><caption className="p-3 text-left text-white/50">Select a question to see its context and outcome</caption><thead className="bg-[#0b101c] text-white/40"><tr>{['Question', 'Source', 'Assessment', ...(kind === 'curiosity' ? ['Attention / review'] : []), 'Created', 'Job'].map(label => <th key={label} className="px-3 py-2 font-normal">{label}</th>)}</tr></thead>
+
+      <section className={`${panel} overflow-hidden`}><div className="overflow-x-auto"><table className="w-full min-w-[720px] text-left text-sm"><caption className="p-3 text-left text-white/50">{data.count} on this page{data.total !== undefined ? ` · ${data.total} matching` : ''} · {data.ordering === 'created_at_desc' ? 'Newest first' : 'Legacy bounded selection'} · Select a question for context and outcome</caption><thead className="bg-[#0b101c] text-white/40"><tr>{['Question', 'Source', 'Assessment', ...(kind === 'curiosity' ? ['Attention / review'] : []), 'Created', 'Job'].map(label => <th key={label} className="px-3 py-2 font-normal">{label}</th>)}</tr></thead>
         <tbody>{data.items.map(item => <tr key={item.id} className="border-t border-white/[.06] text-white/70">
           <td className="max-w-md px-4 py-4"><button type="button" className="analyse-table-excerpt break-words text-left text-sm text-cyan-100 hover:underline" onClick={() => setSelected({ kind, id: item.id })}>{item.question || 'Question text unavailable'}</button></td>
           <td className="max-w-48 break-words px-3 py-3">{item.source?.replaceAll('_', ' ') || 'Not recorded'}</td>
@@ -185,6 +181,9 @@ function InquiryList({ sapienId, kind }: { sapienId: string; kind: InquiryKind }
         {!data.items.length && <p className="p-8 text-center text-xs leading-5 text-white/50">No stored records returned for this Sapien and these filters. This does not establish that the engine is disabled.</p>}
       </section>
     </>}
+    {data && <div className="analyse-secondary-reports"><p className="analyse-inline-note">Read at {timestamp(data.as_of)} (real time)</p>        <details><summary className="cursor-pointer text-xs text-white/50">Page breakdown</summary>
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{Object.entries(data.summary).map(([group, counts]) => <div key={group} className="rounded-lg border border-white/[.07] p-3"><h4 className="text-xs text-cyan-100/80">{group.replaceAll('_', ' ')} · subset only</h4><dl className="mt-2 space-y-1 text-xs text-white/60">{Object.entries(counts ?? {}).map(([label, count]) => <div key={label} className="flex justify-between gap-3"><dt className="break-all">{label === 'answered' ? 'Assessed answered' : label.replaceAll('_', ' ')}</dt><dd>{count}</dd></div>)}{!Object.keys(counts ?? {}).length && <div>No counts</div>}</dl></div>)}</div>
+        </details>{kind === 'questioning' && <QuestionReviews data={data} />}</div>}
     {data?.total !== undefined && <nav aria-label="Question pages" className="flex items-center justify-between"><button className={button} disabled={offset === 0} onClick={() => { resetContent(); setOffset(Math.max(0, offset - filters.limit)); }}>Previous</button><span className="text-xs text-white/50">Page {Math.floor(offset / filters.limit) + 1}</span><button className={button} disabled={!data.has_more} onClick={() => { resetContent(); setOffset(offset + filters.limit); }}>Next</button></nav>}
     <Dialog open={Boolean(selected)} onOpenChange={open => { if (!open) setSelected(null); }}><DialogContent className="max-h-[90dvh] w-[calc(100%-2rem)] max-w-4xl overflow-y-auto border-white/10 bg-[#09101c] text-white"><DialogTitle>{selected ? title(selected.kind) : title(kind)} details</DialogTitle><DialogDescription className="text-xs text-white/45">Sensitive stored content · read-only administrator inspection</DialogDescription>
       {selected && valid && <RecordDetail key={`${selected.kind}:${selected.id}`} sapienId={sapienId} kind={selected.kind} id={selected.id} onQuestion={id => setSelected({ kind: 'questioning', id })} />}

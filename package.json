@@ -10,6 +10,7 @@
     "test:selection": "node scripts/test-selection.mjs",
     "test:customer": "node scripts/test-customer.mjs",
     "test:navigation": "node scripts/test-app-navigation.mjs",
+    "test:analyse": "node scripts/test-analyse-layout.mjs",
     "dev": "vite"
   },
   "dependencies": {

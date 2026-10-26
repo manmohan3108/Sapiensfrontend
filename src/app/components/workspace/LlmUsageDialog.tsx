@@ -108,8 +108,8 @@ function UsageKindSection({ kind, state, sapienId, sapienName, onRetry, compactD
           <div className="mb-3 rounded-xl border border-violet-400/15 bg-violet-400/[.05] p-4"><p className="text-[10px] uppercase tracking-wider text-white/30">{title} today · {state.sapien.today} UTC</p><p className="mt-1 font-mono text-2xl text-violet-200">{number.format(state.sapien.today_total)}</p></div>
           <h5 className="mb-2 text-xs font-medium text-white/50">Per-sapien daily tier quota</h5>
           {Object.keys(sapienLimits).length > 0 ? <TierLimitCards limits={sapienLimits} usage={state.sapien.today_by_tier} ariaScope={`${title}, ${sapienName} per-sapien quota`} /> : <p className="text-xs text-white/35">No per-sapien tier quota was returned.</p>}
-          <UsageBreakdown compact={compactDetails} title="Purpose breakdown & recent daily usage"><h5 className="mb-2 mt-4 text-xs font-medium text-white/50">Today by purpose</h5><MetricRows values={state.sapien.today_by_purpose} emptyText={`No ${title.toLowerCase()} are attributed to this sapien today.`} />
-          <h5 className="mb-2 mt-4 text-xs font-medium text-white/50">Recent daily per-sapien usage</h5><UsageHistory usage={state.sapien} unit={title} /></UsageBreakdown>
+          <UsageBreakdown compact={compactDetails} title="Today by purpose"><h5 className="mb-2 mt-4 text-xs font-medium text-white/50">Today by purpose</h5><MetricRows values={state.sapien.today_by_purpose} emptyText={`No ${title.toLowerCase()} are attributed to this sapien today.`} /></UsageBreakdown>
+          <h5 className="mb-2 mt-4 text-xs font-medium text-white/50">Recent daily per-sapien usage</h5><UsageHistory usage={state.sapien} unit={title} />
         </div>
       )}
       {state.global && (

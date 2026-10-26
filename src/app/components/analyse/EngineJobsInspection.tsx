@@ -2,7 +2,7 @@ import { AnalyseControls } from './AnalyseControls';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import type { ReactNode } from 'react';
-import { Activity, ArrowLeft, Copy, Loader2 } from 'lucide-react';
+import { ArrowLeft, Copy, Loader2 } from 'lucide-react';
 import { engineJobsService } from '../../core/services/engineJobsService';
 import type { ApiError } from '../../types/apiTypes';
 import type { EngineJobDetailResponse, EngineJobFilters, EngineJobPage, EngineJobStatus } from '../../types/engineJobTypes';
@@ -134,6 +134,8 @@ function Detail({ sapienId, jobId, onOpen }: { sapienId: string; jobId: string; 
         <p className="mt-2 text-xs leading-5 text-white/50">Normal pending jobs are due or delayed. Simulation pending jobs require the run’s cognitive clock (simulation_clock_required); this read does not infer their due status from real time. Running jobs are leased or lease_expired. Missing scheduling or lease timestamps yield unknown. Terminal jobs are not queued for scheduling.</p>
         {job.eligibility === 'lease_expired' && <p className="mt-3 text-xs text-amber-200">An expired lease does not prove that execution stopped.</p>}
       </section>
+      {job.has_error && <section className="analyse-job-error"><h3>Recorded error</h3><pre>{typeof job.error === 'string' ? job.error : JSON.stringify(job.error, null, 2)}</pre></section>}
+      {!job.has_error && <Raw label="Recorded error" value={job.error} note="Stored error content, including messages or tracebacks when available. Null means no error value was recorded." />}
       <section className={`${panel} p-4`}><h3 className="mb-3 text-sm text-cyan-100">Timing and lease</h3>
         <dl className="grid gap-4 sm:grid-cols-2">
           {(['created_at', 'updated_at', 'available_at', 'run_started_at', 'lease_until'] as const).map(field => <Fact key={field} label={field}>{timestamp(job[field])}</Fact>)}
@@ -148,7 +150,7 @@ function Detail({ sapienId, jobId, onOpen }: { sapienId: string; jobId: string; 
       </section>
       <Raw label="Full stored payload" value={job.payload} />
       <Raw label="Full stored origin" value={job.origin} />
-      <Raw label="Recorded error" value={job.error} note="Stored error content, including messages or tracebacks when available. Null means no error value was recorded." />
+
       <Raw label="Derived-result checkpoint (progress)" value={job.progress} note="Retained checkpoint used to resume derived-result processing. It can be absent on older jobs and is not a complete execution or attempt history. Completion does not prove question resolution or recipient delivery." />
       <Raw label="Complete returned job facts" value={job} note="No missing outcomes or attempts are reconstructed." />
     </>}
@@ -184,44 +186,32 @@ function JobList({ sapienId, initialEngine, initialJob }: { sapienId: string; in
   function restart() { setRequest(current => ({ ...current, cursors: [null], revision: current.revision + 1 })); }
 
   return <div className="space-y-4">
-    <section className={`${panel} p-4`}>
-      <div className="flex items-center gap-2"><Activity className="h-4 w-4 text-cyan-200" /><h2 className="text-sm text-white/80">Engine jobs</h2><span className="rounded-full border border-cyan-300/20 px-2 py-0.5 text-[10px] text-cyan-100/70">Admin · Read-only</span></div>
-      <p className="mt-2 text-xs leading-5 text-white/50">Inspect persisted engine work for Sapien {sapienId}. Summaries cover the entire filtered creation-time window, not just this page or the all-time queue.</p>
-    </section>
-    <AnalyseControls label="Filters" summary={[`${request.filters.days} days`, request.filters.engine_name || 'All engines', request.filters.status || 'All statuses', `${request.filters.limit} per page`, JSON.stringify(draft) !== JSON.stringify(request.filters) && 'Unapplied edits'].filter(Boolean).join(' · ')} onRefresh={restart} busy={loading}><form onSubmit={event => {
+    <p className="analyse-page-purpose">Inspect saved engine work, execution status and failures. <span className="analyse-inline-note">Read-only · counts cover the filtered creation window.</span></p>
+<form onSubmit={event => {
       event.preventDefault();
       if (!Number.isInteger(draft.days) || draft.days < 1 || draft.days > 90 || !Number.isInteger(draft.limit) || draft.limit < 1 || draft.limit > 200) return;
       setRequest(current => ({ filters: { ...draft }, cursors: [null], revision: current.revision + 1 }));
     }}>
-      <div className="flex flex-wrap items-end gap-3">
-        <label className="text-xs text-white/50">Creation window (days)<input type="number" required min={1} max={90} step={1} value={draft.days || ''} onChange={event => setDraft(current => ({ ...current, days: Number(event.target.value) }))} className={input} /></label>
+    <AnalyseControls label="Page options" primary={<>        <label className="text-xs text-white/50">Creation window (days)<input type="number" required min={1} max={90} step={1} value={draft.days || ''} onChange={event => setDraft(current => ({ ...current, days: Number(event.target.value) }))} className={input} /></label>
         <label className="min-w-48 flex-1 text-xs text-white/50">Engine name (exact match)<input maxLength={100} value={draft.engine_name} onChange={event => setDraft(current => ({ ...current, engine_name: event.target.value }))} placeholder="All engines" className={input} /></label>
         <label className="text-xs text-white/50">Status<select value={draft.status} onChange={event => setDraft(current => ({ ...current, status: event.target.value as EngineJobFilters['status'] }))} className={input}><option value="">All statuses</option>{statuses.map(status => <option key={status}>{status}</option>)}</select></label>
-        <label className="text-xs text-white/50">Page limit<input type="number" required min={1} max={200} step={1} value={draft.limit || ''} onChange={event => setDraft(current => ({ ...current, limit: Number(event.target.value) }))} className={input} /></label>
         <button type="submit" className={button}>Apply filters</button>
-        <button type="button" onClick={() => { setDraft(defaults); setRequest(current => ({ filters: defaults, cursors: [null], revision: current.revision + 1 })); }} className={button}>Reset</button>
+        <button type="button" onClick={() => { setDraft(defaults); setRequest(current => ({ filters: defaults, cursors: [null], revision: current.revision + 1 })); }} className={button}>Reset</button></>} summary={[`${request.filters.days} days`, request.filters.engine_name || 'All engines', request.filters.status || 'All statuses', `${request.filters.limit} per page`, JSON.stringify(draft) !== JSON.stringify(request.filters) && 'Unapplied edits'].filter(Boolean).join(' · ')} onRefresh={restart} busy={loading}>
+      <div className="flex flex-wrap items-end gap-3">
+        <label className="text-xs text-white/50">Page limit<input type="number" required min={1} max={200} step={1} value={draft.limit || ''} onChange={event => setDraft(current => ({ ...current, limit: Number(event.target.value) }))} className={input} /></label>
+
       </div>
       <p className="mt-3 text-[11px] text-white/40">Apply filters to start a new window. Pagination keeps the applied filters and signed cursor; Refresh window starts again at page 1.</p>
-    </form></AnalyseControls>
+    </AnalyseControls></form>
     {loading && <Loading />}
     {error && <Failure error={error} retry={() => setRequest(current => ({ ...current, revision: current.revision + 1 }))} />}
     {!loading && data && <>
-      <details className="analyse-summary-fold"><summary>Window summary · {data.total.toLocaleString()} jobs</summary><div className="space-y-3">
-        <h3 className="text-sm text-white/80">{data.total.toLocaleString()} jobs in the filtered window</h3>
-        <p className="text-xs text-white/50">Applied: {data.filters.days} days · Engine: {data.filters.engine_name || 'all'} · Status: {data.filters.status || 'all'} · Limit: {data.limit}</p>
-        <p className="text-[11px] leading-5 text-white/40">Created from {timestamp(data.since)} through {timestamp(data.until)} (inclusive). Read as of {timestamp(data.as_of)}.</p>
-        <p className="text-[11px] leading-5 text-white/40">Live reads, not a transactional snapshot: statuses can change between pages or between summary and list queries. Later pages preserve the original creation window.</p>
-        <div className="overflow-x-auto"><table className="w-full min-w-[660px] text-left text-xs"><caption className="sr-only">Engine and status totals across the entire filtered window</caption><thead className="text-white/40"><tr>{['Engine', 'Status', 'Jobs', 'Due', 'Delayed', 'Simulation pending', 'Expired leases', 'With failures'].map(label => <th key={label} className="px-3 py-2 font-normal">{label}</th>)}</tr></thead>
-          <tbody>{data.summary.map(row => <tr key={`${row.engine_name}:${row.status}`} className="border-t border-white/[.06] text-white/70"><td className="max-w-64 break-words px-3 py-2">{row.engine_name}</td><td className="px-3 py-2">{row.status}</td>{[row.count, row.due, row.delayed, row.simulation_pending ?? 'Unavailable', row.expired_leases, row.retried].map((value, index) => <td key={index} className="px-3 py-2 tabular-nums">{value}</td>)}</tr>)}</tbody>
-        </table></div>
-        {!data.summary.length && <p className="text-xs text-white/50">No jobs match this creation window and these filters.</p>}
-        <p className="text-[11px] text-white/40">Simulation pending requires the run’s cognitive clock and is not classified as due or delayed by real read time. “With failures” means retries &gt; 0; it does not prove another execution occurred. Expired leases do not prove execution stopped.</p>
-      </div></details>
+      <p className="analyse-result-summary">{data.total.toLocaleString()} jobs in the filtered window · {data.summary.reduce((sum, row) => sum + row.retried, 0)} with recorded failures. Failure counts do not establish whether another attempt occurred.</p>
       <section className={`${panel} overflow-hidden`}>
         <div className="overflow-x-auto"><table className="w-full min-w-[940px] text-left text-xs"><caption className="p-3 text-left text-white/50">Page {request.cursors.length} · {data.jobs.length} returned jobs · newest creation time first. List metadata can be truncated; open details for full stored values.</caption>
           <thead className="bg-[#0b101c] text-white/40"><tr>{['Job / engine', 'Stored action / source', 'Status / eligibility', 'Failures / budget', 'Created', 'Error'].map(label => <th key={label} className="px-3 py-2 font-normal">{label}</th>)}</tr></thead>
           <tbody>{data.jobs.map(job => <tr key={job.id} className="border-t border-white/[.05] text-white/70 hover:bg-white/[.025]">
-            <td className="max-w-64 px-3 py-3"><button type="button" onClick={() => setJobTrail([job.id])} className="break-all text-left font-mono text-cyan-200 underline underline-offset-2">{job.id}</button><p className="mt-1 break-words">{job.engine_name}</p><p className="mt-1 break-all text-[10px] text-white/40">Simulation run origin: {text(job.origin && typeof job.origin === 'object' ? (job.origin as Record<string, unknown>).simulation_run_id : null)}</p></td>
+            <td className="max-w-64 px-3 py-3"><button type="button" onClick={() => setJobTrail([job.id])} className="break-words text-left text-cyan-200 underline underline-offset-2">{job.engine_name}</button><p className="mt-1 text-xs text-white/40" title={job.id}>{job.id.slice(0, 12)}…</p></td>
             <td className="max-w-64 break-words px-3 py-3"><p>{text(job.action)}</p><p className="mt-1 text-white/40">{text(job.origin && typeof job.origin === 'object' ? (job.origin as Record<string, unknown>).source : null)}</p></td>
             <td className="px-3 py-3"><p>{job.status}</p><p className={`mt-1 ${job.eligibility === 'lease_expired' ? 'text-amber-200' : 'text-white/40'}`}>{job.eligibility}</p></td>
             <td className="px-3 py-3 tabular-nums">{job.retries} / {job.max_retries}</td><td className="max-w-52 px-3 py-3 text-[11px]">{timestamp(job.created_at)}</td><td className="px-3 py-3">{job.has_error ? 'Recorded' : 'None recorded'}</td>
@@ -234,6 +224,17 @@ function JobList({ sapienId, initialEngine, initialJob }: { sapienId: string; in
           {!data.next_cursor && <span className="text-[11px] text-white/40">End of results</span>}
         </div>
       </section>
+      <details className="analyse-summary-fold"><summary>Window summary · {data.total.toLocaleString()} jobs</summary><div className="space-y-3">
+        <h3 className="text-sm text-white/80">{data.total.toLocaleString()} jobs in the filtered window</h3>
+        <p className="text-xs text-white/50">Applied: {data.filters.days} days · Engine: {data.filters.engine_name || 'all'} · Status: {data.filters.status || 'all'} · Limit: {data.limit}</p>
+        <p className="text-[11px] leading-5 text-white/40">Created from {timestamp(data.since)} through {timestamp(data.until)} (inclusive). Read as of {timestamp(data.as_of)}.</p>
+        <p className="text-[11px] leading-5 text-white/40">Live reads, not a transactional snapshot: statuses can change between pages or between summary and list queries. Later pages preserve the original creation window.</p>
+        <div className="overflow-x-auto"><table className="w-full min-w-[660px] text-left text-xs"><caption className="sr-only">Engine and status totals across the entire filtered window</caption><thead className="text-white/40"><tr>{['Engine', 'Status', 'Jobs', 'Due', 'Delayed', 'Simulation pending', 'Expired leases', 'With failures'].map(label => <th key={label} className="px-3 py-2 font-normal">{label}</th>)}</tr></thead>
+          <tbody>{data.summary.map(row => <tr key={`${row.engine_name}:${row.status}`} className="border-t border-white/[.06] text-white/70"><td className="max-w-64 break-words px-3 py-2">{row.engine_name}</td><td className="px-3 py-2">{row.status}</td>{[row.count, row.due, row.delayed, row.simulation_pending ?? 'Unavailable', row.expired_leases, row.retried].map((value, index) => <td key={index} className="px-3 py-2 tabular-nums">{value}</td>)}</tr>)}</tbody>
+        </table></div>
+        {!data.summary.length && <p className="text-xs text-white/50">No jobs match this creation window and these filters.</p>}
+        <p className="text-[11px] text-white/40">Simulation pending requires the run’s cognitive clock and is not classified as due or delayed by real read time. “With failures” means retries &gt; 0; it does not prove another execution occurred. Expired leases do not prove execution stopped.</p>
+      </div></details>
     </>}
     <Dialog open={Boolean(selected)} onOpenChange={open => { if (!open) setJobTrail([]); }}>
       <DialogContent className="max-h-[90dvh] w-[calc(100%-2rem)] max-w-4xl overflow-y-auto border-white/10 bg-[#09101c] text-white">

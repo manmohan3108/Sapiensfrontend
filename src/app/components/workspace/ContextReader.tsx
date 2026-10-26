@@ -1,4 +1,30 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+
+/** Restore the originating row and scroll position after an unmounted list returns. */
+export function useListReaderNavigation(selection: string | null, scope: number) {
+  const container = useRef<HTMLDivElement>(null);
+  const list = useRef<HTMLDivElement>(null);
+  const previous = useRef(selection);
+  const saved = useRef<{ id: string; top: number; scope: number } | null>(null);
+  const remember = (id: string) => { saved.current = { id, top: list.current?.scrollTop ?? 0, scope }; };
+
+  useLayoutEffect(() => {
+    if (previous.current === selection) return;
+    previous.current = selection;
+    if (selection) {
+      container.current?.querySelector<HTMLElement>('[data-reader-back]')?.focus();
+      return;
+    }
+    const bookmark = saved.current?.scope === scope ? saved.current : null;
+    const row = bookmark && Array.from(list.current?.querySelectorAll<HTMLElement>('[data-record-id]') ?? [])
+      .find(element => element.dataset.recordId === bookmark.id);
+    (row || container.current?.querySelector<HTMLElement>('[data-reader-heading]'))?.focus({ preventScroll: true });
+    if (bookmark && list.current) list.current.scrollTop = bookmark.top;
+    saved.current = null;
+  }, [selection, scope]);
+
+  return { container, list, remember };
+}
 
 /** Keep keyboard readers in the panel when a list is replaced by a detail view. */
 export function useReaderNavigation(selection: unknown) {

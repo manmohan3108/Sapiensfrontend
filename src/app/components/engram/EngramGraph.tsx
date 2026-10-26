@@ -37,6 +37,7 @@ export function EngramGraph({ sapienId: _sapienId, initialId }: { sapienId: numb
   const cyInst  = useRef<Core | null>(null);
   const loaded  = useRef<Set<string>>(new Set()); // IDs already expanded
 
+  const [legendOpen, setLegendOpen] = useState(false);
   const [inputId, setInputId]       = useState(initialId ?? '');
   const [loading, setLoading]       = useState(false);
   const [error, setError]           = useState<string | null>(null);
@@ -147,7 +148,9 @@ export function EngramGraph({ sapienId: _sapienId, initialId }: { sapienId: numb
     cy.on('unselect', 'node', () => setSelected(null));
 
     cyInst.current = cy;
-    return () => { cy.destroy(); cyInst.current = null; };
+    const resizeObserver = new ResizeObserver(() => cy.resize());
+    resizeObserver.observe(cyRef.current);
+    return () => { resizeObserver.disconnect(); cy.destroy(); cyInst.current = null; };
   }, []);
 
   // ── Core expand: load a node's neighbors via getAdjacent ───────────────────
@@ -337,6 +340,7 @@ export function EngramGraph({ sapienId: _sapienId, initialId }: { sapienId: numb
           Load
         </button>
 
+        <button type="button" className="analyse-button" aria-expanded={!selected && legendOpen} onClick={() => { cyInst.current?.$(':selected').unselect(); setSelected(null); setLegendOpen(value => selected ? true : !value); }}>Legend</button>
         <div className="w-px h-5 flex-shrink-0" style={{ background: 'rgba(255,255,255,0.08)' }} />
 
         <div className="flex items-center gap-1">
@@ -395,9 +399,10 @@ export function EngramGraph({ sapienId: _sapienId, initialId }: { sapienId: numb
         </div>
 
         {/* Detail / legend panel */}
-        <div className="w-full flex-shrink-0 flex flex-col rounded-2xl overflow-hidden md:w-[216px]"
+        {(selected || legendOpen) && <div className="w-full flex-shrink-0 flex flex-col rounded-2xl overflow-hidden md:w-[216px]"
           style={{ background: 'rgba(6,10,20,0.96)', border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(20px)' }}>
 
+          <button type="button" className="analyse-detail-back" onClick={() => { cyInst.current?.$(':selected').unselect(); setSelected(null); setLegendOpen(false); }}>Close panel</button>
           {/* Color strip */}
           <div className="h-1 flex-shrink-0"
             style={{ background: selected ? `linear-gradient(90deg,${selColor},${selColor}60)` : 'linear-gradient(90deg,rgba(99,102,241,0.5),rgba(139,92,246,0.3))' }} />
@@ -510,7 +515,7 @@ export function EngramGraph({ sapienId: _sapienId, initialId }: { sapienId: numb
               </div>
             )}
           </div>
-        </div>
+        </div>}
       </div>
     </div>
   );

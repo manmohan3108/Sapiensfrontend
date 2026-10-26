@@ -55,14 +55,14 @@ export function EngramDashboard({ sapienId }: { sapienId: number }) {
     : '—';
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Hero numbers */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
         <StatCard label="Total units"  value={stats.total_units}  color="#818cf8" />
         <StatCard label="Total links"  value={stats.total_links ?? 0}  color="#22d3ee" />
         {/* Links/unit ratio */}
         <div
-          className="flex flex-col gap-1 px-4 py-3 rounded-xl col-span-2"
+          className="flex flex-col gap-1 px-4 py-3 rounded-xl col-span-2 lg:col-span-1"
           style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(249,115,22,0.2)' }}
         >
           <span className="text-[10px] uppercase tracking-widest font-mono" style={{ color: 'rgba(249,115,22,0.6)' }}>Links / unit</span>
@@ -72,13 +72,6 @@ export function EngramDashboard({ sapienId }: { sapienId: number }) {
           </div>
         </div>
       </div>
-      {/* Type breakdown cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {typeData.map(({ name, count }) => (
-          <StatCard key={name} label={name} value={count} color={TYPE_COLORS[name] ?? '#94a3b8'} />
-        ))}
-      </div>
-
       {/* Charts row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Memory type breakdown */}
@@ -96,7 +89,7 @@ export function EngramDashboard({ sapienId }: { sapienId: number }) {
                 labelStyle={{ color: 'rgba(255,255,255,0.7)' }}
                 itemStyle={{ color: '#818cf8' }}
               />
-              <Bar dataKey="count" radius={4} maxBarSize={20}>
+              <Bar dataKey="count" radius={4} maxBarSize={20} label={{ position: 'right', fill: 'var(--an-ink, #cbd5e1)', fontSize: 12 }}>
                 {typeData.map(({ name }) => (
                   <Cell key={name} fill={TYPE_COLORS[name] ?? '#818cf8'} />
                 ))}
