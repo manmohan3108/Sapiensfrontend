@@ -1,3 +1,4 @@
+import { useRememberedState } from '../components/navigation/NavigationState';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import * as Dialog from '@radix-ui/react-dialog';
@@ -37,7 +38,7 @@ function WorkingMemoryAnalysis({ sapienId, openEngram }: { sapienId: number; ope
   const requestId = useRef(0);
   const entryOpener = useRef<HTMLElement | null>(null);
   const [data, setData] = useState<WMResponse | null>(null); const [loading, setLoading] = useState(true); const [error, setError] = useState('');
-  const [search, setSearch] = useState(''); const [source, setSource] = useState(''); const [tags, setTags] = useState<string[]>([]); const [tagsMatch, setTagsMatch] = useState<WMTagsMatch>('all'); const [references, setReferences] = useState<string[]>([]); const [sort, setSort] = useState<'activation'|'recent'>('activation'); const [selected, setSelected] = useState<WMEntry | null>(null);
+  const [search, setSearch] = useRememberedState(`working-memory:${sapienId}:search`, ''); const [source, setSource] = useRememberedState(`working-memory:${sapienId}:source`, ''); const [tags, setTags] = useRememberedState<string[]>(`working-memory:${sapienId}:tags`, []); const [tagsMatch, setTagsMatch] = useRememberedState<WMTagsMatch>(`working-memory:${sapienId}:tagsMatch`, 'all'); const [references, setReferences] = useRememberedState<string[]>(`working-memory:${sapienId}:references`, []); const [sort, setSort] = useRememberedState<'activation'|'recent'>(`working-memory:${sapienId}:sort`, 'activation'); const [selected, setSelected] = useState<WMEntry | null>(null);
   const refresh = useCallback(async () => { const id=++requestId.current; setLoading(true); setError(''); try { const next=await engramService.getWorkingMemory(sapienId,{source:source||undefined,tags,tagsMatch,references,sort:sort==='recent'?'last_used':'activation',order:'desc',limit:100,includeContent:true,includeMetadata:true}); if(id===requestId.current)setData(next); } catch(caught) { if(id===requestId.current){setError((caught as Error).message||'Could not load Working Memory.');setData(null);} } finally { if(id===requestId.current)setLoading(false); } },[sapienId,source,tags,tagsMatch,references,sort]);
   useEffect(()=>{setData(null);setSelected(null);void refresh();},[refresh]);
   const entries=data?.wm.entries??[]; const sourceData=(data?.sources??[]).map(item=>({name:item.source,count:item.entries}));
@@ -84,7 +85,7 @@ export function AnalysePage() {
     const query = params ? '?' + new URLSearchParams(params) : '';
     navigate((id === 'overview' ? '/admin/analyse' : '/admin/analyse/' + id) + query);
   };
-  return <AnalyseShell section={section} name={currentSapiens.name} sapienId={currentSapiens.id} go={go} onWorkspace={() => navigate('/workspace')}>
+  return <AnalyseShell section={section} name={currentSapiens.name} sapienId={currentSapiens.id} go={go}>
     {section === 'overview' && <AnalyseOverview go={go} />}
     {section === 'awareness' && <AwarenessAnalysis sapienId={currentSapiens.id} />}
     {section === 'working-memory' && <WorkingMemoryAnalysis sapienId={Number(currentSapiens.id)} openEngram={() => go('engram')} />}

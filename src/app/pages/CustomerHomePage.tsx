@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router';
 import * as Dialog from '@radix-ui/react-dialog';
 import { ArrowUpRight, X } from 'lucide-react';
 import { SapiensHomeHeader } from '../components/customer/SapiensHomeHeader';
+import { useRememberedState } from '../components/navigation/NavigationState';
 import { SapiensIdentityRow } from '../components/customer/SapiensIdentityRow';
 import { SapiensEmptyState } from '../components/customer/SapiensEmptyState';
 import { ScienceDetail } from '../components/customer/ScienceDetail';
@@ -21,7 +22,7 @@ export function CustomerHomePage() {
   const [list, setList] = useState<Sapiens[]>([]);
   const [loading, setLoading] = useState(true);
   const [listError, setListError] = useState(false);
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useRememberedState('directory:search', '');
   const [opening, setOpening] = useState<string | null>(null);
   const [openError, setOpenError] = useState<{ id: string; message: string } | null>(null);
   const [dialogOpen, setDialogOpen] = useState(params.get('create') === '1');

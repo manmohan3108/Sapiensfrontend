@@ -10,13 +10,14 @@ import { useSapiens } from '../../hooks/useSapiens';
 import { formatDateTime } from '../../utils/formatters';
 import { SapiensPresence } from '../customer/SapiensPresence';
 import { SapiensEmptyState } from '../customer/SapiensEmptyState';
+import { useRememberedState } from '../navigation/NavigationState';
 
 export function LoadSapiensList({ onCreate }: { onCreate: () => void }) {
   const [sapiensList, setSapiensList] = useState<Sapiens[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [loadingId, setLoadingId] = useState<string | null>(null);
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useRememberedState('directory:search', '');
   const { loadSapiens } = useSapiens();
   const normalizedQuery = query.trim().toLocaleLowerCase();
   const filteredSapiens = sapiensList.filter((sapiens) =>

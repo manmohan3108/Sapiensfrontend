@@ -1,4 +1,5 @@
 import { ConversationHistory } from './ConversationHistory';
+import { useRememberedState } from '../navigation/NavigationState';
 import { ScienceDetail } from '../customer/ScienceDetail';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import {
@@ -332,12 +333,13 @@ function EmptyState({ name, onHint, recent, onResume, loading }: { name: string;
 export function ChatWindow() {
   const { user } = useAuth();
   const sending = useRef(false);
-  const [input, setInput] = useState('');
+  const draftSapienId = useSapiensStore(state => state.currentSapiens?.id);
+  const [input, setInput] = useRememberedState(`conversation:${draftSapienId}:draft`, '');
   const [focused, setFocused] = useState(false);
   const [showScroll, setShowScroll] = useState(false);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
-  const [historyCollapsed, setHistoryCollapsed] = useState(false);
+  const [historyCollapsed, setHistoryCollapsed] = useRememberedState(`conversation:${draftSapienId}:collapsed`, false);
   const [history, setHistory] = useState<ChatHistoryItem[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);

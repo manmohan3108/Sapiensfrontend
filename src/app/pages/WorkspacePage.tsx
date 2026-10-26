@@ -12,6 +12,7 @@ import { GoalsPanel } from '../components/workspace/GoalsPanel';
 import { useSapiensStore } from '../core/state/sapiensStore';
 import { useOrchestratorStatus } from '../hooks/useOrchestratorStatus';
 import { useAuth } from '../contexts/AuthContext';
+import { useRememberedState } from '../components/navigation/NavigationState';
 
 type RightTab = 'awareness' | 'memory' | 'goals';
 
@@ -28,12 +29,13 @@ export function WorkspacePage() {
   const heading = useRef<HTMLHeadingElement>(null);
   const announced = useRef<string | null>(null);
   const { user } = useAuth();
-  const [rightTab, setRightTab] = useState<RightTab>('awareness');
-  const [visitedTabs, setVisitedTabs] = useState<RightTab[]>(['awareness']);
-  const [contextOpen, setContextOpen] = useState(false);
-  const [contextWide, setContextWide] = useState(false);
-
   const currentSapiens = useSapiensStore((state) => state.currentSapiens);
+  const viewKey = `workspace:${currentSapiens?.id || 'none'}`;
+  const [rightTab, setRightTab] = useRememberedState<RightTab>(`${viewKey}:tab`, 'awareness');
+  const [visitedTabs, setVisitedTabs] = useState<RightTab[]>(['awareness']);
+  const [contextOpen, setContextOpen] = useRememberedState(`${viewKey}:context-open`, false);
+  const [contextWide, setContextWide] = useRememberedState(`${viewKey}:context-wide`, false);
+  useEffect(() => { setVisitedTabs(tabs => tabs.includes(rightTab) ? tabs : [...tabs, rightTab]); }, [rightTab]);
 
   // Poll /api/orchestrator/status every 10 s while this tab is visible
   useOrchestratorStatus();

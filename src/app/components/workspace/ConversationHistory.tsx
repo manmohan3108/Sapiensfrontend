@@ -1,4 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
+import { useRememberedState } from '../navigation/NavigationState';
+import { useSapiensStore } from '../../core/state/sapiensStore';
 import { History, Loader2, Plus, RefreshCw, Search, X } from 'lucide-react';
 import type { ChatHistoryItem } from '../../types/sapiensTypes';
 
@@ -7,7 +9,8 @@ export function ConversationHistory({ history, historyLoading, historyError, det
   isProcessing: boolean; chatSessionId: string | null; onRefresh: () => void; onNewChat: () => void;
   onSelectChat: (threadId: string) => void; onCollapse: () => void;
 }) {
-  const [search, setSearch] = useState('');
+  const sapienId = useSapiensStore(state => state.currentSapiens?.id);
+  const [search, setSearch] = useRememberedState(`conversation:${sapienId}:search`, '');
   const groups = useMemo(() => {
     const result = new Map<string, ChatHistoryItem[]>();
     const needle = search.trim().toLocaleLowerCase();
@@ -30,7 +33,7 @@ export function ConversationHistory({ history, historyLoading, historyError, det
       {search && <p className="workspace-search-scope">Searching loaded conversation titles.</p>}
     </div>
     {historyError && <p role="alert" className="workspace-history-error">{historyError}</p>}
-    <div className="workspace-history-list workspace-scrollbar">
+    <div data-nav-scroll="conversation-history" className="workspace-history-list workspace-scrollbar">
       {historyLoading && !history.length ? <p className="workspace-history-empty"><Loader2 size={18} className="animate-spin" />Loading conversations…</p>
       : historyError && !history.length ? <div className="workspace-history-empty"><p>Conversation history is unavailable.</p><button onClick={onRefresh}>Retry history</button></div>
       : !history.length ? <div className="workspace-history-empty"><History size={23} /><p>No saved conversations yet.</p><p>Start by sending a message.</p></div>

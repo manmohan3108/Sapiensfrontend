@@ -9,6 +9,7 @@
     "test:auth": "node scripts/test-auth-session.mjs && node scripts/test-access-navigation.mjs",
     "test:selection": "node scripts/test-selection.mjs",
     "test:customer": "node scripts/test-customer.mjs",
+    "test:navigation": "node scripts/test-app-navigation.mjs",
     "dev": "vite"
   },
   "dependencies": {

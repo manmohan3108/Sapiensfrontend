@@ -2,9 +2,6 @@ import type { ReactNode } from 'react';
 import { useRef, useState } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { Activity, ArrowUpRight, BarChart3, Beaker, BrainCircuit, Bug, Clock3, DatabaseZap, Eye, LayoutDashboard, Menu, Search, Sparkles, Target, X } from 'lucide-react';
-import { YourSapiensLink } from '../navigation/YourSapiensLink';
-import { ThemeToggle } from '../ThemeToggle';
-import { SapiensBrandMark } from '../customer/SapiensBrandMark';
 import '../../../styles/analyse.css';
 
 export const ANALYSE_GROUPS = [
@@ -35,9 +32,9 @@ export type AnalyseSection = 'overview' | typeof ANALYSE_GROUPS[number]['items']
 type AnalyseNavItem = { id: AnalyseSection; label: string; icon: typeof Eye };
 export const ANALYSE_NAV: AnalyseNavItem[] = [{ id: 'overview', label: 'Overview', icon: LayoutDashboard }, ...ANALYSE_GROUPS.flatMap<AnalyseNavItem>(group => [...group.items])];
 
-export function AnalyseShell({ section, name, sapienId, go, onWorkspace, children }: {
+export function AnalyseShell({ section, name, sapienId, go, children }: {
   section: AnalyseSection; name: string; sapienId: string; go: (section: AnalyseSection, params?: Record<string, string>) => void;
-  onWorkspace: () => void; children: ReactNode;
+  children: ReactNode;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const menuButton = useRef<HTMLButtonElement>(null);
@@ -47,12 +44,11 @@ export function AnalyseShell({ section, name, sapienId, go, onWorkspace, childre
     <entry.icon size={16} aria-hidden="true" /><span>{entry.label}</span>{entry.id === 'simulation' && <ArrowUpRight size={13} aria-label="Separate workspace" />}
   </button>;
   const navigation = <>
-    <div className="analyse-brand"><SapiensBrandMark /><div><strong>Sapiens</strong><span>Admin · Analyse</span></div></div>
+    <div className="analyse-brand"><div><strong>Analyse</strong><span>Sections</span></div></div>
     <nav className="analyse-navigation" aria-label="Analyse sections">
       {navItem(ANALYSE_NAV[0])}
       {ANALYSE_GROUPS.map(group => <div className="analyse-nav-group" key={group.label}><p>{group.label}</p>{group.items.map(navItem)}</div>)}
     </nav>
-    <YourSapiensLink className="analyse-directory" onClick={() => setMobileOpen(false)} />
   </>;
   return <div className="analyse-shell" data-analyse-section={section}>
     <a className="analyse-skip" href="#analyse-content">Skip to content</a>
@@ -65,12 +61,10 @@ export function AnalyseShell({ section, name, sapienId, go, onWorkspace, childre
     </Dialog.Root>
     <main className="analyse-main">
       <header className="analyse-header">
-        <YourSapiensLink className="analyse-directory-mobile" />
-        <button ref={menuButton} type="button" className="analyse-menu" aria-label="Open navigation" aria-expanded={mobileOpen} onClick={() => setMobileOpen(true)}><Menu size={20} /></button>
+        <button ref={menuButton} type="button" className="analyse-menu" aria-label="Open Analyse sections" aria-expanded={mobileOpen} onClick={() => setMobileOpen(true)}><Menu size={20} /><span>Sections</span></button>
         <div className="analyse-heading"><p>{name}<span> / ID {sapienId}</span></p><h1>{item.label}</h1></div>
-        <div className="analyse-header-actions"><ThemeToggle className="analyse-theme-toggle" /><button type="button" className="analyse-button" onClick={onWorkspace}>Workspace<ArrowUpRight size={15} /></button></div>
       </header>
-      <div id="analyse-content" tabIndex={-1} className={`analyse-content ${['engram', 'engine-bus'].includes(section) ? 'analyse-content-embedded' : ''}`} key={section}>{children}</div>
+      <div id="analyse-content" data-nav-scroll="analyse-content" tabIndex={-1} className={`analyse-content ${['engram', 'engine-bus'].includes(section) ? 'analyse-content-embedded' : ''}`} key={section}>{children}</div>
     </main>
   </div>;
 }

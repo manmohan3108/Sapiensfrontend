@@ -1,5 +1,6 @@
 import { Navigate, Outlet, useLocation } from 'react-router';
 import { YourSapiensLink } from '../navigation/YourSapiensLink';
+import { AppNavigationFrame } from '../navigation/AppNavigation';
 import { Loader2, ShieldX } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import type { UserRole } from '../../types/authTypes';
@@ -54,6 +55,7 @@ function SelectionGuard() {
   if (!blocked) mountedKey.current = key;
   const failed = error || resourceSession.accessState === 'failed';
   const createdName = (location.state as { createdName?: string } | null)?.createdName;
+  if (!selectedId) return <div className="grid min-h-[60vh] place-items-center p-6 text-center"><p>Choose a Sapiens from the selector above to open this page.</p></div>;
   return <>
     {blocked && <div className="grid min-h-screen place-items-center bg-background text-foreground p-6"><div role="status" className="text-center max-w-md"><p>{failed ? createdName ? `${createdName} was created, but we couldn’t open it.` : 'We couldn’t verify access to this Sapiens.' : 'Checking Sapiens access…'}</p>{failed && <><button className="mt-4 rounded-lg border px-4 py-3" onClick={() => { resourceSession.access('checking'); setError(false); setAttempt(value => value + 1); }}>Try opening again</button></>}<p className="mt-4"><YourSapiensLink className="px-3 underline underline-offset-4" /></p></div></div>}
     {(!blocked || mountedKey.current === key) && <div hidden={blocked}><Outlet key={selectedId ?? 'picker'} /></div>}
@@ -70,7 +72,7 @@ export function ProtectedRoute({ roles, selection = true }: { roles?: UserRole[]
   if (status === 'loading') return <SessionLoading />;
   if (!user) return <Navigate to={authLink('/login', location.pathname + location.search)} replace />;
   if (roles && !roles.includes(user.role)) return <Navigate to="/access-denied" replace />;
-  return selection ? <SelectionGuard key={user.user_id} /> : <Outlet key={user.user_id} />;
+  return <AppNavigationFrame key={`${user.user_id}:${user.role}`} requiresSelection={selection}>{selection ? <SelectionGuard /> : <Outlet />}</AppNavigationFrame>;
 }
 
 export function GuestRoute() {

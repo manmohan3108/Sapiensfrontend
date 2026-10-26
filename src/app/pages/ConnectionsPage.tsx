@@ -1,15 +1,13 @@
-import { YourSapiensLink } from '../components/navigation/YourSapiensLink';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
 import {
-  AlertCircle, ArrowLeft, CheckCircle2, Clock3, ArrowRight, KeyRound, Loader2,
+  AlertCircle, CheckCircle2, Clock3, ArrowRight, KeyRound, Loader2,
   LockKeyhole, Plug, RefreshCw, RotateCcw, ShieldCheck, Trash2, XCircle,
 } from 'lucide-react';
 import { useSapiensStore } from '../core/state/sapiensStore';
 import { connectionsService } from '../core/services/connectionsService';
 import { SapiensBrandMark } from '../components/customer/SapiensBrandMark';
-import { ThemeToggle } from '../components/ThemeToggle';
 import '../../styles/connections.css';
 import type {
   ConnectionFormValue, ConnectionProvider, ConnectionsResponse, CreateConnectionPayload,
@@ -200,7 +198,7 @@ export function ConnectionsPage() {
 
   if (!currentSapiens) return null;
   return <div className="product-surface science-product-theme connections-page min-h-screen text-sp-ink">
-    <header className="connections-header"><div className="connections-header-inner"><YourSapiensLink className="connections-directory-link" /><div className="connections-identity"><SapiensBrandMark /><div><h1>Connections</h1><p>{currentSapiens.name} · Sapien ID {currentSapiens.id}</p></div></div><div className="connections-header-actions"><ThemeToggle className="connections-theme-toggle" /><Link to="/workspace"><ArrowLeft size={16} />Workspace</Link></div></div></header>
+    <header className="connections-header"><div className="connections-header-inner"><div className="connections-identity"><SapiensBrandMark /><div><h1>Connections</h1><p>{currentSapiens.name} · Sapien ID {currentSapiens.id}</p></div></div></div></header>
     <main className="relative mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6 sm:py-8">
       <div className="connections-intro"><h2>Connect the services {currentSapiens.name} can use.</h2><p>Link an account so your Sapiens can work with that service. Review access requests and manage connected accounts here.</p></div>
       {error && data && <div role="alert" className="connections-refresh-error"><span>Couldn’t refresh connections. The information below may be out of date.</span><button onClick={() => void load()} disabled={loading}>Try again</button></div>}

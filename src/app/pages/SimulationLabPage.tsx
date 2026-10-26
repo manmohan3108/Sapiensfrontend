@@ -1,4 +1,3 @@
-import { YourSapiensLink } from '../components/navigation/YourSapiensLink';
 import { SimulationPurpose } from '../components/simulation/SimulationPurpose';
 import {
   Children,
@@ -35,7 +34,6 @@ import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
 import { Badge } from "../components/ui/badge";
-import { ThemeToggle } from "../components/ThemeToggle";
 import { HttpError } from "../core/auth/authSession";
 import { simulationService } from "../core/services/simulationService";
 import { sapiensService } from "../core/services/sapiensService";
@@ -1005,7 +1003,6 @@ export function SimulationLabPage() {
       <header className="border-b">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-4">
           <div className="flex min-w-0 flex-wrap items-center gap-3">
-            <YourSapiensLink className="px-2 hover:bg-muted" />
             {shortcutId && <button
               type="button"
               onClick={() => void returnToSapien()}
@@ -1031,7 +1028,6 @@ export function SimulationLabPage() {
             </div>
           </div>
           <div className="flex gap-2">
-            <ThemeToggle />
             <Button
               variant="outline"
               size="sm"
