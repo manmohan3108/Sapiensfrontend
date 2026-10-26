@@ -1,5 +1,6 @@
 import { apiConfig } from '../config/apiConfig';
 import type { TokenPair } from '../../types/authTypes';
+import type { SapiensDirectoryEntry } from '../../types/sapiensTypes';
 
 const STORAGE_KEY = 'sapiens.auth.tokens';
 const AUTH_EXPIRED_EVENT = 'sapiens:auth-expired';
@@ -10,11 +11,15 @@ export const resourceSession = {
   version: 0,
   selectedId: null as string | null,
   customer: false,
+  verifiedVersion: -1,
   accessState: 'verified' as 'verified' | 'checking' | 'failed',
   accessEvent: 'sapiens:access-check',
   unavailableEvent: 'sapiens:resource-unavailable',
-  select(id: string | null) { this.selectedId = id; this.version += 1; this.accessState = 'verified'; },
-  access(state: 'verified' | 'checking' | 'failed') { this.accessState = state; window.dispatchEvent(new Event(this.accessEvent)); },
+  select(id: string | null) { cancelAccessCheck(); this.selectedId = id; this.version += 1; this.verifiedVersion = -1; this.access('verified'); },
+  isVerified(id: string) { return this.selectedId === id && this.verifiedVersion === this.version && this.accessState === 'verified'; },
+  // Call only after a successful server-filtered identity check, never for a saved ID.
+  confirm(id: string) { if (this.selectedId === id) { this.verifiedVersion = this.version; this.access('verified'); } },
+  access(state: 'verified' | 'checking' | 'failed') { this.accessState = state; if (state !== 'verified') this.verifiedVersion = -1; window.dispatchEvent(new Event(this.accessEvent)); },
 };
 
 function authUrl(path: string) {
@@ -39,6 +44,8 @@ export const authSession = {
   save(tokens: TokenPair) { localStorage.setItem(STORAGE_KEY, JSON.stringify(tokens)); },
   clear(notify = false) {
     sessionVersion += 1;
+    cancelAccessCheck();
+    resourceSession.verifiedVersion = -1;
     try { localStorage.removeItem(STORAGE_KEY); } catch { /* Already inaccessible. */ }
     if (notify) window.dispatchEvent(new Event(AUTH_EXPIRED_EVENT));
   },
@@ -48,30 +55,42 @@ export const authSession = {
 };
 
 let refreshPromise: Promise<string> | null = null;
-let ownershipCheck: { version: number; promise: Promise<void> } | null = null;
+export const ACCESS_CHECK_TIMEOUT_MS = 15_000;
+let ownershipCheck: { version: number; session: number; id: string; controller: AbortController; promise: Promise<SapiensDirectoryEntry> } | null = null;
 
-function revalidateCustomerSelection(selectedId: string, version: number) {
-  if (ownershipCheck?.version === version) return ownershipCheck.promise;
+function cancelAccessCheck() { ownershipCheck?.controller.abort(); ownershipCheck = null; }
+
+/** Share an in-flight check across route mounts. A resource failure always calls this afresh. */
+export function verifyResourceAccess(selectedId: string): Promise<SapiensDirectoryEntry> {
+  const version = resourceSession.version;
+  const session = sessionVersion;
+  if (ownershipCheck?.version === version && ownershipCheck.session === session && ownershipCheck.id === selectedId) return ownershipCheck.promise;
+  cancelAccessCheck();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ACCESS_CHECK_TIMEOUT_MS);
   resourceSession.access('checking');
   const promise = (async () => {
     try {
-      const response = await authenticatedFetch(`${apiConfig.baseUrl}/get-all-sapiens`, { signal: AbortSignal.timeout(30_000) });
+      const response = await authenticatedFetch(`${apiConfig.baseUrl}/get-all-sapiens`, { signal: controller.signal });
       if (!response.ok) throw new Error('Access verification failed');
-      const result = await response.json() as { sapiens?: { id: number | string }[] };
+      const result = await response.json() as { sapiens?: SapiensDirectoryEntry[] };
       if (!Array.isArray(result.sapiens)) throw new Error('Access verification failed');
-      if (resourceSession.version !== version) throw new Error('Selection changed');
-      if (!result.sapiens.some(item => String(item.id) === selectedId)) {
+      controller.signal.throwIfAborted();
+      if (resourceSession.version !== version || sessionVersion !== session) throw new Error('Selection changed');
+      const selected = result.sapiens.find(item => item && String(item.id) === selectedId);
+      if (!selected) {
         resourceSession.select(null);
         window.dispatchEvent(new Event(resourceSession.unavailableEvent));
         throw new HttpError('This Sapiens is not available to this account.', 404);
       }
-      resourceSession.access('verified');
+      resourceSession.confirm(selectedId);
+      return selected;
     } catch (error) {
-      if (resourceSession.version === version) resourceSession.access('failed');
+      if (resourceSession.version === version && sessionVersion === session && ownershipCheck?.controller === controller) resourceSession.access('failed');
       throw error instanceof HttpError ? error : new HttpError('We couldn’t verify access. Try again before continuing.', 503);
     }
-  })().finally(() => { if (ownershipCheck?.version === version) ownershipCheck = null; });
-  ownershipCheck = { version, promise };
+  })().finally(() => { clearTimeout(timer); if (ownershipCheck?.controller === controller) ownershipCheck = null; });
+  ownershipCheck = { version, session, id: selectedId, controller, promise };
   return promise;
 }
 
@@ -90,6 +109,18 @@ export class HttpError extends Error {
     super(message);
     this.name = 'HttpError';
   }
+}
+
+// A short access request may stop waiting without cancelling a token refresh
+// shared by other requests. Its retry must not run after its deadline expires.
+function waitWithSignal<T>(promise: Promise<T>, signal?: AbortSignal | null): Promise<T> {
+  if (!signal) return promise;
+  if (signal.aborted) return Promise.reject(signal.reason);
+  return new Promise((resolve, reject) => {
+    const abort = () => { signal.removeEventListener('abort', abort); reject(signal.reason); };
+    signal.addEventListener('abort', abort, { once: true });
+    promise.then(value => { signal.removeEventListener('abort', abort); resolve(value); }, error => { signal.removeEventListener('abort', abort); reject(error); });
+  });
 }
 
 async function refreshAccessToken() {
@@ -124,6 +155,7 @@ async function getRefreshedAccessToken() {
 }
 
 export async function authenticatedFetch(input: RequestInfo | URL, init: RequestInit = {}, retry = true): Promise<Response> {
+  init.signal?.throwIfAborted();
   const version = sessionVersion;
   const selectionVersion = resourceSession.version;
   const selectedId = resourceSession.selectedId;
@@ -131,6 +163,7 @@ export async function authenticatedFetch(input: RequestInfo | URL, init: Request
     // Buffer JSON responses before releasing them so late body reads cannot
     // repopulate state after logout, selection changes, or loss of access.
     const body = response.status === 204 ? null : await response.arrayBuffer();
+    init.signal?.throwIfAborted();
     if (version !== sessionVersion || selectionVersion !== resourceSession.version) {
       throw new HttpError('The active account or Sapiens changed. Please try again.', 409);
     }
@@ -143,7 +176,7 @@ export async function authenticatedFetch(input: RequestInfo | URL, init: Request
       if (resourceSession.customer) {
         // A missing thread or other child does not prove loss of the individual.
         // Hide protected content until the authoritative owner-filtered list answers.
-        await revalidateCustomerSelection(selectedId, selectionVersion);
+        await verifyResourceAccess(selectedId);
         if (version !== sessionVersion || selectionVersion !== resourceSession.version) throw new HttpError('Session changed.', 409);
         return new Response(body, { status: response.status, statusText: response.statusText, headers: response.headers });
       }
@@ -157,10 +190,12 @@ export async function authenticatedFetch(input: RequestInfo | URL, init: Request
   const access = authSession.tokens?.access;
   if (access) headers.set('Authorization', `Bearer ${access}`);
   const response = await fetch(input, { ...init, credentials: 'omit', headers });
+  init.signal?.throwIfAborted();
   if (sessionVersion !== version) throw new HttpError('Session changed. Please try again.', 401);
   if (response.status !== 401 || !retry) return finish(response);
   if (!authSession.tokens?.refresh) { authSession.clear(true); return response; }
-  const nextAccess = await getRefreshedAccessToken();
+  const nextAccess = await waitWithSignal(getRefreshedAccessToken(), init.signal);
+  init.signal?.throwIfAborted();
   headers.set('Authorization', `Bearer ${nextAccess}`);
   const retried = await fetch(input, { ...init, credentials: 'omit', headers });
   if (sessionVersion !== version) throw new HttpError('Session changed. Please try again.', 401);

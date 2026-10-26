@@ -61,7 +61,7 @@ export function CustomerHomePage() {
       setList(available);
       const selected = available.find(item => item.id === individual.id);
       if (!selected) throw new Error('This Sapiens isn’t available to this account.');
-      useSapiensStore.getState().setCurrentSapiens(selected);
+      useSapiensStore.getState().setCurrentSapiens(selected, true);
       navigate('/workspace', { state: justCreated ? { createdName: individual.name } : undefined });
     } catch {
       if (active.current) setOpenError({ id: individual.id, message: justCreated ? `${individual.name} was created, but we couldn’t open it.` : `We couldn’t open ${individual.name}. Try again or refresh your Sapiens.` });

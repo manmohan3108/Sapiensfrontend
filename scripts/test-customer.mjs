@@ -33,6 +33,7 @@ const servicePath = '../src/app/core/services/sapiensService.ts';
 const serviceSource = (await readFile(new URL(servicePath, import.meta.url), 'utf8'))
   .replace("import { apiClient } from '../api/apiClient';", 'const apiClient = globalThis.customerContractClient;')
   .replace("import { API_ENDPOINTS } from '../config/apiConfig';", 'const API_ENDPOINTS = {};')
+  .replace("import { ACCESS_CHECK_TIMEOUT_MS, verifyResourceAccess } from '../auth/authSession';", 'const ACCESS_CHECK_TIMEOUT_MS = 15000; const verifyResourceAccess = () => { throw Error("Unexpected access request in contract test"); };')
   .replace("import { logger } from '../../utils/logger';", 'const logger = { error() {}, info() {}, debug() {} };');
 const calls = [];
 let response;

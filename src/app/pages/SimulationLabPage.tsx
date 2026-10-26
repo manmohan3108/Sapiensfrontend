@@ -1,3 +1,4 @@
+import { YourSapiensLink } from '../components/navigation/YourSapiensLink';
 import { SimulationPurpose } from '../components/simulation/SimulationPurpose';
 import {
   Children,
@@ -449,7 +450,7 @@ export function SimulationLabPage() {
           throw new Error(
             "The original Sapiens is no longer available to this account.",
           );
-        setCurrentSapiens(origin);
+        setCurrentSapiens(origin, true);
       }
       navigate(returnPath);
     } catch (problem) {
@@ -1002,28 +1003,25 @@ export function SimulationLabPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="border-b">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-4">
-          <div className="flex items-center gap-3">
-            <button
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-4">
+          <div className="flex min-w-0 flex-wrap items-center gap-3">
+            <YourSapiensLink className="px-2 hover:bg-muted" />
+            {shortcutId && <button
               type="button"
               onClick={() => void returnToSapien()}
               disabled={returning}
               className="flex items-center gap-2 text-sm disabled:opacity-50"
               aria-label={
-                shortcutId
-                  ? `Back to ${shortcutName || "selected Sapiens"}`
-                  : "Admin home"
+                `Back to ${shortcutName || "selected Sapiens"}`
               }
             >
               <ArrowLeft className="size-5" />
               <span>
                 {returning
                   ? "Returning…"
-                  : shortcutId
-                    ? `Back to ${shortcutName || "Sapiens"}`
-                    : "Admin home"}
+                  : `Back to ${shortcutName || "Sapiens"}`}
               </span>
-            </button>
+            </button>}
             <Beaker className="size-6 text-violet-500" />
             <div>
               <h1 className="font-semibold">Simulation Lab</h1>

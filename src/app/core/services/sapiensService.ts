@@ -17,16 +17,8 @@ import {
   AwarenessBeatsResponse,
 } from '../../types/sapiensTypes';
 import { logger } from '../../utils/logger';
-
-interface BackendSapiens {
-  id: number;
-  name: string;
-  role?: string;
-  created_at: string;
-  simulation_enabled?: boolean;
-  simulation_available?: boolean;
-  simulation_unavailable_reason?: 'simulation_disabled' | 'runtime_reserved' | null;
-}
+import { ACCESS_CHECK_TIMEOUT_MS, verifyResourceAccess } from '../auth/authSession';
+import type { SapiensDirectoryEntry as BackendSapiens } from '../../types/sapiensTypes';
 
 interface BackendCreateSapiensResponse {
   id: number | string;
@@ -174,9 +166,13 @@ class SapiensService {
 
   async listSapiens(): Promise<Sapiens[]> {
     const response = await apiClient.get<{ sapiens: BackendSapiens[] }>(
-      API_ENDPOINTS.listSapiens
+      API_ENDPOINTS.listSapiens, { signal: AbortSignal.timeout(ACCESS_CHECK_TIMEOUT_MS) }
     );
     return response.data.sapiens.map(transformSapiens);
+  }
+
+  async verifyAccess(sapienId: string): Promise<Sapiens> {
+    return transformSapiens(await verifyResourceAccess(sapienId));
   }
 }
 

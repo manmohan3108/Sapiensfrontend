@@ -15,7 +15,7 @@ globalThis.localStorage = {
 };
 const events = new EventTarget();
 globalThis.window = { location: { origin: 'https://app.example.test' }, dispatchEvent: event => events.dispatchEvent(event) };
-const { authSession, authenticatedFetch, resourceSession } = await import(`data:text/javascript;base64,${Buffer.from(compiled.code).toString('base64')}`);
+const { authSession, authenticatedFetch, resourceSession, verifyResourceAccess, ACCESS_CHECK_TIMEOUT_MS } = await import(`data:text/javascript;base64,${Buffer.from(compiled.code).toString('base64')}`);
 const pair = (access, refresh) => ({ access, refresh, token_type: 'Bearer', access_expires_in: 900 });
 const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 let expired = 0;
@@ -115,3 +115,81 @@ globalThis.fetch = async url => String(url).endsWith('/get-all-sapiens') ? json(
 await assert.rejects(authenticatedFetch('https://api.example.test/api/sapien/12/chats/missing'), /not available/);
 assert.equal(resourceSession.selectedId, null);
 console.log('Customer access checks passed: missing child retained only after verification, failed verification blocked, revoked identity cleared.');
+
+// Verification is scoped to the selection lifetime, not a page pathname.
+resourceSession.select('58');
+assert.equal(resourceSession.isVerified('58'), false, 'Selecting a cached identity alone is not verification');
+let checks = 0;
+let finishCheck;
+globalThis.fetch = async (_url, init) => { checks++; assert(init.signal); return new Promise(resolve => { finishCheck = resolve; }); };
+const initialCheck = verifyResourceAccess('58');
+const remountedCheck = verifyResourceAccess('58');
+assert.equal(initialCheck, remountedCheck, 'Route remounts share one pending access check');
+finishCheck(json({ sapiens: [{ id: 58, name: 'Sample' }] }));
+await initialCheck;
+assert.equal(checks, 1);
+for (const route of ['/workspace', '/connections', '/admin/analyse', '/admin/analyse/awareness']) {
+  assert(resourceSession.isVerified('58'), `Verification remains valid at ${route}`);
+}
+assert.equal(resourceSession.isVerified('59'), false);
+resourceSession.select('58');
+assert.equal(resourceSession.isVerified('58'), false, 'Explicitly reselecting the same ID starts a new verification lifetime');
+resourceSession.select('59');
+assert.equal(resourceSession.isVerified('59'), false, 'Switching identity clears verification');
+resourceSession.confirm('59');
+authSession.clear();
+assert.equal(resourceSession.isVerified('59'), false, 'Logout/account exchange clears verification');
+
+authSession.save(pair('new-account-access', 'new-account-refresh'));
+resourceSession.select('58');
+let obsoleteSignal;
+globalThis.fetch = async (_url, init) => { obsoleteSignal = init.signal; return new Promise(resolve => { finishCheck = resolve; }); };
+const obsolete = verifyResourceAccess('58');
+resourceSession.select('59');
+assert(obsoleteSignal.aborted, 'Switching identity aborts obsolete verification');
+finishCheck(json({ sapiens: [{ id: 58 }] }));
+await assert.rejects(obsolete);
+assert.equal(resourceSession.selectedId, '59');
+assert.equal(resourceSession.accessState, 'verified', 'Old failure cannot overwrite the new selection state');
+assert.equal(resourceSession.isVerified('59'), false);
+
+// Short deadline with an in-flight refresh: time out this request, not the
+// shared refresh. Completing the refresh must not replay an expired request.
+resourceSession.select('58');
+const originalTimeout = globalThis.setTimeout;
+let expireCheck;
+globalThis.setTimeout = (callback, delay, ...args) => {
+  if (delay === ACCESS_CHECK_TIMEOUT_MS) { expireCheck = callback; return originalTimeout(() => {}, 60_000); }
+  return originalTimeout(callback, delay, ...args);
+};
+let finishSlowRefresh;
+let accessRequests = 0;
+globalThis.fetch = async url => {
+  if (String(url).endsWith('/refresh/')) return new Promise(resolve => { finishSlowRefresh = resolve; });
+  accessRequests++;
+  return json({}, 401);
+};
+const deadline = verifyResourceAccess('58');
+await new Promise(resolve => originalTimeout(resolve, 0));
+assert(finishSlowRefresh, 'Refresh is in flight');
+expireCheck();
+await assert.rejects(deadline, /verify access/);
+assert.equal(resourceSession.accessState, 'failed');
+assert.equal(resourceSession.isVerified('58'), false);
+assert.equal(resourceSession.selectedId, '58', 'Temporary failure does not delete the selected identity');
+finishSlowRefresh(json(pair('after-timeout-access', 'after-timeout-refresh')));
+await new Promise(resolve => originalTimeout(resolve, 0));
+assert.equal(accessRequests, 1, 'An expired access request is not replayed after token refresh');
+globalThis.setTimeout = originalTimeout;
+globalThis.fetch = async () => json({ sapiens: [{ id: 58, name: 'Sample' }] });
+await verifyResourceAccess('58');
+assert(resourceSession.isVerified('58'), 'Explicit retry can recover after a timeout');
+
+// A later resource failure bypasses successful navigation verification.
+checks = 0;
+globalThis.fetch = async url => { if (String(url).endsWith('/get-all-sapiens')) { checks++; return json({ sapiens: [] }); } return json({}, 404); };
+await assert.rejects(authenticatedFetch('https://api.example.test/api/sapien/58/chats/missing'), /not available/);
+assert.equal(checks, 1);
+assert.equal(resourceSession.selectedId, null);
+assert(!resourceSession.isVerified('58'));
+console.log('Access lifecycle checks passed: shared verification, selection/account invalidation, cancellation, deadline during refresh, retry and forced revalidation.');

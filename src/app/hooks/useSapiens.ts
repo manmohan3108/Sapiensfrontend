@@ -69,7 +69,7 @@ export function useSapiens() {
         const available = await sapiensService.listSapiens();
         const selected = available.find(item => item.id === sapiens.id);
         if (!selected) { reset(); throw new Error('This Sapiens is no longer available to your account. Refresh the list.'); }
-        setCurrentSapiens(selected);
+        setCurrentSapiens(selected, true);
         setStatus('idle');
         navigate('/workspace');
         return sapiens;
@@ -275,12 +275,6 @@ export function useSapiens() {
     }
   }, [currentSapiens, setStatus]);
 
-  // ── Return to home ───────────────────────────────────────────────────────────
-  const returnToHome = useCallback(() => {
-    reset();
-    navigate(user?.role === 'admin' ? '/admin' : '/home');
-  }, [reset, navigate, user?.role]);
-
   return {
     currentSapiens,
     chatSessionId,
@@ -292,6 +286,5 @@ export function useSapiens() {
     loadChat,
     startNewChat,
     runEngine,
-    returnToHome,
   };
 }

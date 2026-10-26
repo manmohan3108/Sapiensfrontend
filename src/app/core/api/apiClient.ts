@@ -31,7 +31,7 @@ class ApiClient {
           ...this.defaultHeaders,
           ...options.headers,
         },
-        signal: controller.signal,
+        signal: options.signal ? AbortSignal.any([controller.signal, options.signal]) : controller.signal,
       });
 
       clearTimeout(timeoutId);
@@ -55,7 +55,7 @@ class ApiClient {
       
       if (error instanceof Error) {
         const apiError: ApiError = {
-          message: error.name === 'AbortError' 
+          message: ['AbortError', 'TimeoutError'].includes(error.name)
             ? 'Request timeout' 
             : error.message,
         };

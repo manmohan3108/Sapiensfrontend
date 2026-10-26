@@ -91,7 +91,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setStatus('loading');
       try {
         const nextUser = await loadMe();
-        if (nextUser.user_id !== user?.user_id) useSapiensStore.getState().reset();
+        if (nextUser.user_id !== user?.user_id || nextUser.role !== user?.role) useSapiensStore.getState().reset();
         selectionStorage.setOwner(nextUser.user_id);
         setUser(nextUser);
         setNotice('');
@@ -103,7 +103,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
     window.addEventListener('storage', syncSession);
     return () => window.removeEventListener('storage', syncSession);
-  }, [clearSession, user?.user_id]);
+  }, [clearSession, user?.user_id, user?.role]);
 
   const complete = useCallback(async (request: Promise<AuthUser>) => {
     setNotice('');

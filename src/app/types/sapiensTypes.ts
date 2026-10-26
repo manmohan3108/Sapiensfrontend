@@ -1,3 +1,14 @@
+/** Identity returned by the account-filtered directory. */
+export interface SapiensDirectoryEntry {
+  id: number | string;
+  name: string;
+  role?: string;
+  created_at: string;
+  simulation_enabled?: boolean;
+  simulation_available?: boolean;
+  simulation_unavailable_reason?: 'simulation_disabled' | 'runtime_reserved' | null;
+}
+
 export interface Sapiens {
   id: string;
   name: string;

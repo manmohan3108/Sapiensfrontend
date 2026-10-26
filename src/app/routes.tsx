@@ -11,6 +11,7 @@ import { AccessDeniedPage, GuestRoute, ProtectedRoute } from './components/auth/
 import { useAuth } from './contexts/AuthContext';
 import { LandingDirectionsPage, ScienceLandingPage } from './pages/LandingDirectionsPage';
 import { CustomerHomePage } from './pages/CustomerHomePage';
+import { YourSapiensLink } from './components/navigation/YourSapiensLink';
 
 function RoleHome() {
   const { user } = useAuth();
@@ -21,6 +22,7 @@ export const router = createBrowserRouter([
   { path: '/', Component: ScienceLandingPage, ErrorBoundary },
   { path: '/design-directions', Component: LandingDirectionsPage, ErrorBoundary },
   { Component: () => <ProtectedRoute selection={false} />, children: [{ path: '/home', Component: RoleHome, ErrorBoundary }] },
+  { Component: () => <ProtectedRoute selection={false} />, children: [{ path: '/access-denied', Component: AccessDeniedPage, ErrorBoundary }] },
   {
     Component: GuestRoute,
     children: [
@@ -33,15 +35,19 @@ export const router = createBrowserRouter([
     children: [
       { path: '/workspace', Component: WorkspacePage, ErrorBoundary },
       { path: '/connections', Component: ConnectionsPage, ErrorBoundary },
-      { path: '/access-denied', Component: AccessDeniedPage, ErrorBoundary },
     ],
   },
   {
     Component: () => <ProtectedRoute roles={['admin']} />,
     children: [
-      { path: '/admin', Component: LandingPage, ErrorBoundary },
       { path: '/admin/analyse', Component: AnalysePage, ErrorBoundary },
       { path: '/admin/analyse/:section', Component: AnalysePage, ErrorBoundary },
+    ],
+  },
+  {
+    Component: () => <ProtectedRoute roles={['admin']} selection={false} />,
+    children: [
+      { path: '/admin', Component: LandingPage, ErrorBoundary },
       { path: '/admin/simulations', Component: SimulationLabPage, ErrorBoundary },
       { path: '/admin/simulations/:runId/world/*', Component: SimulationWorldPage, ErrorBoundary },
       { path: '/engram', Component: () => <Navigate to="/admin/analyse/engram" replace />, ErrorBoundary },
@@ -56,6 +62,7 @@ export const router = createBrowserRouter([
         <div className="text-center">
           <h1 className="mb-2 text-white/80">404 — Page Not Found</h1>
           <p className="text-white/40">The page you&apos;re looking for doesn&apos;t exist.</p>
+          <div className="mt-4"><YourSapiensLink className="px-3 text-white hover:bg-white/10" /></div>
           <a href="/" className="text-violet-400 hover:text-violet-300 hover:underline mt-4 inline-block transition-colors">
             Return to Home
           </a>

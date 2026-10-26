@@ -1,3 +1,4 @@
+import { YourSapiensLink } from '../navigation/YourSapiensLink';
 import { Brain, LogOut } from 'lucide-react';
 import { Link } from 'react-router';
 import { useAuth } from '../../contexts/AuthContext';
@@ -10,7 +11,7 @@ export function CustomerHeader({ publicPage = false }: { publicPage?: boolean })
     <div className="customer-nav-actions">
       {publicPage && <a className="landing-nav-link" href="#how-it-works">How it works</a>}
       <ThemeToggle className="customer-theme" />
-      {user ? <><Link className="customer-nav-link" to={user.role === 'admin' ? '/admin' : '/home'}>{user.role === 'admin' ? 'Admin home' : 'Your Sapiens'}</Link>{!publicPage && <button className="customer-icon-button" onClick={() => void logout()} aria-label="Sign out"><LogOut size={19} /></button>}</> : <Link className="customer-nav-link" to="/login">Sign in</Link>}
+      {user ? <><YourSapiensLink className="customer-nav-link" />{!publicPage && <button className="customer-icon-button" onClick={() => void logout()} aria-label="Sign out"><LogOut size={19} /></button>}</> : <Link className="customer-nav-link" to="/login">Sign in</Link>}
     </div>
   </nav></header>;
 }

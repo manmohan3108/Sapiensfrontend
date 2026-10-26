@@ -3,7 +3,10 @@
 /* Connections layout only; palette is shared with the workspace. */
 .connections-page { font-size:15px; line-height:1.5; }
 .connections-header { position:sticky; top:0; z-index:20; border-bottom:1px solid var(--sp-line); background:var(--sp-bg); }
-.connections-header-inner { max-width:1152px; margin:auto; padding:14px 24px; display:flex; justify-content:space-between; align-items:center; gap:16px; }
+.connections-header-inner { max-width:1152px; margin:auto; padding:14px 24px; display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:16px; }
+.connections-directory-link { padding:6px 0; color:var(--sp-ink); }
+.connections-directory-link:hover { text-decoration:underline; text-underline-offset:4px; }
+.connections-header-inner .connections-identity { flex:1; min-width:0; }
 .connections-identity { display:flex; align-items:center; gap:12px; min-width:0; }
 .connections-identity .sapiens-brand-mark { display:block; width:38px; flex-shrink:0; }
 .connections-identity img { width:38px; height:38px; object-fit:contain; }
@@ -47,6 +50,7 @@
 .connections-dialog .connections-destructive:hover { filter:brightness(.95); }
 @media(max-width:600px) {
  .connections-header-inner { padding:12px; gap:8px; }
+ .connections-directory-link { flex-basis:100%; }
  .connections-identity { gap:8px; }
  .connections-identity .sapiens-brand-mark,.connections-identity img { width:30px; height:30px; }
  .connections-identity h1 { font-size:21px; }

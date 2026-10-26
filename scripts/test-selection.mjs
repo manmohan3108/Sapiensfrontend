@@ -10,7 +10,8 @@ globalThis.localStorage = {
   removeItem: key => storage.delete(key),
 };
 globalThis.selectionTestCreate = create;
-globalThis.selectionTestResource = { select() {} };
+let confirmed = null;
+globalThis.selectionTestResource = { select() { confirmed = null; }, confirm(id) { confirmed = id; } };
 const compile = async (source, name) => (await transformWithEsbuild(source, name, { loader: 'ts' })).code;
 const selectionSource = await readFile(new URL('../src/app/core/auth/selectionStorage.ts', import.meta.url), 'utf8');
 const storeSource = (await readFile(new URL('../src/app/core/state/sapiensStore.ts', import.meta.url), 'utf8'))
@@ -27,6 +28,9 @@ async function reload(userId) {
 }
 let session = await reload('alice');
 session.store.getState().setCurrentSapiens({ id: '12', name: 'Example' });
+assert.equal(confirmed, null, 'Unverified selection does not grant access');
+session.store.getState().setCurrentSapiens({ id: '12', name: 'Verified example' }, true);
+assert.equal(confirmed, '12', 'A fresh server verification is carried into navigation');
 for (let i = 0; i < 3; i++) {
   session = await reload('alice');
   assert.equal(session.store.getState().currentSapiens, null, 'cached resource data is not trusted');

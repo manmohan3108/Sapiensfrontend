@@ -1,7 +1,7 @@
 import type { Ref } from 'react';
-import { ArrowLeft, PlugZap, ScanSearch, LogOut, Beaker, ChevronDown } from 'lucide-react';
+import { PlugZap, ScanSearch, LogOut, Beaker, ChevronDown } from 'lucide-react';
 import { Link } from 'react-router';
-import { useSapiens } from '../../hooks/useSapiens';
+import { YourSapiensLink } from '../navigation/YourSapiensLink';
 import { useSapiensStore } from '../../core/state/sapiensStore';
 import { ThemeToggle } from '../ThemeToggle';
 import { RunEngineButton } from './RunEngineButton';
@@ -10,13 +10,12 @@ import { SapiensPresence } from '../customer/SapiensPresence';
 
 export function HeaderBar({ headingRef }: { headingRef?: Ref<HTMLHeadingElement> }) {
   const { currentSapiens, status, isOverloaded } = useSapiensStore();
-  const { returnToHome } = useSapiens();
   const { user, logout } = useAuth();
   if (!currentSapiens) return null;
   const statusLabel = { idle: 'Ready', processing: 'Processing', loading: 'Loading', error: 'Error' }[status] ?? 'Ready';
 
   return <header className="workspace-header">
-    <button onClick={returnToHome} className="workspace-directory-link"><ArrowLeft size={17} aria-hidden="true" /><span>Your Sapiens</span></button>
+    <YourSapiensLink className="workspace-directory-link" />
     <div className="workspace-identity">
       <SapiensPresence size={40} tone="orange" />
       <div className="workspace-identity-text"><h1 ref={headingRef} tabIndex={-1} aria-label={`${currentSapiens.name} workspace`}>{currentSapiens.name}</h1><p>{currentSapiens.role || 'Your AI individual'} <span>· ID {currentSapiens.id}</span></p></div>

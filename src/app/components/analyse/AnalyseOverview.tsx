@@ -1,7 +1,6 @@
 import { ArrowRight, ArrowUpRight } from 'lucide-react';
 import { ANALYSE_GROUPS } from './AnalyseShell';
 import type { AnalyseSection } from './AnalyseShell';
-import { ScienceDetail } from '../customer/ScienceDetail';
 import '../../../styles/analyse-overview-notebook.css';
 
 const descriptions: Record<Exclude<AnalyseSection, 'overview'>, string> = {
@@ -33,7 +32,7 @@ function NotebookFigure({ index }: { index: number }) {
 
 export function AnalyseOverview({ go }: { go: (section: AnalyseSection) => void }) {
   return <div className="analyse-overview">
-    <div className="analyse-directory-intro"><div><h2>Choose what to explore.</h2><p>Open a tool to inspect its records, behaviour and evidence.</p></div><div className="analyse-notebook-intro-art"><ScienceDetail variant="surround" /></div></div>
+    <div className="analyse-directory-intro"><h2>Choose what to explore.</h2><p>Open a tool to inspect its records, behaviour and evidence.</p></div>
     <div className="analyse-tool-groups">{ANALYSE_GROUPS.map((group, index) => <section className="analyse-tool-group" key={group.label} aria-labelledby={'analyse-group-' + index}>
       <div className="analyse-notebook-margin"><span className="analyse-notebook-index" aria-hidden="true">0{index + 1}</span><h3 id={'analyse-group-' + index}>{group.label}</h3><NotebookFigure index={index} /></div>
       <div className="analyse-tool-grid">{group.items.map(item => <button type="button" className="analyse-tool-tile" key={item.id} onClick={() => go(item.id)}>

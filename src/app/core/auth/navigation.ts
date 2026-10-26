@@ -1,7 +1,7 @@
 // Only known application destinations survive authentication. Never accept an
 // external URL, encoded path separator, or arbitrary return-to value.
 export function authDestination(role: string, requested: unknown): string {
-  const fallback = role === 'admin' ? '/admin' : '/home';
+  const fallback = sapiensDirectoryPath(role);
   if (typeof requested !== 'string' || !requested.startsWith('/') || /[\\\s]/.test(requested) || requested.startsWith('//')) return fallback;
   const [path, query = ''] = requested.split('?');
   if (path.includes('%') || path.includes('#')) return fallback;
@@ -20,4 +20,7 @@ export function readAuthIntent(search: string, state: unknown): unknown {
 
 export function authLink(path: '/login' | '/register', requested: unknown) {
   return typeof requested === 'string' ? `${path}?next=${encodeURIComponent(requested)}` : path;
+}
+export function sapiensDirectoryPath(role: string): '/admin' | '/home' {
+  return role === 'admin' ? '/admin' : '/home';
 }

@@ -66,7 +66,6 @@ export function AnalysePage() {
   const navigate = useNavigate();
   const { section: rawSection } = useParams();
   const currentSapiens = useSapiensStore(s => s.currentSapiens);
-  const resetSelection = useSapiensStore(s => s.reset);
   const setTimeline = useSapiensStore(s => s.setShowMemoryTimeline);
   const showTimeline = useSapiensStore(s => s.showMemoryTimeline);
   const [usageOpen, setUsageOpen] = useState(false);
@@ -85,7 +84,7 @@ export function AnalysePage() {
     const query = params ? '?' + new URLSearchParams(params) : '';
     navigate((id === 'overview' ? '/admin/analyse' : '/admin/analyse/' + id) + query);
   };
-  return <AnalyseShell section={section} name={currentSapiens.name} sapienId={currentSapiens.id} go={go} onWorkspace={() => navigate('/workspace')} onDirectory={() => { resetSelection(); navigate('/admin'); }}>
+  return <AnalyseShell section={section} name={currentSapiens.name} sapienId={currentSapiens.id} go={go} onWorkspace={() => navigate('/workspace')}>
     {section === 'overview' && <AnalyseOverview go={go} />}
     {section === 'awareness' && <AwarenessAnalysis sapienId={currentSapiens.id} />}
     {section === 'working-memory' && <WorkingMemoryAnalysis sapienId={Number(currentSapiens.id)} openEngram={() => go('engram')} />}

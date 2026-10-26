@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
 import { useRef, useState } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
-import { Activity, ArrowLeft, ArrowUpRight, BarChart3, Beaker, BrainCircuit, Bug, Clock3, DatabaseZap, Eye, LayoutDashboard, Menu, Search, Sparkles, Target, X } from 'lucide-react';
+import { Activity, ArrowUpRight, BarChart3, Beaker, BrainCircuit, Bug, Clock3, DatabaseZap, Eye, LayoutDashboard, Menu, Search, Sparkles, Target, X } from 'lucide-react';
+import { YourSapiensLink } from '../navigation/YourSapiensLink';
 import { ThemeToggle } from '../ThemeToggle';
 import { SapiensBrandMark } from '../customer/SapiensBrandMark';
 import '../../../styles/analyse.css';
@@ -34,9 +35,9 @@ export type AnalyseSection = 'overview' | typeof ANALYSE_GROUPS[number]['items']
 type AnalyseNavItem = { id: AnalyseSection; label: string; icon: typeof Eye };
 export const ANALYSE_NAV: AnalyseNavItem[] = [{ id: 'overview', label: 'Overview', icon: LayoutDashboard }, ...ANALYSE_GROUPS.flatMap<AnalyseNavItem>(group => [...group.items])];
 
-export function AnalyseShell({ section, name, sapienId, go, onWorkspace, onDirectory, children }: {
+export function AnalyseShell({ section, name, sapienId, go, onWorkspace, children }: {
   section: AnalyseSection; name: string; sapienId: string; go: (section: AnalyseSection, params?: Record<string, string>) => void;
-  onWorkspace: () => void; onDirectory: () => void; children: ReactNode;
+  onWorkspace: () => void; children: ReactNode;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const menuButton = useRef<HTMLButtonElement>(null);
@@ -51,7 +52,7 @@ export function AnalyseShell({ section, name, sapienId, go, onWorkspace, onDirec
       {navItem(ANALYSE_NAV[0])}
       {ANALYSE_GROUPS.map(group => <div className="analyse-nav-group" key={group.label}><p>{group.label}</p>{group.items.map(navItem)}</div>)}
     </nav>
-    <button type="button" className="analyse-directory" onClick={() => { setMobileOpen(false); onDirectory(); }}><ArrowLeft size={16} />Your Sapiens</button>
+    <YourSapiensLink className="analyse-directory" onClick={() => setMobileOpen(false)} />
   </>;
   return <div className="analyse-shell" data-analyse-section={section}>
     <a className="analyse-skip" href="#analyse-content">Skip to content</a>
@@ -64,6 +65,7 @@ export function AnalyseShell({ section, name, sapienId, go, onWorkspace, onDirec
     </Dialog.Root>
     <main className="analyse-main">
       <header className="analyse-header">
+        <YourSapiensLink className="analyse-directory-mobile" />
         <button ref={menuButton} type="button" className="analyse-menu" aria-label="Open navigation" aria-expanded={mobileOpen} onClick={() => setMobileOpen(true)}><Menu size={20} /></button>
         <div className="analyse-heading"><p>{name}<span> / ID {sapienId}</span></p><h1>{item.label}</h1></div>
         <div className="analyse-header-actions"><ThemeToggle className="analyse-theme-toggle" /><button type="button" className="analyse-button" onClick={onWorkspace}>Workspace<ArrowUpRight size={15} /></button></div>

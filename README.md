@@ -66,12 +66,21 @@ Sapiens **Owner** field; there is no frontend ownership assignment API.
 
 Global heartbeat/dashboard state, orchestrator status, and LLM/embedding usage
 are admin-only. Customers do not poll orchestrator status or mount usage panels.
-Selection is revalidated against the server list on entry and window focus.
-A scoped resource 404 (including an inaccessible memory batch/child resource)
-clears the selection and private state and returns to the accessible picker.
-This intentionally conservative behavior does not disclose why access failed.
-Selection/account changes discard in-flight response bodies; no Sapiens selection,
-chat, or memory data is persisted to browser storage. Theme preference is shared.
+Selection is verified against the account-filtered server list when opened or
+restored after a reload. Successful verification is held only in memory for the
+current selection; navigating between its pages does not repeat the check.
+Concurrent checks share a request, with a 15-second deadline. Switching Sapiens,
+logging out or changing accounts/roles invalidates verification. Directory and
+simulation pages retain their login/role gates without requiring the previous
+selected Sapien. Every API request still relies on backend authorization.
+For customers, a scoped resource 404 forces a fresh ownership check: a missing
+child alone does not discard an accessible Sapien, while an inconclusive check
+blocks protected content until retry. Confirmed loss of access clears private
+state. Admin scoped-resource 404 handling remains conservative and clears the
+selection; job-inspection failures are handled locally.
+Selection/account changes discard in-flight response bodies. Only an account-scoped
+selected ID is retained for restoration; Sapien records, chat and memory data stay
+in memory. Theme preference is shared.
 
 The admin-only Simulation Lab at `/admin/simulations` uses the backend-authored
 case catalog and can bind an eligible, normally created Sapiens to Sentinel Desk.

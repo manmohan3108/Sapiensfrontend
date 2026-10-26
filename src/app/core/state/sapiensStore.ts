@@ -34,7 +34,7 @@ interface SapiensStore {
   jumpToMessageId: string | null;
 
   // ── Core actions ──────────────────────────────────────────────────────────
-  setCurrentSapiens: (sapiens: Sapiens | null) => void;
+  setCurrentSapiens: (sapiens: Sapiens | null, accessVerified?: boolean) => void;
   setStatus: (status: 'idle' | 'loading' | 'processing' | 'error') => void;
 
   // ── Chat actions ──────────────────────────────────────────────────────────
@@ -82,8 +82,9 @@ export const useSapiensStore = create<SapiensStore>((set) => ({
   jumpToMessageId: null,
 
   // ── Core actions ──────────────────────────────────────────────────────────
-  setCurrentSapiens: (sapiens) => {
+  setCurrentSapiens: (sapiens, accessVerified = false) => {
     resourceSession.select(sapiens?.id ?? null);
+    if (sapiens && accessVerified) resourceSession.confirm(sapiens.id);
     selectionStorage.save(sapiens?.id ?? null);
     set({ currentSapiens: sapiens, chatMessages: [], chatSessionId: null,
       lastMemoryUnits: [], lastDebugInfo: null, pinnedMemoryIds: [], ignoredMemoryIds: [],

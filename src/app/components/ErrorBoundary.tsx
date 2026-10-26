@@ -1,6 +1,7 @@
 import { useRouteError, isRouteErrorResponse, useNavigate } from 'react-router';
 import { AlertCircle, Home, RefreshCw } from 'lucide-react';
 import { Button } from './ui/button';
+import { YourSapiensLink } from './navigation/YourSapiensLink';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 
 export function ErrorBoundary() {
@@ -57,7 +58,8 @@ export function ErrorBoundary() {
             )}
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
+            <YourSapiensLink className="border border-border px-3 hover:bg-muted" />
             <Button onClick={handleGoHome} variant="default" className="flex-1">
               <Home className="w-4 h-4 mr-2" />
               Go to Home
