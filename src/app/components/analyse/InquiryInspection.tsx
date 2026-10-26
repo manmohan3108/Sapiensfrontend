@@ -1,6 +1,7 @@
+import { AnalyseControls } from './AnalyseControls';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
-import { Loader2, RefreshCw } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { inquiryService } from '../../core/services/inquiryService';
 import type { InquiryDetail, InquiryFilters, InquiryKind, InquiryPage } from '../../types/inquiryTypes';
 import type { ApiError } from '../../types/apiTypes';
@@ -147,11 +148,11 @@ function InquiryList({ sapienId, kind }: { sapienId: string; kind: InquiryKind }
   }, [sapienId, kind, filters, valid, revision, offset]);
   function refresh() { resetContent(); setRevision(value => value + 1); }
   return <div className="space-y-4">
-    <section className={`${panel} p-4`}><h2 className="text-sm text-white/80">{title(kind)} <span className="ml-2 rounded-full border border-cyan-300/20 px-2 py-0.5 text-[10px] text-cyan-100/70">Admin · Read-only</span></h2>
+    <section className={`${panel} analyse-intro-compact`}><h2 className="text-sm text-white/80">{title(kind)} <span className="ml-2 rounded-full border border-cyan-300/20 px-2 py-0.5 text-[10px] text-cyan-100/70">Admin · Read-only</span></h2>
       <p className="mt-2 text-base leading-7 text-white/70">{kind === 'questioning' ? 'What is the Sapien trying to understand?' : 'How is the Sapien exploring what it does not know?'}</p>
       <p className="mt-1 text-xs text-white/45">Saved records · Sapien {sapienId} · No engines run when you inspect this page.</p>
     </section>
-    <section className={`${panel} p-4`}><div className="flex flex-wrap items-end gap-3">
+    <AnalyseControls label="Filters" summary={[filters.state || 'All states', filters.source && `Source: ${filters.source}`, kind === 'curiosity' && filters.channel, kind === 'curiosity' && filters.delivery_state, `${filters.limit} per page`].filter(Boolean).join(' · ')} onRefresh={refresh} busy={!valid || (!data && !error)}><div className="flex flex-wrap items-end gap-3">
       <label className="text-xs text-white/50">State<select className={input} value={filters.state} onChange={event => change({ state: event.target.value as InquiryFilters['state'] })}><option value="">All states</option><option value="open">Open</option><option value="answered">Assessed answered</option><option value="stale">Stale</option></select></label>
       <label className="text-xs text-white/50">Source (exact match)<input className={input} maxLength={256} value={filters.source} onChange={event => change({ source: event.target.value })} placeholder="All sources" /></label>
       {kind === 'curiosity' && <>
@@ -159,9 +160,8 @@ function InquiryList({ sapienId, kind }: { sapienId: string; kind: InquiryKind }
         <label className="text-xs text-white/50">Attention / review state<select className={input} value={filters.delivery_state} onChange={event => change({ delivery_state: event.target.value as InquiryFilters['delivery_state'] })}><option value="">All states</option><option value="proposed">Proposed</option><option value="attention_requested">Attention requested</option><option value="reviewed">Reviewed</option></select></label>
       </>}
       <label className="text-xs text-white/50">Page size<input className={input} type="number" min={1} max={200} step={1} value={filters.limit || ''} onChange={event => change({ limit: Number(event.target.value) })} /></label>
-      <button type="button" className={`${button} flex items-center gap-2`} disabled={!valid} onClick={refresh}><RefreshCw className="h-3 w-3" />Refresh</button>
       <button type="button" className={button} onClick={() => change(defaults)}>Reset filters</button>
-    </div><p className="mt-3 text-[11px] text-white/40">Filters apply immediately to records for the selected Sapien, including normal and simulation records. Counts describe the returned subset only.</p></section>
+    </div><p className="mt-3 text-[11px] text-white/40">Filters apply immediately to records for the selected Sapien, including normal and simulation records. Counts describe the returned subset only.</p></AnalyseControls>
     {!valid && <p role="status" className="p-4 text-xs text-amber-100">Use a limit from 1 to 200 and a source up to 256 characters without surrounding spaces.</p>}
     {valid && !data && !error && <Loading />}
     {error && <Failure status={error.status} retry={refresh} />}
@@ -175,7 +175,7 @@ function InquiryList({ sapienId, kind }: { sapienId: string; kind: InquiryKind }
       {kind === 'questioning' && <QuestionReviews data={data} />}
       <section className={`${panel} overflow-hidden`}><div className="overflow-x-auto"><table className="w-full min-w-[720px] text-left text-sm"><caption className="p-3 text-left text-white/50">Select a question to see its context and outcome</caption><thead className="bg-[#0b101c] text-white/40"><tr>{['Question', 'Source', 'Assessment', ...(kind === 'curiosity' ? ['Attention / review'] : []), 'Created', 'Job'].map(label => <th key={label} className="px-3 py-2 font-normal">{label}</th>)}</tr></thead>
         <tbody>{data.items.map(item => <tr key={item.id} className="border-t border-white/[.06] text-white/70">
-          <td className="max-w-md px-4 py-4"><button type="button" className="whitespace-pre-wrap break-words text-left text-base leading-7 text-cyan-100 hover:underline" onClick={() => setSelected({ kind, id: item.id })}>{item.question || 'Question text unavailable'}</button></td>
+          <td className="max-w-md px-4 py-4"><button type="button" className="analyse-table-excerpt break-words text-left text-sm text-cyan-100 hover:underline" onClick={() => setSelected({ kind, id: item.id })}>{item.question || 'Question text unavailable'}</button></td>
           <td className="max-w-48 break-words px-3 py-3">{item.source?.replaceAll('_', ' ') || 'Not recorded'}</td>
           <td className="px-3 py-3">{item.state === 'answered' ? 'Assessed answered' : item.state === 'open' ? 'Open' : item.state === 'stale' ? 'Closed, unanswered' : 'Unknown'}</td>
           {kind === 'curiosity' && <td className="px-3 py-3">{display(item.delivery_state)}</td>}

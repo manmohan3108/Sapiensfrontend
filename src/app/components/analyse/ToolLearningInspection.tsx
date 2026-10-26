@@ -1,3 +1,4 @@
+import { AnalyseControls } from './AnalyseControls';
 import { useEffect, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import { Link, useSearchParams } from 'react-router';
@@ -195,7 +196,7 @@ export function ToolLearningInspection({ sapienId }: { sapienId: string }) {
   const localDate = (value: string | null) => { if (!value) return ''; const date = new Date(value); return Number.isNaN(date.getTime()) ? '' : new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16); };
   return <div className="space-y-4 text-white/75">
     <header className={panel}><h2 className="text-lg text-white/90">Tool Learning <span className="text-xs text-cyan-200">· Read-only</span></h2><p className="mt-2 text-sm text-white/55">Explore what was learned, its evidence and where guidance was used. Saved records remain available after pause or stop.</p><p className="mt-2 text-xs text-white/45">{read.data ? `Current configured mode: ${read.data.configured_mode} · Read at ${time(read.data.as_of)}. This is not the historical run mode.` : 'Reading saved data without starting the Sapien runtime.'}</p><Link className="mt-3 inline-block text-xs text-cyan-200 underline" to="/admin/analyse/engine-jobs?engine_name=tool_learning_engine">Inspect learning jobs and failures</Link></header>
-    <form key={params.toString()} onSubmit={apply} className={`${panel} space-y-3`} aria-label="Tool learning filters">
+    <AnalyseControls summary={[params.has('scope') ? scopeName(params.get('scope') || '') : 'All saved scopes', ...['q','server','tool','has_lessons','since','until','sort','direction'].filter(key => params.get(key)).map(key => `${key === 'q' ? 'Search' : key.replaceAll('_', ' ')}: ${params.get(key)}`)].join(' · ')} onRefresh={read.retry} busy={read.loading}><form key={params.toString()} onSubmit={apply} className="space-y-3" aria-label="Tool learning filters">
       {formError && <p role="alert" className="text-sm text-amber-200">{formError}</p>}
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <label className="text-xs">Search lessons/tools<input name="q" maxLength={160} defaultValue={params.get('q') || ''} className={`${control} mt-1 w-full`} placeholder="Guidance, conditions or tool name" /></label>
@@ -206,8 +207,8 @@ export function ToolLearningInspection({ sapienId }: { sapienId: string }) {
         <label className="text-xs">Run ID (for specific run)<input name="run" maxLength={256} defaultValue={params.get('scope') || ''} className={`${control} mt-1 w-full`} placeholder="run-…" /></label>
         {(['since', 'until'] as const).map(key => <label key={key} className="text-xs">Updated {key} (local time)<input type="datetime-local" name={key} defaultValue={localDate(params.get(key))} className={`${control} mt-1 w-full`} /></label>)}
       </div>
-      <div className="flex flex-wrap items-center gap-2"><label className="text-xs">Sort <select name="sort" defaultValue={params.get('sort') || 'updated_at'} className={control}><option value="updated_at">Updated</option><option value="documented_at">Documented</option><option value="server">Server</option><option value="tool">Tool</option></select></label><label className="text-xs">Order <select name="direction" defaultValue={params.get('direction') || 'desc'} className={control}><option value="desc">Descending</option><option value="asc">Ascending</option></select></label><button className={control}>Apply filters</button><button type="button" className={control} onClick={() => setParams(new URLSearchParams())}>Clear</button><button type="button" className={control} onClick={read.retry}>Refresh</button></div>
-    </form>
+      <div className="flex flex-wrap items-center gap-2"><label className="text-xs">Sort <select name="sort" defaultValue={params.get('sort') || 'updated_at'} className={control}><option value="updated_at">Updated</option><option value="documented_at">Documented</option><option value="server">Server</option><option value="tool">Tool</option></select></label><label className="text-xs">Order <select name="direction" defaultValue={params.get('direction') || 'desc'} className={control}><option value="desc">Descending</option><option value="asc">Ascending</option></select></label><button className={control}>Apply filters</button><button type="button" className={control} onClick={() => setParams(new URLSearchParams())}>Clear</button></div>
+    </form></AnalyseControls>
     <Status {...read} />
     <div className={`grid items-start gap-4 ${selected ? 'xl:grid-cols-2' : ''}`}>
       <section className="min-w-0" aria-label="Tool profiles">{read.data && <>

@@ -32,6 +32,7 @@ export function EngramPage({ embedded = false }: { embedded?: boolean } = {}) {
   const currentSapiens     = useSapiensStore(s => s.currentSapiens);
   const [tab, setTab]      = useState<Tab>('dashboard');
   const [graphSeedId, setGraphSeedId] = useState<string | undefined>(undefined);
+  const [memoryOpen, setMemoryOpen] = useState(!embedded);
 
   const openInGraph = (id: string) => {
     setGraphSeedId(id);
@@ -133,6 +134,7 @@ export function EngramPage({ embedded = false }: { embedded?: boolean } = {}) {
 
       {embedded && <nav className="flex flex-shrink-0 items-center gap-1 overflow-x-auto border-b border-white/[.07] bg-[#080d19] px-3 py-2">
         {TABS.map(t => { const ac = TAB_ACCENT[t.id]; const active = tab === t.id; return <button key={t.id} onClick={() => setTab(t.id)} className="flex flex-shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px]" style={active ? { background: `${ac}18`, border: `1px solid ${ac}40`, color: ac } : { border: '1px solid transparent', color: 'rgba(255,255,255,.35)' }}>{t.icon}{t.label}</button>; })}
+        <button className="engram-memory-toggle" aria-expanded={memoryOpen} aria-controls="engram-memory-panel" onClick={() => setMemoryOpen(value => !value)}>Working Memory {memoryOpen ? '−' : '+'}</button>
       </nav>}
 
       {/* ── Body ── */}
@@ -149,7 +151,7 @@ export function EngramPage({ embedded = false }: { embedded?: boolean } = {}) {
           }}
         >
           {/* Section header */}
-          <div className="flex items-center gap-2 mb-5 pb-3" style={{ borderBottom: `1px solid ${accent}15` }}>
+          <div className="engram-main-heading flex items-center gap-2 mb-5 pb-3" style={{ borderBottom: `1px solid ${accent}15` }}>
             <span style={{ color: accent }}>{TABS.find(t => t.id === tab)?.icon}</span>
             <h2 className="text-sm text-white/80">{TABS.find(t => t.id === tab)?.label}</h2>
           </div>
@@ -161,10 +163,10 @@ export function EngramPage({ embedded = false }: { embedded?: boolean } = {}) {
           {tab === 'graph'     && <EngramGraph      sapienId={sapienId} initialId={graphSeedId} />}
         </div>
 
-        {/* Working Memory sidebar (always visible) */}
-        <div className="min-h-[24rem] w-full flex-shrink-0 lg:min-h-0 lg:w-52">
+        {/* Optional Working Memory sidebar */}
+        {memoryOpen && <div id="engram-memory-panel" className={embedded ? "engram-memory-panel" : "min-h-[24rem] w-full flex-shrink-0 lg:min-h-0 lg:w-52"}>
           <EngramWMSidebar sapienId={sapienId} onOpenInGraph={openInGraph} />
-        </div>
+        </div>}
       </div>
     </div>
   );

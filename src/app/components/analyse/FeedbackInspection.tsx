@@ -1,5 +1,6 @@
+import { AnalyseControls } from './AnalyseControls';
 import { useEffect, useState } from 'react';
-import { AlertCircle, Eye, Loader2, RefreshCw } from 'lucide-react';
+import { AlertCircle, Eye, Loader2 } from 'lucide-react';
 import { feedbackService } from '../../core/services/feedbackService';
 import { FEEDBACK_STATES } from '../../types/feedbackTypes';
 import type { FeedbackReference, FeedbackResponse, FeedbackState } from '../../types/feedbackTypes';
@@ -107,7 +108,7 @@ function FeedbackView({ sapienId }: { sapienId: string }) {
       <p className="mt-2 text-xs text-white/45">{!data ? 'Loading Feedback mode.' : data.mode === 'observe' ? 'Observe mode: findings are recorded for inspection, not applied to behavior.' : data.mode === 'off' ? 'Feedback is off. Previously saved findings remain available.' : 'Active mode can make findings available to other engines; it does not prove they were used.'} Evidence below is a saved, possibly shortened snapshot.</p>
     </section>
 
-    <details className={`${panel} p-4`} aria-label="Feedback filters"><summary className="cursor-pointer text-sm text-white/65">Filter findings · {states.length ? states.map(state => labels[state]).join(', ') : 'All findings'}</summary>
+    <AnalyseControls label="Filter findings" summary={`${states.length ? states.map(state => labels[state]).join(', ') : 'All findings'} · ${limit} per page`} onRefresh={() => setRevision(value => value + 1)} busy={loading}>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <fieldset><legend className="mb-2 text-xs text-white/50">States (none selected means all)</legend>
           <div className="flex flex-wrap gap-2">{FEEDBACK_STATES.map(state => <label key={state} className="flex cursor-pointer items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-xs text-white/65">
@@ -116,12 +117,10 @@ function FeedbackView({ sapienId }: { sapienId: string }) {
         </fieldset>
         <div className="flex items-end gap-2">
           <label className="text-xs text-white/50"><span className="mb-2 block">Page size</span><select value={limit} onChange={event => { setOffset(0); setLimit(Number(event.target.value)); }} className="rounded-lg border border-white/10 bg-[#0b1220] px-3 py-2 text-white/70">{[10, 25, 50, 100].map(value => <option key={value} value={value}>{value}</option>)}</select></label>
-          <button type="button" onClick={() => setRevision(value => value + 1)} disabled={loading} className="flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-xs text-white/65 disabled:opacity-40"><RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />Refresh</button>
         </div>
       </div>
       <p className="mt-3 text-xs text-white/50">{data?.total !== undefined ? `${data.count} on this page · ${data.total} matching findings` : 'Saved findings'}</p>
-    </details>
-    <button type="button" disabled={loading} onClick={() => setRevision(value => value + 1)} className="flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-sm text-white/70 disabled:opacity-40"><RefreshCw className="h-4 w-4" />Refresh findings</button>
+    </AnalyseControls>
 
     {loading && <div role="status" className="flex min-h-40 items-center justify-center gap-2 text-xs text-white/45"><Loader2 className="h-4 w-4 animate-spin" />Loading feedback findings…</div>}
     {error && <div role="alert" className="rounded-xl border border-amber-300/20 bg-amber-300/5 p-4 text-xs">

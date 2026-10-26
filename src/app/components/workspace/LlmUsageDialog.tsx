@@ -9,6 +9,7 @@ interface LlmUsageDialogProps {
   onOpenChange: (open: boolean) => void;
   sapienId: string;
   sapienName: string;
+  compactDetails?: boolean;
 }
 
 interface KindState {
@@ -84,7 +85,11 @@ function ScopeError({ scope, message }: { scope: string; message: string }) {
   );
 }
 
-function UsageKindSection({ kind, state, sapienId, sapienName, onRetry }: { kind: AiUsageKind; state: KindState; sapienId: string; sapienName: string; onRetry: () => void }) {
+function UsageBreakdown({ compact, title, children }: { compact: boolean; title: string; children: React.ReactNode }) {
+  return compact ? <details className="analyse-usage-detail"><summary>{title}</summary><div>{children}</div></details> : <>{children}</>;
+}
+
+function UsageKindSection({ kind, state, sapienId, sapienName, onRetry, compactDetails = false }: { kind: AiUsageKind; state: KindState; sapienId: string; sapienName: string; onRetry: () => void; compactDetails?: boolean }) {
   const title = kind === 'llm' ? 'LLM calls' : 'Embedding calls';
   const hasData = Boolean(state.global || state.sapien);
   const sapienLimits = state.sapien?.sapien_limits ?? {};
@@ -103,8 +108,8 @@ function UsageKindSection({ kind, state, sapienId, sapienName, onRetry }: { kind
           <div className="mb-3 rounded-xl border border-violet-400/15 bg-violet-400/[.05] p-4"><p className="text-[10px] uppercase tracking-wider text-white/30">{title} today · {state.sapien.today} UTC</p><p className="mt-1 font-mono text-2xl text-violet-200">{number.format(state.sapien.today_total)}</p></div>
           <h5 className="mb-2 text-xs font-medium text-white/50">Per-sapien daily tier quota</h5>
           {Object.keys(sapienLimits).length > 0 ? <TierLimitCards limits={sapienLimits} usage={state.sapien.today_by_tier} ariaScope={`${title}, ${sapienName} per-sapien quota`} /> : <p className="text-xs text-white/35">No per-sapien tier quota was returned.</p>}
-          <h5 className="mb-2 mt-4 text-xs font-medium text-white/50">Today by purpose</h5><MetricRows values={state.sapien.today_by_purpose} emptyText={`No ${title.toLowerCase()} are attributed to this sapien today.`} />
-          <h5 className="mb-2 mt-4 text-xs font-medium text-white/50">Recent daily per-sapien usage</h5><UsageHistory usage={state.sapien} unit={title} />
+          <UsageBreakdown compact={compactDetails} title="Purpose breakdown & recent daily usage"><h5 className="mb-2 mt-4 text-xs font-medium text-white/50">Today by purpose</h5><MetricRows values={state.sapien.today_by_purpose} emptyText={`No ${title.toLowerCase()} are attributed to this sapien today.`} />
+          <h5 className="mb-2 mt-4 text-xs font-medium text-white/50">Recent daily per-sapien usage</h5><UsageHistory usage={state.sapien} unit={title} /></UsageBreakdown>
         </div>
       )}
       {state.global && (
@@ -112,14 +117,14 @@ function UsageKindSection({ kind, state, sapienId, sapienName, onRetry }: { kind
           <div className="mb-3"><h4 className="text-xs font-semibold text-white/65">Shared global quota</h4><p className="mt-1 text-[11px] text-white/30">Enforced daily tier quota shared across all sapiens and system {title.toLowerCase()}. System calls consume only this global pool.</p></div>
           <TierLimitCards limits={globalLimits} usage={state.global.today_by_tier} ariaScope={`${title}, global shared limit`} />
           {!Object.keys(globalLimits).length && <p className="text-xs text-white/35">No global shared limits were returned.</p>}
-          <h5 className="mb-2 mt-4 text-xs font-medium text-white/50">Global {title.toLowerCase()} today by purpose</h5><MetricRows values={state.global.today_by_purpose} emptyText={`No global ${title.toLowerCase()} have been recorded today.`} />
+          <UsageBreakdown compact={compactDetails} title="Global purpose breakdown"><h5 className="mb-2 mt-4 text-xs font-medium text-white/50">Global {title.toLowerCase()} today by purpose</h5><MetricRows values={state.global.today_by_purpose} emptyText={`No global ${title.toLowerCase()} have been recorded today.`} /></UsageBreakdown>
         </div>
       )}
     </section>
   );
 }
 
-export function LlmUsageDialog({ open, onOpenChange, sapienId, sapienName }: LlmUsageDialogProps) {
+export function LlmUsageDialog({ open, onOpenChange, sapienId, sapienName, compactDetails = false }: LlmUsageDialogProps) {
   const [states, setStates] = useState<Record<AiUsageKind, KindState>>({ llm: emptyState(), embedding: emptyState() });
   const loadKind = useCallback(async (kind: AiUsageKind) => {
     setStates((current) => ({ ...current, [kind]: { ...current[kind], errors: [], loading: true } }));
@@ -140,7 +145,7 @@ export function LlmUsageDialog({ open, onOpenChange, sapienId, sapienName }: Llm
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90dvh] w-[calc(100%-1rem)] max-w-3xl overflow-y-auto border-white/10 bg-[#090e1c] p-0 text-white shadow-2xl sm:w-full">
         <DialogHeader className="border-b border-white/[.07] px-5 py-4 pr-12 text-left sm:px-6"><DialogTitle className="flex items-center gap-2 text-base"><BarChart3 className="h-4 w-4 text-cyan-300" />AI usage & limits</DialogTitle><DialogDescription className="text-xs text-white/35">LLM and embedding accounting reset on UTC dates. History covers the latest 7 recorded days.</DialogDescription></DialogHeader>
-        <div className="space-y-6 px-5 pb-6 sm:px-6" aria-live="polite"><UsageKindSection kind="llm" state={states.llm} sapienId={sapienId} sapienName={sapienName} onRetry={() => void loadKind('llm')} /><div className="border-t border-white/10" /><UsageKindSection kind="embedding" state={states.embedding} sapienId={sapienId} sapienName={sapienName} onRetry={() => void loadKind('embedding')} /></div>
+        <div className="space-y-6 px-5 pb-6 sm:px-6" aria-live="polite"><UsageKindSection compactDetails={compactDetails} kind="llm" state={states.llm} sapienId={sapienId} sapienName={sapienName} onRetry={() => void loadKind('llm')} /><div className="border-t border-white/10" /><UsageKindSection compactDetails={compactDetails} kind="embedding" state={states.embedding} sapienId={sapienId} sapienName={sapienName} onRetry={() => void loadKind('embedding')} /></div>
       </DialogContent>
     </Dialog>
   );

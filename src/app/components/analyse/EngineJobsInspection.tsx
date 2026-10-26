@@ -1,7 +1,8 @@
+import { AnalyseControls } from './AnalyseControls';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import type { ReactNode } from 'react';
-import { Activity, ArrowLeft, Copy, Loader2, RefreshCw } from 'lucide-react';
+import { Activity, ArrowLeft, Copy, Loader2 } from 'lucide-react';
 import { engineJobsService } from '../../core/services/engineJobsService';
 import type { ApiError } from '../../types/apiTypes';
 import type { EngineJobDetailResponse, EngineJobFilters, EngineJobPage, EngineJobStatus } from '../../types/engineJobTypes';
@@ -187,7 +188,7 @@ function JobList({ sapienId, initialEngine, initialJob }: { sapienId: string; in
       <div className="flex items-center gap-2"><Activity className="h-4 w-4 text-cyan-200" /><h2 className="text-sm text-white/80">Engine jobs</h2><span className="rounded-full border border-cyan-300/20 px-2 py-0.5 text-[10px] text-cyan-100/70">Admin · Read-only</span></div>
       <p className="mt-2 text-xs leading-5 text-white/50">Inspect persisted engine work for Sapien {sapienId}. Summaries cover the entire filtered creation-time window, not just this page or the all-time queue.</p>
     </section>
-    <form className={`${panel} p-4`} onSubmit={event => {
+    <AnalyseControls label="Filters" summary={[`${request.filters.days} days`, request.filters.engine_name || 'All engines', request.filters.status || 'All statuses', `${request.filters.limit} per page`, JSON.stringify(draft) !== JSON.stringify(request.filters) && 'Unapplied edits'].filter(Boolean).join(' · ')} onRefresh={restart} busy={loading}><form onSubmit={event => {
       event.preventDefault();
       if (!Number.isInteger(draft.days) || draft.days < 1 || draft.days > 90 || !Number.isInteger(draft.limit) || draft.limit < 1 || draft.limit > 200) return;
       setRequest(current => ({ filters: { ...draft }, cursors: [null], revision: current.revision + 1 }));
@@ -199,14 +200,13 @@ function JobList({ sapienId, initialEngine, initialJob }: { sapienId: string; in
         <label className="text-xs text-white/50">Page limit<input type="number" required min={1} max={200} step={1} value={draft.limit || ''} onChange={event => setDraft(current => ({ ...current, limit: Number(event.target.value) }))} className={input} /></label>
         <button type="submit" className={button}>Apply filters</button>
         <button type="button" onClick={() => { setDraft(defaults); setRequest(current => ({ filters: defaults, cursors: [null], revision: current.revision + 1 })); }} className={button}>Reset</button>
-        <button type="button" onClick={restart} disabled={loading} className={`${button} flex items-center gap-2`}><RefreshCw className="h-3 w-3" />Refresh window</button>
       </div>
       <p className="mt-3 text-[11px] text-white/40">Apply filters to start a new window. Pagination keeps the applied filters and signed cursor; Refresh window starts again at page 1.</p>
-    </form>
+    </form></AnalyseControls>
     {loading && <Loading />}
     {error && <Failure error={error} retry={() => setRequest(current => ({ ...current, revision: current.revision + 1 }))} />}
     {!loading && data && <>
-      <section className={`${panel} space-y-3 p-4`}>
+      <details className="analyse-summary-fold"><summary>Window summary · {data.total.toLocaleString()} jobs</summary><div className="space-y-3">
         <h3 className="text-sm text-white/80">{data.total.toLocaleString()} jobs in the filtered window</h3>
         <p className="text-xs text-white/50">Applied: {data.filters.days} days · Engine: {data.filters.engine_name || 'all'} · Status: {data.filters.status || 'all'} · Limit: {data.limit}</p>
         <p className="text-[11px] leading-5 text-white/40">Created from {timestamp(data.since)} through {timestamp(data.until)} (inclusive). Read as of {timestamp(data.as_of)}.</p>
@@ -216,7 +216,7 @@ function JobList({ sapienId, initialEngine, initialJob }: { sapienId: string; in
         </table></div>
         {!data.summary.length && <p className="text-xs text-white/50">No jobs match this creation window and these filters.</p>}
         <p className="text-[11px] text-white/40">Simulation pending requires the run’s cognitive clock and is not classified as due or delayed by real read time. “With failures” means retries &gt; 0; it does not prove another execution occurred. Expired leases do not prove execution stopped.</p>
-      </section>
+      </div></details>
       <section className={`${panel} overflow-hidden`}>
         <div className="overflow-x-auto"><table className="w-full min-w-[940px] text-left text-xs"><caption className="p-3 text-left text-white/50">Page {request.cursors.length} · {data.jobs.length} returned jobs · newest creation time first. List metadata can be truncated; open details for full stored values.</caption>
           <thead className="bg-[#0b101c] text-white/40"><tr>{['Job / engine', 'Stored action / source', 'Status / eligibility', 'Failures / budget', 'Created', 'Error'].map(label => <th key={label} className="px-3 py-2 font-normal">{label}</th>)}</tr></thead>

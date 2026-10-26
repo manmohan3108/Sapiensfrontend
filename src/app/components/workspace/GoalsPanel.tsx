@@ -936,7 +936,7 @@ export function GoalsPanel({ sapienId, active = true, compact = false }: { sapie
         </div>
 
         {/* Source chips */}
-        <details className="mt-3" open={compact ? undefined : true}><summary className="text-xs text-sp-muted cursor-pointer">Filter by source{sourceFilters.size ? ` (${sourceFilters.size} selected)` : ''}</summary><p className="text-xs text-sp-muted mt-2">Up to 30 matching goals · Filters apply to this loaded set.</p>
+        <details className="mt-3"><summary className="text-xs text-sp-muted cursor-pointer">Filter by source{sourceFilters.size ? ` (${sourceFilters.size} selected)` : ''}</summary><p className="text-xs text-sp-muted mt-2">Up to 30 matching goals · Filters apply to this loaded set.</p>
         <div className="flex gap-1 flex-wrap mt-2">
           {sourceOptions.map(key => {
             const on = sourceFilters.has(key);

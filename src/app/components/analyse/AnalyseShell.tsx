@@ -3,6 +3,7 @@ import { useRef, useState } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { Activity, ArrowUpRight, BarChart3, Beaker, BrainCircuit, Bug, Clock3, DatabaseZap, Eye, LayoutDashboard, Menu, Search, Sparkles, Target, X } from 'lucide-react';
 import '../../../styles/analyse.css';
+import '../../../styles/analyse-density.css';
 
 export const ANALYSE_GROUPS = [
   { label: 'Understanding & memory', items: [
