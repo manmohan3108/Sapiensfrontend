@@ -103,5 +103,10 @@
 .awareness-pagination button { min-height:44px; }
 .awareness-reader :is(a,button,summary) { touch-action:manipulation; }
 .awareness-reader :is(a,button,summary,pre):focus-visible { outline:2px solid var(--an-accent); outline-offset:3px; }
+.awareness-loop { border-top:1px solid var(--an-line); }
+.awareness-loop>summary { min-height:44px; padding:12px 0; color:var(--an-ink); }
+.awareness-loop>summary>span { margin-left:12px; font-size:13px; font-weight:400; color:var(--an-muted); }
+.awareness-contributors { padding-left:20px; }
+.awareness-contributors>li { margin:12px 0; }
 @media(max-width:1200px) { .awareness-origin-grid { grid-template-columns:1fr; gap:0; } }
 @media(max-width:540px) { .awareness-step-body { padding-left:0; } .awareness-step-title { min-width:80px; } }

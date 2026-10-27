@@ -294,9 +294,12 @@ function RunBrowser({ sapienId }: { sapienId: string }) {
           <nav className="awareness-run-list" aria-label="Choose a saved run">{filtered.map(item => <Link key={item.id}
             to={{ search: '?' + query({ awarenessRun: item.id }) }} aria-current={selectedId === item.id ? 'true' : undefined} onClick={choose}>
             <span className="awareness-run-excerpt">{item.title}</span>
-            <span className="awareness-caption awareness-run-preview">{item.focus.content || item.understanding_preview || 'No subject text retained'}</span>
-            <span className="awareness-run-meta"><DiagnosticBadge>{assessmentLabel(item.assessment_state)}</DiagnosticBadge>
-              {item.processing_state !== 'completed' && <span className="awareness-caption">{processingLabel(item.processing_state)}</span>}</span>
+            <span className="awareness-caption awareness-run-preview">{item.processing_state === 'no_focus'
+              ? 'No focus chosen during this check.'
+              : item.focus_selection?.content ? subjectLabel(item.focus)
+              : item.focus.content || item.understanding_preview || 'No subject text retained'}</span>
+            <span className="awareness-run-meta"><DiagnosticBadge>{item.processing_state === 'no_focus' ? 'Check only' : assessmentLabel(item.assessment_state)}</DiagnosticBadge>
+              {!['completed', 'no_focus'].includes(item.processing_state) && <span className="awareness-caption">{processingLabel(item.processing_state)}</span>}</span>
             <time className="awareness-caption" dateTime={item.started_at || undefined}>{absoluteTime(item.started_at)}</time>
           </Link>)}</nav>
           {!loading && data && !rows.length && <p role="status" className="awareness-caption">{offset ? 'No records remain on this page. Return to the latest runs.' : 'No runs have been saved yet. Refresh after Sapien processes information.'}</p>}
