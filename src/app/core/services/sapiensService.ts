@@ -159,13 +159,20 @@ class SapiensService {
     return response.data;
   }
 
-  async getAwarenessRuns(sapiensId: string, offset = 0, signal?: AbortSignal): Promise<AwarenessRunsResponse> {
+  async getAwarenessRuns(sapiensId: string, offset = 0, signal?: AbortSignal,
+    filters: { trigger?: string; search?: string } = {}): Promise<AwarenessRunsResponse> {
+    const trigger = filters.trigger || '';
+    const search = (filters.search || '').trim();
+    const query = new URLSearchParams({ offset: String(offset), limit: '20' });
+    if (trigger) query.set('trigger', trigger);
+    if (search) query.set('q', search);
     const response = await apiClient.get<AwarenessRunsResponse>(
-      `${API_ENDPOINTS.sapienAwarenessRuns(sapiensId)}?offset=${offset}&limit=20`, { signal }
+      `${API_ENDPOINTS.sapienAwarenessRuns(sapiensId)}?${query}`, { signal }
     );
     if (Number(response.data.sapien_id) !== Number(sapiensId) || response.data.inspection_mode !== 'stored'
-      || response.data.offset !== offset || !Array.isArray(response.data.items)) {
-      throw new Error('The response did not match the requested Sapien and page.');
+      || response.data.offset !== offset || !Array.isArray(response.data.items)
+      || (response.data.filters?.trigger || '') !== trigger || (response.data.filters?.search || '') !== search) {
+      throw new Error('The response did not match the requested Sapien, page and filters.');
     }
     return response.data;
   }

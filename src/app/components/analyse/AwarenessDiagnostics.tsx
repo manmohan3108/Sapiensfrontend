@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useRef, useState, type MouseEvent } from 'react';
+import { useEffect, useId, useRef, useState, type MouseEvent } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { ChevronRight, Loader2, RefreshCw, Search } from 'lucide-react';
 import { sapiensService } from '../../core/services/sapiensService';
@@ -7,7 +7,7 @@ import type { AwarenessBeat } from '../../types/sapiensTypes';
 import { matchedTrace, traceObject, traceText } from '../workspace/awarenessTrace';
 import { DiagnosticBadge, DiagnosticDisclosure, DiagnosticText } from './DiagnosticPrimitives';
 import { AwarenessTechnicalDetails } from './AwarenessTechnicalDetails';
-import { absoluteTime, actionSummary, assessmentLabel, groupRunSteps, inspectionError, matchesRun, processingLabel, safeEvidence, stepView, subjectLabel } from './awarenessPresentation';
+import { absoluteTime, actionSummary, assessmentLabel, groupRunSteps, inspectionError, processingLabel, safeEvidence, stepView, subjectLabel } from './awarenessPresentation';
 import '../../../styles/awareness-reader.css';
 
 function hasOmission(value: unknown): boolean {
@@ -250,6 +250,9 @@ function RunBrowser({ sapienId }: { sapienId: string }) {
   const offset = Number.isSafeInteger(parsedOffset) && parsedOffset >= 0 && parsedOffset <= 2147483647 ? parsedOffset : 0;
   const requestedId = scoped ? params.get('awarenessRun') || '' : '';
   const search = scoped ? params.get('awarenessSearch') || '' : '';
+  const trigger = scoped ? params.get('awarenessTrigger') || '' : '';
+  const [draftSearch, setDraftSearch] = useState(search);
+  useEffect(() => setDraftSearch(search), [search]);
   const validRunId = !requestedId || /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(requestedId);
   const [loaded, setLoaded] = useState<AwarenessRunsResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -258,23 +261,24 @@ function RunBrowser({ sapienId }: { sapienId: string }) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const heading = useRef<HTMLHeadingElement>(null);
   const listId = useId();
-  const data = loaded?.sapien_id === Number(sapienId) && loaded.offset === offset ? loaded : null;
+  const data = loaded?.sapien_id === Number(sapienId) && loaded.offset === offset
+    && (loaded.filters?.trigger || '') === trigger && (loaded.filters?.search || '') === search.trim() ? loaded : null;
+  const categories = loaded?.trigger_categories ?? [];
   useEffect(() => {
     const controller = new AbortController();
     let active = true;
     setLoading(true); setError('');
-    void sapiensService.getAwarenessRuns(sapienId, offset, controller.signal).then(result => {
+    void sapiensService.getAwarenessRuns(sapienId, offset, controller.signal, { trigger, search }).then(result => {
       if (active) setLoaded(result);
     }).catch(caught => { if (active) setError(inspectionError(caught)); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; controller.abort(); };
-  }, [sapienId, offset, revision]);
+  }, [sapienId, offset, trigger, search, revision]);
   const rows = data?.items ?? [];
   const selectedId = requestedId || rows[0]?.id || '';
-  const filtered = useMemo(() => rows.filter(row => matchesRun(row, search)), [rows, search]);
   const query = (values: Record<string, string | null>) => {
     const next = new URLSearchParams(params);
-    if (!scoped) for (const key of ['awarenessRun', 'awarenessOffset', 'awarenessSearch']) next.delete(key);
+    if (!scoped) for (const key of ['awarenessRun', 'awarenessOffset', 'awarenessSearch', 'awarenessTrigger']) next.delete(key);
     next.set('awarenessFor', sapienId);
     for (const [key, value] of Object.entries(values)) value === null ? next.delete(key) : next.set(key, value);
     return next;
@@ -301,14 +305,31 @@ function RunBrowser({ sapienId }: { sapienId: string }) {
           <span>{pickerOpen ? 'Close run list' : 'Choose a run'}</span><small>{data ? data.total.toLocaleString() + ' saved runs' : 'Saved Awareness runs'}</small>
         </button>
         <div id={listId} className="awareness-run-list-body" data-open={pickerOpen}>
-          <div className="awareness-list-heading"><h3>Saved runs</h3><span>{data ? data.total.toLocaleString() + ' total' : ''}</span></div>
-          <label className="awareness-search"><Search size={16} aria-hidden="true"/><input name="awarenessSearch" aria-label="Search this page of runs" autoComplete="off" value={search}
-            onChange={event => setParams(query({ awarenessSearch: event.target.value || null, awarenessRun: selectedId || null }), { replace: true })} placeholder="Search this page…"/></label>
-          {search && <button type="button" className="diagnostic-link" onClick={() => setParams(query({ awarenessSearch: null }), { replace: true })}>Clear search</button>}
+          <div className="awareness-list-heading"><h3>Saved runs</h3><span>{data ? data.total.toLocaleString() + (search || trigger ? ' matches' : ' total') : ''}</span></div>
+          <label className="awareness-filter">Triggered by
+            <select name="awarenessTrigger" value={trigger} disabled={!categories.length}
+              onChange={event => setParams(query({ awarenessTrigger: event.target.value || null, awarenessOffset: '0', awarenessRun: null }))}>
+              <option value="">All sources</option>
+              {trigger && !categories.some(item => item.value === trigger) && <option value={trigger}>Selected source ({trigger})</option>}
+              {categories.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}
+            </select>
+          </label>
+          {loaded && !categories.length && <p className="awareness-caption">Trigger filters require the backend filtering update.</p>}
+          <form role="search" onSubmit={event => { event.preventDefault(); setParams(query({ awarenessSearch: draftSearch.trim() || null, awarenessOffset: '0', awarenessRun: null })); }}>
+            <label className="awareness-filter" htmlFor={listId + '-search'}>Search saved run text</label>
+            <div className="awareness-search"><input id={listId + '-search'} name="awarenessSearch" type="search" autoComplete="off"
+              maxLength={160} value={draftSearch} onChange={event => setDraftSearch(event.target.value)} placeholder="E.g. onboarding…"/>
+              <button type="submit" aria-label="Search saved runs" disabled={loading}><Search size={18} aria-hidden="true"/></button>
+            </div>
+          </form>
+          {(search || trigger) && <button type="button" className="diagnostic-link" onClick={() => {
+            setDraftSearch(''); setParams(query({ awarenessSearch: null, awarenessTrigger: null, awarenessOffset: '0', awarenessRun: null }));
+          }}>Clear filters</button>}
           {loading && <p role="status" className="awareness-caption">Loading runs…</p>}
-          <nav className="awareness-run-list" aria-label="Choose a saved run">{filtered.map(item => <Link key={item.id}
+          <nav className="awareness-run-list" aria-label="Choose a saved run">{rows.map(item => <Link key={item.id}
             to={{ search: '?' + query({ awarenessRun: item.id }) }} aria-current={selectedId === item.id ? 'true' : undefined} onClick={choose}>
             <span className="awareness-run-excerpt">{item.title}</span>
+            {item.trigger_category && <span className="awareness-caption">Triggered by: {categories.find(category => category.value === item.trigger_category)?.label || item.trigger_category}</span>}
             <span className="awareness-caption awareness-run-preview">{item.processing_state === 'no_focus'
               ? 'No focus chosen during this check.'
               : item.focus_selection?.content ? subjectLabel(item.focus)
@@ -317,20 +338,23 @@ function RunBrowser({ sapienId }: { sapienId: string }) {
               {!['completed', 'no_focus'].includes(item.processing_state) && <span className="awareness-caption">{processingLabel(item.processing_state)}</span>}</span>
             <time className="awareness-caption" dateTime={item.started_at || undefined}>{absoluteTime(item.started_at)}</time>
           </Link>)}</nav>
-          {!loading && data && !rows.length && <p role="status" className="awareness-caption">{offset ? 'No records remain on this page. Return to the latest runs.' : 'No runs have been saved yet. Refresh after Sapien processes information.'}</p>}
-          {!loading && !!rows.length && !filtered.length && <p role="status" className="awareness-caption">No matches on this page. Clear the search or browse another page.</p>}
+          {!loading && data && !rows.length && <p role="status" className="awareness-caption">{offset ? 'No records remain on this page. Return to the latest runs.'
+            : search || trigger ? 'No saved runs match these filters. Try another search or clear the filters.'
+            : 'No runs have been saved yet. Refresh after Sapien processes information.'}</p>}
           <div className="awareness-pagination">
             <button type="button" className="analyse-button" disabled={loading || offset === 0} onClick={() => page(Math.max(0, offset - 20))}>Newer</button>
             <button type="button" className="analyse-button" disabled={loading || !data?.has_more || data.next_offset == null} onClick={() => data?.next_offset != null && page(data.next_offset)}>Older</button>
           </div>
-          <p className="awareness-caption" aria-live="polite">{data && rows.length ? 'Showing ' + (offset + 1) + '–' + (offset + rows.length) + ' of ' + data.total.toLocaleString() + '.' : ''} Search covers this page only.</p>
-          <DiagnosticDisclosure title="About these records"><p>Saved runs, not a live queue. Times use your timezone; simulation dates can be ahead of today. Refresh returns to the latest page. New runs can shift page boundaries.</p></DiagnosticDisclosure>
+          <p className="awareness-caption" aria-live="polite">{data && rows.length ? 'Showing ' + (offset + 1) + '–' + (offset + rows.length) + ' of ' + data.total.toLocaleString() + (search || trigger ? ' matching runs.' : ' saved runs.') : ''}</p>
+          <DiagnosticDisclosure title="Search and filter scope"><p>Filters cover all saved runs for this Sapien. Search matches literal text in retained sources, focus, decisions and assessments—not full prompts, linked memories or complete tool responses. Older or shortened records may contain less searchable text.</p>
+            <p>Triggered by uses the initiating source, not the focus selected later. A self-directed check can therefore select a message as its focus. No focus chosen is a separate result, not a source.</p></DiagnosticDisclosure>
+          <DiagnosticDisclosure title="About these records"><p>Saved runs, not a live queue. Times use your timezone; simulation dates can be ahead of today. Refresh returns to the latest page with your filters. New runs can shift page boundaries.</p></DiagnosticDisclosure>
         </div>
       </aside>
       <article className="awareness-run-reader" aria-label="Selected run">
         <h2 ref={heading} tabIndex={-1} className="awareness-selected-heading">Selected run</h2>
         {!validRunId ? <p role="alert" className="awareness-error">The run ID in this link is invalid. Select a saved run.</p>
-          : selectedId ? <><p className="awareness-caption">{data && !rows.some(row => row.id === selectedId) ? 'The selected run is outside this page.' : search && !filtered.some(row => row.id === selectedId) ? 'The selected run is outside these search results.' : ''}</p>
+          : selectedId ? <><p className="awareness-caption">{data && !rows.some(row => row.id === selectedId) ? 'The selected run is outside this result page.' : ''}</p>
             <RunReader key={sapienId + ':' + selectedId + ':' + revision} sapienId={sapienId} runId={selectedId} revision={revision}/></>
             : <p className="awareness-empty">{loading ? 'Loading saved runs…' : error ? 'Use Retry list to load saved runs.' : 'Select a run to inspect its recorded decisions and actions.'}</p>}
       </article>

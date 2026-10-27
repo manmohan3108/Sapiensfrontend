@@ -40,15 +40,6 @@ export function subjectLabel(subject: AwarenessRunSubject) {
   return kinds[subject.kind] || [subject.source, subject.kind?.replaceAll('_', ' ')].filter(Boolean).join(' · ') || 'Source not recorded';
 }
 
-export function matchesRun(item: AwarenessRunSummary, query: string) {
-  const value = query.trim().toLocaleLowerCase();
-  return [item.title, subjectLabel(item.focus), subjectLabel(item.trigger), item.focus.content,
-    item.focus_selection?.content, ...(item.focus_selection?.contributors ?? []).map(subjectLabel),
-    item.trigger.content, item.understanding_preview, item.remaining_preview,
-    assessmentLabel(item.assessment_state), processingLabel(item.processing_state)]
-    .some(text => text?.toLocaleLowerCase().includes(value));
-}
-
 export function actionSummary(item: AwarenessRunSummary) {
   const { recorded, succeeded, failed, uncertain, trace_truncated } = item.actions;
   if (!recorded) return trace_truncated ? 'No actions in the retained trace' : 'No tool actions recorded';
@@ -104,6 +95,7 @@ export function safeEvidence(value: unknown): unknown {
 
 export function inspectionError(error: unknown, detail = false) {
   const status = traceObject(error).status;
+  if (status === 400 && !detail) return 'The run filters are invalid. Clear filters or use a search of up to 160 characters.';
   if (status === 403) return 'An administrator account is needed to inspect these records.';
   if (status === 404) return detail ? 'This run is unavailable for the selected Sapien. The detail API may also need deployment.'
     : 'Saved run inspection is unavailable. Check the selected Sapien and backend deployment.';

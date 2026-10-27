@@ -130,12 +130,23 @@ Deploy the backend run-inspection APIs and action-detail addition first. The
 workspace Awareness panel continues using its existing understanding-history API.
 
 The compact list shows saved beats, including saved failures/no-focus outcomes,
-not a live job queue. Search covers the displayed page only. Refresh starts at
+not a live job queue. Trigger filters and text search cover all saved run records
+through the API, before pagination. Search submits on Enter or the search button;
+typing alone does not send requests. Refresh starts at
 the latest page while retaining an explicit selected run. The URL stores
-`awarenessFor`, `awarenessRun`, `awarenessOffset` and `awarenessSearch`; these are
+`awarenessFor`, `awarenessRun`, `awarenessOffset`, `awarenessSearch` and
+`awarenessTrigger`; these are
 used only when `awarenessFor` matches the globally selected Sapien. They do not
 switch the global identity. In-flight page/detail requests are cancelled or
 ignored on navigation, and returned Sapien/run identities are checked.
+
+Trigger categories and labels come from the API's `trigger_categories`; the
+frontend does not infer them from message wording or the selected focus. Filter
+changes reset pagination and selection. Responses must match the requested
+filters, preventing older requests or an outdated backend from silently showing
+unfiltered data. Search covers retained source/focus/decision/assessment text,
+not full prompts, linked memories or complete tool responses. The scope is
+explained beside the controls. Deploy the backend filtering addition first.
 
 The detail view separates trigger, selected focus, interpretation, processing
 status, task assessment and delivery. Historical missing triggers are not

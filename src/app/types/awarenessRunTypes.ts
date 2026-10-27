@@ -32,6 +32,7 @@ export interface AwarenessRunSummary {
   started_at?: string | null;
   completed_at?: string | null;
   trigger: AwarenessRunSubject;
+  trigger_category?: string;
   focus: AwarenessRunSubject;
   record_version?: number;
   focus_selection?: AwarenessFocusSelection;
@@ -71,6 +72,8 @@ export interface AwarenessRunsResponse {
   has_more: boolean;
   next_offset: number | null;
   ordering: 'started_at_desc';
+  filters?: { trigger: string; search: string };
+  trigger_categories?: Array<{ value: string; label: string }>;
 }
 
 export interface AwarenessActionDetail {

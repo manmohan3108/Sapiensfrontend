@@ -9,8 +9,15 @@
 .awareness-list-heading { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:12px; }
 .awareness-list-heading h3 { font-size:16px; font-weight:600; }
 .awareness-list-heading>span { color:var(--an-muted); font-size:12px; }
-.awareness-search { display:flex; align-items:center; gap:7px; background:var(--an-bg); border:1px solid var(--an-line); padding:9px; border-radius:5px; margin-bottom:8px; color:var(--an-muted); }
-.awareness-search input { width:100%; min-width:0; border:0; font-size:14px; }
+.awareness-search { display:flex; align-items:center; gap:7px; background:var(--an-bg); border:1px solid var(--an-line); padding:0 0 0 9px; border-radius:5px; margin-bottom:8px; color:var(--an-muted); }
+.awareness-search input { width:100%; min-width:0; min-height:44px; border:0; font-size:14px; background:transparent; color:var(--an-ink); }
+.awareness-filter { display:block; font-size:14px; color:var(--an-muted); margin-bottom:8px; }
+.awareness-filter select { display:block; width:100%; min-height:44px; padding:8px; margin-top:5px; background:var(--an-bg); color:var(--an-ink); border:1px solid var(--an-line); border-radius:5px; }
+.awareness-search button { display:grid; place-items:center; min-width:44px; min-height:44px; color:var(--an-accent); cursor:pointer; }
+.awareness-search button:hover { background:var(--an-soft); }
+.awareness-search button:disabled { opacity:.5; cursor:wait; }
+.awareness-search:focus-within { border-color:var(--an-accent); }
+.awareness-filter select:focus-visible,.awareness-search button:focus-visible,.awareness-search input:focus-visible { outline:2px solid var(--an-accent); outline-offset:2px; }
 .awareness-run-list { max-height:calc(100dvh - 360px); min-height:160px; overflow:auto; margin:10px -6px 0; padding:0 6px; scrollbar-width:thin; scrollbar-color:var(--an-line) transparent; }
 .awareness-run-list a { display:flex; flex-direction:column; gap:5px; text-align:left; width:100%; padding:13px 10px; border:1px solid transparent; border-bottom-color:var(--an-line); border-radius:5px; margin-bottom:4px; color:inherit; text-decoration:none; }
 .awareness-run-list a:hover { background:var(--an-raised); }
