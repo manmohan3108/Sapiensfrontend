@@ -145,6 +145,16 @@ markers retained. The legacy generic diagnostic filter remains separate.
 The original advanced trace/graph loads only when opened and requires both an
 exact thought match and the selected beat ID. No runtime or tool is started.
 
+Version-2 run diagnostics show the producer's formed focus separately from its
+primary/contributing sources. Expand a loop, then a step, for decisions, proposed
+tools and execution evidence; grouping follows stored loop indexes and order.
+Older inferred grouping is labelled. No-focus checks are distinguished from
+failures and task completion, and missing explanations are not invented.
+Candidate impressions and the supplied Working Memory catalogue are available
+in a separate disclosure; the catalogue alone does not prove memory use.
+Exact activity-record fallbacks are labelled as saved composite activity text,
+not raw tool responses. Existing API fields and old-run views remain supported.
+
 The local reader change has been reviewed by source inspection only. No build,
 tests, localhost server, commit or deployment was run for this change; visual
 and live API verification remain pending.

@@ -123,6 +123,8 @@ function RunContent({ data }: { data: AwarenessRunDetail }) {
   const reason = traceText(assessment.reason);
   const steps = data.activity.steps;
   const context = traceObject(data.context.curation);
+  const candidates = traceObject(data.context.candidate_summary);
+  const considered = Array.isArray(candidates.considered_candidates) ? candidates.considered_candidates.map(traceObject) : [];
   const selectedContext = Array.isArray(context.selected_context) ? context.selected_context.map(traceObject) : [];
   return <>
     <div className="awareness-run-heading">
@@ -177,7 +179,20 @@ function RunContent({ data }: { data: AwarenessRunDetail }) {
         <ol className="awareness-activity">{group.steps.map(step => <StepRow key={step.event_index} step={step}/>)}</ol>
       </details>) : <p>{noFocus ? 'No subsequent decisions or tool actions are recorded.' : 'No step-by-step record was retained.'}</p>}
     </section>
-    <DiagnosticDisclosure title="Context used to understand the situation">
+    <DiagnosticDisclosure title="What was considered before choosing a focus">
+      {typeof candidates.considered_count === 'number' && <p>{candidates.considered_count} candidate impressions were supplied for selection.</p>}
+      {hasOmission(candidates) && <p className="awareness-caution">Some candidate details were shortened or omitted from this response.</p>}
+      {considered.length ? <ul className="awareness-context-list">{considered.map((item, index) => <li key={index}>
+        <p className="awareness-caption">{[traceText(item.source), traceText(item.kind)].filter(Boolean).join(' · ') || 'Source not recorded'}</p>
+        <DiagnosticText text={traceText(item.content) || (item.omitted ? 'Candidate detail omitted.' : 'Text not recorded.')} limit={240}/>
+        <DiagnosticDisclosure title="Candidate identifiers and attribution"><SavedValue value={item}/></DiagnosticDisclosure>
+      </li>)}</ul> : <p className="awareness-caption">The exact candidate list is unavailable in this response.</p>}
+      <DiagnosticDisclosure title="Working Memory catalogue supplied to selection">
+        <p className="awareness-caption">A catalogue of available memory, not proof that all its contents were read or used.</p>
+        <SavedValue value={candidates.working_memory_catalog}/>
+      </DiagnosticDisclosure>
+    </DiagnosticDisclosure>
+    <DiagnosticDisclosure title="Supporting context used after focus selection">
       {hasOmission(context) && <p className="awareness-caution">Only part of the context was returned. This list may be incomplete.</p>}
       {selectedContext.length ? <ul className="awareness-context-list">{selectedContext.map((item, index) => <li key={index}>
         <p className="awareness-caption">{traceText(item.source) || 'Source not recorded'}</p>
