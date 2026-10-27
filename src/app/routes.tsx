@@ -22,6 +22,7 @@ function RoleHome() {
 export const router = createBrowserRouter([
   { path: '/', Component: ScienceLandingPage, ErrorBoundary },
   { path: '/research', Component: ResearchPage, ErrorBoundary },
+  { path: '/research/:slug', Component: ResearchPage, ErrorBoundary },
   { path: '/design-directions', Component: LandingDirectionsPage, ErrorBoundary },
   { Component: () => <ProtectedRoute selection={false} />, children: [{ path: '/home', Component: RoleHome, ErrorBoundary }] },
   { Component: () => <ProtectedRoute selection={false} />, children: [{ path: '/access-denied', Component: AccessDeniedPage, ErrorBoundary }] },
@@ -73,4 +74,5 @@ export const router = createBrowserRouter([
     ),
   },
 ]);
+
 

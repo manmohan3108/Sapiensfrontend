@@ -1,4 +1,5 @@
-import { Link } from 'react-router';
+import { useEffect } from 'react';
+import { Link, useParams, useSearchParams } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import { YourSapiensLink } from '../components/navigation/YourSapiensLink';
 import { ScienceEnvironment } from '../components/customer/ScienceEnvironment';
@@ -36,60 +37,96 @@ const sections: ResearchSection[] = [
 ];
 export function ResearchPage() {
   const { user } = useAuth();
+  const { slug } = useParams();
+  const [searchParams] = useSearchParams();
+  const category = searchParams.get('category');
+  const selectedSection = sections.find(section => section.id === category);
+  const articleSection = sections.find(section => section.topics.some(topic => topic.id === slug));
+  const article = articleSection?.topics.find(topic => topic.id === slug && topic.introduction);
+  const visibleSections = selectedSection ? [selectedSection] : sections;
+
+  useEffect(() => {
+    const previousTitle = document.title;
+    document.title = article ? `${article.title} | Sapiens Research` : 'Research | Sapiens';
+    return () => { document.title = previousTitle; };
+  }, [article]);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [slug]);
+
   return <div className="direction-page direction-world direction-science research-page">
     <ScienceEnvironment/>
     <div className="direction-design">
-    <a href="#research-main" className="direction-skip">Skip to content</a>
-    <header className="direction-header">
-      <Link className="direction-brand" to="/" aria-label="Sapiens home"><SapiensBrandMark/>Sapiens</Link>
-      <nav aria-label="Main navigation">
-        <a href="/#direction-product">Product</a>
-        <a href="/#layered-chapters">How it works</a>
-        <Link to="/research" aria-current="page">Research</Link>
-        <a href="/#direction-contact">Contact us</a>
-        {user ? <YourSapiensLink/> : <Link to="/login">Sign in</Link>}
-        <ThemeToggle className="layered-theme-toggle"/>
-      </nav>
-    </header>
-    <main id="research-main" tabIndex={-1} className="direction-wrap research-main">
-      <header className="research-opening">
-      <p className="research-status">An evolving research guide</p>
-      <h1>Research</h1>
-      <p className="research-intro">How we are developing a persistent AI individual: the philosophy behind it, the ideas that inspire it and the experiments that help us improve it.</p>
-      </header>
-      <p className="research-reading-note">Start with the short introductions below. Planned articles are marked “Not published yet”.</p>
-      <div className="research-layout">
-        <nav className="research-index" aria-label="Research sections">
-          <p>Browse research</p>
-          {sections.map(section => <a key={section.id} href={`#${section.id}`}>{section.title}</a>)}
+      <a href="#research-main" className="direction-skip">Skip to content</a>
+      <header className="direction-header">
+        <Link className="direction-brand" to="/" aria-label="Sapiens home"><SapiensBrandMark/>Sapiens</Link>
+        <nav aria-label="Main navigation">
+          <a href="/#direction-product">Product</a>
+          <a href="/#layered-chapters">How it works</a>
+          <Link to="/research" aria-current={slug ? undefined : 'page'}>Research</Link>
+          <a href="/#direction-contact">Contact us</a>
+          {user ? <YourSapiensLink/> : <Link to="/login">Sign in</Link>}
+          <ThemeToggle className="layered-theme-toggle"/>
         </nav>
-        <div className="research-topics">
-          {sections.map(section => <section key={section.id} id={section.id} tabIndex={-1} aria-labelledby={`${section.id}-title`}>
-            <h2 id={`${section.id}-title`}>{section.title}</h2>
-            <ul className="research-topic-list">
-              {section.topics.map(topic => <li key={topic.id} id={topic.id}>
-                {topic.introduction ? <details className="research-topic">
-                  <summary>
-                    <span className="research-topic-heading"><span>{topic.title}</span><span className="research-topic-status">Read introduction</span></span>
-                    <span className="research-topic-description">{topic.description}</span>
-                  </summary>
-                  <p className="research-topic-body">{topic.introduction}</p>
-                </details> : <div className="research-topic research-topic-planned">
-                  <div className="research-topic-heading"><h3>{topic.title}</h3><span className="research-topic-status">Not published yet</span></div>
-                  <p className="research-topic-description">{topic.description}</p>
-                </div>}
-              </li>)}
-            </ul>
-          </section>)}
-        </div>
-      </div>
-      <footer className="research-footer">
-      <p className="research-note">This is an overview of an experimental system, not a report of proven capabilities.</p>
-      <a className="research-back" href="/#layered-chapters">Back to the system overview</a>
-      </footer>
-    </main>
+      </header>
+      <main id="research-main" tabIndex={-1} className="direction-wrap research-main">
+        {slug ? article && articleSection ? <div className="research-article-layout">
+          <nav className="research-breadcrumb" aria-label="Breadcrumb">
+            <Link to="/research">Research</Link><span aria-hidden="true">/</span>
+            <Link to={`/research?category=${articleSection.id}`}>{articleSection.title}</Link>
+          </nav>
+          <article className="research-article">
+            <header>
+              <p className="research-status">Introduction</p>
+              <h1>{article.title}</h1>
+              <p className="research-intro">{article.description}</p>
+            </header>
+            <div className="research-article-body"><p>{article.introduction}</p></div>
+            <footer className="research-article-footer">
+              <p>This is a short introduction. Detailed explanations and references have not been published yet.</p>
+              <Link className="research-back" to={`/research?category=${articleSection.id}`}>Browse {articleSection.title.toLowerCase()}</Link>
+            </footer>
+          </article>
+        </div> : <div className="research-opening">
+          <h1>Article not available</h1>
+          <p className="research-intro">This address does not have a published research article.</p>
+          <Link className="research-back" to="/research">Browse research</Link>
+        </div> : <>
+          <header className="research-opening">
+            <h1>Research</h1>
+            <p className="research-intro">The philosophy, system design and experiments behind Sapiens, a persistent AI individual.</p>
+            <p className="research-reading-note">Read our first introductions or explore the topics we plan to publish.</p>
+          </header>
+          <div className="research-layout">
+            <nav className="research-index" aria-label="Research categories">
+              <p>Browse by topic</p>
+              <Link to="/research" aria-current={!selectedSection ? 'page' : undefined}>All topics</Link>
+              {sections.map(section => <Link key={section.id} to={`/research?category=${section.id}`} aria-current={selectedSection?.id === section.id ? 'page' : undefined}>{section.title}</Link>)}
+            </nav>
+            <div className="research-topics">
+              {visibleSections.map(section => <section key={section.id} aria-labelledby={`${section.id}-title`}>
+                <h2 id={`${section.id}-title`}>{section.title}</h2>
+                <ul className="research-topic-list">
+                  {section.topics.map(topic => <li key={topic.id}>
+                    {topic.introduction ? <Link className="research-topic research-topic-link" to={`/research/${topic.id}`}>
+                      <div className="research-topic-heading"><h3>{topic.title}</h3><span className="research-topic-status">Introduction <span aria-hidden="true">↗</span></span></div>
+                      <p className="research-topic-description">{topic.description}</p>
+                    </Link> : <div className="research-topic research-topic-planned">
+                      <div className="research-topic-heading"><h3>{topic.title}</h3><span className="research-topic-status">Not published yet</span></div>
+                      <p className="research-topic-description">{topic.description}</p>
+                    </div>}
+                  </li>)}
+                </ul>
+              </section>)}
+            </div>
+          </div>
+        </>}
+        <footer className="research-footer">
+          <p className="research-note">Sapiens is experimental. Our design ideas and introductions are not evidence of proven capabilities.</p>
+          <a className="research-back" href="/#layered-chapters">Back to the system overview</a>
+        </footer>
+      </main>
     </div>
   </div>;
 }
-
-

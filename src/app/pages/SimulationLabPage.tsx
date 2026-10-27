@@ -206,7 +206,9 @@ const statusLabel = (status: SimulationStatus) =>
     recovery_required: "Recovery needs review",
   })[status];
 const hasLiveRuntime = (run: SimulationRun) =>
-  !run.archived && run.runtime_available !== false;
+  !terminal.has(run.status) &&
+  !run.archived &&
+  run.runtime_available !== false;
 const pollDelay = (status: SimulationStatus) =>
   status === "scheduled" || status === "paused"
     ? 30_000
@@ -502,6 +504,12 @@ export function SimulationLabPage() {
           ? list.runs.filter((item) => String(item.sapien_id) === shortcutId)
           : list.runs;
         setRuns(list.runs);
+        setRun((current) =>
+          current
+            ? (list.runs.find((item) => item.run_id === current.run_id) ??
+              current)
+            : current,
+        );
         setHistoryLimit(list.history_limit);
         setSelectedId((id) =>
           requestedRunId &&
@@ -744,7 +752,12 @@ export function SimulationLabPage() {
     setError("");
     try {
       const next = await operation();
-      if (next) setRun(next);
+      if (next) {
+        setRun(next);
+        setRuns((current) =>
+          current.map((item) => (item.run_id === next.run_id ? next : item)),
+        );
+      }
       await refresh();
     } catch (problem) {
       const detail = `${label === "resume" ? "Resume failed" : label === "pause" ? "Pause failed" : label === "stop" ? "Stop failed" : label === "speed" ? "Speed change failed" : "Operation failed"}: ${message(problem)}`;
@@ -954,7 +967,9 @@ export function SimulationLabPage() {
       setBusy("");
     }
   }
-  const allowed = (name: string) => !!run?.allowed_controls.includes(name);
+  const allowed = (name: string) =>
+    !!run?.allowed_controls.includes(name) &&
+    (name === "delete" || !terminal.has(run.status));
   const sapienForRun = (item: SimulationRun) =>
     item.sapien_id == null
       ? null
@@ -1155,7 +1170,7 @@ export function SimulationLabPage() {
                   ? "This run needs recovery review. Saved activity is available in Simulation World; only supported controls are shown."
                   : !hasLiveRuntime(run)
                     ? "Saved activity is available in Simulation World. Live controls are unavailable for this run."
-                    : run.paused
+                    : run.status === "paused"
                     ? "Simulation paused. Resume to continue. Pausing does not reset or extend the real-time run budget."
                     : run.status === "running" && hasLiveRuntime(run)
                       ? "Pause to review and continue later. Stop ends the run and keeps its recorded history."
