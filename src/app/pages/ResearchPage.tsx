@@ -13,26 +13,47 @@ type ResearchTopic = { id: string; title: string; description: string; introduct
 type ResearchSection = { id: string; title: string; topics: ResearchTopic[] };
 
 const sections: ResearchSection[] = [
-  { id: 'foundations', title: 'Foundations', topics: [
-    { id: 'philosophy', title: 'Our philosophy', description: 'Why we are building a persistent AI individual.', introduction: 'We are building a persistent AI individual whose experiences inform what it notices, says and does next.' },
-    { id: 'identity', title: 'One individual, many functions', description: 'How different functions serve one continuing identity.', introduction: 'Awareness, memory, goals and learning serve one continuing identity. Each has a distinct responsibility within the same Sapien.' },
-    { id: 'inspiration', title: 'Inspired by neuroscience', description: 'The ideas we borrow, and the limits of the analogy.', introduction: 'Attention, working memory, associative recall and consolidation inspire our design. These are engineering interpretations, not claims that Sapiens reproduces a brain or establishes consciousness.' },
+  { id: 'hypothesis', title: 'Our research hypothesis', topics: [
+    { id: 'philosophy', title: 'Intelligence through interacting mechanisms', description: 'The central hypothesis guiding Sapiens.', introduction: 'Our research asks whether intelligence can emerge by bringing together mechanisms inspired by the brain, guided by neuroscience and philosophical concepts of intelligence. We aim to explore these concepts together and study what arises from their interaction. Persistence, memory, identity and learning are parts of this exploration, rather than the whole hypothesis. This is a research direction, not a demonstrated conclusion.' },
+    { id: 'emergence', title: 'What we mean by emergence', description: 'Define the behaviour we seek and what would support or challenge the hypothesis.' },
   ] },
-  { id: 'system-design', title: 'System design', topics: [
-    { id: 'process', title: 'From experience to action', description: 'An introduction to how a Sapien considers information and acts.', introduction: 'A Sapien considers incoming information alongside relevant memories, decides whether to act or wait, and assesses the outcome. What it retains can inform its next decision.' },
-    { id: 'awareness', title: 'Awareness and attention', description: 'How information is considered and decisions are made.' },
-    { id: 'memory', title: 'Memory and recall', description: 'How experiences are retained and relevant context is retrieved.' },
-    { id: 'goals', title: 'Goals and unfinished work', description: 'How intentions, progress and later follow-through are represented.' },
-    { id: 'learning', title: 'Learning from experience', description: 'How outcomes and feedback can inform future behaviour.' },
-    { id: 'connections', title: 'How the parts communicate', description: 'How information and references move between functions and tools.' },
+  { id: 'philosophy-foundations', title: 'Philosophical foundations', topics: [
+    { id: 'intelligence-understanding', title: 'Intelligence and understanding', description: 'The meanings of these concepts and how they guide our research.' },
+    { id: 'self-agency', title: 'Self and agency', description: 'Questions about individuality, intentions and responsibility for action.' },
+    { id: 'consciousness', title: 'Consciousness and its boundaries', description: 'Distinguish consciousness from intelligence, self-representation and observable behaviour.' },
   ] },
-  { id: 'experiments', title: 'Experiments and findings', topics: [
-    { id: 'simulation', title: 'Learning through experiments', description: 'Why we study Sapiens in simulated workplaces.', introduction: 'We use simulated workplaces to study communication, memory, tool use and unfinished work. We inspect successes and failures to improve the system; reliable long-term behaviour remains an open research goal.' },
-    { id: 'findings', title: 'Observations and changes', description: 'Documented examples of what worked, what failed and what changed.' },
+  { id: 'neuroscience', title: 'Neuroscience foundations', topics: [
+    { id: 'inspiration', title: 'From neuroscience to computational design', description: 'Our sources of inspiration and the limits of translating them into software.', introduction: 'Neuroscience informs the mechanisms we explore and how they might interact. Attention, working memory, associative recall and consolidation are among our inspirations. Our implementations are engineering interpretations: a similar name or function does not establish biological equivalence. We intend to explain the relevant concepts, their sources and our design choices as this research develops.' },
+    { id: 'perception-attention', title: 'Perception and attention', description: 'How incoming information and selective attention inform our design.' },
+    { id: 'biological-memory-learning', title: 'Memory and learning', description: 'Ideas about retaining, recalling and adapting through experience.' },
+    { id: 'motivation-action', title: 'Motivation and action', description: 'Concepts connecting internal needs, decisions, action and feedback.' },
   ] },
-  { id: 'open-questions', title: 'Open questions', topics: [
-    { id: 'continuity', title: 'Reliable behaviour over time', description: 'Questions about maintaining context and completing work across many interactions.' },
-    { id: 'evaluation', title: 'How to measure progress', description: 'Questions about evaluating useful behaviour and the limits of simulations.' },
+  { id: 'architecture', title: 'The Sapiens architecture', topics: [
+    { id: 'architecture-overview', title: 'Bringing the mechanisms together', description: 'The overall architecture and the responsibilities of its engines.' },
+    { id: 'process', title: 'From experience to action', description: 'An introduction to the flow across the system.', introduction: 'A Sapien considers incoming information alongside relevant memories, decides whether to act or wait, and assesses the outcome. What it retains can inform its next decision. This flow connects several functions within one individual; studying their interaction is part of our research into intelligence.' },
+    { id: 'connections', title: 'Information flow and shared references', description: 'How engines and tools exchange information while preserving its source and meaning.' },
+  ] },
+  { id: 'mechanisms', title: 'Individual mechanisms', topics: [
+    { id: 'awareness', title: 'Awareness and attention', description: 'Purpose, inspiration, implementation and open questions about attending and deciding.' },
+    { id: 'identity', title: 'Identity and the shared self', description: 'How multiple functions belong to one Sapien.', introduction: 'Awareness, memory, goals and learning serve one continuing identity. Each has a distinct responsibility within the same Sapien. This shared-self design describes how we organize the system; it does not by itself demonstrate consciousness or establish an explanation of the human self.' },
+    { id: 'memory', title: 'Memory and recall', description: 'The roles of working memory, retained experiences and retrieval.' },
+    { id: 'goals', title: 'Goals and planning', description: 'How intentions, progress and unfinished work are represented.' },
+    { id: 'reasoning-questioning', title: 'Reasoning and questioning', description: 'How the system considers possibilities, uncertainties and questions.' },
+    { id: 'action-feedback', title: 'Action and feedback', description: 'How actions are carried out and outcomes become evidence.' },
+  ] },
+  { id: 'adaptation', title: 'Experience and adaptation', topics: [
+    { id: 'learning', title: 'Learning from experience', description: 'How remembered outcomes and feedback can inform future behaviour.' },
+    { id: 'continuity', title: 'Development over time', description: 'How understanding and behaviour may change across accumulated experiences.' },
+  ] },
+  { id: 'experiments', title: 'Experiments and evidence', topics: [
+    { id: 'simulation', title: 'Studying Sapiens through simulation', description: 'Why we use simulated workplaces and what they can reveal.', introduction: 'We use simulated workplaces to study communication, memory, tool use and unfinished work. We inspect successes and failures to improve the system. These experiments provide observations about behaviour under specific conditions; they do not alone demonstrate emergent intelligence. Connecting observations to the research hypothesis requires explicit evaluation and consideration of alternative explanations.' },
+    { id: 'findings', title: 'Observations, failures and changes', description: 'Documented findings and how they influenced our implementation.' },
+    { id: 'evaluation', title: 'Evaluating the hypothesis', description: 'What evidence could distinguish progress from expected model or tool behaviour.' },
+  ] },
+  { id: 'open-questions', title: 'Open questions and limitations', topics: [
+    { id: 'missing-mechanisms', title: 'Missing mechanisms and research directions', description: 'Concepts not yet represented and approaches we still need to explore.' },
+    { id: 'alternative-explanations', title: 'Alternative explanations', description: 'Other reasons observed behaviour might arise, without supporting emergence.' },
+    { id: 'research-limitations', title: 'Limits of our evidence', description: 'Constraints of our implementation, experiments and current conclusions.' },
   ] },
 ];
 export function ResearchPage() {
@@ -95,7 +116,7 @@ export function ResearchPage() {
         </div> : <>
           <header className="research-opening">
             <h1>Research</h1>
-            <p className="research-intro">The philosophy, system design and experiments behind Sapiens, a persistent AI individual.</p>
+            <p className="research-intro">Can intelligence emerge from interacting brain-inspired mechanisms? We explore this question through neuroscience, philosophy, computational design and experiments.</p>
             <p className="research-reading-note">Read our first introductions or explore the topics we plan to publish.</p>
           </header>
           <div className="research-layout">
@@ -130,3 +151,4 @@ export function ResearchPage() {
     </div>
   </div>;
 }
+
