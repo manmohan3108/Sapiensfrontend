@@ -139,12 +139,6 @@ export function ResearchPage() {
             <p className="research-intro">Can intelligence emerge from interacting brain-inspired mechanisms? We explore this question through neuroscience, philosophy, computational design and experiments.</p>
             <p className="research-reading-note">Explore why we are building Sapiens, the concepts behind it, how the engines apply them and what our experiments reveal. Planned articles are marked “Not published yet”.</p>
           </header>
-          {!selectedSection && <Link className="research-feature" to="/research/philosophy">
-            <span className="research-status">Start here</span>
-            <h2>Can intelligence emerge from interacting mechanisms?</h2>
-            <p>Memory alone is not the whole idea. We are exploring what might arise when attention, learning, goals, action and other brain-inspired mechanisms work together.</p>
-            <span className="research-feature-action">Read our research hypothesis</span>
-          </Link>}
           <div className="research-layout">
             <nav className="research-index" aria-label="Research categories">
               <p>Browse by topic</p>
