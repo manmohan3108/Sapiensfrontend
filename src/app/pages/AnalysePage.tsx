@@ -8,7 +8,7 @@ import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxi
 import { engramService } from '../core/services/engramService';
 import { useSapiensStore } from '../core/state/sapiensStore';
 import type { WMEntry, WMResponse, WMTagsMatch } from '../types/engramTypes';
-import { GoalsPanel } from '../components/workspace/GoalsPanel';
+import { AnalyseGoals } from '../components/analyse/AnalyseGoals';
 import { DebugPanel } from '../components/workspace/DebugPanel';
 import { MemoryTimeline } from '../components/workspace/MemoryTimeline';
 import { LlmUsageDialog } from '../components/workspace/LlmUsageDialog';
@@ -96,7 +96,7 @@ export function AnalysePage() {
     {section === 'overview' && <AnalyseOverview go={go} hrefFor={hrefFor} />}
     {section === 'awareness' && <AwarenessAnalysis sapienId={currentSapiens.id} />}
     {section === 'working-memory' && <WorkingMemoryAnalysis key={currentSapiens.id} sapienId={Number(currentSapiens.id)} openEngram={() => go('engram')} />}
-    {section === 'goals' && <div className="analyse-goals-page"><GoalsPanel inspection sapienId={Number(currentSapiens.id)} /></div>}
+    {section === 'goals' && <AnalyseGoals key={currentSapiens.id} sapienId={Number(currentSapiens.id)} />}
     {section === 'engram' && <EngramPage embedded />}
     {section === 'engine-bus' && <EngineBusPage embedded />}
     {section === 'engine-jobs' && <EngineJobsInspection sapienId={currentSapiens.id} />}

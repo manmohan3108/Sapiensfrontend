@@ -1,0 +1,69 @@
+/* Analyse-only goal reader. The workspace GoalsPanel keeps its own layout. */
+.analyse-shell .analyse-goals { max-width:1440px; margin-inline:auto; color:var(--an-ink); }
+.analyse-goals>.analyse-page-purpose { margin-bottom:16px; }
+.analyse-goals .ag-views { display:flex; flex-wrap:wrap; gap:6px; }
+.analyse-goals .ag-views button { min-height:38px; padding:7px 12px; border:1px solid var(--an-line); border-radius:5px; }
+.analyse-goals .ag-views button[aria-pressed=true] { color:var(--an-accent); border-color:var(--an-accent); background:var(--an-soft); box-shadow:inset 0 -2px var(--an-accent); }
+.analyse-goals .ag-layout { display:grid; grid-template-columns:minmax(0,1fr); align-items:start; gap:24px; margin-top:20px; }
+.analyse-goals .ag-layout.has-selection { grid-template-columns:minmax(280px,1fr) minmax(0,1.8fr); }
+.analyse-goals .ag-list { min-width:0; }
+.analyse-goals .has-selection .ag-list { position:sticky; top:0; max-height:calc(100dvh - var(--app-nav-height,0px) - 120px); overflow:auto; padding:3px; }
+.analyse-goals .ag-list-heading { font:500 20px/1.4 'Source Serif 4',Georgia,serif; margin:0 0 12px; }
+.analyse-goals .ag-goal-row { display:block; width:100%; padding:14px 12px; border-bottom:1px solid var(--an-line); text-align:left; overflow-wrap:anywhere; }
+.analyse-goals .ag-goal-row:first-of-type { border-top:1px solid var(--an-line); }
+.analyse-goals .ag-goal-row:hover,.analyse-goals .ag-goal-row[aria-pressed=true] { background:var(--an-soft); }
+.analyse-goals .ag-goal-row[aria-pressed=true] { box-shadow:inset 3px 0 var(--an-accent); }
+.analyse-goals .ag-goal-row strong { display:block; font-size:16px; font-weight:600; line-height:1.5; }
+.analyse-goals .ag-meta { display:flex; align-items:center; flex-wrap:wrap; gap:6px 12px; color:var(--an-muted); font-size:13px; margin:8px 0; }
+.analyse-goals .ag-state { padding:2px 7px; border:1px solid currentColor; border-radius:4px; color:var(--an-muted); overflow-wrap:anywhere; }
+.analyse-goals .ag-state[data-tone=success] { color:var(--an-success); }
+.analyse-goals .ag-state[data-tone=warning] { color:var(--an-warning); }
+.analyse-goals .ag-state[data-tone=danger] { color:var(--an-danger); }
+.analyse-goals .ag-reader { min-width:0; padding:22px 24px; border:1px solid var(--an-line); border-radius:6px; background:var(--an-panel); overflow-wrap:anywhere; }
+.analyse-goals .ag-reader-toolbar { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; margin-bottom:22px; }
+.analyse-goals .ag-goal-header h2 { font:500 25px/1.35 'Source Serif 4',Georgia,serif; margin:0 0 12px; text-wrap:pretty; }
+.analyse-goals h3 { font-size:18px; font-weight:600; margin:0 0 12px; }
+.analyse-goals h4 { font-size:15px; font-weight:600; margin:12px 0 6px; }
+.analyse-goals h5 { font-size:14px; font-weight:600; margin:16px 0 8px; }
+.analyse-goals .ag-motivation { margin-block:18px; }
+.analyse-goals .ag-motivation h3 { font-size:14px; margin-bottom:6px; }
+.analyse-goals .ag-muted,.analyse-goals small { font-size:13px; line-height:1.6; color:var(--an-muted); }
+.analyse-goals p { margin:6px 0; }
+.analyse-goals .ag-section { margin-top:24px; padding-top:20px; border-top:1px solid var(--an-line); }
+.analyse-goals .ag-remaining { margin-top:14px; border-left:2px solid var(--an-accent); padding-left:14px; }
+.analyse-goals .ag-steps { list-style:none; margin:12px 0; padding:0; }
+.analyse-goals .ag-steps>li { display:grid; grid-template-columns:24px minmax(0,1fr); gap:10px; padding:16px 0; border-top:1px solid var(--an-line); }
+.analyse-goals .ag-step-number { font-size:14px; color:var(--an-accent); padding-top:3px; }
+.analyse-goals .ag-disclosure { margin-top:10px; font-size:14px; }
+.analyse-goals .ag-disclosure>summary { cursor:pointer; padding:8px 0; color:var(--an-ink); }
+.analyse-goals .ag-disclosure pre { max-height:360px; overflow:auto; white-space:pre-wrap; overflow-wrap:anywhere; padding:12px; font-size:12px; }
+.analyse-goals .ag-context { margin-top:16px; }
+.analyse-goals .ag-context ul,.analyse-goals .ag-history { padding-left:20px; }
+.analyse-goals .ag-context li,.analyse-goals .ag-history li { margin:10px 0; }
+.analyse-goals dl>div { margin-block:10px; }
+.analyse-goals dt { font-size:13px; color:var(--an-muted); }
+.analyse-goals dd { margin:4px 0 0; font-size:14px; }
+.analyse-goals .ag-facts { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0 18px; }
+.analyse-goals .ag-request { margin:8px 0; }
+.analyse-goals .ag-request form { margin:8px 0; padding:12px; border-left:2px solid var(--an-accent); background:var(--an-bg); }
+.analyse-goals .ag-request label { display:block; font-size:14px; margin-bottom:8px; }
+.analyse-goals .ag-request textarea { width:100%; min-height:90px; padding:10px; border:1px solid var(--an-line); border-radius:4px; font:inherit; resize:vertical; }
+.analyse-goals .ag-text-button { padding:6px 0; min-height:36px; text-align:left; font-size:14px; color:var(--an-accent); }
+.analyse-goals .ag-text-button:hover { text-decoration:underline; text-underline-offset:3px; }
+.analyse-goals .ag-actions { display:flex; gap:16px; align-items:center; flex-wrap:wrap; margin-top:10px; }
+.analyse-goals .ag-error { color:var(--an-danger); font-size:14px; padding-block:10px; }
+.analyse-goals .ag-empty { padding:24px 12px; }
+.analyse-goals .ag-empty p { font-size:14px; color:var(--an-muted); max-width:60ch; }
+.analyse-goals .context-record-text p { white-space:pre-wrap; overflow-wrap:anywhere; font-size:15px; line-height:1.65; }
+.analyse-goals .context-record-text .is-excerpt { display:-webkit-box; -webkit-box-orient:vertical; overflow:hidden; }
+.analyse-goals .context-record-text button { min-height:36px; color:var(--an-accent); font-size:13px; text-decoration:underline; }
+.analyse-goals [tabindex="-1"]:focus-visible { outline:2px solid var(--an-accent); outline-offset:2px; }
+@media(max-width:1279px) {
+  .analyse-goals .ag-layout.has-selection { grid-template-columns:minmax(0,1fr); }
+  .analyse-goals .has-selection .ag-list { display:none; }
+}
+@media(max-width:650px) {
+  .analyse-goals .ag-reader { padding:16px; }
+  .analyse-goals .ag-goal-header h2 { font-size:22px; }
+  .analyse-goals .ag-facts { grid-template-columns:minmax(0,1fr); }
+}

@@ -288,4 +288,89 @@ reader=readerFor(null);reader.list.current={scrollTop:0,querySelectorAll:()=>[ro
 assert.equal(focused,'row');assert.deepEqual(options,{preventScroll:true});assert.equal(reader.list.current.scrollTop,420);
 reader.remember('goal-2');readerFor('goal-2');commit();reader=readerFor(null);reader.list.current={scrollTop:0,querySelectorAll:()=>[]};commit();assert.equal(focused,'heading','A removed or filtered-out goal falls back to the list heading');
 reader.remember('goal-2');readerFor('goal-2');commit();reader=readerFor(null,59);reader.list.current={scrollTop:0,querySelectorAll:()=>[row]};commit();assert.equal(focused,'heading');assert.equal(reader.list.current.scrollTop,0,'A different Sapien never inherits the old list position');
-console.log('Analyse checks passed, including saved-outcome fallbacks, Goals return focus/scroll and graph Legend transitions. No network or server used.');
+// Analyse Goals has a separate presentation; workspace GoalsPanel is not used.
+globalThis.analyseTest.goalReaders=readers;
+globalThis.analyseTest.goalService={};
+const goalPrelude=hooks+`
+const useId=()=>"goal-request";
+const {RecordText,recordDate,sourceName}=globalThis.analyseTest.goalReaders;
+const useListReaderNavigation=()=>({container:{current:null},list:{current:null},remember:()=>{}});
+const goalsService=globalThis.analyseTest.goalService;
+`;
+const goalsUI=await load('components/analyse/AnalyseGoals.tsx',goalPrelude,'export {GoalRecord, GoalRequest, planSummary, completion, useGoalRead};');
+const goalRecord={id:'goal-1',description:'Prepare the release',state:'waiting',finished:false,retired:false,progress:null,motivation:'The team needs a release checklist.',source:'user',owner:'Levi',creator:'Maya',requested_by:'Maya',review_enabled:true,review_at:null,updated_at:'2026-10-27T10:00:00Z',metadata:{},evidence_refs:[]};
+const planRecord={...goalRecord,id:'plan-1',description:'Confirm the release checks',tasks:[{id:'step-1',description:'Check the build',state:'failed',finished:true,result:'Build failed in CI.',evidence_refs:['build-42']},{id:'step-2',description:'Review tests',state:'waiting',finished:null,result:'',evidence_refs:[]}]};
+assert.equal(goalsUI.planSummary(null),'No plan recorded');
+assert.equal(goalsUI.planSummary({...planRecord,tasks:[]}),'Plan has no recorded steps');
+assert.equal(goalsUI.planSummary(planRecord),'1 of 2 steps marked finished · 1 unknown');
+assert.equal(goalsUI.completion({finished:null}),'Completion unknown');
+const goalDetail={goal:goalRecord,current_plan:planRecord,context:null,plan_context:null,history:[],attention:{request_id:'new',resolved_id:'old',requested_at:'2026-10-27T10:01:00Z',resolved_at:'2026-10-27T10:00:00Z',outcome:{assessment:{understanding:'Build failed.',remaining:'Fix CI.'}}}};
+h.reset();
+let goalHtml=html(goalsUI.GoalRecord({detail:goalDetail,request:{sapienId:58,goalId:'goal-1',onAccepted(){}}}));
+for(const expected of ['Prepare the release','Last retained assessment','A newer review was requested','Fix CI.','Build failed in CI.','Completion unknown'])assert(goalHtml.includes(expected),expected);
+assert(!goalHtml.includes('line-through'));
+assert(goalHtml.indexOf('Current plan')<goalHtml.indexOf('History &amp; record details'));
+h.reset();goalHtml=html(goalsUI.GoalRecord({detail:{...goalDetail,current_plan:null},request:{sapienId:58,goalId:'goal-1',onAccepted(){}}}));
+assert(!goalHtml.includes('0/0'));assert(goalHtml.includes('No plan has been recorded'));
+h.reset([0,{key:'58/open',loading:false,data:{goals:[{...goalRecord,current_plan:planRecord}],count:1}}]);
+tree=goalsUI.AnalyseGoals({sapienId:58});
+assert(html(tree).includes('Up to 30 goals'));assert(html(tree).includes('Search and source filter this loaded set'));
+find(tree,n=>n.props['data-record-id']==='goal-1').props.onClick();assert.equal(h.params.get('goal'),'goal-1');
+h.begin();tree=goalsUI.AnalyseGoals({sapienId:58});
+controls=find(tree,n=>n.type===Controls);
+find(controls.props.primary,n=>n.type==='input').props.onChange({target:{value:'release'}});
+assert.equal(h.params.get('goal'),'goal-1','Typing filters must not steal focus by closing the reader');
+find(controls.props.primary,n=>n.type==='button'&&n.props.children==='Finished').props.onClick();
+assert.equal(h.params.get('goalView'),'finished');assert.equal(h.params.has('goal'),false);
+h.reset([0,{key:'58/open',loading:false,data:{goals:[goalRecord]}}]);
+assert(!html(goalsUI.AnalyseGoals({sapienId:59})).includes('Prepare the release'),'Sapien switches never show old list data');
+
+// Submit the real request handlers against a stub service; no production writes.
+let writes=[],acceptedRequests=0;
+globalThis.analyseTest.goalService.comment=async (...args)=>{writes.push(args);return {queued:true};};
+globalThis.analyseTest.goalService.replan=async (...args)=>{writes.push(args);};
+for(const scope of ['goal','plan','step','revise']) {
+  h.reset([true,'  Review the failed build.  ',false,'','']);
+  tree=goalsUI.GoalRequest({sapienId:58,goalId:'goal-1',scope,stepId:scope==='step'?'step-1':undefined,onAccepted:()=>acceptedRequests++});
+  find(tree,n=>n.type==='form').props.onSubmit({preventDefault(){}});
+  find(tree,n=>n.type==='form').props.onSubmit({preventDefault(){}});
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(writes.length,1,'Rapid double submit is ignored');
+  assert.deepEqual(writes[0],scope==='revise'?[58,'goal-1','Review the failed build.']:[58,'goal-1',{comment:'Review the failed build.',scope,...(scope==='step'?{step_id:'step-1'}:{})}]);
+  assert.match(h.values[4],scope==='revise'?/not been confirmed/:/queued/);
+  writes=[];
+}
+assert.equal(acceptedRequests,4);
+globalThis.analyseTest.goalService.comment=async()=>{throw Error('Try again later');};
+h.reset([true,'Keep my draft',false,'','']);
+tree=goalsUI.GoalRequest({sapienId:58,goalId:'goal-1',scope:'goal',onAccepted:()=>{throw Error('Should not run');}});
+find(tree,n=>n.type==='form').props.onSubmit({preventDefault(){}});await new Promise(resolve=>setImmediate(resolve));
+assert.equal(h.values[1],'Keep my draft');assert.equal(h.values[3],'Try again later');assert.equal(h.values[2],false);
+for(const [query,data,error,expected] of [
+  ['',{goals:[]},undefined,'No open goals returned'],
+  ['goalSearch=unknown',{goals:[goalRecord]},undefined,'No goals match these filters'],
+  ['',undefined,'Backend unavailable','Backend unavailable'],
+]) {
+  h.reset([0,{key:'58/open',loading:false,data,error}]);h.params=new URLSearchParams(query);
+  assert(html(goalsUI.AnalyseGoals({sapienId:58})).includes(expected));
+}
+// Drive the real polling effect through a goal switch and a failed refresh.
+globalThis.analyseTest.goalEffects=[];
+const goalHooks=await load('components/analyse/AnalyseGoals.tsx',goalPrelude.replace('useEffect=()=>{}','useEffect=fn=>globalThis.analyseTest.goalEffects.push(fn)'),'export {useGoalRead};');
+const originalDocument=globalThis.document,originalInterval=globalThis.setInterval,originalClearInterval=globalThis.clearInterval;
+let intervals=new Map(),timerId=0,listeners=new Set();
+globalThis.document={visibilityState:'visible',addEventListener:(_,fn)=>listeners.add(fn),removeEventListener:(_,fn)=>listeners.delete(fn)};
+globalThis.setInterval=fn=>{intervals.set(++timerId,fn);return timerId;};globalThis.clearInterval=id=>intervals.delete(id);
+h.reset();let oldResolve;
+goalHooks.useGoalRead('old',()=>new Promise(resolve=>oldResolve=resolve));
+const oldCleanup=globalThis.analyseTest.goalEffects.pop()();oldCleanup();
+h.begin();goalHooks.useGoalRead('new',async()=>({description:'New goal'}));
+const newCleanup=globalThis.analyseTest.goalEffects.pop()();await new Promise(resolve=>setImmediate(resolve));
+oldResolve({description:'Old goal'});await new Promise(resolve=>setImmediate(resolve));
+assert.equal(h.values[1].data.description,'New goal');newCleanup();
+h.begin();goalHooks.useGoalRead('new',async()=>{throw Error('Refresh failed');});
+const failedCleanup=globalThis.analyseTest.goalEffects.pop()();await new Promise(resolve=>setImmediate(resolve));
+assert.equal(h.values[1].data.description,'New goal');assert.equal(h.values[1].error,'Refresh failed');failedCleanup();
+assert.equal(intervals.size,0);assert.equal(listeners.size,0);
+globalThis.document=originalDocument;globalThis.setInterval=originalInterval;globalThis.clearInterval=originalClearInterval;
+console.log('Analyse checks passed, including Goals URL navigation, completion distinctions, request scopes, duplicate-submit protection and existing regressions. No network or server used.');
