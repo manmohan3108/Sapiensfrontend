@@ -121,3 +121,30 @@ check Django `is_staff`, not the app `admin` role. An app-admin who is not Djang
 staff can therefore receive `403` on that endpoint. The frontend deliberately
 does not fall back to Django cookies; align this backend check with the desired
 app-role policy before relying on diagnostics for every app-admin account.
+
+### Admin Awareness run reader
+
+The admin reader uses `GET /sapien/:id/awareness/runs?offset=…&limit=20`
+and fetches `GET /sapien/:id/awareness/runs/:runId` only for the selected run.
+Deploy the backend run-inspection APIs and action-detail addition first. The
+workspace Awareness panel continues using its existing understanding-history API.
+
+The compact list shows saved beats, including saved failures/no-focus outcomes,
+not a live job queue. Search covers the displayed page only. Refresh starts at
+the latest page while retaining an explicit selected run. The URL stores
+`awarenessFor`, `awarenessRun`, `awarenessOffset` and `awarenessSearch`; these are
+used only when `awarenessFor` matches the globally selected Sapien. They do not
+switch the global identity. In-flight page/detail requests are cancelled or
+ignored on navigation, and returned Sapien/run identities are checked.
+
+The detail view separates trigger, selected focus, interpretation, processing
+status, task assessment and delivery. Historical missing triggers are not
+reconstructed from focus text. Only exact `action_detail` matches expose saved
+arguments/results, rendered as inert text with backend truncation/redaction
+markers retained. The legacy generic diagnostic filter remains separate.
+The original advanced trace/graph loads only when opened and requires both an
+exact thought match and the selected beat ID. No runtime or tool is started.
+
+The local reader change has been reviewed by source inspection only. No build,
+tests, localhost server, commit or deployment was run for this change; visual
+and live API verification remain pending.

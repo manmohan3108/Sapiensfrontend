@@ -10,9 +10,9 @@ import '../../styles/science-direction.css';
 import '../../styles/research.css';
 
 type ResearchTopic = { id: string; title: string; description: string; introduction?: string };
-type ResearchSection = { id: string; title: string; topics: ResearchTopic[] };
+type ResearchSection = { id: string; title: string; question?: string; concepts?: string; topics: ResearchTopic[] };
 
-const sections: ResearchSection[] = [
+const topicGroups: ResearchSection[] = [
   { id: 'hypothesis', title: 'Our research hypothesis', topics: [
     { id: 'philosophy', title: 'Intelligence through interacting mechanisms', description: 'The central hypothesis guiding Sapiens.', introduction: 'Our research asks whether intelligence can emerge by bringing together mechanisms inspired by the brain, guided by neuroscience and philosophical concepts of intelligence. We aim to explore these concepts together and study what arises from their interaction. Persistence, memory, identity and learning are parts of this exploration, rather than the whole hypothesis. This is a research direction, not a demonstrated conclusion.' },
     { id: 'emergence', title: 'What we mean by emergence', description: 'Define the behaviour we seek and what would support or challenge the hypothesis.' },
@@ -55,6 +55,30 @@ const sections: ResearchSection[] = [
     { id: 'alternative-explanations', title: 'Alternative explanations', description: 'Other reasons observed behaviour might arise, without supporting emergence.' },
     { id: 'research-limitations', title: 'Limits of our evidence', description: 'Constraints of our implementation, experiments and current conclusions.' },
   ] },
+];
+const existingTopics = topicGroups.flatMap(section => section.topics);
+const additionalTopics: ResearchTopic[] = [
+  { id: 'associative-memory', title: 'How one experience brings another to mind', description: 'Associative memory: connecting experiences so the past can help explain a new situation.' },
+  { id: 'replay-consolidation', title: 'Why revisit an experience?', description: 'Replay and consolidation: exploring how revisiting memories changes their connections.' },
+  { id: 'reinforcement-forgetting', title: 'What should grow stronger, and what should fade?', description: 'Reinforcement, forgetting and the risk of strengthening the wrong association.' },
+  { id: 'curiosity', title: 'What makes something worth exploring?', description: 'Curiosity can concern an unfamiliar pattern, an opportunity or an idea—not only a missing answer.' },
+  { id: 'initiative', title: 'Why think when nobody has asked?', description: 'Making room for exploration, gathering information and ordinary conversation without forcing constant activity.', introduction: 'Imagine a Sapien has no new message to answer. Should it simply wait? Our ambition includes noticing something worth learning, revisiting an unresolved idea or starting a conversation on its own initiative.\n\nA question is one possible starting point. An unfamiliar pattern, a connection between experiences or interest in another person can also invite exploration. Curiosity concerns what is worth exploring; questioning concerns what to ask; deciding whether and how to act is another responsibility.\n\nThis should not become a rule to contact someone every few minutes. Rest, waiting and leaving people uninterrupted can also be appropriate. The research challenge is to develop useful initiative through context and experience rather than prescribed scenarios. These connections are still being developed and evaluated.' },
+  { id: 'firsthand-experience', title: 'What can an AI learn by taking part?', description: 'Firsthand experience and how an individual develops beyond its initial model knowledge.', introduction: 'Two Sapiens could begin with the same language model yet participate in different situations. One might encounter a failed deployment; another might learn why a team changed its plans. We want those different histories to matter when they next think or act.\n\nThe model supplies capabilities and prior knowledge. The wider system retains what this particular Sapien observes, discusses, attempts and learns. Its memories, associations and learned guidance can then provide different context for later decisions. This is not the same as retraining the underlying model.\n\nOur aim is growing understanding and judgment through participation, not simply keeping a transcript. We still need to measure when retained experience improves behaviour, when it misleads it and how later evidence can correct it.' },
+  { id: 'abstraction', title: 'When does an experience become a general idea?', description: 'Abstraction and generalization: exploring patterns that may apply beyond one remembered event.' },
+  { id: 'prediction', title: 'Could expectations help a Sapien understand what is happening?', description: 'An exploratory direction: compare expectations with incoming evidence and connect events into an unfolding account.' },
+  { id: 'reward-emotion', title: 'What could give an experience significance?', description: 'Research directions around motivation, reward and emotion-inspired processes, without claiming human feelings.' },
+  { id: 'senses-roles', title: 'One individual across different roles and senses', description: 'How tools, context and experience could support different roles, with future voice and vision contributing to shared understanding.' },
+];
+const allTopics = [...existingTopics, ...additionalTopics];
+const selectTopics = (...ids: string[]) => ids.map(id => allTopics.find(topic => topic.id === id)!);
+const sections: ResearchSection[] = [
+  { id: 'hypothesis', title: 'The central question', question: 'Can intelligence emerge from interacting mechanisms?', concepts: 'Emergence, intelligence, neuroscience and philosophy', topics: selectTopics('philosophy', 'inspiration', 'emergence', 'intelligence-understanding', 'consciousness') },
+  { id: 'understanding', title: 'Understanding and individuality', question: 'How could an AI develop its own understanding?', concepts: 'Firsthand experience, individual development and a shared self', topics: selectTopics('firsthand-experience', 'identity', 'continuity', 'self-agency') },
+  { id: 'memory', title: 'Memory and association', question: 'What makes an experience matter later?', concepts: 'Working memory, associative recall, reinforcement and replay', topics: selectTopics('memory', 'associative-memory', 'replay-consolidation', 'reinforcement-forgetting', 'biological-memory-learning') },
+  { id: 'initiative', title: 'Attention and curiosity', question: 'Why think when nobody has asked?', concepts: 'Attention, questioning, curiosity and initiative', topics: selectTopics('initiative', 'awareness', 'curiosity', 'reasoning-questioning', 'perception-attention') },
+  { id: 'learning', title: 'Decisions and learning', question: 'How does experience change the next decision?', concepts: 'Action, reflection, feedback, goals and generalization', topics: selectTopics('process', 'action-feedback', 'learning', 'goals', 'abstraction', 'architecture-overview', 'connections') },
+  { id: 'directions', title: 'Research directions', question: 'What might be missing?', concepts: 'Prediction, motivation, reward, emotion-inspired processes and new senses', topics: selectTopics('prediction', 'motivation-action', 'reward-emotion', 'senses-roles', 'missing-mechanisms') },
+  { id: 'experiments', title: 'Experiments and evidence', question: 'What happens when we put these ideas to work?', concepts: 'Simulations, observations, failures and evaluation', topics: selectTopics('simulation', 'findings', 'evaluation', 'alternative-explanations', 'research-limitations') },
 ];
 export function ResearchPage() {
   const { user } = useAuth();
@@ -103,10 +127,14 @@ export function ResearchPage() {
               <h1>{article.title}</h1>
               <p className="research-intro">{article.description}</p>
             </header>
-            <div className="research-article-body"><p>{article.introduction}</p></div>
+            <div className="research-article-body">{article.introduction?.split('\n\n').map((paragraph, index) => <p key={index}>{paragraph}</p>)}</div>
             <footer className="research-article-footer">
               <p>This is a short introduction. Detailed explanations and references have not been published yet.</p>
-              <Link className="research-back" to={`/research?category=${articleSection.id}`}>Browse {articleSection.title.toLowerCase()}</Link>
+              <Link className="research-back" to={`/research?category=${articleSection.id}`}>Explore {articleSection.title.toLowerCase()}</Link>
+              <nav className="research-related" aria-label="Related reading">
+                <h2>Keep exploring</h2>
+                {sections.flatMap(section => section.topics).filter(topic => topic.introduction && topic.id !== article.id).slice(0, 3).map(topic => <Link key={topic.id} to={`/research/${topic.id}`}>{topic.title}</Link>)}
+              </nav>
             </footer>
           </article>
         </div> : <div className="research-opening">
@@ -117,8 +145,14 @@ export function ResearchPage() {
           <header className="research-opening">
             <h1>Research</h1>
             <p className="research-intro">Can intelligence emerge from interacting brain-inspired mechanisms? We explore this question through neuroscience, philosophy, computational design and experiments.</p>
-            <p className="research-reading-note">Read our first introductions or explore the topics we plan to publish.</p>
+            <p className="research-reading-note">Start with our hypothesis, then follow a question that interests you. Short introductions are available now; planned articles remain visible below.</p>
           </header>
+          {!selectedSection && <Link className="research-feature" to="/research/philosophy">
+            <span className="research-status">Start here</span>
+            <h2>Can intelligence emerge from interacting mechanisms?</h2>
+            <p>Memory alone is not the whole idea. We are exploring what might arise when attention, learning, goals, action and other brain-inspired mechanisms work together.</p>
+            <span className="research-feature-action">Read our research hypothesis</span>
+          </Link>}
           <div className="research-layout">
             <nav className="research-index" aria-label="Research categories">
               <p>Browse by topic</p>
@@ -127,9 +161,10 @@ export function ResearchPage() {
             </nav>
             <div className="research-topics">
               {visibleSections.map(section => <section key={section.id} aria-labelledby={`${section.id}-title`}>
-                <h2 id={`${section.id}-title`}>{section.title}</h2>
+                <h2 id={`${section.id}-title`}>{section.question ?? section.title}</h2>
+                <p className="research-concepts">{section.concepts}</p>
                 <ul className="research-topic-list">
-                  {section.topics.map(topic => <li key={topic.id}>
+                  {[...section.topics].sort((a, b) => Number(Boolean(b.introduction)) - Number(Boolean(a.introduction))).map(topic => <li key={topic.id}>
                     {topic.introduction ? <Link className="research-topic research-topic-link" to={`/research/${topic.id}`}>
                       <div className="research-topic-heading"><h3>{topic.title}</h3><span className="research-topic-status">Introduction <span aria-hidden="true">↗</span></span></div>
                       <p className="research-topic-description">{topic.description}</p>
@@ -151,4 +186,5 @@ export function ResearchPage() {
     </div>
   </div>;
 }
+
 

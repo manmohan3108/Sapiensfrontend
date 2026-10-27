@@ -1,164 +1,297 @@
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
-import { Loader2, RefreshCw, Search } from 'lucide-react';
+import { useEffect, useId, useMemo, useRef, useState, type MouseEvent } from 'react';
+import { Link, useSearchParams } from 'react-router';
+import { ChevronRight, Loader2, RefreshCw, Search } from 'lucide-react';
 import { sapiensService } from '../../core/services/sapiensService';
-import type { AwarenessBeat, AwarenessBeatsResponse, AwarenessHistoryItem, AwarenessResponse } from '../../types/sapiensTypes';
-import type { ApiError } from '../../types/apiTypes';
-import { matchedTrace, traceContext, traceObject, traceText } from '../workspace/awarenessTrace';
+import type { AwarenessRunDetail, AwarenessRunStep, AwarenessRunSubject, AwarenessRunsResponse, AwarenessMemoryReference } from '../../types/awarenessRunTypes';
+import type { AwarenessBeat } from '../../types/sapiensTypes';
+import { matchedTrace, traceObject, traceText } from '../workspace/awarenessTrace';
 import { DiagnosticBadge, DiagnosticDisclosure, DiagnosticText } from './DiagnosticPrimitives';
 import { AwarenessTechnicalDetails } from './AwarenessTechnicalDetails';
-import { absoluteTime, assessmentLabel, matchesRun, runSteps, runTitle, safeEvidence, eventEvidence, type RunStep } from './awarenessPresentation';
+import { absoluteTime, actionSummary, assessmentLabel, inspectionError, matchesRun, processingLabel, safeEvidence, stepView, subjectLabel } from './awarenessPresentation';
 import '../../../styles/awareness-reader.css';
 
-function StepRow({ step, prefix }: { step: RunStep; prefix: string }) {
-  const tone = /failure|fail|error|not approved/.test(step.status) ? 'danger' : /uncertain/.test(step.status) ? 'warning' : step.status === 'Tool reported success' ? 'success' : 'neutral';
-  const texts = [step.summary, step.response, step.reason, step.event?.consequence ?? ''].filter(Boolean);
-  const unique = [...new Set(texts)];
-  return <li className="awareness-activity-row" id={`${prefix}-${step.id}`} tabIndex={-1}>
-    <div className="awareness-step-heading"><strong>{step.title}</strong><DiagnosticBadge tone={tone}>{step.status}</DiagnosticBadge></div>
-    <p className="awareness-caption">{step.kind === 'action' ? 'Action record' : step.kind === 'decision' ? 'Decision' : step.kind === 'review' ? 'Review' : 'Recorded step'}{step.round !== null ? ` · Round ${step.round}` : ''}{step.event?.occurred_at || step.event?.at ? ` · ${absoluteTime(step.event.occurred_at || step.event.at)}` : ''}</p>
-    {unique.length ? unique.map((text, index) => <div key={index} className="awareness-step-text">{text === step.response && <p className="awareness-caption">Prepared reply · delivery is not established by this text</p>}{text === step.reason && text !== step.summary && <p className="awareness-caption">Recorded reason</p>}<DiagnosticText text={text} limit={300}/></div>) : <p className="awareness-caption">No explanation or result text was saved for this step.</p>}
-    {step.event && <DiagnosticDisclosure title="Inspect saved evidence"><pre>{JSON.stringify(eventEvidence(step.event), null, 2)}</pre></DiagnosticDisclosure>}
+function hasOmission(value: unknown): boolean {
+  if (typeof value === 'string') return /\[shortened\]|\[truncated\]/.test(value);
+  if (Array.isArray(value)) return value.some(hasOmission);
+  if (!value || typeof value !== 'object') return false;
+  const record = value as Record<string, unknown>;
+  return record.omitted === true || record._truncated === true || Object.values(record).some(hasOmission);
+}
+
+function SavedValue({ value }: { value: unknown }) {
+  if (value === undefined || value === null) return <p className="awareness-caption">Not recorded.</p>;
+  // API action fields are bounded and credential-scrubbed. Render as inert text,
+  // including HTML returned by a tool; do not use the legacy payload filter here.
+  return <>{hasOmission(value) && <p className="awareness-caution">Only part of this value was retained or returned.</p>}
+    <pre className="awareness-saved-value" tabIndex={0} aria-label="Saved value">{typeof value === 'string' ? value || '(Empty text)' : JSON.stringify(value, null, 2)}</pre></>;
+}
+
+function sameReference(a?: AwarenessMemoryReference | null, b?: AwarenessMemoryReference | null) {
+  return !!a && !!b && a.id === b.id && a.memory_source === b.memory_source
+    && (a.container_id || '') === (b.container_id || '');
+}
+
+function Subject({ subject, sources }: { subject: AwarenessRunSubject; sources: AwarenessRunDetail['source_records'] }) {
+  if (subject.availability === 'not_recorded') return <p>The exact initiating event was not saved for this older run. Any retained selected focus is shown separately.</p>;
+  if (subject.availability === 'not_applicable') return <p>This run began without an incoming trigger. See the selected focus below if one was retained.</p>;
+  const source = sources.find(item => sameReference(item.reference, subject.source_reference));
+  return <>
+    <div className="awareness-source"><strong>{subjectLabel(subject)}</strong>
+      {subject.recipient?.name && <span>To {subject.recipient.name}</span>}
+      {subject.event_at && <time dateTime={subject.event_at}>{absoluteTime(subject.event_at)}</time>}
+    </div>
+    <DiagnosticText text={subject.content || 'Event text was not recorded.'} limit={300}/>
+    {subject.content_truncated && <p className="awareness-caption">This saved excerpt may be incomplete.</p>}
+    {subject.origin_relation === 'related_subject' && <p className="awareness-caption">Related-source details describe earlier work, not the author of this event.</p>}
+    {source && <DiagnosticDisclosure title="Open linked source record">
+      <p className="awareness-caption">Current saved source, read separately from this run’s historical snapshot.</p>
+      {source.availability === 'available' ? <>
+        <DiagnosticText text={source.content ?? 'Source text was not recorded.'}/>
+        {source.content_truncated && <p className="awareness-caution">Source text was shortened.</p>}
+        <SavedValue value={source.metadata}/>
+      </> : <p>The exact linked source could not be read. No substitute is shown.</p>}
+    </DiagnosticDisclosure>}
+    <DiagnosticDisclosure title="Source identifiers"><SavedValue value={subject}/></DiagnosticDisclosure>
+  </>;
+}
+
+function StepRow({ step }: { step: AwarenessRunStep }) {
+  const view = stepView(step);
+  const action = step.action_detail;
+  const isAction = step.evidence?.stage === 'action' || !!action;
+  return <li className="awareness-activity-row">
+    <details className="awareness-step-disclosure">
+      <summary><ChevronRight size={16} aria-hidden="true"/><span className="awareness-step-title">{view.title}</span>
+        <DiagnosticBadge tone={view.tone}>{view.status}</DiagnosticBadge>
+        <span className="awareness-step-meta">{step.round !== null ? 'Round ' + step.round : 'Recorded step'}{view.when ? ' · ' + absoluteTime(view.when) : ''}</span>
+      </summary>
+      <div className="awareness-step-body">
+        <DiagnosticText text={view.summary || 'No explanation was retained.'} limit={300}/>
+        {view.response && view.response !== view.summary && <><h4>Prepared reply</h4><DiagnosticText text={view.response}/></>}
+        {view.response && <p className="awareness-caption">Prepared text alone does not establish delivery.</p>}
+        {view.reason && view.reason !== view.summary && view.reason !== view.response && <><h4>Recorded reason</h4><DiagnosticText text={view.reason}/></>}
+        {view.consequence && ![view.summary, view.response, view.reason].includes(view.consequence) && <><h4>What followed</h4><DiagnosticText text={view.consequence}/></>}
+        {isAction && (action?.match_status === 'exact' ? <>
+          <h4>Arguments sent to the tool</h4><SavedValue value={action.arguments}/>
+          <h4>Returned result</h4><SavedValue value={action.result}/>
+          {action.result_detail_truncated && <p className="awareness-caution">The saved result was already shortened.</p>}
+          <p className="awareness-caption">{[action.server, action.tool].filter(Boolean).join(' / ')}{action.observed_at ? ' · ' + absoluteTime(action.observed_at) : ''}</p>
+        </> : <p className="awareness-caption">{action?.match_status === 'ambiguous'
+          ? 'Conflicting records match this activity. No arguments or result are attached.'
+          : 'Exact action details are unavailable. They may not have been retained, or the backend detail update may not be deployed.'}</p>)}
+        <DiagnosticDisclosure title="Technical evidence"><SavedValue value={safeEvidence(step.evidence)}/></DiagnosticDisclosure>
+      </div>
+    </details>
   </li>;
 }
 
-function ActivityHistory({ beat, prefix }: { beat: AwarenessBeat; prefix: string }) {
-  const steps = useMemo(() => runSteps(beat), [beat]);
-  const important = steps.filter(step => step.important);
-  const shown = important.length ? important : steps;
-  const context = traceContext(beat);
-  const incomplete = beat.events_truncated || beat.run_flow?.truncated;
-  return <>
-    {incomplete && <p role="status" className="awareness-caution">Only part of this run was saved. Missing steps may change the picture.</p>}
-    <p className="awareness-caption">Decisions describe intended next moves. Action records show what was attempted and what the tool reported.</p>
-    {shown.length ? <ol className="awareness-activity">{shown.map(step => <StepRow key={step.id} step={step} prefix={prefix}/>)}</ol> : <p>No individual decisions or actions were saved for this run.</p>}
-    <DiagnosticDisclosure title={`Context used · ${context.length} saved ${context.length === 1 ? 'item' : 'items'}`}>
-      <p className="awareness-caption">These items were selected to help interpret the situation. The saved list may not include information used later.</p>
-      {context.length ? <ul className="awareness-context-list">{context.map((entry, index) => <li key={index}><p className="awareness-caption">Source: {entry.source || 'Not recorded'}</p><DiagnosticText text={entry.content || 'Content not retained'}/></li>)}</ul> : <p>No selected context was saved.</p>}
-    </DiagnosticDisclosure>
-    <DiagnosticDisclosure title={`Full decision trace · ${steps.length} saved ${steps.length === 1 ? 'step' : 'steps'}`}>
-      <p className="awareness-caption">Each round records another choice about what to do next. Steps follow saved event order; order alone does not prove cause.</p>
-      <ol className="awareness-full-trace">{steps.map((step, index) => shown.includes(step) ? <li key={step.id}><span>{index + 1}. {step.title}</span><a href={`#${prefix}-${step.id}`}>View above</a>{step.round !== null && <small>Round {step.round}</small>}</li> : <StepRow key={step.id} step={step} prefix={prefix}/>)}</ol>
-      {!steps.length && <p>No step-by-step record was retained.</p>}
-    </DiagnosticDisclosure>
-  </>;
-}
-
-function RunReader({ item, sapienId, revision }: { item: AwarenessHistoryItem; sapienId: string; revision: number }) {
-  const [trace, setTrace] = useState<AwarenessBeatsResponse | null>(null);
-  const [traceError, setTraceError] = useState('');
+function OriginalTrace({ sapienId, runId, thoughtId }: { sapienId: string; runId: string; thoughtId: string }) {
+  const [beat, setBeat] = useState<AwarenessBeat | null>(null);
+  const [error, setError] = useState('');
   const [attempt, setAttempt] = useState(0);
-  const prefix = useId().replaceAll(':', '');
   useEffect(() => {
     let active = true;
-    setTrace(null); setTraceError('');
-    void sapiensService.getAwarenessBeats(sapienId, 20, item.id).then(result => { if (active) setTrace(result); }).catch(error => {
-      if (active) setTraceError((error as ApiError).status === 403 ? 'An administrator account is needed to inspect these steps.' : 'Couldn’t load this run’s steps. The saved input and understanding are still available.');
-    });
+    setBeat(null); setError('');
+    void sapiensService.getAwarenessBeats(sapienId, 20, thoughtId).then(result => {
+      if (!active) return;
+      const exact = matchedTrace(result, sapienId, thoughtId);
+      if (exact?._id === runId) setBeat(exact);
+      else setError('No exact original trace is available for this run.');
+    }).catch(caught => { if (active) setError(inspectionError(caught, true)); });
     return () => { active = false; };
-  }, [sapienId, item.id, revision, attempt]);
-  const beat = trace ? matchedTrace(trace, sapienId, item.id) : null;
-  const focus = beat ? traceText(traceObject(beat.focus_formation).content) || traceText(traceObject(beat.winner).content) || traceText(beat.winner) : '';
-  const assessment = beat?.assessment;
-  const state = item.state || assessment?.state;
-  const remaining = item.remaining || assessment?.remaining;
-  const reason = item.reason || assessment?.reason;
-  const processing = beat ? traceText(traceObject(beat.final).status) : '';
-  const understanding = item.understanding || assessment?.understanding;
+  }, [sapienId, runId, thoughtId, attempt]);
+  if (error) return <p role="alert" className="awareness-error">{error} <button type="button" className="diagnostic-link" onClick={() => setAttempt(value => value + 1)}>Retry original trace</button></p>;
+  return beat ? <AwarenessTechnicalDetails beat={beat}/> : <p role="status">Loading original trace…</p>;
+}
+
+function RunContent({ data }: { data: AwarenessRunDetail }) {
+  const [originalOpen, setOriginalOpen] = useState(false);
+  const run = data.run;
+  const assessment = traceObject(data.assessment);
+  const remaining = traceText(assessment.remaining) || run.remaining_preview;
+  const reason = traceText(assessment.reason);
+  const steps = data.activity.steps;
+  const context = traceObject(data.context.curation);
+  const selectedContext = Array.isArray(context.selected_context) ? context.selected_context.map(traceObject) : [];
   return <>
-    <section className="awareness-reading-section" aria-labelledby={`${prefix}-input`}>
-      <h3 id={`${prefix}-input`}><span>01</span>What started this</h3>
-      <p className="awareness-caption">{beat?.mode === 'autonomous' ? 'Sapiens selected its own focus.' : beat?.mode === 'reactive' ? 'Sapiens responded to an incoming event.' : 'The input or focus saved with this record.'}</p>
-      <DiagnosticText text={item.subject?.content || focus || item.focus || 'The original input was not saved.'}/>
-      <div className="awareness-source"><span>Source: {item.subject?.source || beat?.trigger_source || 'Not recorded'}</span><span>{absoluteTime(item.subject?.event_at || beat?.started_at)}</span></div>
-      {item.subject && <p className="awareness-caption">Sender and conversation details were not included in this record.</p>}
+    <div className="awareness-run-heading">
+      <h3>{run.title}</h3><span>{absoluteTime(run.started_at)}</span>
+      <p>{processingLabel(run.processing_state)}</p>
+    </div>
+    <section className="awareness-outcome" aria-label="Recorded outcome">
+      <div className="awareness-step-heading"><h3>Where it stands</h3>
+        <DiagnosticBadge tone={run.assessment_state === 'blocked' ? 'danger' : ['waiting', 'unresolved'].includes(run.assessment_state) ? 'warning' : 'neutral'}>
+          {assessmentLabel(run.assessment_state)}
+        </DiagnosticBadge>
+      </div>
+      <p className="awareness-caption">{actionSummary(run)}</p>
+      {reason && <DiagnosticText text={reason} limit={260}/>}
+      {remaining && <div className="awareness-remaining"><h4>Still needed</h4><DiagnosticText text={remaining} limit={260}/></div>}
+      <p className="awareness-caption">This is Sapien’s assessment. Finished processing and successful tools do not prove the whole task is complete.</p>
     </section>
-    <section className="awareness-reading-section" aria-labelledby={`${prefix}-understanding`}>
-      <h3 id={`${prefix}-understanding`}><span>02</span>What Sapiens understood</h3>
-      <DiagnosticText text={understanding || 'No separate interpretation was saved. The selected focus is shown above.'}/>
-      <p className="awareness-caption">This is Sapiens’ interpretation, not independent verification.</p>
+    <div className="awareness-origin-grid">
+      <section className="awareness-reading-section"><h3>What prompted the run</h3>
+        <Subject subject={data.trigger} sources={data.source_records}/>
+      </section>
+      <section className="awareness-reading-section"><h3>What Sapien understood</h3>
+        <DiagnosticText text={data.understanding || 'No separate understanding was retained.'} limit={300}/>
+        <p className="awareness-caption">An interpretation, not independently verified facts.</p>
+        <DiagnosticDisclosure title="What it selected to focus on">
+          <Subject subject={data.focus} sources={data.source_records}/>
+        </DiagnosticDisclosure>
+      </section>
+    </div>
+    <section className="awareness-reading-section">
+      <h3>Decisions and actions <span>{steps.length} saved steps</span></h3>
+      <p className="awareness-caption">Open a step to see its explanation and recorded result. Steps follow saved order.</p>
+      {(data.activity.truncated || run.actions.trace_truncated) && <p role="status" className="awareness-caution">Only part of this run was retained. Counts and steps may be incomplete.</p>}
+      {steps.length ? <ol className="awareness-activity">{steps.map(step => <StepRow key={step.event_index} step={step}/>)}</ol>
+        : <p>No step-by-step record was retained.</p>}
     </section>
-    <section className="awareness-reading-section" aria-labelledby={`${prefix}-activity`}>
-      <h3 id={`${prefix}-activity`}><span>03</span>What it did</h3>
-      {traceError ? <p role="alert" className="awareness-error">{traceError} <button type="button" className="diagnostic-link" onClick={() => setAttempt(value => value + 1)}>Retry steps</button></p>
-        : !trace ? <p role="status" className="awareness-caption">Loading the matching decisions and actions…</p>
-        : !beat ? <p className="awareness-caption">{trace.match_status === 'ambiguous' ? 'More than one run matches this record, so no step-by-step record is shown.' : 'No exact matching trace is available for this Sapien and record. Unrelated steps are not shown.'}</p>
-        : <ActivityHistory beat={beat} prefix={prefix}/>}
-    </section>
-    <section className="awareness-reading-section" aria-labelledby={`${prefix}-assessment`}>
-      <h3 id={`${prefix}-assessment`}><span>04</span>Where it stands</h3>
-      <div className="awareness-step-heading"><DiagnosticBadge tone={state === 'blocked' ? 'danger' : ['waiting', 'unresolved'].includes(state ?? '') ? 'warning' : 'neutral'}>{assessmentLabel(state)}</DiagnosticBadge><span className="awareness-caption">Sapiens’ own assessment</span></div>
-      {remaining && <div className="awareness-step-text"><h4>Still needed</h4><DiagnosticText text={remaining}/></div>}
-      {reason && reason !== remaining && reason !== understanding && <div className="awareness-step-text"><h4>Recorded reason</h4><DiagnosticText text={reason}/></div>}
-      {!remaining && !reason && <p className="awareness-caption">No additional assessment detail was saved.</p>}
-      <p className="awareness-caption">Run processing: {processing ? processing.replaceAll('_', ' ') : 'Status not recorded'}. A finished run or successful tool call does not establish that the overall task is complete.</p>
-      {beat?.delivery && <DiagnosticDisclosure title="Recorded delivery information"><p className="awareness-caption">Delivery information is separate from a prepared reply. Only the fields retained by the system are shown.</p><pre>{JSON.stringify(safeEvidence(beat.delivery), null, 2)}</pre></DiagnosticDisclosure>}
-    </section>
+    <DiagnosticDisclosure title="Context used to understand the situation">
+      {hasOmission(context) && <p className="awareness-caution">Only part of the context was returned. This list may be incomplete.</p>}
+      {selectedContext.length ? <ul className="awareness-context-list">{selectedContext.map((item, index) => <li key={index}>
+        <p className="awareness-caption">{traceText(item.source) || 'Source not recorded'}</p>
+        <DiagnosticText text={traceText(item.content) || traceText(item.summary) || (item.omitted ? 'This context item was omitted from the returned detail.' : 'Context text was not retained.')}/>
+      </li>)}</ul> : <p>No selected context items are available in this response.</p>}
+      <DiagnosticDisclosure title="Preparation and context diagnostics"><SavedValue value={data.context}/></DiagnosticDisclosure>
+    </DiagnosticDisclosure>
+    <DiagnosticDisclosure title="Reply and delivery information">
+      <p className="awareness-caption">A prepared reply is separate from a confirmed send. Source delivery audits below describe their latest saved state, which can be later than this run.</p>
+      <dl className="awareness-record-details">
+        <div><dt>Outward reply expected</dt><dd>{run.delivery.outward_expected === true ? 'Yes' : run.delivery.outward_expected === false ? 'No' : 'Not recorded'}</dd></div>
+        <div><dt>Reply text prepared</dt><dd>{run.delivery.response_present === true ? 'Yes' : run.delivery.response_present === false ? 'No' : 'Not recorded'}</dd></div>
+        <div><dt>Reply satisfied through a tool</dt><dd>{run.delivery.reply_satisfied_by_tool === true ? 'Yes' : run.delivery.reply_satisfied_by_tool === false ? 'No' : 'Not recorded'}</dd></div>
+        <div><dt>Confirmed tool messages</dt><dd>{run.delivery.confirmed_tool_messages ?? 'Not recorded'}</dd></div>
+      </dl>
+      <SavedValue value={data.delivery}/>
+      {data.source_records.map(source => typeof source.metadata.reply_delivery_status === 'string' && <p key={source.reference.id} className="awareness-caption">
+        Linked message {source.reference.id}: latest delivery status {source.metadata.reply_delivery_status}.
+      </p>)}
+    </DiagnosticDisclosure>
     <DiagnosticDisclosure title="Technical details">
-      <dl className="awareness-record-details"><div><dt>Record ID</dt><dd>{item.id}</dd></div><div><dt>Assessment source</dt><dd>{item.source || 'Not recorded'}</dd></div><div><dt>Assessment time</dt><dd>{absoluteTime(item.assessed_at)}</dd></div><div><dt>Created time</dt><dd>{absoluteTime(item.created_at)}</dd></div>{typeof item.confidence === 'number' && <div><dt>Reported confidence · not measured accuracy</dt><dd>{Math.round(item.confidence * 100)}%</dd></div>}</dl>
-      {beat && <AwarenessTechnicalDetails beat={beat}/>}
+      <SavedValue value={{ run_id: run.id, mode: run.mode, started_at: run.started_at, completed_at: run.completed_at,
+        round_count: data.activity.round_count, thought_link: run.thought_link, assessment: data.assessment, ...data.technical }}/>
+      {run.thought_link.status === 'exact' && run.thought_link.id && <details className="diagnostic-disclosure" onToggle={event => setOriginalOpen(event.currentTarget.open)}>
+        <summary>Original trace and flow graph</summary>
+        <p className="awareness-caption">The existing advanced view, matched to this exact run. It may contain more retained selection diagnostics.</p>
+        {originalOpen && <OriginalTrace sapienId={String(data.sapien_id)} runId={run.id} thoughtId={run.thought_link.id}/>}
+      </details>}
     </DiagnosticDisclosure>
   </>;
 }
 
-export function AwarenessDiagnostics({ sapienId }: { sapienId: string }) {
-  const requestVersion = useRef(0);
-  const [loaded, setLoaded] = useState<{ sapienId: string; value: AwarenessResponse } | null>(null);
-  const data = loaded?.sapienId === sapienId ? loaded.value : null;
+function RunReader({ sapienId, runId, revision }: { sapienId: string; runId: string; revision: number }) {
+  const [data, setData] = useState<AwarenessRunDetail | null>(null);
+  const [error, setError] = useState('');
+  const [attempt, setAttempt] = useState(0);
+  useEffect(() => {
+    const controller = new AbortController();
+    let active = true;
+    setData(null); setError('');
+    void sapiensService.getAwarenessRun(sapienId, runId, controller.signal)
+      .then(result => { if (active) setData(result); })
+      .catch(caught => { if (active) setError(inspectionError(caught, true)); });
+    return () => { active = false; controller.abort(); };
+  }, [sapienId, runId, revision, attempt]);
+  if (error) return <div role="alert" className="awareness-error">{error} <button type="button" className="diagnostic-link" onClick={() => setAttempt(value => value + 1)}>Retry details</button></div>;
+  if (!data) return <p role="status" className="awareness-empty">Loading the selected run…</p>;
+  return <RunContent data={data}/>;
+}
+
+function RunBrowser({ sapienId }: { sapienId: string }) {
+  const [params, setParams] = useSearchParams();
+  const scoped = params.get('awarenessFor') === sapienId;
+  const parsedOffset = scoped ? Number(params.get('awarenessOffset') || 0) : 0;
+  const offset = Number.isSafeInteger(parsedOffset) && parsedOffset >= 0 && parsedOffset <= 2147483647 ? parsedOffset : 0;
+  const requestedId = scoped ? params.get('awarenessRun') || '' : '';
+  const search = scoped ? params.get('awarenessSearch') || '' : '';
+  const validRunId = !requestedId || /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(requestedId);
+  const [loaded, setLoaded] = useState<AwarenessRunsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [search, setSearch] = useState('');
-  const [pickerOpen, setPickerOpen] = useState(false);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [revision, setRevision] = useState(0);
-  const detailHeading = useRef<HTMLHeadingElement>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const heading = useRef<HTMLHeadingElement>(null);
   const listId = useId();
-  const refresh = useCallback(async () => {
-    const version = ++requestVersion.current;
-    setLoading(true); setError('');
-    try {
-      const result = await sapiensService.getAwareness(sapienId, 20);
-      if (version === requestVersion.current) { setLoaded({ sapienId, value: result }); setRevision(value => value + 1); }
-    } catch (caught) {
-      if (version === requestVersion.current) setError((caught as ApiError).message || 'Could not load saved understanding.');
-    } finally { if (version === requestVersion.current) setLoading(false); }
-  }, [sapienId]);
+  const data = loaded?.sapien_id === Number(sapienId) && loaded.offset === offset ? loaded : null;
   useEffect(() => {
-    setLoaded(null); setSelectedId(null); setSearch(''); setPickerOpen(false);
-    void refresh();
-    return () => { requestVersion.current += 1; };
-  }, [refresh]);
-  const history = useMemo(() => {
-    const items = data?.history ?? [];
-    return data?.current ? [data.current, ...items.filter(item => item.id !== data.current?.id)] : items;
-  }, [data]);
-  const selected = history.find(item => item.id === selectedId) ?? history[0];
-  const filtered = useMemo(() => history.filter(item => matchesRun(item, search)), [history, search]);
-  const choose = (id: string) => {
-    setSelectedId(id); setPickerOpen(false);
-    if (window.matchMedia('(max-width: 900px)').matches) requestAnimationFrame(() => detailHeading.current?.focus());
+    const controller = new AbortController();
+    let active = true;
+    setLoading(true); setError('');
+    void sapiensService.getAwarenessRuns(sapienId, offset, controller.signal).then(result => {
+      if (active) setLoaded(result);
+    }).catch(caught => { if (active) setError(inspectionError(caught)); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; controller.abort(); };
+  }, [sapienId, offset, revision]);
+  const rows = data?.items ?? [];
+  const selectedId = requestedId || rows[0]?.id || '';
+  const filtered = useMemo(() => rows.filter(row => matchesRun(row, search)), [rows, search]);
+  const query = (values: Record<string, string | null>) => {
+    const next = new URLSearchParams(params);
+    if (!scoped) for (const key of ['awarenessRun', 'awarenessOffset', 'awarenessSearch']) next.delete(key);
+    next.set('awarenessFor', sapienId);
+    for (const [key, value] of Object.entries(values)) value === null ? next.delete(key) : next.set(key, value);
+    return next;
+  };
+  const page = (nextOffset: number) => setParams(query({ awarenessOffset: String(nextOffset), awarenessRun: null }));
+  const refresh = () => {
+    setParams(query({ awarenessOffset: '0', awarenessRun: selectedId || null }), { replace: true });
+    setRevision(value => value + 1);
+  };
+  const choose = (event: MouseEvent<HTMLAnchorElement>) => {
+    if (event.button || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
+    setPickerOpen(false);
+    if (window.matchMedia('(max-width: 900px)').matches) requestAnimationFrame(() => heading.current?.focus());
   };
   return <div className="awareness-reader">
-    <header className="awareness-intro"><div><h2>See how Sapiens responds to a situation.</h2><p>Each run records Sapiens handling an input or choosing its own focus. Select a run to inspect its understanding, decisions and recorded results.</p></div><button type="button" className="analyse-button" onClick={() => void refresh()} disabled={loading}>{loading ? <Loader2 size={16} className="animate-spin"/> : <RefreshCw size={16}/>}Refresh</button></header>
-    {error && <div role="alert" className="awareness-error">{data ? 'Couldn’t refresh. You are viewing the last loaded records. ' : ''}{error} <button type="button" className="diagnostic-link" disabled={loading} onClick={() => void refresh()}>Retry</button></div>}
-    {loading && !data ? <p role="status" className="awareness-empty">Loading saved runs…</p> : !data ? <p className="awareness-empty">Records could not be loaded. Use Retry to try again.</p> : !history.length ? <p className="awareness-empty">No runs have been saved yet. Return after Sapiens processes information, then use Refresh to check for records.</p> : <div className="awareness-reader-layout">
-      <aside className="awareness-run-picker" aria-label="Recent runs">
-        <button type="button" className="awareness-mobile-picker" aria-expanded={pickerOpen} aria-controls={listId} onClick={() => setPickerOpen(!pickerOpen)}><span>{pickerOpen ? 'Close run picker' : 'Choose a run'} · {history.length} records</span><small>{selected && runTitle(selected)}</small></button>
+    <header className="awareness-intro"><div><h2>See how Sapien responds to a situation.</h2><p>Follow what prompted a run, what it understood and what happened next.</p></div>
+      <button type="button" className="analyse-button" onClick={refresh} disabled={loading}>{loading ? <Loader2 size={16} className="animate-spin" aria-hidden="true"/> : <RefreshCw size={16} aria-hidden="true"/>}Refresh</button>
+    </header>
+    {!scoped && params.has('awarenessFor') && <p role="status" className="awareness-caption">The linked selection belongs to another Sapien. Showing records for the currently selected Sapien.</p>}
+    {error && <div role="alert" className="awareness-error">{data ? 'Refresh failed; showing the last loaded page. ' : ''}{error} <button type="button" className="diagnostic-link" disabled={loading} onClick={() => setRevision(value => value + 1)}>Retry list</button></div>}
+    <div className="awareness-reader-layout">
+      <aside className="awareness-run-picker" aria-label="Saved runs">
+        <button type="button" className="awareness-mobile-picker" aria-expanded={pickerOpen} aria-controls={listId} onClick={() => setPickerOpen(value => !value)}>
+          <span>{pickerOpen ? 'Close run list' : 'Choose a run'}</span><small>{data ? data.total.toLocaleString() + ' saved runs' : 'Saved Awareness runs'}</small>
+        </button>
         <div id={listId} className="awareness-run-list-body" data-open={pickerOpen}>
-          <div className="awareness-list-heading"><h3>Recent runs</h3><span>{history.length} loaded</span></div>
-          <label className="awareness-search"><Search size={16} aria-hidden="true"/><input aria-label="Search recent runs" value={search} onChange={event => setSearch(event.target.value)} placeholder="Search input, source or status"/></label>
-          {search && <button type="button" className="diagnostic-link" onClick={() => setSearch('')}>Clear search</button>}
-          <nav className="awareness-run-list" aria-label="Choose a saved run">{filtered.map(item => <button type="button" key={item.id} aria-current={selected?.id === item.id ? 'true' : undefined} onClick={() => choose(item.id)}>
-            <span className="awareness-run-excerpt">{runTitle(item)}</span><span className="awareness-run-meta"><span className="awareness-caption">{item.subject?.source || 'Source not recorded'}</span><DiagnosticBadge>{assessmentLabel(item.state)}</DiagnosticBadge></span><time className="awareness-caption">{absoluteTime(item.assessed_at || item.created_at)}</time>
-          </button>)}</nav>
-          {!filtered.length && <p role="status" className="awareness-caption">No runs match this search. Clear it to see the loaded records.</p>}
-          <DiagnosticDisclosure title="About these records"><p>Up to 20 recent records. Times use your timezone; simulation dates may be ahead of today. Saved text and traces may be incomplete.</p></DiagnosticDisclosure>
+          <div className="awareness-list-heading"><h3>Saved runs</h3><span>{data ? data.total.toLocaleString() + ' total' : ''}</span></div>
+          <label className="awareness-search"><Search size={16} aria-hidden="true"/><input name="awarenessSearch" aria-label="Search this page of runs" autoComplete="off" value={search}
+            onChange={event => setParams(query({ awarenessSearch: event.target.value || null, awarenessRun: selectedId || null }), { replace: true })} placeholder="Search this page…"/></label>
+          {search && <button type="button" className="diagnostic-link" onClick={() => setParams(query({ awarenessSearch: null }), { replace: true })}>Clear search</button>}
+          {loading && <p role="status" className="awareness-caption">Loading runs…</p>}
+          <nav className="awareness-run-list" aria-label="Choose a saved run">{filtered.map(item => <Link key={item.id}
+            to={{ search: '?' + query({ awarenessRun: item.id }) }} aria-current={selectedId === item.id ? 'true' : undefined} onClick={choose}>
+            <span className="awareness-run-excerpt">{item.title}</span>
+            <span className="awareness-caption awareness-run-preview">{item.focus.content || item.understanding_preview || 'No subject text retained'}</span>
+            <span className="awareness-run-meta"><DiagnosticBadge>{assessmentLabel(item.assessment_state)}</DiagnosticBadge>
+              {item.processing_state !== 'completed' && <span className="awareness-caption">{processingLabel(item.processing_state)}</span>}</span>
+            <time className="awareness-caption" dateTime={item.started_at || undefined}>{absoluteTime(item.started_at)}</time>
+          </Link>)}</nav>
+          {!loading && data && !rows.length && <p role="status" className="awareness-caption">{offset ? 'No records remain on this page. Return to the latest runs.' : 'No runs have been saved yet. Refresh after Sapien processes information.'}</p>}
+          {!loading && !!rows.length && !filtered.length && <p role="status" className="awareness-caption">No matches on this page. Clear the search or browse another page.</p>}
+          <div className="awareness-pagination">
+            <button type="button" className="analyse-button" disabled={loading || offset === 0} onClick={() => page(Math.max(0, offset - 20))}>Newer</button>
+            <button type="button" className="analyse-button" disabled={loading || !data?.has_more || data.next_offset == null} onClick={() => data?.next_offset != null && page(data.next_offset)}>Older</button>
+          </div>
+          <p className="awareness-caption" aria-live="polite">{data && rows.length ? 'Showing ' + (offset + 1) + '–' + (offset + rows.length) + ' of ' + data.total.toLocaleString() + '.' : ''} Search covers this page only.</p>
+          <DiagnosticDisclosure title="About these records"><p>Saved runs, not a live queue. Times use your timezone; simulation dates can be ahead of today. Refresh returns to the latest page. New runs can shift page boundaries.</p></DiagnosticDisclosure>
         </div>
       </aside>
       <article className="awareness-run-reader" aria-label="Selected run">
-        <h2 ref={detailHeading} tabIndex={-1} className="awareness-selected-heading">Selected run <span>{absoluteTime(selected?.assessed_at || selected?.created_at)}</span></h2>
-        {search && selected && !filtered.some(item => item.id === selected.id) && <p className="awareness-caption">The open run is outside your search results.</p>}
-        {selected && <RunReader key={`${sapienId}:${selected.id}:${revision}`} item={selected} sapienId={sapienId} revision={revision}/>}
+        <h2 ref={heading} tabIndex={-1} className="awareness-selected-heading">Selected run</h2>
+        {!validRunId ? <p role="alert" className="awareness-error">The run ID in this link is invalid. Select a saved run.</p>
+          : selectedId ? <><p className="awareness-caption">{data && !rows.some(row => row.id === selectedId) ? 'The selected run is outside this page.' : search && !filtered.some(row => row.id === selectedId) ? 'The selected run is outside these search results.' : ''}</p>
+            <RunReader key={sapienId + ':' + selectedId + ':' + revision} sapienId={sapienId} runId={selectedId} revision={revision}/></>
+            : <p className="awareness-empty">{loading ? 'Loading saved runs…' : error ? 'Use Retry list to load saved runs.' : 'Select a run to inspect its recorded decisions and actions.'}</p>}
       </article>
-    </div>}
+    </div>
   </div>;
+}
+
+export function AwarenessDiagnostics({ sapienId }: { sapienId: string }) {
+  // Remount all page/detail state on an identity change, including failed requests.
+  return <RunBrowser key={sapienId} sapienId={sapienId}/>;
 }

@@ -17,6 +17,7 @@ import {
   AwarenessBeatsResponse,
 } from '../../types/sapiensTypes';
 import { logger } from '../../utils/logger';
+import type { AwarenessRunsResponse, AwarenessRunDetail } from '../../types/awarenessRunTypes';
 import { ACCESS_CHECK_TIMEOUT_MS, verifyResourceAccess } from '../auth/authSession';
 import type { SapiensDirectoryEntry as BackendSapiens } from '../../types/sapiensTypes';
 
@@ -155,6 +156,28 @@ class SapiensService {
     const response = await apiClient.get<AwarenessBeatsResponse>(
       `${API_ENDPOINTS.sapienAwarenessBeats(sapiensId)}?limit=${boundedLimit}${thoughtId ? `&thought_id=${encodeURIComponent(thoughtId)}` : ''}`
     );
+    return response.data;
+  }
+
+  async getAwarenessRuns(sapiensId: string, offset = 0, signal?: AbortSignal): Promise<AwarenessRunsResponse> {
+    const response = await apiClient.get<AwarenessRunsResponse>(
+      `${API_ENDPOINTS.sapienAwarenessRuns(sapiensId)}?offset=${offset}&limit=20`, { signal }
+    );
+    if (Number(response.data.sapien_id) !== Number(sapiensId) || response.data.inspection_mode !== 'stored'
+      || response.data.offset !== offset || !Array.isArray(response.data.items)) {
+      throw new Error('The response did not match the requested Sapien and page.');
+    }
+    return response.data;
+  }
+
+  async getAwarenessRun(sapiensId: string, runId: string, signal?: AbortSignal): Promise<AwarenessRunDetail> {
+    const response = await apiClient.get<AwarenessRunDetail>(
+      `${API_ENDPOINTS.sapienAwarenessRuns(sapiensId)}/${encodeURIComponent(runId)}`, { signal }
+    );
+    if (Number(response.data.sapien_id) !== Number(sapiensId) || response.data.inspection_mode !== 'stored'
+      || response.data.run?.id !== runId) {
+      throw new Error('The response did not match the requested Awareness run.');
+    }
     return response.data;
   }
 

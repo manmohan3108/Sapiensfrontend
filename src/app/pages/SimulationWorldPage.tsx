@@ -391,11 +391,13 @@ function ChatPortal({ runId, eventCount }: { runId: string; eventCount: number }
   const [selected, setSelected] = useState('');
   const [items, setItems] = useState<WorldActivityItem[]>([]);
   const [cursor, setCursor] = useState<{ next: number; more: boolean }>({ next: 0, more: false });
+  const [conversationLoading, setConversationLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [error, setError] = useState('');
   const previous = useRef(eventCount);
   const [refresh, setRefresh] = useState(0);
   const conversationPaneRef = useRef<HTMLDivElement | null>(null);
+  const conversationCache = useRef(new Map<string, { through: number; items: WorldActivityItem[]; cursor: { next: number; more: boolean } }>());
   const [mobileConversationOpen, setMobileConversationOpen] = useState(false);
 
   useEffect(() => {
@@ -439,33 +441,51 @@ function ChatPortal({ runId, eventCount }: { runId: string; eventCount: number }
   const employee = employees.find(person => person.person_id === selectedId);
   const channel = channels.find(item => item.channel_id === selectedId);
 
-  const load = useCallback(async (after = 0, append = false) => {
+  const load = useCallback(async (after = 0, append = false, signal?: AbortSignal) => {
     if (!overview || !selectedId) return;
     try {
       const page = await simulationService.worldActivity(runId, {
         through: overview.through,
         kind: 'messages',
         after,
-        limit: 100,
+        limit: 50,
         ...(selectedType === 'channel' ? { channel_id: selectedId } : { person_id: selectedId }),
-      });
+      }, signal);
       const visible = selectedType === 'person'
         ? page.items.filter(item => !value(payload(item.event).channel_id))
         : page.items;
-      setItems(current => append
-        ? [...current, ...visible.filter(item => !current.some(existing => existing.event.record_id === item.event.record_id))]
-        : visible);
-      setCursor({ next: page.next_after, more: page.has_more });
+      const cached = conversationCache.current.get(selected);
+      const nextItems = append
+        ? [...(cached?.items ?? []), ...visible.filter(item => !(cached?.items ?? []).some(existing => existing.event.record_id === item.event.record_id))]
+        : visible;
+      const nextCursor = { next: page.next_after, more: page.has_more };
+      conversationCache.current.set(selected, { through: overview.through, items: nextItems, cursor: nextCursor });
+      if (signal?.aborted) return;
+      setItems(nextItems);
+      setCursor(nextCursor);
     } catch (problem) {
-      setError(message(problem));
+      if (!(problem instanceof DOMException && problem.name === 'AbortError')) setError(message(problem));
     }
   }, [runId, overview?.through, selected, selectedId, selectedType]);
 
   useEffect(() => {
+    if (!overview || !selected) return;
+    const cached = conversationCache.current.get(selected);
+    if (cached?.through === overview.through) {
+      setItems(cached.items);
+      setCursor(cached.cursor);
+      setConversationLoading(false);
+      return;
+    }
+    const controller = new AbortController();
     setItems([]);
     setCursor({ next: 0, more: false });
-    void load();
-  }, [load]);
+    setConversationLoading(true);
+    void load(0, false, controller.signal).finally(() => {
+      if (!controller.signal.aborted) setConversationLoading(false);
+    });
+    return () => controller.abort();
+  }, [load, overview, selected]);
 
   const normalizedSearch = search.trim().toLowerCase();
   const visibleEmployees = sortChatsByRecentActivity(employees.filter(person => !normalizedSearch || person.name.toLowerCase().includes(normalizedSearch) || person.person_id.toLowerCase().includes(normalizedSearch)));
@@ -566,10 +586,11 @@ function ChatPortal({ runId, eventCount }: { runId: string; eventCount: number }
                   </article>
                 );
               })}
-              {!items.length && selected && <div className="grid min-h-40 place-items-center text-center text-slate-500"><div><MessageSquare className="mx-auto size-8 opacity-30" /><p className="mt-3">No recorded messages in this conversation.</p></div></div>}
+              {conversationLoading && <div className="grid min-h-40 place-items-center text-center text-slate-500" role="status" aria-live="polite"><div><RefreshCw className="mx-auto size-6 motion-safe:animate-spin" aria-hidden="true" /><p className="mt-3">Loading conversation…</p></div></div>}
+              {!conversationLoading && !items.length && selected && <div className="grid min-h-40 place-items-center text-center text-slate-500"><div><MessageSquare className="mx-auto size-8 opacity-30" aria-hidden="true" /><p className="mt-3">No recorded messages in this conversation.</p></div></div>}
               {!selected && <div className="grid min-h-64 place-items-center text-center text-slate-500"><p>Select a chat or channel.</p></div>}
             </div>
-            {cursor.more && <Button className="mt-5" variant="outline" onClick={() => void load(cursor.next, true)}>Load earlier messages</Button>}
+            {cursor.more && <Button className="mt-5" variant="outline" disabled={conversationLoading} onClick={() => void load(cursor.next, true)}>Load earlier messages</Button>}
           </div>
         </div>
 

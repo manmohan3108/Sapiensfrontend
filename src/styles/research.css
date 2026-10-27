@@ -61,3 +61,14 @@
   .research-page .research-intro { font-size: 17px; }
   .research-page .research-topic-heading { flex-direction: column; }
 }
+.research-page .research-feature { display: block; margin-top: 28px; padding: 24px; max-width: 900px; background: var(--paper); border: 1px solid var(--line); border-left: 3px solid var(--accent); }
+.research-page .research-feature h2 { margin-block: 10px 14px; font: 600 clamp(25px, 3vw, 34px)/1.25 'Source Serif 4', Georgia, serif; text-wrap: balance; }
+.research-page .research-feature p { max-width: 65ch; font-size: 18px; line-height: 1.65; color: var(--muted); }
+.research-page .research-feature-action { display: inline-block; padding-top: 18px; text-decoration: underline; text-underline-offset: 4px; }
+.research-page .research-feature:hover .research-feature-action { text-decoration-color: var(--accent); }
+.research-page .research-concepts { color: var(--muted); font-size: 15px; line-height: 1.6; margin-bottom: 12px; }
+.research-page .research-article-body p + p { margin-top: 20px; }
+.research-page .research-related { margin-top: 20px; border-top: 1px solid var(--line); padding-top: 20px; }
+.research-page .research-related h2 { font-size: 20px; color: var(--ink); }
+.research-page .research-related a { display: flex; align-items: center; min-height: 44px; padding-block: 8px; text-decoration: underline; text-underline-offset: 4px; }
+@media (max-width: 720px) { .research-page .research-feature { padding: 20px 16px; } }

@@ -209,20 +209,60 @@ const usageHtml=html(tree);
 assert(usageHtml.indexOf('Recent daily per-sapien usage')>usageHtml.indexOf('</details>'),'Daily history stays outside the collapsed purpose breakdown');
 assert(usageHtml.includes('UTC date'));
 
-const memory=await load('pages/AnalysePage.tsx',hooks+`
+const wmPresentation=await load('components/analyse/workingMemoryPresentation.ts',`const sourceName=value=>({awareness_thought:'Recorded understanding',teams:'Teams',jira:'Jira'}[value]||value||'Source not supplied');`);
+globalThis.analyseTest.wmPresentation=wmPresentation;
+const memory=await load('components/analyse/WorkingMemoryAnalysis.tsx',hooks+`
+const {activationBuckets,activationLabel,matchesMemory,memoryDate,memoryKind,memoryOrigin,memoryTimes}=globalThis.analyseTest.wmPresentation;
+const sourceName=value=>value;
 const useRememberedState=(_key,initial)=>h.useState(initial);
 Dialog.Root=Dialog; Dialog.Portal=()=>null; Dialog.Overlay=()=>null; Dialog.Content=({children})=>children;
 Dialog.Title=({children})=>children; Dialog.Description=({children})=>children; Dialog.Close=({children})=>children;
-const Bar=()=>null,BarChart=()=>null,CartesianGrid=()=>null,ResponsiveContainer=()=>null,Tooltip=()=>null,XAxis=()=>null,YAxis=()=>null;
-`, 'export {WorkingMemoryAnalysis};');
+const DiagnosticDisclosure=({title,children})=>React.createElement('details',null,React.createElement('summary',null,title),children);
+`, 'export {MemoryDetails, SnapshotDetails};');
 const snapshot={wm:{entries:[{id:'memory-1',content:'Team prefers morning reviews',memory_source:'memory_unit',activation:0.7,tags:['team'],references:[]}]},sources:[],tags:[{value:'team',count:1}],references:[],summary:{}};
-h.reset([false,snapshot,false,'','', '',['team'],'all',[],'activation',null]);
+const memoryKey=JSON.stringify([58,'',['team'],'all',[],'activation']);
+h.reset([false,{key:memoryKey,data:snapshot,loading:false},'', '',['team'],'all',[],'activation',null]);
 tree=memory.WorkingMemoryAnalysis({sapienId:58,openEngram(){}});controls=find(tree,n=>n.type===Controls);
-assert(primaryNames(controls).includes('Search returned memory records'));
+assert(primaryNames(controls).includes('memorySearch'));
 assert(html(tree).includes('Team prefers morning reviews'));
 assert(!html(tree).includes('Embedding cached'),'Embedding diagnostics do not occupy the list');
 assert(!html(tree).includes('Snapshot statistics'),'Snapshot analysis is opened separately');
-controls.props.filters[0].onRemove();assert.deepEqual(h.values[6],[],'Removing a visible tag clears its actual filter');
+controls.props.filters[0].onRemove();assert.deepEqual(h.values[4],[],'Removing a visible tag clears its actual filter');
+
+// Recorded timestamps are independent of age_seconds and the browser clock.
+const jiraMemory={id:'jira-memory',memory_source:'awareness_thought',content:'Ben says staging needs a deployed version.',activation:0.48,age_seconds:null,last_used_at:'2026-11-13T16:41:12+00:00',metadata:{origin:{type:'jira',actor_name:'Ben Carter',issue_key:'SD-4',simulation_run_id:'run-1'},created_at:'2026-11-13T16:37:28+00:00'},provenance:{}};
+const teamsMemory={...jiraMemory,id:'teams-memory',metadata:{origin:{type:'teams',actor_name:'Ben Carter',name:'channel:project:message-298',channel_id:'project',thread_id:'message-298',actor_ref:'simulation:run-1:teams:ben'},created_at:'2026-11-14T01:32:04+00:00'}};
+assert.equal(wmPresentation.memoryTimes(jiraMemory).created,jiraMemory.metadata.created_at);
+assert.equal(wmPresentation.memoryTimes({...jiraMemory,created_at:'2026-11-12T01:00:00Z'}).created,'2026-11-12T01:00:00Z','Explicit created time takes precedence');
+for(const age of [null,undefined,0,NaN,-1])assert.equal(wmPresentation.memoryTimes({...jiraMemory,age_seconds:age}).activated,jiraMemory.last_used_at);
+assert.equal(wmPresentation.memoryTimes({last_used_at:'bad',age_seconds:null}).activated,undefined);
+assert.equal(wmPresentation.memoryTimes({last_used_at:'2026-11-13T10:00:00'}).activated,undefined,'Timezone-less timestamps are not silently interpreted');
+assert.equal(wmPresentation.memoryTimes({last_used:0}).activated,'1970-01-01T00:00:00.000Z');
+assert.equal(wmPresentation.memoryDate(undefined),'Not recorded');
+assert.equal(wmPresentation.activationLabel({activation:null,score:null}),'Not recorded');
+assert.equal(wmPresentation.memoryOrigin(jiraMemory).place,'SD-4');
+assert.equal(wmPresentation.memoryOrigin(teamsMemory).service,'Teams');
+assert.equal(wmPresentation.memoryOrigin(teamsMemory).simulation,true);
+assert.equal(wmPresentation.memoryOrigin({metadata:null,provenance:'legacy'}).person,undefined);
+for(const query of ['Ben Carter','jira','SD-4','Recorded understanding'])assert(wmPresentation.matchesMemory(jiraMemory,query));
+assert(wmPresentation.matchesMemory(teamsMemory,'message-298'));
+assert(!wmPresentation.matchesMemory(jiraMemory,'unrelated'));
+const bucketCounts=wmPresentation.activationBuckets([{}, {activation:null},{activation:0},{activation:0.1},{activation:1},{activation:1.1}]).map(x=>x.count);
+assert.equal(bucketCounts.reduce((a,b)=>a+b,0),3,'Unknown/out-of-range activation is not counted as zero or double counted at boundaries');
+const wmDetailHtml=html(memory.MemoryDetails({entry:jiraMemory,focused:true,openEngram(){}}));
+assert(wmDetailHtml.indexOf('Ben Carter')<wmDetailHtml.indexOf('Activation and time'));
+assert(wmDetailHtml.includes('Jira'));assert(wmDetailHtml.includes('SD-4'));assert(wmDetailHtml.includes('From record metadata'));
+assert(wmDetailHtml.includes('not necessarily Sapiens'));assert(!wmDetailHtml.includes('0s ago'));assert(!wmDetailHtml.includes('Not applicable'));
+const ordinaryHtml=html(memory.MemoryDetails({entry:{id:'missing',memory_source:'unknown'},focused:false,openEngram(){}}));
+assert(ordinaryHtml.includes('Content was not supplied'));assert(ordinaryHtml.includes('Origin not supplied'));assert(ordinaryHtml.includes('Not recorded'));
+let openedEngram=false;
+find(memory.MemoryDetails({entry:snapshot.wm.entries[0],focused:false,openEngram(){openedEngram=true;}}),node=>node.type==='button').props.onClick();assert(openedEngram);
+for(const [query,entries,expected] of [['nothing',[jiraMemory],'No matching memories'],['',[],'No Working Memory records returned']]) {
+  h.reset([false,{key:JSON.stringify([62,'',[],'all',[],'activation']),data:{wm:{entries}},loading:false},query]);
+  assert(html(memory.WorkingMemoryAnalysis({sapienId:62,openEngram(){}})).includes(expected));
+}
+h.reset([false,{key:memoryKey,data:snapshot,loading:false}]);
+assert(!html(memory.WorkingMemoryAnalysis({sapienId:62,openEngram(){}})).includes('Team prefers morning reviews'),'A previous Sapien snapshot cannot leak while the new request starts');
 
 const inquiries=await load('components/analyse/InquiryInspection.tsx',hooks+'const InquiryContext=()=>null;','export {InquiryList};');
 h.reset();tree=inquiries.InquiryList({sapienId:'58',kind:'curiosity',initialSource:''});
@@ -373,4 +413,30 @@ const failedCleanup=globalThis.analyseTest.goalEffects.pop()();await new Promise
 assert.equal(h.values[1].data.description,'New goal');assert.equal(h.values[1].error,'Refresh failed');failedCleanup();
 assert.equal(intervals.size,0);assert.equal(listeners.size,0);
 globalThis.document=originalDocument;globalThis.setInterval=originalInterval;globalThis.clearInterval=originalClearInterval;
-console.log('Analyse checks passed, including Goals URL navigation, completion distinctions, request scopes, duplicate-submit protection and existing regressions. No network or server used.');
+// Working Memory ignores late reads on filter changes/unmount and keeps data
+// during a failed refresh. Exercise the actual effect and service call options.
+globalThis.analyseTest.wmEffects=[];
+globalThis.analyseTest.wmService={getWorkingMemory:async()=>snapshot};
+const memoryAsync=await load('components/analyse/WorkingMemoryAnalysis.tsx',hooks.replace('useEffect=()=>{}','useEffect=fn=>globalThis.analyseTest.wmEffects.push(fn)')+`
+const {activationBuckets,activationLabel,matchesMemory,memoryDate,memoryKind,memoryOrigin,memoryTimes}=globalThis.analyseTest.wmPresentation;
+const sourceName=value=>value;
+const useRememberedState=(_key,initial)=>h.useState(initial);
+const engramService=globalThis.analyseTest.wmService;
+Dialog.Root=Dialog; Dialog.Portal=()=>null; Dialog.Overlay=()=>null; Dialog.Content=({children})=>children;
+`);
+h.reset();let resolveMemory;let memoryReadOptions;
+globalThis.analyseTest.wmService.getWorkingMemory=(_id,options)=>{memoryReadOptions=options;return new Promise(resolve=>resolveMemory=resolve);};
+memoryAsync.WorkingMemoryAnalysis({sapienId:62,openEngram(){}});
+const cancelMemory=globalThis.analyseTest.wmEffects.pop()();cancelMemory();
+assert.equal(memoryReadOptions.limit,100);assert.equal(memoryReadOptions.includeMetadata,true);assert.equal(memoryReadOptions.includeContent,true);
+globalThis.analyseTest.wmService.getWorkingMemory=async()=>({wm:{entries:[jiraMemory]}});
+h.begin();memoryAsync.WorkingMemoryAnalysis({sapienId:62,openEngram(){}});
+const cleanMemory=globalThis.analyseTest.wmEffects.pop()();await new Promise(resolve=>setImmediate(resolve));
+resolveMemory(snapshot);await new Promise(resolve=>setImmediate(resolve));
+assert.equal(h.values[1].data.wm.entries[0].id,'jira-memory','Late previous response is ignored');
+globalThis.analyseTest.wmService.getWorkingMemory=async()=>{throw Error('Snapshot refresh unavailable');};
+h.begin();tree=memoryAsync.WorkingMemoryAnalysis({sapienId:62,openEngram(){}});
+find(tree,n=>n.type===Controls).props.onRefresh();await new Promise(resolve=>setImmediate(resolve));
+assert.equal(h.values[1].data.wm.entries[0].id,'jira-memory');assert.equal(h.values[1].error,'Snapshot refresh unavailable');
+h.begin();assert(html(memoryAsync.WorkingMemoryAnalysis({sapienId:62,openEngram(){}})).includes('Showing the previous snapshot'));cleanMemory();
+console.log('Analyse checks passed, including Working Memory origin, timestamp, search, filter, stale-response and refresh-error regressions; Goals and existing Analyse checks passed. No network or server used.');
