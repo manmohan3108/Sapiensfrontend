@@ -14,7 +14,7 @@ const assessmentLabels: Record<string, string> = {
 export const assessmentLabel = (state?: string) => assessmentLabels[state ?? ''] || state?.replaceAll('_', ' ') || 'Not assessed';
 
 const processingLabels: Record<string, string> = {
-  completed: 'Processing finished', failed: 'Processing failed', no_focus: 'No focus selected',
+  completed: 'Processing finished', failed: 'Processing failed', no_focus: 'Check completed · no focus chosen',
   correction_failed: 'Correction incomplete', controller_unavailable: 'Decision unavailable',
   not_recorded: 'Processing status not recorded',
 };
@@ -31,12 +31,19 @@ export function subjectLabel(subject: AwarenessRunSubject) {
   const kinds: Record<string, string> = { message: provider ? provider + ' message · sender not recorded' : 'Message · sender not recorded',
     goal_review: 'Goal review', plan_review: 'Plan review', tool_result: 'Tool result',
     self_directed: 'Self-directed run' };
-  return kinds[subject.kind] || 'Internal information';
+  if (subject.source === 'jira') {
+    const jiraKinds: Record<string, string> = { comment_created: 'comment', issue_updated: 'issue update' };
+    return 'Jira ' + (jiraKinds[subject.kind] || subject.kind?.replaceAll('_', ' ') || 'notification');
+  }
+  if (subject.source === 'stream') return 'Previous thought';
+  if (subject.source === 'connection') return 'Connection update';
+  return kinds[subject.kind] || [subject.source, subject.kind?.replaceAll('_', ' ')].filter(Boolean).join(' · ') || 'Source not recorded';
 }
 
 export function matchesRun(item: AwarenessRunSummary, query: string) {
   const value = query.trim().toLocaleLowerCase();
   return [item.title, subjectLabel(item.focus), subjectLabel(item.trigger), item.focus.content,
+    item.focus_selection?.content, ...(item.focus_selection?.contributors ?? []).map(subjectLabel),
     item.trigger.content, item.understanding_preview, item.remaining_preview,
     assessmentLabel(item.assessment_state), processingLabel(item.processing_state)]
     .some(text => text?.toLocaleLowerCase().includes(value));
@@ -52,7 +59,7 @@ export function actionSummary(item: AwarenessRunSummary) {
 
 export function stepView(step: AwarenessRunStep) {
   const event = step.evidence ?? {};
-  const view = activityView(event);
+  const view = activityView({ ...event, stage: event.kind || event.stage });
   const detail = traceObject(event.detail || event.technical_details);
   const action = step.action_detail;
   const move = step.decision || view.move;
@@ -62,12 +69,27 @@ export function stepView(step: AwarenessRunStep) {
     ? action.is_uncertain === true ? 'Outcome uncertain' : action.is_error === true ? 'Tool reported failure'
       : action.is_error === false ? 'Tool reported success' : view.status
     : view.status;
-  return { title: view.action ? view.title : titles[move] || step.title,
+  return { title: event.kind ? step.title : view.action ? view.title : titles[move] || step.title,
     status, response: traceText(detail.response), reason: traceText(detail.reason),
     consequence: traceText(event.consequence),
     summary: view.summary || step.summary, when: view.when,
     tone: (/uncertain/.test(status) ? 'warning' : /fail|error|reject|blocked/.test(status) ? 'danger'
       : status === 'Tool reported success' ? 'success' : 'neutral') as 'warning' | 'danger' | 'success' | 'neutral' };
+}
+
+export function groupRunSteps(steps: AwarenessRunStep[]) {
+  const groups: Array<{ key: string; label: string; steps: AwarenessRunStep[] }> = [];
+  for (const step of steps) {
+    const key = step.round !== null ? 'loop:' + step.round : 'phase:' + (step.phase || 'run');
+    const label = step.round !== null ? 'Loop ' + step.round
+      : step.phase === 'finalization' ? 'After the loops'
+      : step.phase ? step.phase.replaceAll('_', ' ') : 'Other run events';
+    const last = groups.at(-1);
+    // Keep stored order even when later events refer back to an earlier loop.
+    if (last?.key === key) last.steps.push(step);
+    else groups.push({ key, label, steps: [step] });
+  }
+  return groups;
 }
 
 // Legacy diagnostics keep their payload filter. Explicit bounded action_detail

@@ -33,6 +33,8 @@ export interface AwarenessRunSummary {
   completed_at?: string | null;
   trigger: AwarenessRunSubject;
   focus: AwarenessRunSubject;
+  record_version?: number;
+  focus_selection?: AwarenessFocusSelection;
   processing_state: string;
   assessment_state: string;
   understanding_preview: string;
@@ -45,6 +47,18 @@ export interface AwarenessRunSummary {
     confirmed_tool_messages: number | null;
   };
   thought_link: { status: 'exact' | 'ambiguous' | 'unavailable'; id: string | null };
+}
+
+export interface AwarenessFocusSelection {
+  status: 'selected' | 'no_focus' | 'not_recorded';
+  provenance: 'recorded' | 'legacy';
+  content: string;
+  content_truncated?: boolean;
+  reason: string;
+  reason_code: string;
+  primary: AwarenessRunSubject;
+  contributors: AwarenessRunSubject[];
+  contributors_truncated: boolean;
 }
 
 export interface AwarenessRunsResponse {
@@ -66,6 +80,7 @@ export interface AwarenessActionDetail {
   tool?: string | null;
   arguments?: unknown;
   result?: unknown;
+  result_kind?: 'activity_record' | 'outcome_evidence';
   result_detail_truncated?: boolean | null;
   is_error?: boolean | null;
   is_uncertain?: boolean | null;
@@ -76,9 +91,11 @@ export interface AwarenessRunStep {
   title: string;
   summary: string;
   round: number | null;
+  kind?: string;
+  phase?: string;
   event_index: number;
   decision?: string | null;
-  evidence: AwarenessBeatEvent & { omitted?: boolean };
+  evidence: AwarenessBeatEvent & { omitted?: boolean; kind?: string; phase?: string; loop_index?: number | null };
   action_detail?: AwarenessActionDetail | null;
 }
 
@@ -88,9 +105,10 @@ export interface AwarenessRunDetail {
   run: AwarenessRunSummary;
   trigger: AwarenessRunSubject;
   focus: AwarenessRunSubject;
+  focus_selection?: AwarenessFocusSelection;
   understanding: string;
   assessment: Record<string, unknown>;
-  activity: { steps: AwarenessRunStep[]; round_count: number; truncated: boolean; ordering: string };
+  activity: { steps: AwarenessRunStep[]; round_count: number; rounds_inferred?: boolean; truncated: boolean; ordering: string };
   context: Record<string, unknown>;
   delivery: Record<string, unknown>;
   source_records: Array<{

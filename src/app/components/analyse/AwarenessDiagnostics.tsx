@@ -7,7 +7,7 @@ import type { AwarenessBeat } from '../../types/sapiensTypes';
 import { matchedTrace, traceObject, traceText } from '../workspace/awarenessTrace';
 import { DiagnosticBadge, DiagnosticDisclosure, DiagnosticText } from './DiagnosticPrimitives';
 import { AwarenessTechnicalDetails } from './AwarenessTechnicalDetails';
-import { absoluteTime, actionSummary, assessmentLabel, inspectionError, matchesRun, processingLabel, safeEvidence, stepView, subjectLabel } from './awarenessPresentation';
+import { absoluteTime, actionSummary, assessmentLabel, groupRunSteps, inspectionError, matchesRun, processingLabel, safeEvidence, stepView, subjectLabel } from './awarenessPresentation';
 import '../../../styles/awareness-reader.css';
 
 function hasOmission(value: unknown): boolean {
@@ -58,12 +58,15 @@ function Subject({ subject, sources }: { subject: AwarenessRunSubject; sources: 
 function StepRow({ step }: { step: AwarenessRunStep }) {
   const view = stepView(step);
   const action = step.action_detail;
-  const isAction = step.evidence?.stage === 'action' || !!action;
+  const isAction = (step.kind || step.evidence?.stage) === 'action' || !!action;
+  const detail = traceObject(step.evidence?.detail || step.evidence?.technical_details);
+  const proposals = Array.isArray(detail.actions) ? detail.actions.map(traceObject)
+    : detail.action ? [traceObject(detail.action)] : [];
   return <li className="awareness-activity-row">
     <details className="awareness-step-disclosure">
       <summary><ChevronRight size={16} aria-hidden="true"/><span className="awareness-step-title">{view.title}</span>
         <DiagnosticBadge tone={view.tone}>{view.status}</DiagnosticBadge>
-        <span className="awareness-step-meta">{step.round !== null ? 'Round ' + step.round : 'Recorded step'}{view.when ? ' · ' + absoluteTime(view.when) : ''}</span>
+        <span className="awareness-step-meta">{step.phase?.replaceAll('_', ' ') || 'Recorded step'}{view.when ? ' · ' + absoluteTime(view.when) : ''}</span>
       </summary>
       <div className="awareness-step-body">
         <DiagnosticText text={view.summary || 'No explanation was retained.'} limit={300}/>
@@ -71,9 +74,15 @@ function StepRow({ step }: { step: AwarenessRunStep }) {
         {view.response && <p className="awareness-caption">Prepared text alone does not establish delivery.</p>}
         {view.reason && view.reason !== view.summary && view.reason !== view.response && <><h4>Recorded reason</h4><DiagnosticText text={view.reason}/></>}
         {view.consequence && ![view.summary, view.response, view.reason].includes(view.consequence) && <><h4>What followed</h4><DiagnosticText text={view.consequence}/></>}
+        {traceText(detail.focus) && <><h4>Focus at this step</h4><DiagnosticText text={traceText(detail.focus)}/></>}
+        {!!proposals.length && <><h4>Proposed tools</h4><p className="awareness-caption">A proposal does not establish execution. See the action results in this loop.</p>
+          <ul>{proposals.map((item, index) => <li key={index}>{traceText(item.capability) || 'Tool not recorded'}</li>)}</ul>
+          {detail.actions_truncated === true && <p className="awareness-caption">Only part of the proposed batch was retained.</p>}
+        </>}
         {isAction && (action?.match_status === 'exact' ? <>
           <h4>Arguments sent to the tool</h4><SavedValue value={action.arguments}/>
-          <h4>Returned result</h4><SavedValue value={action.result}/>
+          <h4>{action.result_kind === 'activity_record' ? 'Saved tool activity' : 'Returned result'}</h4><SavedValue value={action.result}/>
+          {action.result_kind === 'activity_record' && <p className="awareness-caption">The exact activity record includes bounded arguments and result text; it is not the full raw tool response.</p>}
           {action.result_detail_truncated && <p className="awareness-caution">The saved result was already shortened.</p>}
           <p className="awareness-caption">{[action.server, action.tool].filter(Boolean).join(' / ')}{action.observed_at ? ' · ' + absoluteTime(action.observed_at) : ''}</p>
         </> : <p className="awareness-caption">{action?.match_status === 'ambiguous'
@@ -107,6 +116,8 @@ function OriginalTrace({ sapienId, runId, thoughtId }: { sapienId: string; runId
 function RunContent({ data }: { data: AwarenessRunDetail }) {
   const [originalOpen, setOriginalOpen] = useState(false);
   const run = data.run;
+  const selection = data.focus_selection;
+  const noFocus = selection?.status === 'no_focus' || run.processing_state === 'no_focus';
   const assessment = traceObject(data.assessment);
   const remaining = traceText(assessment.remaining) || run.remaining_preview;
   const reason = traceText(assessment.reason);
@@ -121,32 +132,50 @@ function RunContent({ data }: { data: AwarenessRunDetail }) {
     <section className="awareness-outcome" aria-label="Recorded outcome">
       <div className="awareness-step-heading"><h3>Where it stands</h3>
         <DiagnosticBadge tone={run.assessment_state === 'blocked' ? 'danger' : ['waiting', 'unresolved'].includes(run.assessment_state) ? 'warning' : 'neutral'}>
-          {assessmentLabel(run.assessment_state)}
+          {noFocus ? 'No focus chosen' : assessmentLabel(run.assessment_state)}
         </DiagnosticBadge>
       </div>
       <p className="awareness-caption">{actionSummary(run)}</p>
       {reason && <DiagnosticText text={reason} limit={260}/>}
       {remaining && <div className="awareness-remaining"><h4>Still needed</h4><DiagnosticText text={remaining} limit={260}/></div>}
-      <p className="awareness-caption">This is Sapien’s assessment. Finished processing and successful tools do not prove the whole task is complete.</p>
+      <p className="awareness-caption">{noFocus
+        ? 'This check ended without choosing a focus. Pending work is not thereby completed or cancelled.'
+        : 'This is Sapien’s assessment. Finished processing and successful tools do not prove the whole task is complete.'}</p>
     </section>
     <div className="awareness-origin-grid">
       <section className="awareness-reading-section"><h3>What prompted the run</h3>
         <Subject subject={data.trigger} sources={data.source_records}/>
       </section>
-      <section className="awareness-reading-section"><h3>What Sapien understood</h3>
-        <DiagnosticText text={data.understanding || 'No separate understanding was retained.'} limit={300}/>
-        <p className="awareness-caption">An interpretation, not independently verified facts.</p>
-        <DiagnosticDisclosure title="What it selected to focus on">
-          <Subject subject={data.focus} sources={data.source_records}/>
+      <section className="awareness-reading-section"><h3>{noFocus ? 'Why no focus was chosen' : 'Focus formed'}</h3>
+        {noFocus ? <DiagnosticText text={selection?.reason || 'The specific reason was not recorded. This status alone does not prove there was nothing useful to do.'}/>
+          : selection?.content ? <DiagnosticText text={selection.content} limit={300}/>
+          : <p className="awareness-caption">The formed focus was not stored separately in this record. The original selected source is available below.</p>}
+        {selection?.content_truncated && <p className="awareness-caption">The recorded focus text was shortened.</p>}
+        {!noFocus && selection?.reason && <DiagnosticText text={selection.reason} limit={260}/>}
+        <DiagnosticDisclosure title={noFocus ? 'Selection details' : 'Sources that contributed to this focus'}>
+          {!noFocus && <><h4>Primary source</h4><Subject subject={data.focus} sources={data.source_records}/></>}
+          {!!selection?.contributors.length && <><h4>Contributing impressions</h4><ol className="awareness-contributors">{selection.contributors.map((subject, index) => <li key={index}>
+            <Subject subject={subject} sources={data.source_records}/>
+          </li>)}</ol></>}
+          {selection?.contributors_truncated && <p className="awareness-caution">Only part of the contributor list was retained.</p>}
+          {selection?.provenance === 'legacy' && <p className="awareness-caption">Older record: contributor details and selection reasons may be incomplete.</p>}
+          <SavedValue value={selection ? { status: selection.status, reason_code: selection.reason_code, provenance: selection.provenance } : undefined}/>
         </DiagnosticDisclosure>
       </section>
     </div>
+    {data.understanding && <section className="awareness-reading-section"><h3>What Sapien understood</h3>
+      <DiagnosticText text={data.understanding} limit={300}/>
+      <p className="awareness-caption">The recorded interpretation, separate from the original source and formed focus.</p>
+    </section>}
     <section className="awareness-reading-section">
       <h3>Decisions and actions <span>{steps.length} saved steps</span></h3>
-      <p className="awareness-caption">Open a step to see its explanation and recorded result. Steps follow saved order.</p>
+      <p className="awareness-caption">Open a loop, then a step, to see its decisions and tool results.</p>
+      {data.activity.rounds_inferred && !!steps.length && <p className="awareness-caption">Older record: loop grouping is inferred from the saved controller events.</p>}
       {(data.activity.truncated || run.actions.trace_truncated) && <p role="status" className="awareness-caution">Only part of this run was retained. Counts and steps may be incomplete.</p>}
-      {steps.length ? <ol className="awareness-activity">{steps.map(step => <StepRow key={step.event_index} step={step}/>)}</ol>
-        : <p>No step-by-step record was retained.</p>}
+      {steps.length ? groupRunSteps(steps).map((group, index) => <details className="awareness-loop diagnostic-disclosure" key={group.key + ':' + index}>
+        <summary>{group.label}<span>{group.steps.length} recorded steps</span></summary>
+        <ol className="awareness-activity">{group.steps.map(step => <StepRow key={step.event_index} step={step}/>)}</ol>
+      </details>) : <p>{noFocus ? 'No subsequent decisions or tool actions are recorded.' : 'No step-by-step record was retained.'}</p>}
     </section>
     <DiagnosticDisclosure title="Context used to understand the situation">
       {hasOmission(context) && <p className="awareness-caution">Only part of the context was returned. This list may be incomplete.</p>}

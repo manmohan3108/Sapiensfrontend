@@ -72,3 +72,6 @@
 .research-page .research-related h2 { font-size: 20px; color: var(--ink); }
 .research-page .research-related a { display: flex; align-items: center; min-height: 44px; padding-block: 8px; text-decoration: underline; text-underline-offset: 4px; }
 @media (max-width: 720px) { .research-page .research-feature { padding: 20px 16px; } }
+.research-page .research-related-sections { display: flex; flex-wrap: wrap; gap: 4px 20px; border-top: 1px solid var(--line); padding-top: 12px; }
+.research-page .research-related-sections a { display: inline-flex; align-items: center; min-height: 44px; font-size: 15px; text-decoration: underline; text-underline-offset: 4px; }
+.research-page .research-related-sections a:hover { text-decoration-color: var(--accent); }
