@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useLayoutEffect } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import { YourSapiensLink } from '../components/navigation/YourSapiensLink';
@@ -71,15 +71,39 @@ const sections: ResearchSection[] = [
   { id: 'experiments', title: 'Experiments and findings', motivation: 'What actually happens when these ideas work together? Examine conditions, observations, failures and alternative explanations rather than treating the architecture as proof.', related: ['engines', 'philosophy'], topics: selectTopics('simulation', 'findings', 'experience-evaluation', 'evaluation', 'alternative-explanations', 'research-limitations') },
   { id: 'future', title: 'Future research', motivation: 'Which ideas still need exploration? These directions describe questions and possibilities, not promises of implemented capability.', related: ['neuroscience', 'engines'], topics: selectTopics('prediction', 'imagination', 'abstraction', 'motivation-action', 'reward-emotion', 'senses-roles', 'missing-mechanisms', 'initiative') },
 ];
+let lastBrowsePosition: { url: string; y: number } | undefined;
+
 export function ResearchPage() {
   const { user } = useAuth();
   const { slug } = useParams();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const query = searchParams.get('q') ?? '';
+  const availableOnly = searchParams.get('available') === '1';
+  const browseUrl = '/research' + (searchParams.size ? '?' + searchParams : '');
+  const updateFilter = (key: string, value: string) => {
+    setSearchParams(previous => {
+      const next = new URLSearchParams(previous);
+      if (value) next.set(key, value); else next.delete(key);
+      return next;
+    }, { replace: true });
+  };
+  const categoryUrl = (id: string) => {
+    const next = new URLSearchParams(searchParams);
+    if (id) next.set('category', id); else next.delete('category');
+    return '/research' + (next.size ? '?' + next : '');
+  };
+  const rememberPosition = () => { lastBrowsePosition = { url: browseUrl, y: window.scrollY }; };
   const category = searchParams.get('category');
   const selectedSection = sections.find(section => section.id === category);
   const articleSection = sections.find(section => section.topics.some(topic => topic.id === slug));
   const article = articleSection?.topics.find(topic => topic.id === slug && topic.introduction);
-  const visibleSections = selectedSection ? [selectedSection] : sections;
+  const terms = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  const visibleSections = (selectedSection ? [selectedSection] : sections).map(section => ({
+    ...section,
+    topics: section.topics.filter(topic => (!availableOnly || Boolean(topic.introduction))
+      && terms.every(term => [section.title, topic.title, topic.description, topic.introduction ?? ''].join(' ').toLowerCase().includes(term))),
+  })).filter(section => section.topics.length > 0);
+  const resultCount = visibleSections.reduce((count, section) => count + section.topics.length, 0);
 
   useEffect(() => {
     const previousTitle = document.title;
@@ -87,8 +111,10 @@ export function ResearchPage() {
     return () => { document.title = previousTitle; };
   }, [article]);
 
-  useEffect(() => {
-    window.scrollTo(0, 0);
+  useLayoutEffect(() => {
+    window.scrollTo({ top: !slug && lastBrowsePosition?.url === browseUrl ? lastBrowsePosition.y : 0, behavior: 'instant' });
+    // Filter edits stay in place; restore only when entering or leaving an article.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug]);
 
   return <div className="direction-page direction-world direction-science research-page">
@@ -109,7 +135,7 @@ export function ResearchPage() {
       <main id="research-main" tabIndex={-1} className="direction-wrap research-main">
         {slug ? article && articleSection ? <div className="research-article-layout">
           <nav className="research-breadcrumb" aria-label="Breadcrumb">
-            <Link to="/research">Research</Link><span aria-hidden="true">/</span>
+            <Link to={browseUrl}>Research</Link><span aria-hidden="true">/</span>
             <Link to={`/research?category=${articleSection.id}`}>{articleSection.title}</Link>
           </nav>
           <article className="research-article">
@@ -121,10 +147,11 @@ export function ResearchPage() {
             <div className="research-article-body">{article.introduction?.split('\n\n').map((paragraph, index) => <p key={index}>{paragraph}</p>)}</div>
             <footer className="research-article-footer">
               <p>This is a short introduction. Detailed explanations and references have not been published yet.</p>
-              <Link className="research-back" to={`/research?category=${articleSection.id}`}>Explore {articleSection.title.toLowerCase()}</Link>
+              <Link className="research-back" to={browseUrl}>Back to topics</Link>
               <nav className="research-related" aria-label="Related reading">
-                <h2>Keep exploring</h2>
+                <h2>Keep exploring</h2><p className="research-related-label">Related research areas</p>
                 {articleSection.related.map(id => sections.find(item => item.id === id)).filter((item): item is ResearchSection => Boolean(item)).map(item => <Link key={item.id} to={`/research?category=${item.id}`}>{item.title}</Link>)}
+                {articleSection.topics.some(topic => topic.introduction && topic.id !== article.id) && <p className="research-related-label">More introductions in this area</p>}
                 {articleSection.topics.filter(topic => topic.introduction && topic.id !== article.id).slice(0, 3).map(topic => <Link key={topic.id} to={`/research/${topic.id}`}>{topic.title}</Link>)}
               </nav>
             </footer>
@@ -139,19 +166,37 @@ export function ResearchPage() {
             <p className="research-intro">Can intelligence emerge from interacting brain-inspired mechanisms? We explore this question through neuroscience, philosophy, computational design and experiments.</p>
             <p className="research-reading-note">Explore why we are building Sapiens, the concepts behind it, how the engines apply them and what our experiments reveal. Planned articles are marked “Not published yet”.</p>
           </header>
+          <div className="research-controls">
+            <label className="research-search" htmlFor="research-search">Search topics
+              <input id="research-search" name="q" type="search" autoComplete="off" placeholder="Try memory or awareness…" value={query} onChange={event => updateFilter('q', event.target.value)}/>
+            </label>
+            <label className="research-available"><input type="checkbox" checked={availableOnly} onChange={event => updateFilter('available', event.target.checked ? '1' : '')}/>Available to read only</label>
+          </div>
           <div className="research-layout">
             <nav className="research-index" aria-label="Research categories">
+              <label className="research-mobile-category" htmlFor="research-category">Browse by topic
+                <select id="research-category" name="category" value={selectedSection?.id ?? ''} onChange={event => updateFilter('category', event.target.value)}>
+                  <option value="">All topics</option>
+                  {sections.map(section => <option key={section.id} value={section.id}>{section.title}</option>)}
+                </select>
+              </label>
               <p>Browse by topic</p>
-              <Link to="/research" aria-current={!selectedSection ? 'page' : undefined}>All topics</Link>
-              {sections.map(section => <Link key={section.id} to={`/research?category=${section.id}`} aria-current={selectedSection?.id === section.id ? 'page' : undefined}>{section.title}</Link>)}
+              <Link to={categoryUrl('')} aria-current={!selectedSection ? 'page' : undefined}>All topics</Link>
+              {sections.map(section => <Link key={section.id} to={categoryUrl(section.id)} aria-current={selectedSection?.id === section.id ? 'page' : undefined}>{section.title}</Link>)}
             </nav>
             <div className="research-topics">
+              <p className="research-results" role="status">{resultCount} {resultCount === 1 ? 'topic' : 'topics'}{availableOnly ? ' available to read' : ''}</p>
+              {resultCount === 0 && <div className="research-empty">
+                <h2>No matching topics</h2>
+                <p>Try another search, choose a different category or include planned articles.</p>
+                <button type="button" onClick={() => setSearchParams({})}>Show all topics</button>
+              </div>}
               {visibleSections.map(section => <section key={section.id} aria-labelledby={`${section.id}-title`}>
                 <h2 id={`${section.id}-title`}>{section.title}</h2>
                 <p className="research-concepts">{section.motivation}</p>
                 <ul className="research-topic-list">
                   {[...section.topics].sort((a, b) => Number(Boolean(b.introduction)) - Number(Boolean(a.introduction))).map(topic => <li key={topic.id}>
-                    {topic.introduction ? <Link className="research-topic research-topic-link" to={`/research/${topic.id}`}>
+                    {topic.introduction ? <Link className="research-topic research-topic-link" to={'/research/' + topic.id + (searchParams.size ? '?' + searchParams : '')} onClick={rememberPosition}>
                       <div className="research-topic-heading"><h3>{topic.title}</h3><span className="research-topic-status">Introduction <span aria-hidden="true">↗</span></span></div>
                       <p className="research-topic-description">{topic.description}</p>
                     </Link> : <div className="research-topic research-topic-planned">
@@ -160,7 +205,7 @@ export function ResearchPage() {
                     </div>}
                   </li>)}
                 </ul>
-                <nav className="research-related-sections" aria-label={`Related sections for ${section.title}`}>
+                <nav className="research-related-sections" aria-label={`Related sections for ${section.title}`}><span className="research-related-label">Explore related areas</span>
                   {section.related.map(id => sections.find(item => item.id === id)).filter((item): item is ResearchSection => Boolean(item)).map(item => <Link key={item.id} to={`/research?category=${item.id}`}>{item.title}</Link>)}
                 </nav>
               </section>)}

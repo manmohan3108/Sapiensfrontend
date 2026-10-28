@@ -129,7 +129,7 @@ and fetches `GET /sapien/:id/awareness/runs/:runId` only for the selected run.
 Deploy the backend run-inspection APIs and action-detail addition first. The
 workspace Awareness panel continues using its existing understanding-history API.
 
-The compact list shows saved beats, including saved failures/no-focus outcomes,
+The full-width table shows saved beats, including saved failures/no-focus outcomes,
 not a live job queue. Trigger filters and text search cover all saved run records
 through the API, before pagination. Search submits on Enter or the search button;
 typing alone does not send requests. Refresh starts at
@@ -148,19 +148,39 @@ unfiltered data. Search covers retained source/focus/decision/assessment text,
 not full prompts, linked memories or complete tool responses. The scope is
 explained beside the controls. Deploy the backend filtering addition first.
 
+Columns read left to right: situation/focus, initiating source, processing,
+work status, recorded tool actions and start time. Narrow layouts show labelled
+rows. Selecting a row opens a detail dialog; no run opens automatically. A saved
+run URL still opens its exact record, including records outside the current page.
+Closing the dialog retains the filters and page and returns focus to the opener
+(or search when no opener remains).
+
 The detail view separates trigger, selected focus, interpretation, processing
 status, task assessment and delivery. Historical missing triggers are not
 reconstructed from focus text. Only exact `action_detail` matches expose saved
 arguments/results, rendered as inert text with backend truncation/redaction
 markers retained. The legacy generic diagnostic filter remains separate.
+Recorded failure stages and reasons appear in the outcome section, with raw
+technical detail still available. Missing source details are labelled honestly.
 The original advanced trace/graph loads only when opened and requires both an
 exact thought match and the selected beat ID. No runtime or tool is started.
 
 Version-2 run diagnostics show the producer's formed focus separately from its
-primary/contributing sources. Expand a loop, then a step, for decisions, proposed
-tools and execution evidence; grouping follows stored loop indexes and order.
-Older inferred grouping is labelled. No-focus checks are distinguished from
+primary/contributing sources. The detail dialog starts with source/focus previews
+and the overall outcome, then a numbered, clickable sequence of all retained
+decisions and actions. Lines indicate stored order, not causal relationships.
+Each step expands to its explanation, proposed tools and execution evidence.
+Optional loop grouping uses the same steps, stored loop indexes and order; older
+inferred grouping is labelled. Phase and loop identifiers stay in technical
+detail rather than the default flow. Unknown event types retain their supplied
+titles and summaries. No-focus checks are distinguished from
 failures and task completion, and missing explanations are not invented.
+When formed focus is absent but selected input text survives, the overview labels
+it as selected source, not a reconstructed focus. Inferred loop numbers remain
+labelled inside individual step details even when loop grouping is off.
+Full retained source details, contributors, understanding and supporting context
+remain in disclosures below the flow. Preview shortening does not replace the
+saved values. No API, persistence or Awareness decision behaviour is changed.
 Candidate impressions and the supplied Working Memory catalogue are available
 in a separate disclosure; the catalogue alone does not prove memory use.
 Exact activity-record fallbacks are labelled as saved composite activity text,

@@ -69,3 +69,23 @@
 .research-page .research-related-sections { display: flex; flex-wrap: wrap; gap: 4px 20px; border-top: 1px solid var(--line); padding-top: 12px; }
 .research-page .research-related-sections a { display: inline-flex; align-items: center; min-height: 44px; font-size: 15px; text-decoration: underline; text-underline-offset: 4px; }
 .research-page .research-related-sections a:hover { text-decoration-color: var(--accent); }
+
+.research-page :is(input, select):focus-visible { outline: 2px solid var(--button); outline-offset: 3px; }
+.research-page .research-controls { display: flex; align-items: end; flex-wrap: wrap; gap: 16px 24px; margin-top: 28px; background: var(--paper); }
+.research-page .research-search { display: grid; gap: 8px; flex: 1 1 280px; max-width: 520px; }
+.research-page :is(.research-search input, .research-mobile-category select) { width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 4px; background: var(--paper); color: var(--ink); font: inherit; font-size: 16px; }
+.research-page .research-search input::placeholder { color: var(--muted); }
+.research-page .research-available { display: flex; align-items: center; gap: 10px; min-height: 44px; cursor: pointer; }
+.research-page .research-available input { width: 18px; height: 18px; accent-color: var(--button); }
+.research-page .research-mobile-category { display: none; }
+.research-page .research-results { color: var(--muted); padding-top: 16px; font-size: 15px; }
+.research-page .research-empty { padding-block: 24px; line-height: 1.6; }
+.research-page .research-empty button { min-height: 44px; margin-top: 16px; padding: 8px 16px; border: 1px solid var(--line); background: var(--paper); color: var(--ink); cursor: pointer; }
+.research-page .research-empty button:hover { border-color: var(--accent); }
+.research-page .research-related-label { width: 100%; color: var(--muted); font-size: 15px; margin-top: 12px; }
+@media (max-width: 720px) {
+  .research-page .research-mobile-category { display: grid; gap: 8px; width: 100%; }
+  .research-page .research-index > :is(p, a) { display: none; }
+  .research-page .research-controls { gap: 8px; }
+  .research-page .research-search { max-width: none; }
+}
