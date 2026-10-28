@@ -39,37 +39,41 @@ export const researchArticles: Partial<Record<string, ResearchArticle>> = {
     ]
   },
   "emergence": {
-    "opening": "How could intelligence arise from the interaction of processes that each do something more limited? This is the question behind our use of emergence. It directs attention to how a system is organized and how its parts influence one another over time.",
+    "opening": "How can interactions among parts produce an organized pattern or ability that no part exhibits on its own? This is the question behind emergence. For Sapiens, it motivates investigating whether intelligence could arise from the organization and interaction of computational mechanisms.",
     "sections": [
       {
-        "title": "Looking at the whole",
-        "text": "We use emergence as a working idea about abilities or patterns that arise through the organization and interaction of a system’s parts. Understanding each part in isolation may leave important questions about the whole unanswered. Different philosophical accounts give this idea different meanings; our starting point is to investigate the contribution of interactions, without assuming that they introduce something beyond computational explanation."
+        "title": "A property of the whole",
+        "text": "We use emergence to describe a pattern or property that belongs to a system’s collective organization. To explain it, we need to examine both the parts and how they influence one another. Different philosophical accounts set different requirements for emergence; our starting point is a computationally explainable form, without assuming that the whole operates beyond the rules governing its parts."
       },
       {
-        "title": "An example of the question",
-        "text": "Imagine a system encounters a difficulty, retains the experience and later recognizes a related problem in an unfamiliar setting. That recognition changes what it investigates, and the resulting experience changes its future judgment. The ability we are interested in belongs to this continuing relationship between experience and behaviour. This is an illustration of what we want to study, not a claim that Sapiens has already demonstrated it."
+        "title": "Example: a flock from local interactions",
+        "text": "In Craig Reynolds’s Boids model, each simulated bird adjusts its movement using nearby birds: it avoids crowding, aligns with their direction and moves toward their local centre. Together, these interactions produce coordinated flocking. No individual bird contains the flock’s overall formation, and the collective pattern need not be choreographed bird by bird. The flocking pattern arises as the local movements continually influence one another."
       },
       {
-        "title": "What we intend to design",
-        "text": "We can design ways for information to be retained, connected, reconsidered and used. We can also decide how those processes communicate. Our hypothesis concerns what may develop when they operate together across experience, including responses to situations we did not anticipate individually. The design supplies the conditions for investigation; adding more components does not establish that intelligence will emerge."
+        "title": "Why this illustrates emergence",
+        "text": "The relevant property is the organized movement of the group. Examining one bird’s movement in isolation would miss the relationships that produce it. The local rules are deliberately designed, so emergence does not require a system with no programmed rules. It concerns how interactions generate a pattern at the level of the whole. This example illustrates collective organization; it is not evidence that flocking itself is intelligence."
       },
       {
-        "title": "Surprise is not enough",
-        "text": "An unexpected response can be a mistake, a chance result or an ability already present in the underlying model. Equally, a useful outcome can follow directly from a procedure we explicitly designed. Calling something emergent therefore requires a clear account of the behaviour and why the system’s interactions matter to it. We do not use the word as a substitute for that explanation."
+        "title": "The hypothesis for Sapiens",
+        "text": "We ask whether mechanisms informed by neuroscience and philosophy could interact in ways that support broader abilities than their individual functions provide. The object of study is that organization: how the activity of one mechanism changes what others can do, and what abilities the combined system develops. Adding components or connecting them into a workflow is only a design step. Whether their interaction produces the kind of intelligence we seek remains an open question."
       },
       {
-        "title": "The question we carry forward",
-        "text": "We want to understand whether interacting mechanisms can contribute to adaptable intelligence that develops through experience. This leaves two connected questions: what we mean by intelligence, and how we could establish the contribution of the mechanisms. The linked articles examine those questions without treating emergence or consciousness as an achieved result."
+        "title": "Keeping the claim precise",
+        "text": "Remembering an experience and changing a later decision can demonstrate learning, but does not by itself establish emergence. Neither does an unexpected answer. We would need to identify the proposed ability of the whole and explain the contribution of its interactions, including what the underlying model already supplies. The Experiments section develops that evidence question; this article establishes what our hypothesis means."
       }
     ],
     "related": [
       "philosophy",
       "intelligence-understanding",
-      "firsthand-experience",
+      "architecture-overview",
       "evaluation",
       "alternative-explanations"
     ],
     "references": [
+      {
+        "title": "Craig Reynolds — Boids: local steering and collective flocking",
+        "url": "https://www.red3d.com/cwr/boids/"
+      },
       {
         "title": "Stanford Encyclopedia of Philosophy — Emergent Properties",
         "url": "https://plato.stanford.edu/entries/properties-emergent/"

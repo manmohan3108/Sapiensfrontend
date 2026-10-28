@@ -33,6 +33,10 @@ reproduced the brain or demonstrated emergence.
   implementation follow the motivation.
 - Use plain language with enough detail to make the reasoning meaningful.
   Introduce necessary technical terms beside their meaning.
+- Keep emergence focused on properties or organized patterns arising through
+  interactions among parts. Learning from experience, unexpected output and
+  connecting components are not sufficient evidence of emergence. Deliberately
+  designed local rules do not rule out an emergent collective pattern.
 - Give each concept one primary home. Elsewhere, explain its relevance briefly
   and link to that home instead of repeating the whole explanation.
 - Richness comes from reasons, concrete examples, trade-offs, competing
@@ -197,9 +201,11 @@ groups; there is no separate per-article navigation store.
 
 Editorial pass: 28 October 2026.
 
-- All 46 visible topics now follow the roadmap. The previously reviewed
-  `philosophy` and `emergence` articles are preserved; the other 44 introductions
-  have been rewritten in the user-authorized batch.
+- All 46 visible topics have been revised under the roadmap. The initial batch
+  preserved the reviewed `philosophy` and `emergence` articles and rewrote the
+  other 44 introductions. A subsequent emergence review replaced its learning
+  example with sourced Boids flocking and refocused the whole article on
+  properties arising through interactions.
 - Each article begins with its motivating question, problem or inspiration.
   Foundations own the scientific explanations; engine articles describe the
   computational adaptation and its inspected integration status.

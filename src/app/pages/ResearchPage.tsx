@@ -209,7 +209,6 @@ export function ResearchPage() {
           <header className="research-opening research-overview">
             <h1>Research</h1>
             <p className="research-intro">Can intelligence emerge from interacting brain-inspired mechanisms? We explore this question through neuroscience, philosophy, computational design and experiments.</p>
-            <p className="research-reading-note">Explore why we are building Sapiens, the concepts behind it, how the engines apply them and what our experiments reveal. Each introduction starts with a question or inspiration, then explains the approach and its current limits.</p>
           </header>
           <div className="research-controls">
             <label className="research-search" htmlFor="research-search">Search topics
