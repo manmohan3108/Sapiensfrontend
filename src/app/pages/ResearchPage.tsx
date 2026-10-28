@@ -153,8 +153,8 @@ export function ResearchPage() {
                 <p>{part.text}</p>
               </section>)}
               {articleContent.references && <section className="research-references" aria-labelledby="research-references-title">
-                <h2 id="research-references-title">Scientific reading</h2>
-                <p>These sources explain the scientific foundations; they do not validate our software implementation.</p>
+                <h2 id="research-references-title">Sources and further reading</h2>
+                <p>These sources explain the underlying concepts; they do not validate our software implementation.</p>
                 <ul>{articleContent.references.map(reference => <li key={reference.url}><a href={reference.url}>{reference.title}</a></li>)}</ul>
               </section>}
             </div>

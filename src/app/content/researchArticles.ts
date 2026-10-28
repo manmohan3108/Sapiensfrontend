@@ -8,39 +8,72 @@ export type ResearchArticle = {
 // Introductions describe current code and research directions, not deployment guarantees.
 export const researchArticles: Partial<Record<string, ResearchArticle>> = {
   "philosophy": {
-    "opening": "Could intelligence emerge from the interaction of mechanisms inspired by the brain, rather than from prescribing every useful behaviour? This is the central hypothesis behind Sapiens. Neuroscience and philosophical questions guide what we build and what we look for.",
+    "opening": "Can we build intelligence by understanding and adapting how the brain’s mechanisms work together? Sapiens begins with this question. Our ambition is to investigate how intelligent behaviour could develop through the interaction of computational mechanisms, guided by neuroscience and philosophical questions about intelligence.",
     "sections": [
       {
-        "title": "Our approach",
-        "text": "We explore memory, attention, identity, goals, action and learning as cooperating functions within one individual. Persistence and experience matter because these interactions need a history: what happened earlier should be able to change what the individual considers next."
+        "title": "What we want to understand",
+        "text": "Consider someone encountering an unfamiliar situation. They may connect it to an earlier experience, notice a conflict, reconsider what they believe and decide what to try next. We want to understand what makes this continuing process possible: how experience changes later behaviour, how something becomes relevant at a particular moment, and how understanding carries across situations."
       },
       {
-        "title": "What would make this meaningful?",
-        "text": "The important evidence is how the system behaves in unfamiliar situations, adapts to experience and handles contradictions. More engines or more convincing language would not, by themselves, establish emergence. Our architecture is a way to investigate the hypothesis, not its proof."
+        "title": "Why look to the brain?",
+        "text": "Human intelligence gives us a concrete example of learning from experience, adapting to unfamiliar situations and coordinating thought with action. Studying the brain offers a way to investigate how those abilities arise and work together. Neuroscience provides concepts and evidence to examine; philosophy helps us ask what understanding and agency mean. We use both to guide computational experiments, while leaving open which biological principles can usefully transfer to software."
+      },
+      {
+        "title": "Our hypothesis",
+        "text": "Our hypothesis is that intelligence may emerge when computational mechanisms, informed by neuroscience and philosophical concepts of intelligence, interact and develop through experience. We want to investigate whether their combined activity can give rise to ways of understanding and acting that we have not explicitly prescribed for each situation. Which mechanisms are needed, how they should interact and what their interaction can produce remain open research questions."
+      },
+      {
+        "title": "How questions lead to mechanisms",
+        "text": "We begin with a problem, such as how an earlier experience could help in a new situation. We then examine scientific accounts, choose an explicit computational interpretation and connect it to the wider system. The design must explain what information it needs, how experience can change it and how its contribution could be observed. This is how we want to arrive at mechanisms: through the questions they address, with their assumptions visible."
+      },
+      {
+        "title": "An investigation that remains open",
+        "text": "This hypothesis needs evidence, and our designs must remain open to revision. The next articles explain what we mean by intelligence and emergence, and introduce the scientific ideas guiding the work. The Experiments section examines how we can evaluate the approach and what our observations can support."
       }
     ],
     "related": [
+      "intelligence-understanding",
+      "inspiration",
       "emergence",
-      "architecture-overview",
       "evaluation"
     ]
   },
   "emergence": {
-    "opening": "When several mechanisms interact, can they produce useful behaviour that we did not specify as a scenario? We use emergence as a research question about the whole system, not as a label for every surprising response.",
+    "opening": "How could intelligence arise from the interaction of processes that each do something more limited? This is the question behind our use of emergence. It directs attention to how a system is organized and how its parts influence one another over time.",
     "sections": [
       {
-        "title": "What we are looking for",
-        "text": "A remembered difficulty might affect a later decision, an unresolved intention might be revisited after new evidence, or several experiences might support a broader idea. We want these behaviours to arise from reusable mechanisms and experience rather than instructions written for each example."
+        "title": "Looking at the whole",
+        "text": "We use emergence as a working idea about abilities or patterns that arise through the organization and interaction of a system’s parts. Understanding each part in isolation may leave important questions about the whole unanswered. Different philosophical accounts give this idea different meanings; our starting point is to investigate the contribution of interactions, without assuming that they introduce something beyond computational explanation."
       },
       {
-        "title": "What would count as evidence?",
-        "text": "We need comparisons that change or remove mechanisms while keeping the task and underlying model comparable. An unexpected answer could come from the model, the prompt or chance. Reliable behaviour across unfamiliar situations would be more informative than a single impressive run."
+        "title": "An example of the question",
+        "text": "Imagine a system encounters a difficulty, retains the experience and later recognizes a related problem in an unfamiliar setting. That recognition changes what it investigates, and the resulting experience changes its future judgment. The ability we are interested in belongs to this continuing relationship between experience and behaviour. This is an illustration of what we want to study, not a claim that Sapiens has already demonstrated it."
+      },
+      {
+        "title": "What we intend to design",
+        "text": "We can design ways for information to be retained, connected, reconsidered and used. We can also decide how those processes communicate. Our hypothesis concerns what may develop when they operate together across experience, including responses to situations we did not anticipate individually. The design supplies the conditions for investigation; adding more components does not establish that intelligence will emerge."
+      },
+      {
+        "title": "Surprise is not enough",
+        "text": "An unexpected response can be a mistake, a chance result or an ability already present in the underlying model. Equally, a useful outcome can follow directly from a procedure we explicitly designed. Calling something emergent therefore requires a clear account of the behaviour and why the system’s interactions matter to it. We do not use the word as a substitute for that explanation."
+      },
+      {
+        "title": "The question we carry forward",
+        "text": "We want to understand whether interacting mechanisms can contribute to adaptable intelligence that develops through experience. This leaves two connected questions: what we mean by intelligence, and how we could establish the contribution of the mechanisms. The linked articles examine those questions without treating emergence or consciousness as an achieved result."
       }
     ],
     "related": [
       "philosophy",
-      "alternative-explanations",
-      "evaluation"
+      "intelligence-understanding",
+      "firsthand-experience",
+      "evaluation",
+      "alternative-explanations"
+    ],
+    "references": [
+      {
+        "title": "Stanford Encyclopedia of Philosophy — Emergent Properties",
+        "url": "https://plato.stanford.edu/entries/properties-emergent/"
+      }
     ]
   },
   "intelligence-understanding": {
