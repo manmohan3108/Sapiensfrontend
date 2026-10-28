@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router';
+import { researchArticles, type ResearchArticle } from '../content/researchArticles';
 import { useAuth } from '../contexts/AuthContext';
 import { YourSapiensLink } from '../components/navigation/YourSapiensLink';
 import { ScienceEnvironment } from '../components/customer/ScienceEnvironment';
@@ -9,31 +10,31 @@ import '../../styles/landing-directions.css';
 import '../../styles/science-direction.css';
 import '../../styles/research.css';
 
-type ResearchTopic = { id: string; title: string; description: string; introduction?: string };
+type ResearchTopic = { id: string; title: string; description: string; content?: ResearchArticle };
 type ResearchSection = { id: string; title: string; motivation: string; related: string[]; topics: ResearchTopic[] };
 
 const topics: ResearchTopic[] = [
-    { id: 'philosophy', title: 'Intelligence through interacting mechanisms', description: 'The central hypothesis guiding Sapiens.', introduction: 'Our research asks whether intelligence can emerge by bringing together mechanisms inspired by the brain, guided by neuroscience and philosophical concepts of intelligence. We aim to explore these concepts together and study what arises from their interaction. Persistence, memory, identity and learning are parts of this exploration, rather than the whole hypothesis. This is a research direction, not a demonstrated conclusion.' },
+    { id: 'philosophy', title: 'Intelligence through interacting mechanisms', description: 'The central hypothesis guiding Sapiens.' },
     { id: 'emergence', title: 'What we mean by emergence', description: 'Define the behaviour we seek and what would support or challenge the hypothesis.' },
     { id: 'intelligence-understanding', title: 'Intelligence and understanding', description: 'The meanings of these concepts and how they guide our research.' },
     { id: 'self-agency', title: 'Self and agency', description: 'Questions about individuality, intentions and responsibility for action.' },
     { id: 'consciousness', title: 'Consciousness and its boundaries', description: 'Distinguish consciousness from intelligence, self-representation and observable behaviour.' },
-    { id: 'inspiration', title: 'From neuroscience to computational design', description: 'Our sources of inspiration and the limits of translating them into software.', introduction: 'Neuroscience informs the mechanisms we explore and how they might interact. Attention, working memory, associative recall and consolidation are among our inspirations. Our implementations are engineering interpretations: a similar name or function does not establish biological equivalence. We intend to explain the relevant concepts, their sources and our design choices as this research develops.' },
+    { id: 'inspiration', title: 'From neuroscience to computational design', description: 'Our sources of inspiration and the limits of translating them into software.' },
     { id: 'perception-attention', title: 'Attention and Global Workspace Theory', description: 'The scientific ideas about selection and shared availability; their relevance to Awareness and the limits of the comparison.' },
     { id: 'biological-memory-learning', title: 'Memory and learning', description: 'Ideas about retaining, recalling and adapting through experience.' },
     { id: 'motivation-action', title: 'Motivation and action', description: 'Concepts connecting internal needs, decisions, action and feedback.' },
     { id: 'architecture-overview', title: 'Bringing the mechanisms together', description: 'The overall architecture and the responsibilities of its engines.' },
-    { id: 'process', title: 'From experience to action', description: 'An introduction to the flow across the system.', introduction: 'A Sapien considers incoming information alongside relevant memories, decides whether to act or wait, and assesses the outcome. What it retains can inform its next decision. This flow connects several functions within one individual; studying their interaction is part of our research into intelligence.' },
+    { id: 'process', title: 'From experience to action', description: 'An introduction to the flow across the system.' },
     { id: 'connections', title: 'Information flow and shared references', description: 'How engines and tools exchange information while preserving its source and meaning.' },
     { id: 'awareness', title: 'Awareness', description: 'Why a coherent present focus is needed, and how attention, decisions and assessment work today.' },
-    { id: 'identity', title: 'Identity and the shared self', description: 'How multiple functions belong to one Sapien.', introduction: 'Awareness, memory, goals and learning serve one continuing identity. Each has a distinct responsibility within the same Sapien. This shared-self design describes how we organize the system; it does not by itself demonstrate consciousness or establish an explanation of the human self.' },
+    { id: 'identity', title: 'Identity and the shared self', description: 'How multiple functions belong to one Sapien.' },
     { id: 'memory', title: 'Engram: long-term memory and recall', description: 'Why experiences need context and connections; how ingestion, recall and local strengthening work.' },
     { id: 'goals', title: 'Goals and planning', description: 'How intentions, progress and unfinished work are represented.' },
     { id: 'reasoning-questioning', title: 'Reasoning and questioning', description: 'How the system considers possibilities, uncertainties and questions.' },
     { id: 'action-feedback', title: 'Action and feedback', description: 'How actions are carried out and outcomes become evidence.' },
     { id: 'learning', title: 'Learning from experience', description: 'How remembered outcomes and feedback can inform future behaviour.' },
     { id: 'continuity', title: 'Development over time', description: 'How understanding and behaviour may change across accumulated experiences.' },
-    { id: 'simulation', title: 'Studying Sapiens through simulation', description: 'Why we use simulated workplaces and what they can reveal.', introduction: 'We use simulated workplaces to study communication, memory, tool use and unfinished work. We inspect successes and failures to improve the system. These experiments provide observations about behaviour under specific conditions; they do not alone demonstrate emergent intelligence. Connecting observations to the research hypothesis requires explicit evaluation and consideration of alternative explanations.' },
+    { id: 'simulation', title: 'Studying Sapiens through simulation', description: 'Why we use simulated workplaces and what they can reveal.' },
     { id: 'findings', title: 'Observations, failures and changes', description: 'Documented findings and how they influenced our implementation.' },
     { id: 'evaluation', title: 'Evaluating the hypothesis', description: 'What evidence could distinguish progress from expected model or tool behaviour.' },
     { id: 'missing-mechanisms', title: 'Missing mechanisms and research directions', description: 'Concepts not yet represented and approaches we still need to explore.' },
@@ -43,8 +44,8 @@ const topics: ResearchTopic[] = [
   { id: 'replay-consolidation', title: 'Replay, consolidation and balancing associations', description: 'Replay and consolidation: exploring how revisiting memories changes their connections.' },
   { id: 'reinforcement-forgetting', title: 'Hebbian strengthening and plasticity', description: 'Reinforcement, forgetting and the risk of strengthening the wrong association.' },
   { id: 'curiosity', title: 'What makes something worth exploring?', description: 'Curiosity can concern an unfamiliar pattern, an opportunity or an idea—not only a missing answer.' },
-  { id: 'initiative', title: 'Why think when nobody has asked?', description: 'Making room for exploration, gathering information and ordinary conversation without forcing constant activity.', introduction: 'Imagine a Sapien has no new message to answer. Should it simply wait? Our ambition includes noticing something worth learning, revisiting an unresolved idea or starting a conversation on its own initiative.\n\nA question is one possible starting point. An unfamiliar pattern, a connection between experiences or interest in another person can also invite exploration. Curiosity concerns what is worth exploring; questioning concerns what to ask; deciding whether and how to act is another responsibility.\n\nThis should not become a rule to contact someone every few minutes. Rest, waiting and leaving people uninterrupted can also be appropriate. The research challenge is to develop useful initiative through context and experience rather than prescribed scenarios. These connections are still being developed and evaluated.' },
-  { id: 'firsthand-experience', title: 'What can an AI learn by taking part?', description: 'Firsthand experience and how an individual develops beyond its initial model knowledge.', introduction: 'Two Sapiens could begin with the same language model yet participate in different situations. One might encounter a failed deployment; another might learn why a team changed its plans. We want those different histories to matter when they next think or act.\n\nThe model supplies capabilities and prior knowledge. The wider system retains what this particular Sapien observes, discusses, attempts and learns. Its memories, associations and learned guidance can then provide different context for later decisions. This is not the same as retraining the underlying model.\n\nOur aim is growing understanding and judgment through participation, not simply keeping a transcript. We still need to measure when retained experience improves behaviour, when it misleads it and how later evidence can correct it.' },
+  { id: 'initiative', title: 'Why think when nobody has asked?', description: 'Making room for exploration, gathering information and ordinary conversation without forcing constant activity.' },
+  { id: 'firsthand-experience', title: 'What can an AI learn by taking part?', description: 'Firsthand experience and how an individual develops beyond its initial model knowledge.' },
   { id: 'abstraction', title: 'When does an experience become a general idea?', description: 'Abstraction and generalization: exploring patterns that may apply beyond one remembered event.' },
   { id: 'prediction', title: 'Could expectations help a Sapien understand what is happening?', description: 'An exploratory direction: compare expectations with incoming evidence and connect events into an unfolding account.' },
   { id: 'reward-emotion', title: 'What could give an experience significance?', description: 'Research directions around motivation, reward and emotion-inspired processes, without claiming human feelings.' },
@@ -61,7 +62,7 @@ const topics: ResearchTopic[] = [
   { id: 'weave', title: 'Weave: higher-level understanding', description: 'The motivation for abstraction, synthesis and belief revision; incomplete capabilities that are not currently integrated.' },
   { id: 'experience-evaluation', title: 'Does experience improve behaviour?', description: 'How to examine the benefits and failure modes of memory, replay and feedback.' },
   { id: 'imagination', title: 'Imagination and hypothesis generation', description: 'Exploring possibilities while keeping imagined explanations distinct from supported evidence.' },
-];
+].map(topic => ({ ...topic, content: researchArticles[topic.id] }));
 const selectTopics = (...ids: string[]) => ids.flatMap(id => topics.filter(topic => topic.id === id));
 const sections: ResearchSection[] = [
   { id: 'philosophy', title: 'Research philosophy', motivation: 'Why explore intelligence through interacting mechanisms? Start with our ambition and the questions guiding it.', related: ['architecture', 'experiments'], topics: selectTopics('philosophy', 'emergence', 'intelligence-understanding', 'self-agency', 'consciousness', 'firsthand-experience', 'continuity') },
@@ -96,12 +97,14 @@ export function ResearchPage() {
   const category = searchParams.get('category');
   const selectedSection = sections.find(section => section.id === category);
   const articleSection = sections.find(section => section.topics.some(topic => topic.id === slug));
-  const article = articleSection?.topics.find(topic => topic.id === slug && topic.introduction);
+  const article = articleSection?.topics.find(topic => topic.id === slug && topic.content);
+  const articleContent = article?.content;
+  const relatedTopics = articleContent?.related.flatMap(id => topics.filter(topic => topic.id === id && topic.content)) ?? [];
   const terms = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
   const visibleSections = (selectedSection ? [selectedSection] : sections).map(section => ({
     ...section,
-    topics: section.topics.filter(topic => (!availableOnly || Boolean(topic.introduction))
-      && terms.every(term => [section.title, topic.title, topic.description, topic.introduction ?? ''].join(' ').toLowerCase().includes(term))),
+    topics: section.topics.filter(topic => (!availableOnly || Boolean(topic.content))
+      && terms.every(term => [section.title, topic.title, topic.description, topic.content?.opening ?? '', ...(topic.content?.sections.map(part => part.text) ?? [])].join(' ').toLowerCase().includes(term))),
   })).filter(section => section.topics.length > 0);
   const resultCount = visibleSections.reduce((count, section) => count + section.topics.length, 0);
 
@@ -133,7 +136,7 @@ export function ResearchPage() {
         </nav>
       </header>
       <main id="research-main" tabIndex={-1} className="direction-wrap research-main">
-        {slug ? article && articleSection ? <div className="research-article-layout">
+        {slug ? article && articleSection && articleContent ? <div className="research-article-layout">
           <nav className="research-breadcrumb" aria-label="Breadcrumb">
             <Link to={browseUrl}>Research</Link><span aria-hidden="true">/</span>
             <Link to={`/research?category=${articleSection.id}`}>{articleSection.title}</Link>
@@ -142,17 +145,27 @@ export function ResearchPage() {
             <header>
               <p className="research-status">Introduction</p>
               <h1>{article.title}</h1>
-              <p className="research-intro">{article.description}</p>
+              <p className="research-intro">{articleContent.opening}</p>
             </header>
-            <div className="research-article-body">{article.introduction?.split('\n\n').map((paragraph, index) => <p key={index}>{paragraph}</p>)}</div>
+            <div className="research-article-body">
+              {articleContent.sections.map(part => <section key={part.title}>
+                <h2>{part.title}</h2>
+                <p>{part.text}</p>
+              </section>)}
+              {articleContent.references && <section className="research-references" aria-labelledby="research-references-title">
+                <h2 id="research-references-title">Scientific reading</h2>
+                <p>These sources explain the scientific foundations; they do not validate our software implementation.</p>
+                <ul>{articleContent.references.map(reference => <li key={reference.url}><a href={reference.url}>{reference.title}</a></li>)}</ul>
+              </section>}
+            </div>
             <footer className="research-article-footer">
-              <p>This is a short introduction. Detailed explanations and references have not been published yet.</p>
+              <p>This introduction separates our research motivation, engineering approach and current limits. More detailed studies will build on these notes.</p>
               <Link className="research-back" to={browseUrl}>Back to topics</Link>
               <nav className="research-related" aria-label="Related reading">
                 <h2>Keep exploring</h2><p className="research-related-label">Related research areas</p>
                 {articleSection.related.map(id => sections.find(item => item.id === id)).filter((item): item is ResearchSection => Boolean(item)).map(item => <Link key={item.id} to={`/research?category=${item.id}`}>{item.title}</Link>)}
-                {articleSection.topics.some(topic => topic.introduction && topic.id !== article.id) && <p className="research-related-label">More introductions in this area</p>}
-                {articleSection.topics.filter(topic => topic.introduction && topic.id !== article.id).slice(0, 3).map(topic => <Link key={topic.id} to={`/research/${topic.id}`}>{topic.title}</Link>)}
+                {relatedTopics.length > 0 && <p className="research-related-label">Connected ideas and mechanisms</p>}
+                {relatedTopics.map(topic => <Link key={topic.id} to={'/research/' + topic.id}>{topic.title}</Link>)}
               </nav>
             </footer>
           </article>
@@ -164,7 +177,7 @@ export function ResearchPage() {
           <header className="research-opening research-overview">
             <h1>Research</h1>
             <p className="research-intro">Can intelligence emerge from interacting brain-inspired mechanisms? We explore this question through neuroscience, philosophy, computational design and experiments.</p>
-            <p className="research-reading-note">Explore why we are building Sapiens, the concepts behind it, how the engines apply them and what our experiments reveal. Planned articles are marked “Not published yet”.</p>
+            <p className="research-reading-note">Explore why we are building Sapiens, the concepts behind it, how the engines apply them and what our experiments reveal. Each introduction starts with a question or inspiration, then explains the approach and its current limits.</p>
           </header>
           <div className="research-controls">
             <label className="research-search" htmlFor="research-search">Search topics
@@ -197,8 +210,8 @@ export function ResearchPage() {
                   <p className="research-concepts">{section.motivation}</p>
                 </header>
                 <ul className="research-topic-list">
-                  {[...section.topics].sort((a, b) => Number(Boolean(b.introduction)) - Number(Boolean(a.introduction))).map(topic => <li key={topic.id}>
-                    {topic.introduction ? <Link className="research-topic research-topic-link" to={'/research/' + topic.id + (searchParams.size ? '?' + searchParams : '')} onClick={rememberPosition}>
+                  {[...section.topics].sort((a, b) => Number(Boolean(b.content)) - Number(Boolean(a.content))).map(topic => <li key={topic.id}>
+                    {topic.content ? <Link className="research-topic research-topic-link" to={'/research/' + topic.id + (searchParams.size ? '?' + searchParams : '')} onClick={rememberPosition}>
                       <div className="research-topic-heading"><h3>{topic.title}</h3><span className="research-topic-status">Read introduction <span aria-hidden="true">→</span></span></div>
                       <p className="research-topic-description">{topic.description}</p>
                     </Link> : <div className="research-topic research-topic-planned">
