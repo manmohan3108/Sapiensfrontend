@@ -39,27 +39,27 @@ export const researchArticles: Partial<Record<string, ResearchArticle>> = {
     ]
   },
   "emergence": {
-    "opening": "How can interactions among parts produce an organized pattern or ability that no part exhibits on its own? This is the question behind emergence. For Sapiens, it motivates investigating whether intelligence could arise from the organization and interaction of computational mechanisms.",
+    "opening": "Could a system develop abilities that none of its parts has on its own? Emergence gives us a way to ask that question. For Sapiens, we want to explore whether intelligence could arise through the way different processes work together.",
     "sections": [
       {
-        "title": "A property of the whole",
-        "text": "We use emergence to describe a pattern or property that belongs to a system’s collective organization. To explain it, we need to examine both the parts and how they influence one another. Different philosophical accounts set different requirements for emergence; our starting point is a computationally explainable form, without assuming that the whole operates beyond the rules governing its parts."
+        "title": "What emergence means",
+        "text": "Sometimes, parts that affect one another create a pattern or ability that belongs to the whole. We call this emergence. To understand it, we need to look at how the parts work together, as well as what each part does. The way they are connected matters."
       },
       {
-        "title": "Example: a flock from local interactions",
-        "text": "In Craig Reynolds’s Boids model, each simulated bird adjusts its movement using nearby birds: it avoids crowding, aligns with their direction and moves toward their local centre. Together, these interactions produce coordinated flocking. No individual bird contains the flock’s overall formation, and the collective pattern need not be choreographed bird by bird. The flocking pattern arises as the local movements continually influence one another."
+        "title": "Imagine a flock of birds",
+        "text": "In a simple computer simulation, each bird follows three rules: avoid crowding nearby birds, move in a similar direction and stay close to the group. Together, they form a coordinated flock, even though no bird controls the whole formation. Each bird’s movement affects its neighbours, whose movements affect others. The flock’s shared movement grows out of these interactions. Craig Reynolds demonstrated this in Boids, a well-known computer simulation of flocking."
       },
       {
-        "title": "Why this illustrates emergence",
-        "text": "The relevant property is the organized movement of the group. Examining one bird’s movement in isolation would miss the relationships that produce it. The local rules are deliberately designed, so emergence does not require a system with no programmed rules. It concerns how interactions generate a pattern at the level of the whole. This example illustrates collective organization; it is not evidence that flocking itself is intelligence."
+        "title": "Simple rules can produce a larger pattern",
+        "text": "The rules for each bird are programmed, but the flock’s movements do not need to be planned bird by bird. This is what makes the example useful: the pattern forms through the birds responding to one another. Emergence can be explained by the rules and interactions that produce it; it does not have to be mysterious or unexplainable."
       },
       {
-        "title": "The hypothesis for Sapiens",
-        "text": "We ask whether mechanisms informed by neuroscience and philosophy could interact in ways that support broader abilities than their individual functions provide. The object of study is that organization: how the activity of one mechanism changes what others can do, and what abilities the combined system develops. Adding components or connecting them into a workflow is only a design step. Whether their interaction produces the kind of intelligence we seek remains an open question."
+        "title": "Our question for Sapiens",
+        "text": "The flock helps illustrate the idea; intelligence is the larger question we want to investigate. We look to neuroscience for ideas about how the brain works, and to philosophy for questions about intelligence and understanding. We then explore these ideas in software. Could the processes we build support broader abilities through the way they affect one another? Building and connecting them lets us investigate that possibility, but does not establish that it will happen."
       },
       {
-        "title": "Keeping the claim precise",
-        "text": "Remembering an experience and changing a later decision can demonstrate learning, but does not by itself establish emergence. Neither does an unexpected answer. We would need to identify the proposed ability of the whole and explain the contribution of its interactions, including what the underlying model already supplies. The Experiments section develops that evidence question; this article establishes what our hypothesis means."
+        "title": "What we still need to show",
+        "text": "Learning from an experience or giving an unexpected answer is not enough to demonstrate emergence. We need to identify an ability of the whole system and show how its parts working together contribute to it. We also need to account for abilities already present in the language model. Our Experiments section explains how we could examine those questions."
       }
     ],
     "related": [
@@ -71,7 +71,7 @@ export const researchArticles: Partial<Record<string, ResearchArticle>> = {
     ],
     "references": [
       {
-        "title": "Craig Reynolds — Boids: local steering and collective flocking",
+        "title": "Craig Reynolds — Boids: a computer model of flocking",
         "url": "https://www.red3d.com/cwr/boids/"
       },
       {

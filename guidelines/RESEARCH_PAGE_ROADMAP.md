@@ -32,7 +32,9 @@ reproduced the brain or demonstrated emergence.
 - Explain why that question matters, then develop the idea or approach. Names and
   implementation follow the motivation.
 - Use plain language with enough detail to make the reasoning meaningful.
-  Introduce necessary technical terms beside their meaning.
+  Introduce necessary technical terms beside their meaning. Explain a familiar
+  example before naming its model or creator; the name should add context after
+  the reader understands the idea.
 - Keep emergence focused on properties or organized patterns arising through
   interactions among parts. Learning from experience, unexpected output and
   connecting components are not sufficient evidence of emergence. Deliberately
