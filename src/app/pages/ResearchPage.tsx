@@ -161,7 +161,7 @@ export function ResearchPage() {
           <p className="research-intro">This address does not have a published research article.</p>
           <Link className="research-back" to="/research">Browse research</Link>
         </div> : <>
-          <header className="research-opening">
+          <header className="research-opening research-overview">
             <h1>Research</h1>
             <p className="research-intro">Can intelligence emerge from interacting brain-inspired mechanisms? We explore this question through neuroscience, philosophy, computational design and experiments.</p>
             <p className="research-reading-note">Explore why we are building Sapiens, the concepts behind it, how the engines apply them and what our experiments reveal. Planned articles are marked “Not published yet”.</p>
@@ -192,12 +192,14 @@ export function ResearchPage() {
                 <button type="button" onClick={() => setSearchParams({})}>Show all topics</button>
               </div>}
               {visibleSections.map(section => <section key={section.id} aria-labelledby={`${section.id}-title`}>
-                <h2 id={`${section.id}-title`}>{section.title}</h2>
-                <p className="research-concepts">{section.motivation}</p>
+                <header className="research-section-heading">
+                  <h2 id={section.id + '-title'}>{section.title}</h2>
+                  <p className="research-concepts">{section.motivation}</p>
+                </header>
                 <ul className="research-topic-list">
                   {[...section.topics].sort((a, b) => Number(Boolean(b.introduction)) - Number(Boolean(a.introduction))).map(topic => <li key={topic.id}>
                     {topic.introduction ? <Link className="research-topic research-topic-link" to={'/research/' + topic.id + (searchParams.size ? '?' + searchParams : '')} onClick={rememberPosition}>
-                      <div className="research-topic-heading"><h3>{topic.title}</h3><span className="research-topic-status">Introduction <span aria-hidden="true">↗</span></span></div>
+                      <div className="research-topic-heading"><h3>{topic.title}</h3><span className="research-topic-status">Read introduction <span aria-hidden="true">→</span></span></div>
                       <p className="research-topic-description">{topic.description}</p>
                     </Link> : <div className="research-topic research-topic-planned">
                       <div className="research-topic-heading"><h3>{topic.title}</h3><span className="research-topic-status">Not published yet</span></div>
