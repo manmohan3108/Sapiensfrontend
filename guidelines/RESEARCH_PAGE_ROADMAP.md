@@ -167,6 +167,15 @@ Do not imply that a changed implementation has passed runtime verification.
 
 ## Link design
 
+Previous/Next on every article follows the same section/topic order as the index,
+across category boundaries. Only articles with content are destinations:
+unpublished topics remain visible in the index but are skipped by Previous/Next.
+The sequence has no wraparound, and unavailable directions are omitted.
+Search/category filters do not change the reading sequence; they are retained
+for returning to the topic list. Related reading remains a separate set of
+editorially chosen connections.
+
+
 - Philosophy points to definitions and scientific foundations before requiring
   readers to understand engine architecture.
 - Foundations link to their computational interpretations in engine articles.
@@ -178,33 +187,60 @@ Do not imply that a changed implementation has passed runtime verification.
 - Future topics link to existing ingredients without implying the proposed
   integration already works.
 
-Prefer relationship labels such as “Scientific inspiration,” “How we implement
-this,” “How we evaluate it” and “Open research questions.” Existing generic
-related-topic links are a starting point; these more specific labels are an
-editorial target, not a claim that the current renderer already supports them.
-Do not add a new content abstraction until the article work needs it.
+Related article links use the destination category’s relationship label, such as
+“Scientific inspiration,” “Computational interpretations,” “Evidence and evaluation”
+and “Open research questions.” Links within the current category appear under
+“In this section”. Existing article IDs and category membership determine these
+groups; there is no separate per-article navigation store.
 
 ## Current progress and remaining work
 
-Current editorial status:
+Editorial pass: 28 October 2026.
 
-- All 46 visible topics have initial introductions. Existence of text does not
-  mean they meet this revised editorial plan.
-- `philosophy` has been rewritten under this plan. Its follow-up review
-  clarified why we look to the brain, made the emergence hypothesis explicit,
-  and moved detailed evaluation discussion out of the ending.
-- `emergence` has also been rewritten: it explains the working meaning, gives
-  an explicitly illustrative example, and distinguishes emergence from surprise
-  or an already-designed procedure. Philosophical further reading is linked.
-- Both article revisions are included with this roadmap. Confirm publication
-  against the deployed frontend revision.
-- The other 44 introductions still need review and rewriting against these
-  boundaries. Avoid treating their present wording as the approved model.
-- Next, review `intelligence-understanding` and continue through the philosophy
-  section.
-  The intended reader order above is separate from the editing order.
-- Current category ordering and generic link labels have not all been adjusted
-  to this roadmap.
+- All 46 visible topics now follow the roadmap. The previously reviewed
+  `philosophy` and `emergence` articles are preserved; the other 44 introductions
+  have been rewritten in the user-authorized batch.
+- Each article begins with its motivating question, problem or inspiration.
+  Foundations own the scientific explanations; engine articles describe the
+  computational adaptation and its inspected integration status.
+- Scientific and philosophical references accompany the relevant foundations.
+  These are introductory sources, not an exhaustive literature review.
+- Observations from the earlier simulation discussions are separated from proposed
+  comparisons. No new VM inspection or experiment was conducted for this editorial
+  pass, and no claim is made that an engineering change has passed runtime validation.
+- Index and Previous/Next share the roadmap order and skip unpublished topics.
+  Related article links are grouped using existing category membership, with
+  labels for scientific inspiration, computational interpretations, evidence and
+  open questions. Within-category links are labelled “In this section”.
+- This editorial pass is tracked with the frontend. Confirm publication against the deployed frontend
+  revision; content presence determines availability after deployment.
+- Remaining work is editorial feedback, manual page review and progressively
+  deeper studies with reproducible evidence. These introductions do not claim
+  that those studies have already been completed.
+
+### Implementation sources checked for this pass
+
+Use these backend sources when revising implementation claims. They describe
+the inspected code, not a guarantee about any deployed run.
+
+| Topic | Backend sources |
+| --- | --- |
+| Ownership and composition | `sapiens/engines/README.md`, `sapiens/orchestrator/setup.py` |
+| Shared self and attribution | `sapiens/engines/identity/README.md` |
+| Awareness and prompt presentation | `sapiens/engines/awareness_engine/README.md` |
+| Memory and replay | `sapiens/engines/engram_engine/README.md`, `engram_engine/consolidation.py`, `hippocampus_engine/README.md` |
+| Active context | `sapiens/engines/working_memory/README.md` and setup registrations |
+| Goals and waiting | `sapiens/engines/goal_engine/README.md`, `hold_engine/README.md` |
+| Execution and communication | `sapiens/engines/motor_engine/README.md`, `conversation_engine/README.md` |
+| Experience interpretation | `sapiens/engines/feedback_engine/README.md`, `tool_learning_engine/README.md` |
+| Questioning and Curiosity | Their engine READMEs and setup connections |
+| Unconnected research components | `weave_engine/README.md`, Cortex/Cerebellum/Dopamine READMEs and setup |
+| Simulation boundaries | `simulation_suite/README.md`, `cases/sentinel_desk/README.md`, `world/interpreter.py` |
+
+Paths abbreviated after the first engine path remain relative to
+`sapiens/engines/`; abbreviated simulation paths are relative to
+`simulation_suite/`. The latest code must be checked again when expanding the
+articles, especially for integrations that are currently disconnected.
 
 Update this progress section as work advances; check Git and deployment state
 rather than assuming these notes remain current.
