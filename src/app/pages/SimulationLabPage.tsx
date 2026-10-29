@@ -1,4 +1,6 @@
 import { SimulationPurpose } from '../components/simulation/SimulationPurpose';
+import { useAuth } from '../contexts/AuthContext';
+import { sapiensDirectoryPath } from '../core/auth/navigation';
 import {
   Children,
   cloneElement,
@@ -355,6 +357,7 @@ function EventFeed({
 }
 
 export function SimulationLabPage() {
+  const { user } = useAuth();
   const navigate = useNavigate();
   const currentSapiens = useSapiensStore((state) => state.currentSapiens);
   const setCurrentSapiens = useSapiensStore((state) => state.setCurrentSapiens);
@@ -437,7 +440,7 @@ export function SimulationLabPage() {
       : "/admin/analyse";
   async function returnToSapien() {
     if (!shortcutId) {
-      navigate("/admin");
+      navigate(sapiensDirectoryPath(user?.role ?? 'customer'));
       return;
     }
     setReturning(true);
@@ -602,7 +605,7 @@ export function SimulationLabPage() {
         items.length > 0 && choices.length === 0
           ? shortcutId
             ? `Sapiens ID ${shortcutId} is not simulation-enabled or is no longer available.`
-            : "No simulation-enabled Sapiens are available. Enable one in Django admin, then refresh."
+            : "No simulation-enabled Sapiens are available. Create one with simulation enabled from Your Sapiens, then refresh."
           : "",
       );
       setSelectedSapienId((current) => {
@@ -1338,7 +1341,7 @@ export function SimulationLabPage() {
                     {!sapiensLoading && !sapiensError && !sapiens.length && (
                       <p className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">
                         No simulation-enabled Sapiens are available. Create one
-                        normally or enable an existing one in Django admin.
+                        with simulation enabled from Your Sapiens, or ask an administrator to enable an existing one.
                       </p>
                     )}
                     {!sapiensLoading &&
@@ -2280,3 +2283,4 @@ export function SimulationLabPage() {
     </div>
   );
 }
+

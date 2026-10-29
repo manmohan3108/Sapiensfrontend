@@ -1,9 +1,9 @@
 export type AppArea = 'directory' | 'workspace' | 'connections' | 'analyse' | 'simulations';
-export const appDestinations = (admin: boolean) => [
+export const appDestinations = (admin: boolean, analysisAccess: boolean) => [
   { id: 'directory' as AppArea, label: 'Your Sapiens', path: admin ? '/admin' : '/home', needsSapien: false },
   { id: 'workspace' as AppArea, label: 'Workspace', path: '/workspace', needsSapien: true },
   { id: 'connections' as AppArea, label: 'Connections', path: '/connections', needsSapien: true },
-  ...(admin ? [
+  ...(analysisAccess ? [
     { id: 'analyse' as AppArea, label: 'Analyse', path: '/admin/analyse', needsSapien: true },
     { id: 'simulations' as AppArea, label: 'Simulations', path: '/admin/simulations', needsSapien: false },
   ] : []),

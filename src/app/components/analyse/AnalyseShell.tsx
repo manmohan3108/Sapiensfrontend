@@ -23,7 +23,7 @@ export const ANALYSE_GROUPS = [
     { id: 'engine-jobs', label: 'Engine Jobs', icon: Activity },
     { id: 'timeline', label: 'Timeline', icon: Clock3 },
   ] },
-  { label: 'Admin tools', items: [
+  { label: 'Analysis tools', items: [
     { id: 'simulation', label: 'Simulation', icon: Beaker },
     { id: 'debug', label: 'Debug', icon: Bug },
     { id: 'usage', label: 'AI Usage', icon: BarChart3 },

@@ -96,7 +96,7 @@ export function safeEvidence(value: unknown): unknown {
 export function inspectionError(error: unknown, detail = false) {
   const status = traceObject(error).status;
   if (status === 400 && !detail) return 'The run filters are invalid. Clear filters or use a search of up to 160 characters.';
-  if (status === 403) return 'An administrator account is needed to inspect these records.';
+  if (status === 403) return 'Your account needs analysis and simulation access to inspect these records.';
   if (status === 404) return detail ? 'This run is unavailable for the selected Sapien. The detail API may also need deployment.'
     : 'Saved run inspection is unavailable. Check the selected Sapien and backend deployment.';
   return 'Could not load saved records. Retry when the connection is available.';

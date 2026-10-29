@@ -37,7 +37,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
       const user = isRegister
         ? await register({ username: username.trim(), password, ...(email.trim() ? { email: email.trim() } : {}) })
         : await login({ username: username.trim(), password });
-      navigate(authDestination(user.role, intent), { replace: true });
+      navigate(authDestination(user, intent), { replace: true });
     } catch (caught) { setError(authErrorMessage(caught)); }
     finally { setBusy(false); }
   };

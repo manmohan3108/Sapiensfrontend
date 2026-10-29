@@ -30,8 +30,8 @@ function Stored({ label, value }: { label: string; value: unknown }) {
   return <section className={`${panel} p-4`}><h3 className="text-sm text-cyan-100">{label}</h3><div className="mt-3 max-h-80 overflow-auto whitespace-pre-wrap break-words text-base leading-7 text-white/85 [overflow-wrap:anywhere]">{display(value)}</div></section>;
 }
 function Failure({ status, retry }: { status?: number; retry: () => void }) {
-  const message = status === 401 ? 'Session expired. Sign in with an administrator account.'
-    : status === 403 ? 'Administrator access required. Server permissions remain authoritative.'
+  const message = status === 401 ? 'Your session expired. Sign in again.'
+    : status === 403 ? 'Your account needs analysis and simulation access to inspect these records.'
     : status === 404 ? 'Record, Sapien, or endpoint unavailable for this Sapien. A legacy reference may no longer exist.'
     : status === 400 || status === 422 ? 'Invalid filters or record reference. Check the record ID and filter values.'
     : 'Could not read stored records. The backend may be unavailable.';
@@ -185,7 +185,7 @@ function InquiryList({ sapienId, kind }: { sapienId: string; kind: InquiryKind }
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{Object.entries(data.summary).map(([group, counts]) => <div key={group} className="rounded-lg border border-white/[.07] p-3"><h4 className="text-xs text-cyan-100/80">{group.replaceAll('_', ' ')} · subset only</h4><dl className="mt-2 space-y-1 text-xs text-white/60">{Object.entries(counts ?? {}).map(([label, count]) => <div key={label} className="flex justify-between gap-3"><dt className="break-all">{label === 'answered' ? 'Assessed answered' : label.replaceAll('_', ' ')}</dt><dd>{count}</dd></div>)}{!Object.keys(counts ?? {}).length && <div>No counts</div>}</dl></div>)}</div>
         </details>{kind === 'questioning' && <QuestionReviews data={data} />}</div>}
     {data?.total !== undefined && <nav aria-label="Question pages" className="flex items-center justify-between"><button className={button} disabled={offset === 0} onClick={() => { resetContent(); setOffset(Math.max(0, offset - filters.limit)); }}>Previous</button><span className="text-xs text-white/50">Page {Math.floor(offset / filters.limit) + 1}</span><button className={button} disabled={!data.has_more} onClick={() => { resetContent(); setOffset(offset + filters.limit); }}>Next</button></nav>}
-    <Dialog open={Boolean(selected)} onOpenChange={open => { if (!open) setSelected(null); }}><DialogContent className="max-h-[90dvh] w-[calc(100%-2rem)] max-w-4xl overflow-y-auto border-white/10 bg-[#09101c] text-white"><DialogTitle>{selected ? title(selected.kind) : title(kind)} details</DialogTitle><DialogDescription className="text-xs text-white/45">Sensitive stored content · read-only administrator inspection</DialogDescription>
+    <Dialog open={Boolean(selected)} onOpenChange={open => { if (!open) setSelected(null); }}><DialogContent className="max-h-[90dvh] w-[calc(100%-2rem)] max-w-4xl overflow-y-auto border-white/10 bg-[#09101c] text-white"><DialogTitle>{selected ? title(selected.kind) : title(kind)} details</DialogTitle><DialogDescription className="text-xs text-white/45">Sensitive stored content · read-only inspection</DialogDescription>
       {selected && valid && <RecordDetail key={`${selected.kind}:${selected.id}`} sapienId={sapienId} kind={selected.kind} id={selected.id} onQuestion={id => setSelected({ kind: 'questioning', id })} />}
     </DialogContent></Dialog>
   </div>;

@@ -65,9 +65,9 @@ function Loading({ detail = false }: { detail?: boolean }) {
 
 function Failure({ error, detail = false, retry }: { error: ApiError; detail?: boolean; retry: () => void }) {
   const status = error.status;
-  const title = status === 403 ? 'Administrator access required' : status === 401 ? 'Session expired' : status === 404 ? (detail ? 'Job not found' : 'Sapiens or endpoint not found') : status === 400 ? 'Invalid filters or cursor' : 'Engine job analysis unavailable';
-  const explanation = status === 403 ? 'Only active administrators can inspect engine jobs. Server permissions remain authoritative.'
-    : status === 401 ? 'Sign in again with an active administrator account.'
+  const title = status === 403 ? 'Analysis access required' : status === 401 ? 'Session expired' : status === 404 ? (detail ? 'Job not found' : 'Sapiens or endpoint not found') : status === 400 ? 'Invalid filters or cursor' : 'Engine job analysis unavailable';
+  const explanation = status === 403 ? 'Your account needs analysis and simulation access to inspect engine jobs.'
+    : status === 401 ? 'Your session expired. Sign in again.'
     : status === 404 ? (detail ? 'This job is missing or belongs to another Sapien. The backend endpoint may also be unavailable.' : 'The selected Sapien may be missing, or this backend may not provide the analysis endpoint.')
     : status === 400 ? 'Apply valid filters or restart from the first page to discard the cursor.'
     : 'The backend could not be reached or could not read job storage. Retry when it is available.';
@@ -239,7 +239,7 @@ function JobList({ sapienId, initialEngine, initialJob }: { sapienId: string; in
     <Dialog open={Boolean(selected)} onOpenChange={open => { if (!open) setJobTrail([]); }}>
       <DialogContent className="max-h-[90dvh] w-[calc(100%-2rem)] max-w-4xl overflow-y-auto border-white/10 bg-[#09101c] text-white">
         <DialogTitle className="pr-8">Engine job details</DialogTitle>
-        <DialogDescription className="text-xs text-white/45">Sensitive stored content · read-only administrator inspection</DialogDescription>
+        <DialogDescription className="text-xs text-white/45">Sensitive stored content · read-only inspection</DialogDescription>
         {jobTrail.length > 1 && <button type="button" className={`${button} flex w-fit items-center gap-2`} onClick={() => setJobTrail(current => current.slice(0, -1))}><ArrowLeft className="h-3 w-3" />Back to previous job</button>}
         {selected && <Detail key={selected} sapienId={sapienId} jobId={selected} onOpen={id => { if (id !== selected) setJobTrail(current => [...current, id]); }} />}
       </DialogContent>

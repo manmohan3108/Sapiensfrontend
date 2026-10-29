@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { useSapiens } from '../../hooks/useSapiens';
 import { useAuth } from '../../contexts/AuthContext';
+import { canAnalyzeAndSimulate } from '../../core/auth/permissions';
 import { SapiensPresence } from '../customer/SapiensPresence';
 
 interface CreateSapiensFormProps {
@@ -23,6 +24,7 @@ export function CreateSapiensForm({ onNameChange }: CreateSapiensFormProps) {
   const { createSapiens } = useSapiens();
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
+  const analysisAccess = canAnalyzeAndSimulate(user);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,7 +39,7 @@ export function CreateSapiensForm({ onNameChange }: CreateSapiensFormProps) {
       await createSapiens({
         name: name.trim(),
         ...(role.trim() ? { role: role.trim() } : {}),
-        ...(isAdmin ? { simulation_enabled: simulationEnabled } : {}),
+        ...(analysisAccess ? { simulation_enabled: simulationEnabled } : {}),
       });
       
       // Reset form
@@ -104,7 +106,7 @@ export function CreateSapiensForm({ onNameChange }: CreateSapiensFormProps) {
             <p id="admin-focus-help" className="text-xs leading-5 text-muted-foreground">Descriptive context that may inform conversations. It does not add skills or access. Leave it blank to use the default, “generalist.”</p>
           </div>
 
-          {isAdmin && (
+          {analysisAccess && (
             <div className="flex items-start gap-3 rounded-lg border bg-muted/30 p-3">
               <Checkbox
                 id="simulation-enabled"

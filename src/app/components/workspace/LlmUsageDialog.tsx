@@ -3,6 +3,7 @@ import { AlertCircle, BarChart3, Loader2, RefreshCw } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog';
 import { aiUsageService } from '../../core/services/llmUsageService';
 import type { AiUsageKind, AiUsageResponse } from '../../types/llmUsageTypes';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface LlmUsageDialogProps {
   open: boolean;
@@ -125,15 +126,20 @@ function UsageKindSection({ kind, state, sapienId, sapienName, onRetry, compactD
 }
 
 export function LlmUsageDialog({ open, onOpenChange, sapienId, sapienName, compactDetails = false }: LlmUsageDialogProps) {
+  const { user } = useAuth();
+  const showGlobal = user?.role === 'admin';
   const [states, setStates] = useState<Record<AiUsageKind, KindState>>({ llm: emptyState(), embedding: emptyState() });
   const loadKind = useCallback(async (kind: AiUsageKind) => {
     setStates((current) => ({ ...current, [kind]: { ...current[kind], errors: [], loading: true } }));
-    const [globalResult, sapienResult] = await Promise.allSettled([aiUsageService.getUsage(kind), aiUsageService.getUsage(kind, sapienId)]);
+    const [globalResult, sapienResult] = await Promise.allSettled([
+      showGlobal ? aiUsageService.getUsage(kind) : Promise.resolve(null),
+      aiUsageService.getUsage(kind, sapienId),
+    ]);
     const errors: KindState['errors'] = [];
     if (globalResult.status === 'rejected') errors.push({ scope: 'Global', message: errorMessage(globalResult.reason) });
     if (sapienResult.status === 'rejected') errors.push({ scope: sapienName, message: errorMessage(sapienResult.reason) });
     setStates((current) => ({ ...current, [kind]: { global: globalResult.status === 'fulfilled' ? globalResult.value : null, sapien: sapienResult.status === 'fulfilled' ? sapienResult.value : null, errors, loading: false } }));
-  }, [sapienId, sapienName]);
+  }, [sapienId, sapienName, showGlobal]);
 
   useEffect(() => {
     if (!open) return;

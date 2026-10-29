@@ -10,6 +10,8 @@ import { LlmUsageDialog } from '../components/workspace/LlmUsageDialog';
 import { EngramPage } from './EngramPage';
 import { EngineBusPage } from './EngineBusPage';
 import { useOrchestratorStatus } from '../hooks/useOrchestratorStatus';
+import { useAuth } from '../contexts/AuthContext';
+import { sapiensDirectoryPath } from '../core/auth/navigation';
 import { AwarenessDiagnostics as AwarenessAnalysis } from '../components/analyse/AwarenessDiagnostics';
 import { FeedbackInspection } from '../components/analyse/FeedbackInspection';
 import { ToolLearningInspection } from '../components/analyse/ToolLearningInspection';
@@ -23,6 +25,7 @@ import { AnalyseOverview } from '../components/analyse/AnalyseOverview';
 
 const panel = 'rounded-xl border border-white/[.07] bg-white/[.025]';
 export function AnalysePage() {
+  const { user } = useAuth();
   const [scopeParams] = useSearchParams();
   const navigate = useNavigate();
   const { section: rawSection } = useParams();
@@ -32,7 +35,7 @@ export function AnalysePage() {
   const [usageOpen, setUsageOpen] = useState(false);
   useOrchestratorStatus();
   const section = (ANALYSE_NAV.some(n => n.id === rawSection) ? rawSection : 'overview') as AnalyseSection;
-  useEffect(() => { if (!currentSapiens) navigate('/admin'); }, [currentSapiens, navigate]);
+  useEffect(() => { if (!currentSapiens) navigate(sapiensDirectoryPath(user?.role ?? 'customer')); }, [currentSapiens, navigate, user?.role]);
   useEffect(() => { if (section === 'usage') setUsageOpen(true); }, [section]);
   if (!currentSapiens) return null;
   const hrefFor = (id: AnalyseSection, params?: Record<string, string>) => {

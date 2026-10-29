@@ -41,7 +41,7 @@ export const router = createBrowserRouter([
     ],
   },
   {
-    Component: () => <ProtectedRoute roles={['admin']} />,
+    Component: () => <ProtectedRoute analysis />,
     children: [
       { path: '/admin/analyse', Component: AnalysePage, ErrorBoundary },
       { path: '/admin/analyse/:section', Component: AnalysePage, ErrorBoundary },
@@ -51,6 +51,11 @@ export const router = createBrowserRouter([
     Component: () => <ProtectedRoute roles={['admin']} selection={false} />,
     children: [
       { path: '/admin', Component: LandingPage, ErrorBoundary },
+    ],
+  },
+  {
+    Component: () => <ProtectedRoute analysis selection={false} />,
+    children: [
       { path: '/admin/simulations', Component: SimulationLabPage, ErrorBoundary },
       { path: '/admin/simulations/:runId/world/*', Component: SimulationWorldPage, ErrorBoundary },
       { path: '/engram', Component: () => <Navigate to="/admin/analyse/engram" replace />, ErrorBoundary },

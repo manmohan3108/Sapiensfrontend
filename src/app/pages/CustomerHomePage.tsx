@@ -10,6 +10,8 @@ import { ScienceDetail } from '../components/customer/ScienceDetail';
 import { SapiensBrandMark } from '../components/customer/SapiensBrandMark';
 import { SapiensPresence } from '../components/customer/SapiensPresence';
 import { sapiensService } from '../core/services/sapiensService';
+import { useAuth } from '../contexts/AuthContext';
+import { canAnalyzeAndSimulate } from '../core/auth/permissions';
 import { useSapiensStore } from '../core/state/sapiensStore';
 import type { Sapiens } from '../types/sapiensTypes';
 import { validateCreation, creationFailureIsDefinitive } from '../core/customer/creation';
@@ -17,6 +19,8 @@ import '../../styles/customer.css';
 import '../../styles/home-science.css';
 
 export function CustomerHomePage() {
+  const { user } = useAuth();
+  const analysisAccess = canAnalyzeAndSimulate(user);
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const [list, setList] = useState<Sapiens[]>([]);
@@ -28,6 +32,7 @@ export function CustomerHomePage() {
   const [dialogOpen, setDialogOpen] = useState(params.get('create') === '1');
   const [name, setName] = useState('');
   const [focus, setFocus] = useState('');
+  const [simulationEnabled, setSimulationEnabled] = useState(false);
   const [errors, setErrors] = useState<{ name?: string; focus?: string }>({});
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState('');
@@ -77,7 +82,10 @@ export function CustomerHomePage() {
     if (Object.keys(invalid).length) { if (invalid.name) nameInput.current?.focus(); else document.getElementById('sapiens-focus')?.focus(); return; }
     busy.current = true; setCreating(true); setCreateError('');
     try {
-      const result = await sapiensService.createSapiens({ name: name.trim(), ...(focus.trim() ? { role: focus.trim() } : {}) });
+      const result = await sapiensService.createSapiens({
+        name: name.trim(), ...(focus.trim() ? { role: focus.trim() } : {}),
+        ...(analysisAccess ? { simulation_enabled: simulationEnabled } : {}),
+      });
       if (!active.current) return;
       const identity: Sapiens = { id: result.sapiensId, name: result.name, role: result.role, createdAt: result.createdAt, lastModified: result.createdAt };
       setConfirmed(identity);
@@ -120,6 +128,13 @@ export function CustomerHomePage() {
             {createError && <div className="customer-notice" role="alert">{createError}{unknown && <p>Check your Sapiens before deciding what to do next. Refreshing the list or finding a matching name cannot confirm this request’s outcome. We won’t submit it again automatically.</p>}</div>}
             <div className="customer-field"><label htmlFor="sapiens-name">Name</label><input ref={nameInput} id="sapiens-name" autoComplete="off" placeholder="e.g. Atlas" value={name} disabled={creating || unknown} aria-required="true" aria-invalid={Boolean(errors.name)} aria-describedby={errors.name ? 'name-error' : undefined} onChange={e => setName(e.target.value)} onBlur={() => setErrors(value => ({ ...value, name: validateCreation(name, focus).name }))} />{errors.name && <p id="name-error" className="customer-field-error" role="alert">{errors.name}</p>}</div>
             <div className="customer-field"><label htmlFor="sapiens-focus">Focus <span className="font-normal">(optional)</span></label><input id="sapiens-focus" autoComplete="off" placeholder="e.g. Ideas and reading" value={focus} disabled={creating || unknown} aria-invalid={Boolean(errors.focus)} aria-describedby={`focus-help${errors.focus ? ' focus-error' : ''}`} onChange={e => setFocus(e.target.value)} onBlur={() => setErrors(value => ({ ...value, focus: validateCreation(name, focus).focus }))} /><small id="focus-help">Descriptive context about what you’d like to explore together. It may inform conversations; it does not add specialist skills or access. Leave it blank to use the default, “generalist.”</small>{errors.focus && <p id="focus-error" className="customer-field-error" role="alert">{errors.focus}</p>}</div>
+            {analysisAccess && <div className="my-5">
+              <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm" htmlFor="customer-simulation-enabled">
+                <input id="customer-simulation-enabled" name="simulation_enabled" type="checkbox" className="size-4 accent-current focus-visible:outline-2 focus-visible:outline-offset-4" checked={simulationEnabled} disabled={creating || unknown} onChange={event => setSimulationEnabled(event.target.checked)} aria-describedby="customer-simulation-help" />
+                Enable simulation
+              </label>
+              <p id="customer-simulation-help" className="customer-form-description">Allow this Sapien to be selected in Simulation Lab. This does not start a simulation or reset its memories.</p>
+            </div>}
             <div className="customer-form-actions"><button type="button" className="customer-secondary" disabled={creating} onClick={() => unknown ? inspectHome() : setDialogOpen(false)}>{unknown ? 'Check your Sapiens' : 'Cancel'}</button>{!unknown && <button type="submit" className="customer-primary" disabled={creating}>{creating ? 'Creating…' : 'Create and open'}</button>}</div>
             <p className="sr-only" role="status">{creating ? 'Creating your Sapiens. Please wait.' : ''}</p>
           </form>}

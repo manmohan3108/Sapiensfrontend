@@ -70,7 +70,7 @@ function Status({ loading, error, retry }: { loading: boolean; error?: ApiError;
   if (loading) return <p role="status" className="p-6 text-sm text-white/55">Loading saved records…</p>;
   if (!error) return null;
   return <div role="alert" className={`${panel} text-sm text-amber-200`}>
-    <p>{error.status === 403 ? 'Administrator access is required.' : error.status === 404 ? 'This saved record is no longer available.' : error.status === 503 ? 'Stored-data inspection is unavailable. This does not mean there are no lessons.' : error.message || 'Could not load records.'}</p>
+    <p>{error.status === 403 ? 'Your account needs analysis and simulation access.' : error.status === 404 ? 'This saved record is no longer available.' : error.status === 503 ? 'Stored-data inspection is unavailable. This does not mean there are no lessons.' : error.message || 'Could not load records.'}</p>
     <button className={`${control} mt-3`} onClick={retry}>Retry</button>
   </div>;
 }

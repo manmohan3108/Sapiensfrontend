@@ -10,6 +10,7 @@ import { sapiensService } from '../../core/services/sapiensService';
 import { resourceSession } from '../../core/auth/authSession';
 import { selectionStorage } from '../../core/auth/selectionStorage';
 import { authDestination, authLink, readAuthIntent } from '../../core/auth/navigation';
+import { canAnalyzeAndSimulate } from '../../core/auth/permissions';
 
 function SelectionGuard() {
   const currentId = useSapiensStore(state => state.currentSapiens?.id);
@@ -66,12 +67,13 @@ function SessionLoading() {
   return <div className="grid min-h-screen place-items-center bg-background text-muted-foreground"><div className="flex items-center gap-3 text-sm"><Loader2 className="size-5 animate-spin text-violet-500" />Restoring your session…</div></div>;
 }
 
-export function ProtectedRoute({ roles, selection = true }: { roles?: UserRole[]; selection?: boolean }) {
+export function ProtectedRoute({ roles, analysis = false, selection = true }: { roles?: UserRole[]; analysis?: boolean; selection?: boolean }) {
   const { status, user } = useAuth();
   const location = useLocation();
   if (status === 'loading') return <SessionLoading />;
   if (!user) return <Navigate to={authLink('/login', location.pathname + location.search)} replace />;
   if (roles && !roles.includes(user.role)) return <Navigate to="/access-denied" replace />;
+  if (analysis && !canAnalyzeAndSimulate(user)) return <Navigate to="/access-denied" replace />;
   return <AppNavigationFrame key={`${user.user_id}:${user.role}`} requiresSelection={selection}>{selection ? <SelectionGuard /> : <Outlet />}</AppNavigationFrame>;
 }
 
@@ -79,7 +81,7 @@ export function GuestRoute() {
   const { status, user } = useAuth();
   const location = useLocation();
   if (status === 'loading') return <SessionLoading />;
-  if (user) return <Navigate to={authDestination(user.role, readAuthIntent(location.search, location.state))} replace />;
+  if (user) return <Navigate to={authDestination(user, readAuthIntent(location.search, location.state))} replace />;
   return <Outlet />;
 }
 

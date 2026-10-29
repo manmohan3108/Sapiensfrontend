@@ -51,21 +51,31 @@ production bundle. These tests mock network and storage; they do not create or
 modify real accounts. Browser smoke checks cover the public auth forms and
 unauthenticated route redirects; successful live login requires test credentials.
 
-Customer registration always creates a customer account. The role returned by
-`GET /accounts/api/me/` controls frontend routing and navigation: customers enter
-the Sapiens workspace and connection management, while app administrators enter
-the analysis area. This app-admin flow is separate from Django's `/admin/` session
-login.
+Customer registration always creates a customer account. `GET /accounts/api/me/`
+returns `role` and the effective `analysis_simulation_access` boolean. Admins retain
+analysis/simulation access automatically. Enabled customers can also enter Analyse
+and Simulation Lab, including direct links and login redirects, while their home
+remains `/home`. Existing `/admin/analyse` and `/admin/simulations` URLs are retained;
+the `/admin` directory itself remains admin-only. The shared `canAnalyzeAndSimulate`
+helper governs routes, navigation and creation controls. Missing flags default to
+false for customers, for compatibility with older current-user responses.
+
+Manage the flag only in Django admin and reload the app after changing it. Deploy
+the backend's additive accounts migration, generated only on the VM through its
+existing `deploy.sh`, before enabling the flag. This does not grant Django staff
+access or change which Sapiens the account can access.
 
 Frontend role gates are only an interface boundary. Backend authorization remains
 authoritative. Customers receive server-filtered lists and can access only their
-own Sapiens and related resources. Customer creation sends name/descriptive role
-only; the backend assigns the authenticated owner. Admins see all Sapiens and
-create ownerless, admin-only records. Assignment/reassignment uses Django admin's
+own Sapiens and related resources. Enabled customers additionally see an Enable
+simulation checkbox in their creation dialog; ordinary customers omit the field.
+The backend assigns the authenticated owner on creation. Admins see all Sapiens.
+Assignment/reassignment uses Django admin's
 Sapiens **Owner** field; there is no frontend ownership assignment API.
 
-Global heartbeat/dashboard state, orchestrator status, and LLM/embedding usage
-are admin-only. Customers do not poll orchestrator status or mount usage panels.
+Global heartbeat/dashboard state, orchestrator status, and global LLM/embedding
+usage remain admin-only. Enabled customers can inspect usage for their selected
+Sapien; the usage dialog does not request global totals for them.
 Selection is verified against the account-filtered server list when opened or
 restored after a reload. Successful verification is held only in memory for the
 current selection; navigating between its pages does not repeat the check.
@@ -82,7 +92,7 @@ Selection/account changes discard in-flight response bodies. Only an account-sco
 selected ID is retained for restoration; Sapien records, chat and memory data stay
 in memory. Theme preference is shared.
 
-The admin-only Simulation Lab at `/admin/simulations` uses the backend-authored
+The permission-gated Simulation Lab at `/admin/simulations` uses the backend-authored
 case catalog and can bind an eligible, normally created Sapiens to Sentinel Desk.
 It prepares the runtime immediately and schedules execution for the next real
 whole-hour appointment, then exposes only server-authorized controls, read-only
@@ -100,9 +110,14 @@ permanently removes the saved run archive and evidence, not cognitive memories.
 Deploy the backend simulation-history migration before enabling this storage
 mode. The picker consumes the
 authoritative simulation enablement, current availability and unavailable-reason
-fields added to the existing admin Sapiens-list response. Older deployments that
+fields added to the authorized Sapiens-list response. Older deployments that
 omit those fields fail closed; no numeric-ID fallback is provided. Eligibility
-remains controlled only through Django admin.
+is selected during authorized creation or changed later through Django admin.
+The backend scopes customer run lists, controls and archived history to owned
+Sapiens, including direct run-ID requests and idempotent creation. Runs without
+a Sapien remain admin-only. Manual verification should cover admin, ordinary
+customer and enabled customer navigation/creation, owned live and archived runs,
+cross-account IDs, and permission revocation after reload.
 
 Deployment is NOT verified. Apply backend migration `0004_sapiensmodel_owner`
 before restarting, verifying the host includes `0003_enginejob_origin`; reconcile
@@ -116,11 +131,8 @@ which is absent from the current backend URL configuration. A payload mapping to
 the per-Sapiens feedback endpoint must be agreed separately; no alternative
 endpoint or ownership parameter is invented here.
 
-One legacy exception still exists in the backend: awareness beat diagnostics
-check Django `is_staff`, not the app `admin` role. An app-admin who is not Django
-staff can therefore receive `403` on that endpoint. The frontend deliberately
-does not fall back to Django cookies; align this backend check with the desired
-app-role policy before relying on diagnostics for every app-admin account.
+Awareness beat diagnostics and stored analysis use the backend's central
+capability and ownership checks. The frontend never falls back to Django cookies.
 
 ### Admin Awareness run reader
 

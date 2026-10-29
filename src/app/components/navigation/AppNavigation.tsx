@@ -3,6 +3,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { Link, useLocation } from 'react-router';
 import { ChevronDown, LayoutGrid, Loader2, LogOut, Menu, Search, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { canAnalyzeAndSimulate } from '../../core/auth/permissions';
 import { useSapiensStore } from '../../core/state/sapiensStore';
 import { sapiensService } from '../../core/services/sapiensService';
 import { selectionStorage } from '../../core/auth/selectionStorage';
@@ -36,7 +37,7 @@ export function AppNavigationFrame({ children, requiresSelection = false }: { ch
   useNavigationScroll(page, `${area === 'directory' ? 'directory' : selected?.id || 'none'}:${location.pathname}${location.search}`);
   const isRun = /^\/admin\/simulations\/[^/]+\/world(?:\/|$)/.test(location.pathname);
   const admin = user?.role === 'admin';
-  const destinations = appDestinations(admin);
+  const destinations = appDestinations(admin, canAnalyzeAndSimulate(user));
   const keyFor = (id: string) => `${selected?.id || 'none'}:${id}`;
 
   useEffect(() => {

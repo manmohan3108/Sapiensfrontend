@@ -6,6 +6,7 @@ export interface AuthUser {
   email: string;
   role: UserRole;
   customer_tier: string;
+  analysis_simulation_access?: boolean;
 }
 
 export interface TokenPair {
