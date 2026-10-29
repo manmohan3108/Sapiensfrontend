@@ -1,4 +1,4 @@
-import type { AwarenessBeatEvent } from './sapiensTypes';
+import type { AwarenessBeatEvent, AwarenessFocusDiagnostic } from './sapiensTypes';
 
 export interface AwarenessMemoryReference {
   id: string;
@@ -50,16 +50,9 @@ export interface AwarenessRunSummary {
   thought_link: { status: 'exact' | 'ambiguous' | 'unavailable'; id: string | null };
 }
 
-export interface AwarenessFocusSelection {
-  status: 'selected' | 'no_focus' | 'not_recorded';
+export interface AwarenessFocusSelection extends AwarenessFocusDiagnostic<AwarenessRunSubject> {
   provenance: 'recorded' | 'legacy';
-  content: string;
   content_truncated?: boolean;
-  reason: string;
-  reason_code: string;
-  primary: AwarenessRunSubject;
-  contributors: AwarenessRunSubject[];
-  contributors_truncated: boolean;
 }
 
 export interface AwarenessRunsResponse {

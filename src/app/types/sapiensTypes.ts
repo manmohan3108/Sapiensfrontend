@@ -183,7 +183,21 @@ export interface AwarenessBeatsResponse {
   beats: AwarenessBeat[];
 }
 
+/** Producer-owned focus snapshot; source snapshots differ from API presentation. */
+export interface AwarenessFocusDiagnostic<TSubject = Record<string, unknown>> {
+  status: 'selected' | 'no_focus' | 'not_recorded';
+  content: string;
+  reason: string;
+  reason_code: string;
+  primary: TSubject;
+  contributors: TSubject[];
+  contributors_truncated: boolean;
+}
+
 export interface AwarenessBeatEvent {
+  kind?: string;
+  phase?: string;
+  loop_index?: number | null;
   sequence?: number;
   actor?: string;
   title?: string;
@@ -245,6 +259,8 @@ export interface AwarenessBeatAttention {
 }
 
 export interface AwarenessBeat {
+  record_version?: number;
+  focus_selection?: AwarenessFocusDiagnostic | null;
   run_flow?: {
     steps: Array<{ title: string; summary: string; round: number | null; event_index: number; decision?: string | null }>;
     round_count: number;
