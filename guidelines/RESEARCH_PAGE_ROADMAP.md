@@ -39,6 +39,9 @@ reproduced the brain or demonstrated emergence.
   interactions among parts. Learning from experience, unexpected output and
   connecting components are not sufficient evidence of emergence. Deliberately
   designed local rules do not rule out an emergent collective pattern.
+  Connect the example to a specific brain-inspired interaction, then briefly
+  explain how Sapiens explores it. Avoid replacing that connection with our
+  general research philosophy; keep evidence limits in their dedicated section.
 - Give each concept one primary home. Elsewhere, explain its relevance briefly
   and link to that home instead of repeating the whole explanation.
 - Richness comes from reasons, concrete examples, trade-offs, competing
@@ -82,7 +85,7 @@ the brain?” currently belongs inside the first article, not a new duplicate pa
 
 | Existing article | Question or responsibility |
 | --- | --- |
-| `philosophy` — Intelligence through interacting mechanisms | Establish the central question, why brain research is a starting point, our hypothesis and how questions lead to mechanisms |
+| `philosophy` — Why we are building Sapiens | Establish our ambition, why neuroscience and philosophy guide it, and why we build to investigate; introduce the hypothesis briefly |
 | `intelligence-understanding` — Intelligence and understanding | Clarify what we want to investigate and why fluent responses alone do not settle it |
 | `emergence` — What we mean by emergence | Explain the intended meaning and what distinguishes it from merely surprising output |
 | `self-agency` — Self and agency | Explore continuity, perspective and responsibility before describing shared-self implementation |
@@ -91,9 +94,16 @@ the brain?” currently belongs inside the first article, not a new duplicate pa
 | `continuity` — Development over time | Explore development and revision across experience, beyond accumulating records |
 
 The first article should follow:
-question → what we want to understand → why neuroscience and philosophy →
-hypothesis → how questions lead to mechanisms → brief acknowledgement that
-evidence is needed. Detailed evaluation belongs in Experiments.
+question → ambition illustrated by a familiar situation → why the brain inspires
+us → how philosophical questions guide the work → brief hypothesis → why build
+to investigate. Its purpose is motivation, not an explanation of emergence.
+
+Keep these neighbouring articles distinct: the first explains why we are building
+Sapiens; Intelligence and understanding examines what those terms mean; Emergence
+explains how a whole can have properties its parts lack, with its own examples.
+The first article should link onward rather than repeat those explanations or
+introduce engine lists. Detailed implementation and evaluation belong in their
+respective sections.
 
 ### 2. Neuroscience foundations
 

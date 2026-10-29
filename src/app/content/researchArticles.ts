@@ -8,27 +8,27 @@ export type ResearchArticle = {
 // Introductions describe current code and research directions, not deployment guarantees.
 export const researchArticles: Partial<Record<string, ResearchArticle>> = {
   "philosophy": {
-    "opening": "Can we build intelligence by understanding and adapting how the brain’s mechanisms work together? Sapiens begins with this question. Our ambition is to investigate how intelligent behaviour could develop through the interaction of computational mechanisms, guided by neuroscience and philosophical questions about intelligence.",
+    "opening": "What would it take to build an artificial intelligence that can make sense of unfamiliar situations, form its own questions and find ways to respond? We are building Sapiens to investigate that ambition, drawing inspiration from the brain and from philosophical thinking about intelligence.",
     "sections": [
       {
-        "title": "What we want to understand",
-        "text": "Consider someone encountering an unfamiliar situation. They may connect it to an earlier experience, notice a conflict, reconsider what they believe and decide what to try next. We want to understand what makes this continuing process possible: how experience changes later behaviour, how something becomes relevant at a particular moment, and how understanding carries across situations."
+        "title": "The ambition behind Sapiens",
+        "text": "Imagine joining an unfamiliar team. Knowing the words people use is only a beginning. You need to work out what they mean in this setting, notice what you do not yet understand and decide what is worth asking or trying. As the situation changes, you may need to reconsider your first impression. We want to explore how an artificial individual could develop this kind of understanding while taking part in the world."
       },
       {
-        "title": "Why look to the brain?",
-        "text": "Human intelligence gives us a concrete example of learning from experience, adapting to unfamiliar situations and coordinating thought with action. Studying the brain offers a way to investigate how those abilities arise and work together. Neuroscience provides concepts and evidence to examine; philosophy helps us ask what understanding and agency mean. We use both to guide computational experiments, while leaving open which biological principles can usefully transfer to software."
+        "title": "Why the brain is our starting point",
+        "text": "The brain is our inspiration because human intelligence spans many kinds of activity: making sense of what we encounter, recalling something relevant, imagining possibilities and choosing how to act. Neuroscience gives us ideas to investigate how these abilities are possible. We want to examine those ideas broadly, including concepts that may not yet have a place in our software. The question is which principles we can meaningfully adapt, and what building with them might help us discover."
       },
       {
-        "title": "Our hypothesis",
-        "text": "Our hypothesis is that intelligence may emerge when computational mechanisms, informed by neuroscience and philosophical concepts of intelligence, interact and develop through experience. We want to investigate whether their combined activity can give rise to ways of understanding and acting that we have not explicitly prescribed for each situation. Which mechanisms are needed, how they should interact and what their interaction can produce remain open research questions."
+        "title": "Why philosophy belongs in the work",
+        "text": "Building a system also requires deciding what we are trying to build. What would count as understanding? What does it mean for an action to belong to an individual? Could intelligent behaviour tell us anything about consciousness? Philosophical questions help us examine our assumptions and distinguish claims that might otherwise be mixed together. They guide both what we choose to investigate and how we interpret what we observe."
       },
       {
-        "title": "How questions lead to mechanisms",
-        "text": "We begin with a problem, such as how an earlier experience could help in a new situation. We then examine scientific accounts, choose an explicit computational interpretation and connect it to the wider system. The design must explain what information it needs, how experience can change it and how its contribution could be observed. This is how we want to arrive at mechanisms: through the questions they address, with their assumptions visible."
+        "title": "The hypothesis we want to explore",
+        "text": "Our central hypothesis is that intelligence may emerge as we bring brain-inspired processes together in software. This gives the research a direction; it is not an established result. “What we mean by emergence” develops that idea and its examples separately."
       },
       {
-        "title": "An investigation that remains open",
-        "text": "This hypothesis needs evidence, and our designs must remain open to revision. The next articles explain what we mean by intelligence and emergence, and introduce the scientific ideas guiding the work. The Experiments section examines how we can evaluate the approach and what our observations can support."
+        "title": "Why build Sapiens to study these questions?",
+        "text": "Building makes us turn an idea into specific choices. If we think experience should influence understanding, we must decide what can be retained, when it becomes relevant and how it could change a later decision. We can then observe what happens and revise the design. Sapiens is where we explore these questions in practice. The articles that follow introduce the concepts, explain our design choices and examine what our experiments can tell us."
       }
     ],
     "related": [
@@ -39,11 +39,11 @@ export const researchArticles: Partial<Record<string, ResearchArticle>> = {
     ]
   },
   "emergence": {
-    "opening": "Could a system develop abilities that none of its parts has on its own? Emergence gives us a way to ask that question. For Sapiens, we want to explore whether intelligence could arise through the way different processes work together.",
+    "opening": "Could intelligence arise from many processes working together, even though none has the whole ability on its own? This is the emergence question behind Sapiens.",
     "sections": [
       {
         "title": "What emergence means",
-        "text": "Sometimes, parts that affect one another create a pattern or ability that belongs to the whole. We call this emergence. To understand it, we need to look at how the parts work together, as well as what each part does. The way they are connected matters."
+        "text": "Sometimes, parts that affect one another create a pattern or ability that belongs to the whole. We call this emergence. To understand it, we need to look at how the parts work together, as well as what each part does."
       },
       {
         "title": "Imagine a flock of birds",
@@ -51,11 +51,11 @@ export const researchArticles: Partial<Record<string, ResearchArticle>> = {
       },
       {
         "title": "Simple rules can produce a larger pattern",
-        "text": "The rules for each bird are programmed, but the flock’s movements do not need to be planned bird by bird. This is what makes the example useful: the pattern forms through the birds responding to one another. Emergence can be explained by the rules and interactions that produce it; it does not have to be mysterious or unexplainable."
+        "text": "The rules for each bird are programmed, but the flock’s movements do not need to be planned bird by bird. Each bird responds to its neighbours, and their combined movements form the flock’s changing pattern. The pattern belongs to the group, even though each bird follows only its own local rules."
       },
       {
-        "title": "Our question for Sapiens",
-        "text": "The flock helps illustrate the idea; intelligence is the larger question we want to investigate. We look to neuroscience for ideas about how the brain works, and to philosophy for questions about intelligence and understanding. We then explore these ideas in software. Could the processes we build support broader abilities through the way they affect one another? Building and connecting them lets us investigate that possibility, but does not establish that it will happen."
+        "title": "From the brain to Sapiens",
+        "text": "The brain brings processes such as perception, memory and attention together. Remembering a past danger, for example, can change what catches our attention and how we respond. This inspires how we organize Sapiens. Remembered information can inform Awareness’s decisions; Motor carries out selected tool actions and returns what happened, which can inform the next decision. Each function contributes something different, and information moves between them. Our emergence question is what broader abilities the whole system might develop through these interactions."
       },
       {
         "title": "What we still need to show",
@@ -65,6 +65,7 @@ export const researchArticles: Partial<Record<string, ResearchArticle>> = {
     "related": [
       "philosophy",
       "intelligence-understanding",
+      "perception-attention",
       "architecture-overview",
       "evaluation",
       "alternative-explanations"
