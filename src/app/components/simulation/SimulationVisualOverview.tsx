@@ -190,7 +190,7 @@ export function SimulationVisualOverview({ run, knownSapienName }: { run: Simula
   return <div className="sv-overview">
     <header className="sv-header"><div><p className="sv-eyebrow">A simulated workplace</p><h1 className="capitalize">{readable(run.case_id)}<span>.</span></h1></div><div className="sv-run-state"><span className="sv-status">{readable(overview?.run_status || run.status)}</span><small>Simulated time · {stamp(overview?.run_state?.simulated_time || run.simulated_time)}</small><Button variant="ghost" size="sm" disabled={loading} onClick={() => setRefresh(value => value + 1)}><RefreshCw className="mr-2 size-3.5" />{loading ? 'Loading…' : 'Refresh'}</Button></div></header>
     {error && <p role="alert" className="sv-inline-error">{error}</p>}
-    <div className="mb-4"><SimulationPurpose /></div>
+    <div className="mb-4"><SimulationPurpose sapienName={run.sapien_id ? knownSapienName || people.get(run.participant_id || '') : null} /></div>
     <SimulationIntroduction spec={spec} overview={overview} participant={participant} role={role} base={base} loading={loading} />
     <div className="sv-story-intro"><h2>What did {participant} do?</h2></div>
     <section className="sv-story" aria-label="Guided response story">

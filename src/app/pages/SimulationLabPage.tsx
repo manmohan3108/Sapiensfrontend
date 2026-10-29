@@ -492,6 +492,11 @@ export function SimulationLabPage() {
   const acknowledgedDeletes = useRef(new Set<string>());
 
   const selectedCase = catalog?.cases[caseIndex];
+  const purposeSapienId = shortcutId || selectedSapienId;
+  const purposeSapienName =
+    (currentSapiens?.id === purposeSapienId ? currentSapiens.name : null) ||
+    allSapiens.find(item => item.id === purposeSapienId)?.name ||
+    (shortcutId === purposeSapienId ? shortcutName : null);
   const visibleRuns = shortcutId
     ? runs.filter((item) => String(item.sapien_id) === shortcutId)
     : runs;
@@ -1064,7 +1069,7 @@ export function SimulationLabPage() {
       <main className="mx-auto grid max-w-7xl items-start gap-5 px-4 py-6 lg:grid-cols-[minmax(0,1fr)_280px]">
         <div className="min-w-0 space-y-5">
         <div className="space-y-3">
-          <SimulationPurpose />
+          <SimulationPurpose sapienName={purposeSapienName} />
           {shortcutId && (
             <div className="min-w-0 text-sm">
               <strong>{shortcutName || `Sapiens ${shortcutId}`} simulations</strong>
