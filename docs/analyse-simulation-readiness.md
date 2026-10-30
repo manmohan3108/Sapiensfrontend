@@ -353,6 +353,27 @@ is evidence for presentation review, not proof of final demo readiness.
 
 ## Implementation: Simulation overview and navigation — 30 October 2026
 
+### Follow-up: retire Overview Old — 31 October 2026
+
+- Reader/task: an admin inspecting a simulation should have one overview, while
+  retaining useful recorded assessments and failure details from the duplicate page.
+- Comparison: the current overview already covers the setting, participant role,
+  exchanges, timeline and check verdicts. The old page additionally exposed assessment
+  explanations and run reasons; its other panels duplicate existing destinations.
+- Removed Overview Old's navigation, rendering branch and dedicated helpers/code.
+  Old bookmarks fall through to the existing overview redirect, preserving query/hash.
+- Kept the current overview's design and guided story. Check rows in its existing
+  Timeline & results disclosure now expand to show the saved explanation and any
+  recorded missing actions. A compact run-detail line appears when a reason is recorded
+  or the run failed. Familiar Messages (Teams), Jira and Results & evidence links remain.
+- No new data requests or backend changes; Journey and Results implementations remain.
+  Acceptance checks: removed exports/imports and links, old-route redirect, missing
+  explanations, absent/failed run details, retained evidence, build and Analyse tests.
+  Both themes use the existing variables; disclosures have native keyboard controls,
+  visible focus and wrapping. Browser verification remains pending; no server/deploy.
+  Production build, Analyse tests and isolated renders of the migrated assessment/
+  run-detail components passed, including missing, long and failed-record cases.
+
 **Reverted locally at the user's request on 30 October 2026.** The implementation
 described below is historical, not the current working version. Restored Simulation
 World's overview, navigation and styling from the parent of `f8098b42`, including the

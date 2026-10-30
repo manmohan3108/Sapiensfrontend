@@ -110,7 +110,15 @@
 .sv-phases strong { display: block; font-size: 13px; }
 .sv-phases small { font-size: 12px; color: var(--muted-foreground); }
 .sv-checks { list-style: none; margin: 12px 0 18px; }
-.sv-checks li { display: flex; justify-content: space-between; gap: 16px; padding: 10px 0; border-bottom: 1px solid var(--sv-line); font-size: 13px; }
+.sv-checks li { padding: 10px 0; border-bottom: 1px solid var(--sv-line); font-size: 14px; }
+.sv-checks li>details>summary { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px 16px; cursor: pointer; min-height: 36px; padding: 6px 0; }
+.sv-checks li>details>summary>span { flex: 1; min-width: 160px; overflow-wrap: anywhere; }
+.sv-checks li>details>summary::before { content: '+'; color: var(--sv-accent); }
+.sv-checks li>details[open]>summary::before { content: '−'; }
+.sv-checks li>details>p { max-width: 80ch; line-height: 1.65; white-space: pre-wrap; overflow-wrap: anywhere; padding-block: 8px; }
+.sv-check-evidence summary { cursor: pointer; padding-block: 8px; }
+.sv-check-evidence pre { max-height: 280px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 13px; padding-block: 8px; }
+.sv-run-detail { white-space: pre-wrap; overflow-wrap: anywhere; }
 .sv-checks strong { white-space: nowrap; font-size: 12px; font-weight: 500; color: var(--muted-foreground); }
 .sv-footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; padding: 18px 0 0; font-size: 12px; color: var(--muted-foreground); }
 .sv-footer a { text-decoration: underline; text-underline-offset: 3px; }

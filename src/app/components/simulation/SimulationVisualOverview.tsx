@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import { ArrowLeft, ArrowRight, Bot, Check, ChevronDown, CircleHelp, FileText, MessageSquare, RefreshCw, X } from 'lucide-react';
 import { simulationService } from '../../core/services/simulationService';
-import type { InspectionActivity, InspectionActivityPage, InspectionOverviewDetails, InspectionSpecificationResponse, InspectionStory, SimulationRun } from '../../types/simulationTypes';
+import type { InspectionActivity, InspectionActivityPage, InspectionObjective, InspectionOverviewDetails, InspectionSpecificationResponse, InspectionStory, SimulationRun } from '../../types/simulationTypes';
 import { Button } from '../ui/button';
 import '../../../styles/simulation-visual-overview.css';
 
@@ -139,6 +139,27 @@ function SimulationIntroduction({ spec, overview, participant, role, base, loadi
   </section>;
 }
 
+export function OverviewChecks({ objectives, base }: { objectives: InspectionObjective[]; base: string }) {
+  if (!objectives.length) return <p>No evaluated checks are available.</p>;
+  return <>
+    <p className="sv-meta">Select a check to read its recorded assessment. These verdicts do not establish completion of the whole project.</p>
+    <ul className="sv-checks">{objectives.map(objective => <li key={objective.expectation_id}>
+      <details>
+        <summary><span>{objective.title}</span><strong>{readable(objective.verdict)}</strong></summary>
+        <p>{text(objective.observed_behavior?.explanation) || 'No assessment explanation was recorded for this check.'}</p>
+        {objective.missing_actions != null && <details className="sv-check-evidence"><summary>Recorded missing actions</summary><pre>{JSON.stringify(objective.missing_actions, null, 2)}</pre></details>}
+      </details>
+    </li>)}</ul>
+    <Link to={`${base}/results`}>Open all results and evidence <ArrowRight className="size-4 inline" aria-hidden="true" /></Link>
+  </>;
+}
+
+export function OverviewRunDetail({ run }: { run: SimulationRun }) {
+  const detail = run.detail?.trim() || run.participant?.failure_type?.trim();
+  if (!detail && run.status !== 'failed') return null;
+  return <p className="sv-inline-error sv-run-detail"><strong>Run status: {readable(run.status)}.</strong> {detail || 'No failure reason was recorded.'}</p>;
+}
+
 export function SimulationVisualOverview({ run, knownSapienName }: { run: SimulationRun; knownSapienName?: string | null }) {
   const [overview, setOverview] = useState<InspectionOverviewDetails | null>(null);
   const [spec, setSpec] = useState<InspectionSpecificationResponse | null>(null);
@@ -190,6 +211,7 @@ export function SimulationVisualOverview({ run, knownSapienName }: { run: Simula
   return <div className="sv-overview">
     <header className="sv-header"><div><p className="sv-eyebrow">A simulated workplace</p><h1 className="capitalize">{readable(run.case_id)}<span>.</span></h1></div><div className="sv-run-state"><span className="sv-status">{readable(overview?.run_status || run.status)}</span><small>Simulated time · {stamp(overview?.run_state?.simulated_time || run.simulated_time)}</small><Button variant="ghost" size="sm" disabled={loading} onClick={() => setRefresh(value => value + 1)}><RefreshCw className="mr-2 size-3.5" />{loading ? 'Loading…' : 'Refresh'}</Button></div></header>
     {error && <p role="alert" className="sv-inline-error">{error}</p>}
+    <OverviewRunDetail run={run} />
     <div className="mb-4"><SimulationPurpose sapienName={run.sapien_id ? knownSapienName || people.get(run.participant_id || '') : null} /></div>
     <SimulationIntroduction spec={spec} overview={overview} participant={participant} role={role} base={base} loading={loading} />
     <div className="sv-story-intro"><h2>What did {participant} do?</h2></div>
@@ -198,8 +220,8 @@ export function SimulationVisualOverview({ run, knownSapienName }: { run: Simula
       {source ? <StoryCanvas key={`${run.run_id}:${source.sequence}:${refresh}`} run={run} source={source} people={people} participantName={participant} /> : <div className="sv-empty"><MessageSquare className="size-10" /><h2>{loading ? 'Opening the recorded exchanges…' : 'No incoming messages in this portion'}</h2><p>{loading ? 'The story will appear when the saved evidence is loaded.' : page?.has_more ? 'Load earlier messages to explore another part of the run.' : 'Messages will appear here once recorded. You can still explore the scenario below.'}</p></div>}
       <div className="sv-story-picker"><label htmlFor="sv-story-select">Browse exchanges</label><select id="sv-story-select" disabled={!sources.length || loading} value={source ? String(index) : ''} onChange={event => setIndex(Number(event.target.value))}>{!sources.length && <option value="">No exchanges loaded</option>}{sources.map((item, position) => <option key={item.record_id} value={position}>{people.get(text(item.payload.sender_id)) || text(item.payload.sender_id)} · {stamp(item.occurred_at)} · {text(item.payload.text).slice(0, 65)}</option>)}</select>{page?.has_more && <Button variant="outline" size="sm" disabled={loading} onClick={() => void loadEarlier()}>{loading ? 'Loading…' : 'Load earlier exchanges'}</Button>}<small>Newest first · {sources.length} exchanges loaded</small></div>
     </section>
-    <div className="sv-explore"><h2>Explore the workplace</h2><div>{[['messages', 'Conversations'], ['jira', 'Project board'], ['sapien', 'All activity'], ['results', 'Verified results']].map(([path, title]) => <Link key={path} to={`${base}/${path}`}>{title}<ArrowRight className="size-4" /></Link>)}</div></div>
-    <details className="sv-background"><summary><span>Timeline & results</span><span>Explore this run <ChevronDown className="size-4" /></span></summary><div className="sv-background-content"><h3>Project calendar</h3><p className="sv-meta">Time reached is not work completed.</p>{phases.length ? <ol className="sv-phases">{phases.map(phase => { const current = now >= Date.parse(phase.start_at) && now < Date.parse(phase.end_at); return <li key={phase.phase_id} aria-current={current ? 'step' : undefined}><span /><strong>{phase.title}</strong><small>{current ? 'Current period' : now >= Date.parse(phase.end_at) ? 'Earlier period' : 'Upcoming period'}</small></li>; })}</ol> : <p>No phase timeline recorded.</p>}<h3>Independent checks</h3>{overview?.objectives.length ? <ul className="sv-checks">{overview.objectives.map(objective => <li key={objective.expectation_id}><span>{objective.title}</span><strong>{readable(objective.verdict)}</strong></li>)}</ul> : <p>No evaluated checks are available.</p>}<p className="sv-meta">A complete list of unresolved work is not available here. Inspect a story’s assessment or conversations for remaining work.</p></div></details>
+    <div className="sv-explore"><h2>Explore the workplace</h2><div>{[['messages', 'Messages (Teams)'], ['jira', 'Jira'], ['sapien', 'All activity'], ['results', 'Results & evidence']].map(([path, title]) => <Link key={path} to={`${base}/${path}`}>{title}<ArrowRight className="size-4" /></Link>)}</div></div>
+    <details className="sv-background"><summary><span>Timeline & results</span><span>Explore this run <ChevronDown className="size-4" /></span></summary><div className="sv-background-content"><h3>Project calendar</h3><p className="sv-meta">Time reached is not work completed.</p>{phases.length ? <ol className="sv-phases">{phases.map(phase => { const current = now >= Date.parse(phase.start_at) && now < Date.parse(phase.end_at); return <li key={phase.phase_id} aria-current={current ? 'step' : undefined}><span /><strong>{phase.title}</strong><small>{current ? 'Current period' : now >= Date.parse(phase.end_at) ? 'Earlier period' : 'Upcoming period'}</small></li>; })}</ol> : <p>No phase timeline recorded.</p>}<h3>Independent checks</h3><OverviewChecks objectives={overview?.objectives || []} base={base} /><p className="sv-meta">A complete list of unresolved work is not available here. Inspect a story’s assessment or conversations for remaining work.</p></div></details>
     <footer className="sv-footer"><span>Recorded activity from this simulation. Snapshot #{overview?.through ?? '—'}{overview?.partial ? ' · Partial evidence' : ''}.</span><Link to={`${base}/diagnostics`}>Technical diagnostics</Link></footer>
   </div>;
 }
