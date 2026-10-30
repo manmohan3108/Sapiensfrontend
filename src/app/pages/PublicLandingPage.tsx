@@ -43,7 +43,7 @@ const stages = [
 export function PublicLandingPage() {
   const motionRef = useLandingMotion();
   const { user, status } = useAuth();
-  const destination = user ? user.role === 'admin' ? '/admin' : '/home' : '/register?next=%2Fhome%3Fcreate%3D1';
+  const destination = user ? user.role === 'admin' ? '/admin' : '/home' : '/login?next=%2Fhome%3Fcreate%3D1';
   const action = user ? 'Open your Sapiens' : 'Create your Sapiens';
   const cta = <Link className="customer-primary" to={destination}>{action}<ArrowUpRight size={18} aria-hidden="true" /></Link>;
   // Signing in does not imply that an individual has already been created.
