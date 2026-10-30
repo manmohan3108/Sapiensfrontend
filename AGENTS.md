@@ -100,3 +100,107 @@ Styling changes must retain permissions, navigation, validation, search, creatio
 Check desktop/mobile, both themes and the relevant states. Use the actual page components for visual verification where possible. When a backend is unavailable, use clearly labelled, isolated sample-data previews and distinguish those checks from live integration testing. Remove temporary preview files and mocks after verification unless retaining a preview is requested.
 
 Report what changed, what was tested and any remaining limitations. Keep changes scoped and reversible. Run the build and checks appropriate to the change. Deploy only when requested; local implementation does not imply a production deployment.
+
+## 13. Planning and delivery workflow
+
+Before changing a page, record a short page brief: intended reader, primary question,
+primary action, current friction, data available, proposed reading order and acceptance
+checks. Inspect the actual implementation and, when accessible, the live page for the
+requested Sapien. Distinguish browser observations, source-code findings and proposals.
+Do not call a code inspection or static render test a visual review.
+
+Work in small, reviewable page changes:
+
+1. Establish the current state, selected Sapien/run and routes; inspect relevant API
+   types and presentation helpers. Check Git status and preserve other work.
+2. Plan what stays immediately visible, what belongs beside a record and what can
+   be secondary. Decide this per task; do not convert every section into a dropdown.
+3. Implement the smallest coherent improvement using the existing theme and shared
+   components. Remove superseded code rather than hiding unused implementations.
+4. Review the result from a first-time reader's perspective and against the two
+   required skills. Test the affected states, navigation and data interpretation.
+5. Report changes, evidence, limitations and next review point. Commit, push, start
+   localhost or deploy only when requested. For authorized VM deployment, follow
+   `DEPLOYMENT.md` and run the VM's `deploy.sh`; verify the deployed build.
+
+Use the in-app browser by default. Do not request Chrome/Edge access unless the user
+asks for it. If visual verification requires localhost and it has not been authorized,
+report that verification as pending; do not bypass browser restrictions. Never mutate
+production records, launch a simulation, advance a run, submit feedback or trigger a
+Sapien action just to obtain attractive screenshots.
+
+## 14. Analyse and Simulation presentation contract
+
+For the current readiness pass, review only Analyse and Simulation, using Sapien 65
+as the reference account data. Homepage, Workspace and Your Sapiens are outside this
+pass. This is a presentation initiative, not a change to Sapiens' intelligence,
+decision-making, memory, learning, scheduling or simulation behaviour.
+
+- Keep the selected Sapien and, where applicable, simulation run unambiguous. A
+  simulation record must not appear to be a live-world action. Preserve selection,
+  useful filters and return paths while moving between related evidence.
+- Lead with the record's meaning and origin: who/what supplied it, relevant service,
+  conversation or issue, recorded understanding/action and outcome. Surface available
+  origin metadata before saying context is unknown. Never infer identities from prose.
+- Distinguish source evidence, Sapiens' interpretation and an evaluator's assessment.
+  Proposed, queued, prepared, executed, tool-reported success, verified outcome and
+  learned guidance are different states. A finished flag alone is not proof of success.
+- Labels must state the scope of counts, search, charts and filters: all records,
+  one run, server matches, returned page or locally filtered results. Never build an
+  apparently complete service/category selector from one paginated result page.
+- Null, unavailable, empty, zero and not applicable have different meanings. Show
+  missing information honestly, without a screen full of empty metric tiles.
+- Preserve event time, creation time, last activation and fetch time as distinct
+  concepts. Display recorded timestamps with timezone. Do not turn null ages into
+  zero or compare simulated time to the browser clock as if it were real elapsed time.
+- Explain unfamiliar controls beside the control. Keep diagnosis/evidence accessible;
+  hide raw JSON and infrastructure IDs until requested, without dropping records.
+- Use graphs when they reveal actual relationships, order or change. Provide readable
+  labels and a list/text alternative. Never invent connections, equations or metrics.
+- Prefer task-specific layouts: directories for choosing, lists/readers for records,
+  timelines for sequence, tables for comparison and graphs for connected evidence.
+  Keep the scientific grid restrained; decoration must not replace useful context.
+
+## 15. Code structure and API boundary
+
+Use `AnalyseShell`, `AnalyseControls`, `DiagnosticPrimitives`, the existing context
+readers/navigation helpers and shared theme tokens where they fit. Inspect current
+exports before adding a new abstraction. Keep Analyse-specific renderers under
+`src/app/components/analyse` and Simulation renderers under
+`src/app/components/simulation`. Keep route components focused on composition.
+
+Prefer pure, typed presentation helpers for origin labels, dates, status and display
+normalization. Reuse verified helpers rather than copying transformations between
+screens. Keep rendering, request state and data interpretation separable. Do not
+rewrite shared workspace components to achieve an Analyse-only change.
+
+Use scoped CSS and existing `--an-*` or Simulation tokens, Source Sans 3 and Source
+Serif 4. Avoid new hardcoded palettes, new dependencies for simple UI, broad override
+chains, and compressed multi-purpose components that are difficult to review. Extract
+shared primitives when behaviour genuinely repeats, not just because markup looks alike.
+
+Backend code may be read to establish field semantics. Frontend-facing API changes
+are allowed within an authorized task only after identifying the endpoint, consumers,
+permissions, clock/scope semantics and backward-compatibility impact. Prefer an additive
+read-only field or bounded query over changing an engine. Document and test the contract.
+Changes to core behaviour, authorization, scoring, ranking, learning, persistence or
+simulation execution require a separate explicit scope; do not disguise them as UI fixes.
+
+## 16. Readiness checks and review evidence
+
+For each page, check desktop and narrow layout, both themes, keyboard operation,
+opening/closing detail and returning to the same list position. Exercise loading,
+empty, partial/missing data, long content, errors, stale responses after switching
+Sapien/run, filtering/pagination, and request-in-progress states where applicable.
+Keep primary actions identifiable and separate read-only inspection from actions
+that start or change work. Do not shrink text to optimize space.
+
+Use meaningful tests for changed interpretation and interaction behaviour. Available
+checks include `pnpm test:analyse`, `pnpm test:navigation`, the awareness scripts under
+`scripts/`, and `pnpm run build`; select those relevant to the change. The Vite build
+does not replace type checking, browser review or live API integration tests.
+
+The readiness record is `docs/analyse-simulation-readiness.md`. Update its observed
+coverage, priorities and outstanding checks as work proceeds. A page is not visually
+approved because its build passes, and a polished UI is not evidence of an unsupported
+capability. Keep this document a flexible reference, not a forced layout template.
