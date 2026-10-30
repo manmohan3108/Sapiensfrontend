@@ -123,7 +123,7 @@ for(const status of ['unavailable','ambiguous','linked']) {
   h.reset([{link_status:status,through:440,reason:'conversation_match_not_unique',beat:null,actions:[],actions_truncated:false,missing_operation_ids:[]},'',0]);
   markup=html(reader.LinkedDecisions({...readProps,source:incoming}));
   if(status==='linked') assert(markup.includes('No external action is included'));
-  else {assert(markup.includes('Browse conversations'));assert(!markup.includes('Outcome not yet established'));}
+  else {assert(markup.includes('Open Messages (Teams)'));assert(!markup.includes('Outcome not yet established'));}
 }
 
 h.reset();tree=SimulationShell({run,name:'Rashi',section:'messages',children:React.createElement('p',null,'Body unchanged')});markup=html(tree);

@@ -353,6 +353,12 @@ is evidence for presentation review, not proof of final demo readiness.
 
 ## Implementation: Simulation overview and navigation — 30 October 2026
 
+Review feedback: this is the first implementation step, not completion of the
+Analyse/Simulation audit. The new overview layout is not visually approved.
+Keep the concrete workplace destinations **Jira** and **Messages (Teams)** in
+navigation, headings and overview links; replacing those names with generic
+labels made the simulation's purpose less clear. Label correction is local only.
+
 ### Page brief and design decision
 
 - Reader: an admin or first-time demo viewer inspecting Sapien 65's simulation.

@@ -47,7 +47,7 @@ function LinkedDecisions({ runId, source, participant, names, channels, hrefFor 
   if (!story) return <p role="status">Loading linked evidence…</p>;
   if (story.link_status !== 'linked') return <div className="sv-link-gap">
     <p>{story.link_status === 'ambiguous' ? 'More than one decision may match this message, so no response is attributed to it here.' : 'This message has no uniquely linked decision in the retained history.'}</p>
-    <div className="sv-reader-links"><Link to={hrefFor('messages')}>Browse conversations<ArrowRight size={14} aria-hidden="true" /></Link><Link to={hrefFor('sapien')}>Browse Sapien activity<ArrowRight size={14} aria-hidden="true" /></Link></div>
+    <div className="sv-reader-links"><Link to={hrefFor('messages')}>Open Messages (Teams)<ArrowRight size={14} aria-hidden="true" /></Link><Link to={hrefFor('sapien')}>Browse Sapien activity<ArrowRight size={14} aria-hidden="true" /></Link></div>
     <DiagnosticDisclosure title="Link details"><p>{readableSimulationLabel(story.reason || 'No reason recorded')}</p><p>Linked evidence snapshot #{story.through}</p></DiagnosticDisclosure>
   </div>;
   const decisions = story.beat?.events || [];

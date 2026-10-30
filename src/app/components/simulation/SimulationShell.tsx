@@ -8,8 +8,8 @@ import '../../../styles/simulation-shell.css';
 
 export const SIMULATION_SECTIONS = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard, group: 'Explore this run' },
-  { id: 'messages', label: 'Conversations', icon: MessageSquare, group: 'Explore this run' },
-  { id: 'jira', label: 'Project board', icon: FolderKanban, group: 'Explore this run' },
+  { id: 'messages', label: 'Messages (Teams)', icon: MessageSquare, group: 'Explore this run' },
+  { id: 'jira', label: 'Jira', icon: FolderKanban, group: 'Explore this run' },
   { id: 'sapien', label: 'Sapien activity', icon: Activity, group: 'Explore this run' },
   { id: 'results', label: 'Results', icon: CheckCircle2, group: 'Explore this run' },
   { id: 'test-case', label: 'Test case', icon: BookOpen, group: 'Reference' },

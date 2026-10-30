@@ -47,14 +47,14 @@ export function SimulationVisualOverview({ run, knownSapienName }: { run: Simula
   return <div className="sv-overview">
     <div className="sv-intro"><div><p>See how {participant} behaves at work in a simulated workplace.</p>{role && <p className="sv-meta">Assigned role: {role}</p>}</div><Button type="button" variant="outline" onClick={refresh} disabled={loading}><RefreshCw size={16} aria-hidden="true" />{loading ? 'Refreshing…' : 'Refresh records'}</Button></div>
     <div className="sv-workplace-links" aria-label="Explore this simulation">
-      <Link to={href('messages')}><strong>Conversations</strong><span>Read the team’s exchanges</span><ArrowRight size={16} aria-hidden="true" /></Link>
-      <Link to={href('jira')}><strong>Project board</strong><span>Inspect issues and changes</span><ArrowRight size={16} aria-hidden="true" /></Link>
+      <Link to={href('messages')}><strong>Messages (Teams)</strong><span>Read the team’s exchanges</span><ArrowRight size={16} aria-hidden="true" /></Link>
+      <Link to={href('jira')}><strong>Jira</strong><span>Inspect issues and changes</span><ArrowRight size={16} aria-hidden="true" /></Link>
       <Link to={href('sapien')}><strong>Sapien activity</strong><span>Browse messages and tool use</span><ArrowRight size={16} aria-hidden="true" /></Link>
     </div>
     {error && <div className="sv-error" role="alert"><p>{error} {page ? 'Loaded records remain available.' : ''}</p><Button type="button" variant="outline" disabled={loading} onClick={refresh}>Retry records</Button></div>}
     <div className="sv-section-heading"><div><h2>Recorded activity</h2><p className="sv-meta">{overview ? `Snapshot #${overview.through} · newest first · simulated times${overview.partial ? ' · partial retained evidence' : ''}` : 'Messages and tool activity involving this Sapien'}</p></div><Link to={href('sapien')}>All activity<ArrowRight size={15} aria-hidden="true" /></Link></div>
     <section className="sv-activity" aria-label="Recorded activity reader" aria-busy={loading} data-mobile-reader={mobileReader}>
-      {!page && !groups.length ? <div className="sv-empty" role="status"><h3>{loading ? 'Loading recorded activity…' : 'Activity could not be loaded'}</h3><p>{loading ? 'Reading the run’s saved messages and tool records.' : 'Retry the records above, or open Conversations.'}</p></div>
+      {!page && !groups.length ? <div className="sv-empty" role="status"><h3>{loading ? 'Loading recorded activity…' : 'Activity could not be loaded'}</h3><p>{loading ? 'Reading the run’s saved messages and tool records.' : 'Retry the records above, or open Messages (Teams).'}</p></div>
         : !groups.length ? <div className="sv-empty"><MessageSquare size={28} aria-hidden="true" /><h3>No participant activity in this snapshot</h3><p>{participantId ? 'Refresh after activity is recorded, or explore the test case.' : 'This run has no recorded participant identity. Open the test case for its setup.'}</p><Link to={href('test-case')}>Explore the test case<ArrowRight size={15} aria-hidden="true" /></Link>{page?.has_more && <Button type="button" variant="outline" disabled={loading || loadingMore} onClick={() => void loadMore()}>Load older records</Button>}</div>
         : <>
           <div className="sv-activity-list" ref={list}>
