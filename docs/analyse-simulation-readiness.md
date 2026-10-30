@@ -353,6 +353,17 @@ is evidence for presentation review, not proof of final demo readiness.
 
 ## Implementation: Simulation overview and navigation — 30 October 2026
 
+**Reverted locally at the user's request on 30 October 2026.** The implementation
+described below is historical, not the current working version. Restored Simulation
+World's overview, navigation and styling from the parent of `f8098b42`, including the
+previous overview route. Removed the new shell, record reader, request/model helpers,
+styles and their implementation-specific test. Analyse's existing copper palette is
+unchanged; its token definitions are back in `analyse.css`. The audit and AGENTS.md
+guidance remain, and the separate Engram stash is untouched. No deployment requested.
+Rollback verification: production build and `pnpm test:analyse` passed. Restored
+Simulation sources match the earlier version (apart from a trailing blank line
+cleanup); removed modules have no remaining imports. No browser preview was started.
+
 Review feedback: this is the first implementation step, not completion of the
 Analyse/Simulation audit. The new overview layout is not visually approved.
 Keep the concrete workplace destinations **Jira** and **Messages (Teams)** in
