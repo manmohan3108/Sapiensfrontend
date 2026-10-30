@@ -58,7 +58,7 @@ function DirectionLanding({ direction, homepage = false }: { direction: Directio
   const [graphOpen, setGraphOpen] = useState(false);
   const environment = direction.id === 'forest' || direction.id === 'workshop' || direction.id === 'science' ? direction.id : undefined;
   const { user } = useAuth();
-  const destination = user ? user.role === 'admin' ? '/admin' : '/home' : '/login?next=%2Fhome%3Fcreate%3D1';
+  const destination = user ? user.role === 'admin' ? '/admin' : '/home' : '/login?next=%2Fhome';
   const action = user ? 'Open your Sapiens' : 'Create your Sapiens';
   const cta = <Link className="direction-cta" to={destination}>{action}<ArrowUpRight size={18}/></Link>;
   const howLink = <a href="#layered-chapters">How it works</a>;
