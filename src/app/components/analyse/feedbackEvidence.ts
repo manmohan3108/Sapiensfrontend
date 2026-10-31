@@ -173,7 +173,9 @@ export function feedbackNodePreview(reference: FeedbackReference, names = new Ma
   const available = !!reference?.details?.available;
   const issue = text(event.tool?.args?.issue_key || event.tool?.args?.issueKey);
   const result = object(event.tool?.result);
-  const issueFields = object(result?.fields);
+  // Jira tools return either native `fields` or a flattened issue. Both contain
+  // the same reader-facing information; housekeeping fields stay in source details.
+  const issueFields = object(result?.fields) || result;
   const commentTool = event.tool?.server === 'jira' && event.tool.tool === 'jira_get_comments';
   const issueTool = event.tool?.server === 'jira' && event.tool.tool === 'jira_get_issue';
   // A batch is evidence as a whole. Its first entry is not necessarily the one
@@ -184,6 +186,7 @@ export function feedbackNodePreview(reference: FeedbackReference, names = new Ma
   let excerpt = event.body;
   let caption = '';
   let context = event.actor;
+  const issueStatus = issueTool ? text(issueFields?.status) || text(object(issueFields?.status)?.name) : '';
   const facts = (values: EvidenceField[]) => values.map(field => `${field.label}: ${field.value}`).join('\n');
 
   if (event.kind === 'message') {
@@ -199,8 +202,7 @@ export function feedbackNodePreview(reference: FeedbackReference, names = new Ma
       : event.tool.server === 'teams' && /^(list-chat-messages|list-channel-messages)$/.test(event.tool.tool) ? 'Request to read Teams messages'
       : event.title || 'Tool record';
     const resultExcerpt = singleItem?.text || (singleItem ? facts(singleItem.fields) : '')
-      || event.resultText || feedbackDocumentText(issueFields?.description) || text(issueFields?.summary)
-      || facts(event.resultFields);
+      || event.resultText || (issueTool ? feedbackDocumentText(issueFields?.description) || text(issueFields?.summary) : facts(event.resultFields));
     if (event.error) { excerpt = event.error; caption = 'Error returned by the tool'; }
     else if (entries) {
       excerpt = ''; caption = `${entries.length} entries in this saved result`;
@@ -209,8 +211,9 @@ export function feedbackNodePreview(reference: FeedbackReference, names = new Ma
       excerpt = 'The saved result contains no entries.'; caption = 'Saved result';
     } else if (resultExcerpt) {
       excerpt = resultExcerpt;
-      caption = 'Saved result';
+      caption = issueTool ? 'Issue description' : 'Saved result';
       context = singleItem?.author && !commentTool ? `From ${singleItem.author}` : issueTool ? text(issueFields?.summary) : '';
+      if (context === excerpt) context = '';
     } else if (event.body && !/^Tool activity /.test(event.body)) {
       excerpt = event.body; caption = 'Saved event text';
     } else {
@@ -233,7 +236,7 @@ export function feedbackNodePreview(reference: FeedbackReference, names = new Ma
 
   return {
     title, excerpt: available ? excerpt || (entries ? '' : 'No readable text was supplied.') : 'Details unavailable. The original event could not be loaded.',
-    caption, context, entries, service: event.service,
+    caption, context, entries, issueStatus, service: event.service,
     detailAction: event.tool ? event.kind === 'message' ? 'View tool details' : 'View request and result' : available ? 'View source details' : 'View saved reference',
     status: event.tool ? `Tool reported: ${event.tool.outcome || 'result not recorded'}` : event.state ? `Recorded state: ${event.state}` : '',
     tone: event.tool?.outcome === 'Failed' ? 'danger' as const : event.tool?.outcome === 'Uncertain' ? 'warning' as const : 'neutral' as const,

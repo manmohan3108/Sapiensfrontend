@@ -142,7 +142,7 @@ function FeedbackView({ sapienId }: { sapienId: string }) {
 
     <Dialog open={selectedId !== null} onOpenChange={open => { if (!open) close(); }}>
       <DialogContent className="feedback-dialog" onCloseAutoFocus={event => { event.preventDefault(); (opener.current?.isConnected ? opener.current : tableHeading.current || firstFilter.current)?.focus({ preventScroll: true }); }}>
-        <header className="feedback-dialog-header"><DialogTitle>{selected ? feedbackDetailTitle(selected) : 'Feedback finding'}</DialogTitle><DialogDescription>Sapien {sapienId} · Feedback finding</DialogDescription>
+        <header className="feedback-dialog-header"><div className="feedback-dialog-heading"><DialogTitle>{selected ? feedbackDetailTitle(selected) : 'Feedback finding'}</DialogTitle><DialogDescription>Sapien {sapienId} · Feedback finding</DialogDescription></div>
           <div className="feedback-reader-navigation"><button type="button" className="analyse-button" onClick={close}>Back to findings</button>
             {selected && data && <><span>{selectedIndex + 1} of {data.findings.length} on this page</span><button type="button" className="analyse-button" disabled={selectedIndex === 0} onClick={() => update({ selectedId: data.findings[selectedIndex - 1]._id }, true)}>Previous finding</button><button type="button" className="analyse-button" disabled={selectedIndex === data.findings.length - 1} onClick={() => update({ selectedId: data.findings[selectedIndex + 1]._id }, true)}>Next finding</button></>}
           </div>

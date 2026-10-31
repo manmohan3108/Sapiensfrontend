@@ -112,50 +112,52 @@ export function FeedbackFindingDetail({ finding, mode }: { finding: FeedbackFind
   return <article className="feedback-finding">
     <section className="feedback-events" aria-labelledby={`${id}-graph-title`}>
       <h3 id={`${id}-graph-title`}>Evidence behind this finding</h3>
-      <p className="feedback-help">The linked records feed into Sapiens’ interpretation below. Supporting records are included where available.</p>
+      <p className="feedback-help">Read the saved evidence alongside Sapiens’ interpretation.</p>
       <div className="feedback-merge-graph">
+        <div className="feedback-graph-summary">
+          <section className="feedback-graph-conclusion" aria-labelledby={`${id}-conclusion`}>
+            <div className="feedback-conclusion-heading"><h3 id={`${id}-conclusion`}>What Sapiens concluded</h3>
+              {finding.state === 'interpreted' ? <DiagnosticBadge>Interpretation recorded</DiagnosticBadge> : <FeedbackStateBadge state={finding.state} />}
+            </div>
+            {finding.state === 'ambiguous' && <p className="feedback-help">Sapiens could not clearly determine how these records are related.</p>}
+            {finding.state === 'unrelated' && <p className="feedback-help">Sapiens did not find a useful connection between these records.</p>}
+            {finding.state === 'superseded' && <p className="feedback-help">A newer finding replaced this interpretation. This record is kept for reference.</p>}
+            <p className="feedback-node-excerpt">{finding.meaning || 'No conclusion was recorded.'}</p>
+            <p className="feedback-mode-note">{mode === 'observe'
+              ? <><strong>Saved for review — not applied.</strong> Observe mode does not apply these findings to Sapiens’ behavior.</>
+              : feedbackMode(mode)}</p>
+          </section>
+          {!!changes.length && <section className="feedback-request-changes" aria-labelledby={`${id}-changes`}>
+            <h3 id={`${id}-changes`}>What changed in the request</h3>
+            <p className="feedback-help">Same tool, two saved requests. These differences alone do not prove what caused the result.</p>
+            <dl className="feedback-change-list">{changes.map((change, index) => <div key={index}>
+              <dt>{change.label}</dt><dd>
+                <span><small>Activity request</small>{change.earlier}</span>
+                <span className="feedback-change-arrow" aria-hidden="true">→</span>
+                <span><small>Compared request</small>{change.later}</span>
+              </dd>
+            </div>)}</dl>
+          </section>}
+        </div>
         <div className="feedback-graph-sources">
           {previews.map((preview, index) => <section key={index} className="feedback-graph-node" data-selected={selected === index} aria-labelledby={`${id}-source-${index}`}>
             <p className="feedback-node-role">{sourceRole(index)}</p>
             <h4 id={`${id}-source-${index}`}>{preview.title}</h4>
             {(preview.service || preview.context) && <p className="feedback-node-context">{[preview.service, preview.context].filter(Boolean).join(' · ')}</p>}
-            {preview.caption && <p className="feedback-node-caption">{preview.caption}</p>}
+            {preview.issueStatus && <p className="feedback-node-fact">Jira status: <strong>{preview.issueStatus}</strong></p>}
+            {preview.caption && !['Saved result', 'Saved message', 'Issue description'].includes(preview.caption) && <p className="feedback-node-caption">{preview.caption}</p>}
             {preview.excerpt && <p className="feedback-node-excerpt">{preview.excerpt}</p>}
             {preview.entries && <ol className="feedback-graph-entries" aria-label="Entries in the saved result">{preview.entries.map((item, itemIndex) => <li key={itemIndex}>
               {item.author && <p className="feedback-result-author">{item.author}</p>}
               <p className="feedback-node-excerpt">{item.text || item.fields.map(field => `${field.label}: ${field.value}`).join('\n') || 'No readable text was supplied for this entry.'}</p>
             </li>)}</ol>}
-            {preview.status && <DiagnosticBadge tone={preview.tone}>{preview.status}</DiagnosticBadge>}
-            {preview.partial && <p className="feedback-note">Partial saved record</p>}
+            <div className="feedback-node-status">{preview.status && <DiagnosticBadge tone={preview.tone}>{preview.status}</DiagnosticBadge>}
+              {preview.partial && <span className="feedback-note">Partial saved record</span>}</div>
             <footer className="feedback-node-footer"><span>{feedbackTime(sources[index]?.occurred_at)}</span>
               <button type="button" className="diagnostic-link" aria-expanded={selected === index} aria-controls={`${id}-details`} aria-label={`${preview.detailAction}: ${preview.title} (${sourceRole(index).toLowerCase()})`} onClick={event => inspect(index, event.currentTarget)}>{preview.detailAction}</button>
             </footer>
           </section>)}
         </div>
-        <div className="feedback-merge-connector" aria-hidden="true"><span /></div>
-        {!!changes.length && <section className="feedback-request-changes" aria-labelledby={`${id}-changes`}>
-          <h3 id={`${id}-changes`}>What changed in the request</h3>
-          <p className="feedback-help">Same tool, two saved requests. These differences alone do not prove what caused the result.</p>
-          <dl className="feedback-change-list">{changes.map((change, index) => <div key={index}>
-            <dt>{change.label}</dt><dd>
-              <span><small>Activity request</small>{change.earlier}</span>
-              <span className="feedback-change-arrow" aria-hidden="true">→</span>
-              <span><small>Compared request</small>{change.later}</span>
-            </dd>
-          </div>)}</dl>
-        </section>}
-        <section className="feedback-graph-conclusion" aria-labelledby={`${id}-conclusion`}>
-          <div className="feedback-conclusion-heading"><h3 id={`${id}-conclusion`}>What Sapiens concluded</h3>
-            {finding.state === 'interpreted' ? <DiagnosticBadge>Interpretation recorded</DiagnosticBadge> : <FeedbackStateBadge state={finding.state} />}
-          </div>
-          {finding.state === 'ambiguous' && <p className="feedback-help">Sapiens could not clearly determine how these records are related.</p>}
-          {finding.state === 'unrelated' && <p className="feedback-help">Sapiens did not find a useful connection between these records.</p>}
-          {finding.state === 'superseded' && <p className="feedback-help">A newer finding replaced this interpretation. This record is kept for reference.</p>}
-          <p className="feedback-node-excerpt">{finding.meaning || 'No conclusion was recorded.'}</p>
-          <p className="feedback-mode-note">{mode === 'observe'
-            ? <><strong>Saved for review — not applied.</strong> Observe mode does not apply these findings to Sapiens’ behavior.</>
-            : feedbackMode(mode)}</p>
-        </section>
       </div>
     </section>
     <section className="feedback-node-details" id={`${id}-details`} ref={detailPanel} tabIndex={-1} aria-labelledby={`${id}-details-title`} hidden={selected === null}>
