@@ -1,13 +1,194 @@
 # Analyse and Simulation readiness review
 
-Reviewed: 30 October 2026. Status: **Simulation overview and navigation implemented locally; visual verification pending**.
-Local baseline: `cd09dea5`. Reference: Rashi, Sapien **65**.
+Latest review: 31 October 2026. Status: **Feedback table implemented locally; updated UI browser review pending**.
+Reference: Rashi, Sapien **65**. The Simulation redesign was reverted; its legacy
+overview was subsequently removed. Engram remains stashed for later review.
+The initial 30 October audit used local baseline `cd09dea5`; implementation entries
+below are historical and must be read with their rollback notes.
 
 This record works alongside [AGENTS.md](../AGENTS.md). It is a flexible, page-by-page
 plan, not a requirement to give every page the same layout. The initial review changed
 documentation only. The implementation record below tracks subsequent application
 changes. No backend behaviour, production records or simulation controls were
 changed; localhost and deployment remain off unless requested.
+
+## Current plan: table-first Analyse review, 31 October 2026
+
+**Implementation order updated by the user:** Feedback first, ahead of Awareness.
+Page brief: an admin reviewing Sapien 65 should be able to compare saved feedback
+findings and open the original evidence. The current split view repeats long prose
+and automatically selects the first record. Use a full-width table with interpretation,
+recorded experience/source, state and creation time, then a focused detail dialog.
+Keep the mode explanation, multi-state filtering, paging, supporting evidence and
+background diagnostics. Use only existing feedback response fields; no API or engine
+changes. Retain --an-* copper tokens (dark #1e1916 / #30251f / #ebe2d5 / #deb580;
+light #efede7 / #faf8f2 / #352e29 / #874a2b), Source Sans 3, left-aligned evidence
+and quiet separators. Acceptance: no automatic reader, full evidence on click,
+filter/page/scroll preservation, keyboard return, accurate missing/truncated states,
+no stale records on Sapien or filter changes, and no claim that a possible lesson
+was applied. Localhost and deployment remain unauthorized.
+
+This plan supersedes the earlier implementation order. Keep compact tables or aligned
+record rows as the primary view, opening one record for full details. Preserve the
+copper palette, shared navigation, scientific grid and existing useful explanations.
+Do not replace these with dashboard cards, a permanent split pane on every page,
+or another round of generic collapsible sections. Feedback is first, Awareness follows;
+Engram is last.
+Simulation, Homepage, Workspace and Your Sapiens are outside this change.
+
+### Feedback implementation, 31 October 2026
+
+- Rechecked the deployed Feedback page for Rashi #65 in the in-app browser: 12
+  findings; opened Mei's clarification and its saved activity/experience evidence.
+  This was a review of the existing UI, not a preview of the implementation below.
+- Replaced the paragraph list and automatically selected reader with a semantic
+  table: recorded interpretation, earlier activity, later experience, finding state
+  and recorded time. No record is selected automatically. Explicit display fields
+  supply people/service/tool labels; nothing is inferred from the interpretation.
+- Open an interpretation in the shared accessible dialog. It preserves full saved
+  wording, paired evidence, supporting references, truncation notices and technical
+  records. Previous/next stays within the returned page. Closing restores focus and
+  the list position; URL state retains filters, page and selected finding for this Sapien.
+- Kept multi-state filtering, page size, refresh, background diagnostics and the
+  existing read-only API. Observe mode and possible lessons remain distinct from
+  applied learning. Missing counts are not displayed as zero; event, observation
+  and record timestamps retain their separate meanings and include timezone.
+- Reused AnalyseControls, DiagnosticPrimitives, Dialog, navigation memory and copper
+  tokens. Extracted typed presentation helpers and the evidence reader; removed the
+  obsolete split-layout JSX and responsive CSS. No shared workspace or engine changes.
+- Checks: `pnpm test:analyse` passes, including table/reader selection, preserved
+  scroll/focus callbacks, filters, paging without a total, missing/deep-linked records,
+  evidence escaping, truncation, timestamps and stale-response isolation. Production
+  Vite build passes with the existing large-chunk warning. These are code/render tests,
+  not visual or end-to-end browser approval.
+- `pnpm test:navigation` has an unrelated baseline failure: its first admin menu
+  assertion calls `appDestinations(true)` without the required `analysisAccess` argument.
+  Both that test and the permission helper are unchanged from HEAD. They were not
+  modified to make the Feedback check pass.
+- Still pending: visual review of the new UI at desktop/narrow widths in both themes,
+  real keyboard/focus/scroll behavior, and live integration of the new presentation.
+  Localhost was not started, and nothing was committed, pushed or deployed.
+
+### Evidence from this pass
+
+Used the authenticated live site in the in-app browser, with **Rashi #65 selected**,
+and inspected the corresponding frontend components/types. Applied frontend-design
+and the freshly fetched Web Interface Guidelines. Desktop observations used a
+1440 x 900 viewport; Awareness was also observed at the browser's narrow width.
+The viewport override was reset afterward. These are observations of the deployed
+UI, not proof that every local source file matches the deployed build.
+
+| Page | Observed live | Main friction |
+| --- | --- | --- |
+| Awareness | 92 saved runs; opened Isha's colleague-outreach run, 38 steps, 25 recorded tool actions; expanded the Teams list-users result | The request repeats in the title, focus and assessment. Important action results sit below repeated prose. Many rows say "An external action finished". Expanding a structured directory result exposes JSON first. |
+| Working Memory | 25 returned records, with origin, activation and absolute time | Good aligned layout. Long Teams chat IDs crowd the origin column; three-line excerpts plus tags make rows tall. Preserve factual source and timing distinctions. |
+| Goals & Plans | Three open goals; opened the Jira SD-1–SD-32 review goal | Existing row/reader navigation works. Selected goal has no plan, assessment or context, each occupying its own section. Source is available in the model but not prominent in the list. |
+| Questioning | 15 records; opened the assessed kickoff-readiness answer | Table is useful. "awareness engine" names the producer, not the underlying person/context. Detail puts several metadata lines and a missing-context panel before the answer. |
+| Curiosity | Zero returned records with all states selected | Empty table headers, breakdown and disabled pagination add noise. No populated record was available to visually review. |
+| Feedback | 12 findings; inspected Mei's recipient clarification and before/after evidence | Long paragraph previews in a narrow list beside the full reader duplicate content and make findings hard to compare. Observe mode is correctly distinguished from applied learning. |
+| Tool Learning | 25 profiles; all-service selector includes connections, Jira and Microsoft Teams; opened Teams list-users lesson | Service selector works. List repeats full simulation-run IDs and "View 1 saved lesson" instead of guidance, while detail has useful guidance, conditions and limits. |
+| Engine Bus | Last hour: 0 shown of 1 loaded; last 24 hours: one owner-introduction signal, with two delivery records | Empty state needs a direct wider-range action; time-only list labels lose the date. Keep publication and individual delivery status distinct. |
+| Engine Jobs | Error state; one read-only retry did not recover | Populated rows could not be reviewed live in this pass. Table/detail plan is based on source, not a successful live response. Diagnose the read failure before claiming this page verified. |
+| Timeline / Debug | Timeline opens "no session"; Debug says to send a message | These still depend on workspace session state. Selecting Sapien 65 alone does not establish a conversation. They need a clear scope/entry path before visual polish. |
+| AI Usage | Populated quota dialog; Sapien and shared-global accounting are distinguished | Repeated quota cards make the dialog long. Preserve UTC date, scope and call-type distinctions in any compact comparison. |
+
+Counts are a review snapshot, not fixed totals. Several records use simulation dates
+later than the browser clock; this alone is not a timestamp bug. No production data,
+jobs, feedback, goals, conversations or simulation state were changed.
+
+### Shared interaction decisions
+
+- A short purpose line, compact controls, result scope/count, then the table. Keep
+  commonly used search/status/service/time controls immediately visible; secondary
+  filters may expand. Do not bury essential filters or add a new filter to every page.
+- Each table has a wide meaning column, recorded origin where available, a small
+  number of useful status/time columns and a clear record-opening affordance.
+  Use real table headers where the content is tabular. Keep readable text sizes;
+  reduce repetition and padding before shrinking text.
+- Use approximately two lines for long list excerpts, with the complete saved text
+  in the reader. Do not invent short titles or generated interpretations. Full IDs
+  belong in copyable technical details, with useful service/person/issue fields first.
+- Standardize record opening, visible Close/Back, keyboard focus and restoring the
+  same filters, page and scroll position. Keep one reader open at a time. Add previous/
+  next record navigation within the currently loaded result set where it helps.
+  Deep links and browser Back should retain the selected Sapien and scope.
+- Details may use chronological rows, a small evidence comparison or structured
+  fields as appropriate. Do not force all detail content into another wide table.
+- Use recorded origin metadata and exact references. A shared engine name is not a
+  sender. A run UUID should be labelled as simulation scope; resolve a friendly run
+  name only when available. Do not infer people, outcomes or links from text similarity.
+- Keep counts/search bounds explicit. Full-service choices must continue to cover
+  all saved pages. Missing context, empty results and read errors remain distinct.
+
+### Next implementation: Awareness
+
+**Reader:** an admin inspecting Rashi's behaviour. **Primary question:** what prompted
+this run, what did Rashi understand, and what actually happened? **Primary action:**
+choose a run, inspect its evidence and return to the same place in the table.
+
+**Available data:** run/source/focus/assessment fields, saved understanding, ordered
+steps and exact matched action arguments/results. The existing renderer already
+distinguishes exact/ambiguous matches, activity records, raw results and truncation.
+Preserve those distinctions. No new backend logic is needed for this first pass.
+
+1. Keep the current table. Refine headings to **Situation**, **Source / person**,
+   **Run state**, **Sapien's assessment**, **Tool actions**, **Started**. The last two
+   status concepts must stay separate: finished processing does not establish a
+   completed task, and a task assessment does not establish a Jira issue's status.
+2. Keep a compact reader header with source, recorded time and status. Show the
+   original input and saved understanding without repeating the full focus in the
+   title, focus panel and assessment. Preserve distinct saved passages when they
+   contain different evidence; reduce rendering duplication, not stored meaning.
+3. Make **Recorded actions** easy to scan: action, service/target when recorded,
+   reported result and time. For example, show **Teams · List users — tool reported
+   success** instead of only **An external action finished**. Known structured
+   results become readable fields or a small directory table; raw JSON stays available.
+4. Open an action for its exact inputs, result and recorded reason. Preserve errors,
+   rejected proposals, reconsiderations and waiting decisions in the accessible full
+   trace, retaining event order. Prepared messages must never look like sent messages.
+5. Put the recorded assessment and remaining work together. Keep context, original
+   source snapshots, full decision trace and technical identifiers available without
+   requiring them to read the primary account. No fabricated causal flow or summary.
+
+**Acceptance:** the Isha outreach run must show that 25 tool actions reported success
+while the work remained in progress. A multi-action run, a no-action run and a failed/
+unresolved run must all remain understandable. Validate exact vs ambiguous action
+matching, missing/truncated evidence, long tool results and preserved step access.
+
+### Following pages: brief and reading order
+
+The reader remains an admin inspecting saved evidence; the primary action remains
+opening a record unless noted. These are incremental proposals, not approval to
+implement every page at once.
+
+| Order / page | Primary question and table contents | Open-record reading order and available-data limit | Page-specific acceptance |
+| --- | --- | --- | --- |
+| 2. Questioning / Curiosity | What question or gap was recorded, where did it arise, and what is its assessment? Keep question, origin/producer, assessment and recorded time visible. Move the job link to related evidence if it improves the table. | Question → available source context → saved understanding/outcome → related job and technical facts. Treat missing context as a concise note rather than a large empty panel. Preserve distinct Curiosity selection/review fields. | Generated, selected, asked and delivered remain separate; no inferred delivery. Empty Curiosity view has refresh/filters without empty breakdowns or useless paging. Populated Curiosity needs fixtures or another authorized recorded example. |
+| 3. Feedback | What possible lesson was identified and from which experience? Use a full-width table: interpretation excerpt, source/service when supplied, finding state and time. | Interpretation → what Rashi did → what happened afterward → evidence limits. Preserve existing before/after evidence but open it on selection, avoiding the permanent paragraph-heavy split view. | Observe-mode findings never appear as applied learning. Actual action result, later feedback, model confidence and truncated evidence retain separate meanings. |
+| 4. Tool Learning | Which service/tool has learned guidance? Preserve the all-pages service selector; align tool, guidance preview when supplied, lesson count, scope and update time. | Keep the useful existing lesson, conditions, limits, evidence, versions and guidance-use views. Label run scope as simulation, placing full UUID in details. The list response did not expose guidance in the observed UI, though the detail did. Confirm the API contract before promising a list preview; do not fetch every profile on every render or invent lesson text. | Service list remains complete across pagination; guidance is not tool documentation; consideration/use of guidance is not proof of successful execution. Any additive read-only preview API is a separately documented follow-up if needed. |
+| 5. Working Memory / Goals | What context is available, or what goal is open? Retain the good row/reader foundation. Align goal state, plan availability and update time; reduce UUID/tag clutter in memory origins. | Memory: content → origin → activation/time. Goal: goal/status → available assessment/plan → context/history. Collapse multiple absent sections into a short truthful availability note; keep actions that change a goal distinct from inspection. | Activation is not confidence; focus is not a current thought. Missing plan is not zero progress. No recomputed lifecycle or completion logic. Workspace components remain unchanged. |
+| 6. Engine Bus / Engine Jobs | What signal was passed, or what work ran? Bus: signal, producer/target, publication status, occurred time. Jobs: engine/action, state, scheduling eligibility, failures and creation time. | Bus: envelope → deliveries → actual correlation links. Jobs: origin/action → status/error → schedule/timing → raw payload. Resolve the live Jobs read error before visual approval. | Completed publication is not delivered work. Job completion is not goal success. Simulation due time stays separate from real audit/execution time. No execution/retry controls triggered by inspection. |
+| 7. Timeline / Debug / AI Usage | Timeline/Debug: which conversation or saved execution is being inspected? Usage: whose quota, which call type and UTC period? | Establish an explicit supported session/record selection for Timeline/Debug; inspect current APIs before promising a Sapien-wide history. Usage may use compact tier rows, retaining small real usage bars, with purpose/history on demand. | No "send a message" requirement just to inspect existing evidence; no false zero-history claim when no session is selected. Usage never merges Sapien quota with the shared global pool or converts call counts into invented costs. |
+| Last. Engram | Deferred by explicit user preference. | Existing stash stays intact. Revisit the stored-memory workflow after the pages above. | Do not pop or rewrite the stash as part of these changes. |
+
+### Implementation and verification boundary
+
+Use AnalyseShell, AnalyseControls, DiagnosticPrimitives, existing navigation/context
+helpers and --an-* tokens. Reuse small presentation helpers for readable names, dates,
+status, source references and common reader behaviour; keep page-specific meaning
+out of generic components. Remove superseded UI code instead of hiding it.
+
+Before completing each implementation, check desktop/narrow layout, both themes,
+keyboard opening/closing and focus return, list position/filter retention, long text,
+missing data, empty results, pagination, stale Sapien/run responses and refresh errors.
+Use relevant presentation/navigation tests, type checks where available and build;
+these do not replace browser review. No local server is authorized by this plan.
+
+This pass reviewed representative live states, not every interaction or both themes
+on every page. It changed documentation only. No implementation tests were run because
+no application code changed; the Engine Jobs failure and populated Curiosity review
+remain outstanding. Implement **Awareness only** as the next reviewable step after
+the user approves proceeding.
 
 ## Scope and goal
 

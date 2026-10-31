@@ -439,4 +439,136 @@ h.begin();tree=memoryAsync.WorkingMemoryAnalysis({sapienId:62,openEngram(){}});
 find(tree,n=>n.type===Controls).props.onRefresh();await new Promise(resolve=>setImmediate(resolve));
 assert.equal(h.values[1].data.wm.entries[0].id,'jira-memory');assert.equal(h.values[1].error,'Snapshot refresh unavailable');
 h.begin();assert(html(memoryAsync.WorkingMemoryAnalysis({sapienId:62,openEngram(){}})).includes('Showing the previous snapshot'));cleanMemory();
-console.log('Analyse checks passed, including Working Memory origin, timestamp, search, filter, stale-response and refresh-error regressions; Goals and existing Analyse checks passed. No network or server used.');
+// Feedback: production render trees and read lifecycle; no server or writes.
+const feedbackTypes=await load('types/feedbackTypes.ts');
+globalThis.analyseTest.feedbackTypes=feedbackTypes;
+const feedbackPresentation=await load('components/analyse/feedbackPresentation.ts','const {FEEDBACK_STATES}=globalThis.analyseTest.feedbackTypes;');
+globalThis.analyseTest.feedbackPresentation=feedbackPresentation;
+globalThis.analyseTest.diagnosticUI=await load('components/analyse/DiagnosticPrimitives.tsx','const {useState,useId}=React;');
+const feedbackDetail=await load('components/analyse/FeedbackFindingDetail.tsx','const {DiagnosticBadge,DiagnosticDisclosure,DiagnosticText}=globalThis.analyseTest.diagnosticUI;\nconst {feedbackLabels,feedbackOrigin,feedbackTime}=globalThis.analyseTest.feedbackPresentation;');
+globalThis.analyseTest.feedbackDetail=feedbackDetail;
+globalThis.analyseTest.feedbackService={list:async()=>{throw Error('Unexpected request');}};
+globalThis.analyseTest.feedbackNavigation={scroll:new Map()};
+const feedbackPrelude=hooks+'\nconst useLocation=()=>({pathname:"/admin/analyse/feedback"});\nconst useNavigationMemory=()=>globalThis.analyseTest.feedbackNavigation;\nconst {FEEDBACK_STATES}=globalThis.analyseTest.feedbackTypes;\nconst {feedbackLabels,feedbackMode,feedbackOrigin,feedbackQuery,feedbackTime,updateFeedbackQuery}=globalThis.analyseTest.feedbackPresentation;\nconst {FeedbackFindingDetail,FeedbackStateBadge}=globalThis.analyseTest.feedbackDetail;\nconst {DiagnosticDisclosure}=globalThis.analyseTest.diagnosticUI;\nconst feedbackService=globalThis.analyseTest.feedbackService;';
+const feedbackUI=await load('components/analyse/FeedbackInspection.tsx',feedbackPrelude,'export {FeedbackView,FeedbackProcessing};');
+const feedbackRecord={
+  _id:'finding-1',sapien_id:65,state:'interpreted',meaning:'Mei clarified the intended recipient. No subsequent introduction is established.',
+  confidence:0,created_at:'2026-11-04T00:55:35Z',updated_at:null,last_surfaced_at:null,acknowledged_at:null,
+  activity:{id:'activity-1',source:'tool_activity',occurred_at:'2026-11-03T10:36:05Z',details:{
+    available:true,content:'Full saved tool text',metadata:{arguments:{chat_id:'chat-1'},_truncated:true},
+    observed_at:'2026-11-03T10:36:06Z',truncated:true,display:{kind:'tool',server:'teams',tool:'send-chat-message',actor:'',recipient:'',outcome:'Succeeded',text:'Who should receive the introduction?'},
+  }},
+  experience:{id:'experience-1',source:'conversation_message',occurred_at:'2026-11-03T10:43:31Z',details:{
+    available:true,content:'Address the introduction to me.',metadata:{},observed_at:null,truncated:false,
+    display:{kind:'message',actor:'Mei Chen',recipient:'',server:'',tool:'',outcome:null,text:'Address the introduction to me.'},
+  }},
+  supporting_experiences:[{id:'missing',source:'conversation_message',occurred_at:null,details:{available:false}}],
+};
+const feedbackPage={sapien_id:65,mode:'observe',count:2,total:2,has_more:false,findings:[feedbackRecord,{...feedbackRecord,_id:'finding-2',state:'ambiguous',meaning:'The relationship is uncertain.'}]};
+assert.deepEqual(feedbackPresentation.feedbackOrigin(feedbackRecord.experience),{primary:'Mei Chen',secondary:'conversation message'});
+assert.match(feedbackPresentation.feedbackOrigin(feedbackRecord.activity).primary,/Teams.*send chat message/);
+assert.equal(feedbackPresentation.feedbackOrigin({source:'conversation_message',details:{available:true,content:'Alice said this in Jira',metadata:{}}}).primary,'conversation message','Never derive identities/services from prose');
+assert.equal(feedbackPresentation.feedbackTime(null),'Not recorded');
+assert.equal(feedbackPresentation.feedbackTime('bad-time'),'bad-time');
+assert.match(feedbackPresentation.feedbackTime('2026-11-03T10:00:00'),/timezone not recorded/);
+assert.match(feedbackPresentation.feedbackTime('2026-11-03T10:00:00Z'),/GMT|UTC|[A-Z]{2,}/);
+assert.match(feedbackPresentation.feedbackMode('observe'),/not applied/);
+assert.match(feedbackPresentation.feedbackMode('unexpected'),/not available/);
+const savedQuery=new URLSearchParams('feedbackFor=65&feedbackState=interpreted&feedbackLimit=10&feedbackOffset=10&keep=existing');
+let changedQuery=feedbackPresentation.updateFeedbackQuery(savedQuery,'65',{selectedId:'finding-1'});
+assert.equal(changedQuery.get('keep'),'existing');
+assert.equal(changedQuery.get('feedbackOffset'),'10');
+assert.equal(feedbackPresentation.feedbackQuery(changedQuery,'66').selectedId,null);
+assert.deepEqual(feedbackPresentation.feedbackQuery(changedQuery,'66').states,[]);
+assert.equal(feedbackPresentation.feedbackQuery(new URLSearchParams('feedbackFor=65&feedbackOffset=-1&feedbackLimit=500&feedbackState=invalid'),'65').offset,0);
+assert.equal(feedbackPresentation.feedbackQuery(new URLSearchParams('feedbackFor=65&feedbackLimit=500'),'65').limit,50);
+let selectedFeedback;
+const tableTree=feedbackUI.FeedbackTable({findings:feedbackPage.findings,selectedId:null,onSelect:(id,button)=>selectedFeedback={id,button}});
+const tableMarkup=html(tableTree);
+assert.equal((tableMarkup.match(/<th scope="col"/g)||[]).length,5);
+assert(tableMarkup.includes('Mei Chen')&&tableMarkup.includes('Teams'));
+assert(!tableMarkup.includes('Full saved tool text'),'Evidence stays out of the directory');
+const openerNode={isConnected:true,focus:()=>{}};
+find(tableTree,node=>node.props.className==='feedback-open').props.onClick({currentTarget:openerNode});
+assert.equal(selectedFeedback.id,'finding-1');
+const detailMarkup=html(React.createElement(feedbackDetail.FeedbackFindingDetail,{finding:feedbackRecord}));
+for(const expected of ['Earlier activity','Later experience','Tool-reported result','Who should receive','Address the introduction','not evidence that behavior changed','shortened','Original event details are unavailable','Other evidence considered (1)','Full saved tool text','chat-1','Model estimate, not measured accuracy'])assert(detailMarkup.includes(expected),expected);
+assert(detailMarkup.includes('>0<'),'Zero confidence is not treated as missing');
+const safeMarkup=html(React.createElement(feedbackDetail.FeedbackFindingDetail,{finding:{...feedbackRecord,meaning:'<img src=x onerror=alert(1)>'}}));
+assert(safeMarkup.includes('&lt;img'));assert(!safeMarkup.includes('<img src=x'));
+const feedbackKey=(params='',revision=0)=>{const query=feedbackPresentation.feedbackQuery(new URLSearchParams(params),'65');return JSON.stringify(['65',query.states,query.limit,query.offset,revision]);};
+function setupFeedback(page=feedbackPage,params=''){
+  h.reset([0,{key:feedbackKey(params),data:page}]);h.params=new URLSearchParams(params);
+}
+const renderFeedback=()=>{h.begin();return feedbackUI.FeedbackView({sapienId:'65'});};
+setupFeedback();tree=renderFeedback();
+assert(html(tree).includes('<table'));
+assert(!html(tree).includes('Evidence behind this finding'),'No automatic first-record reader');
+h.refs[2].current={closest:()=>({dataset:{navScroll:'analyse-content'},scrollTop:480})};
+find(tree,node=>node.type===feedbackUI.FeedbackTable).props.onSelect('finding-1',openerNode);
+assert.equal(globalThis.analyseTest.feedbackNavigation.scroll.get(`65:/admin/analyse/feedback?${h.params}:analyse-content`),480,'Opening a reader preserves the table scroll in the shared navigation memory');
+tree=renderFeedback();assert(html(tree).includes('Evidence behind this finding'));
+assert.equal(h.params.get('feedbackFor'),'65');
+find(tree,node=>node.type==='button'&&node.props.children==='Next finding').props.onClick();
+assert.equal(h.params.get('feedbackFinding'),'finding-2');
+tree=renderFeedback();assert(find(tree,node=>node.type==='button'&&node.props.children==='Next finding').props.disabled);
+find(tree,node=>node.type==='button'&&node.props.children==='Previous finding').props.onClick();
+tree=renderFeedback();let focusRestored=false;
+h.refs[0].current={isConnected:true,focus:options=>{focusRestored=options.preventScroll;}};
+find(tree,node=>typeof node.props.onCloseAutoFocus==='function').props.onCloseAutoFocus({preventDefault(){}});
+assert(focusRestored,'Close returns focus without scrolling the table');
+find(tree,node=>node.type==='button'&&node.props.children==='Back to findings').props.onClick();
+assert(!h.params.has('feedbackFinding'));
+assert.equal(globalThis.analyseTest.feedbackNavigation.scroll.get(`65:/admin/analyse/feedback?${h.params}:analyse-content`),480,'Closing the reader preserves the same table position');
+assert(!html(renderFeedback()).includes('Evidence behind this finding'));
+setupFeedback(feedbackPage,'feedbackFor=65&feedbackFinding=missing');
+assert(html(renderFeedback()).includes('not in the returned page'));
+assert(!html(renderFeedback()).includes('Evidence behind this finding'),'Do not silently substitute a different record');
+setupFeedback(feedbackPage,'feedbackFor=65&feedbackLimit=10&feedbackOffset=10&feedbackFinding=finding-1');
+tree=renderFeedback();controls=find(tree,node=>node.type===Controls);
+find(controls.props.primary,node=>node.type==='input'&&node.props.value==='ambiguous').props.onChange({target:{checked:true}});
+assert.equal(h.params.get('feedbackOffset'),null);assert.equal(h.params.get('feedbackFinding'),null);
+assert.equal(h.params.get('feedbackState'),'ambiguous');
+assert(!html(renderFeedback()).includes(feedbackRecord.meaning),'Old data disappears before the replacement request resolves');
+for(const [params,page,expected] of [
+  ['',{...feedbackPage,findings:[],count:0,total:0},'No saved findings yet'],
+  ['feedbackFor=65&feedbackState=ambiguous',{...feedbackPage,findings:[],count:0,total:0},'No findings match these states'],
+  ['feedbackFor=65&feedbackOffset=50',{...feedbackPage,findings:[],count:0,total:2},'No findings on this page'],
+]){setupFeedback(page,params);assert(html(renderFeedback()).includes(expected));}
+setupFeedback({...feedbackPage,total:undefined,has_more:true});tree=renderFeedback();
+assert(!find(tree,node=>node.type==='button'&&node.props.children==='Next page').props.disabled,'has_more works without total');
+find(tree,node=>node.type==='button'&&node.props.children==='Next page').props.onClick();
+assert.equal(h.params.get('feedbackOffset'),'50');
+h.reset([0,{key:feedbackKey(),error:{status:503,message:'Storage unavailable'}}]);
+assert(html(renderFeedback()).includes('Saved feedback temporarily unavailable'));
+assert(!html(renderFeedback()).includes('No saved findings'));
+h.reset();assert(html(renderFeedback()).includes('Loading feedback findings'));
+setupFeedback();h.begin();assert(!html(feedbackUI.FeedbackView({sapienId:'66'})).includes(feedbackRecord.meaning),'Never display another Sapien’s response');
+assert(html(React.createElement(feedbackUI.FeedbackProcessing,{processing:{available:true}})).includes('Not recorded'),'Missing diagnostics are not zero');
+// Exercise production read effects through cancellation, scope mismatch and errors.
+globalThis.analyseTest.feedbackEffects=[];
+const feedbackAsync=await load('components/analyse/FeedbackInspection.tsx',feedbackPrelude.replace('useEffect=()=>{}','useEffect=fn=>globalThis.analyseTest.feedbackEffects.push(fn)'),'export {useFeedbackRead};');
+const baseQuery=feedbackPresentation.feedbackQuery(new URLSearchParams(),'65');
+let resolveOldFeedback;let oldFeedbackArgs;
+globalThis.analyseTest.feedbackService.list=(...args)=>{oldFeedbackArgs=args;return new Promise(resolve=>resolveOldFeedback=resolve);};
+h.reset();feedbackAsync.useFeedbackRead('65',baseQuery);
+const cancelOldFeedback=globalThis.analyseTest.feedbackEffects.pop()();cancelOldFeedback();
+assert.deepEqual(oldFeedbackArgs,['65',[],50,0]);
+globalThis.analyseTest.feedbackService.list=async()=>({...feedbackPage,sapien_id:66,findings:[]});
+h.begin();feedbackAsync.useFeedbackRead('66',baseQuery);
+const stopNewFeedback=globalThis.analyseTest.feedbackEffects.pop()();
+await new Promise(resolve=>setImmediate(resolve));
+resolveOldFeedback(feedbackPage);await new Promise(resolve=>setImmediate(resolve));
+assert.equal(h.values[1].data.sapien_id,66);stopNewFeedback();
+h.reset();globalThis.analyseTest.feedbackService.list=async()=>feedbackPage;
+feedbackAsync.useFeedbackRead('66',baseQuery);globalThis.analyseTest.feedbackEffects.pop()();
+await new Promise(resolve=>setImmediate(resolve));
+assert.match(h.values[1].error.message,/different Sapien/);assert(!h.values[1].data);
+h.reset();globalThis.analyseTest.feedbackService.list=async()=>{throw {status:503,message:'Retry later'};};
+feedbackAsync.useFeedbackRead('65',baseQuery);globalThis.analyseTest.feedbackEffects.pop()();
+await new Promise(resolve=>setImmediate(resolve));assert.equal(h.values[1].error.status,503);
+h.reset();globalThis.analyseTest.feedbackService.list=async()=>{throw null;};
+feedbackAsync.useFeedbackRead('65',baseQuery);globalThis.analyseTest.feedbackEffects.pop()();
+await new Promise(resolve=>setImmediate(resolve));assert.equal(h.values[1].error.message,'Could not load feedback findings.');
+console.log('Feedback checks passed: table/detail selection, evidence, filters, pagination, focus return, missing data, escaping, timestamps and stale-response isolation.');
+console.log('Analyse checks passed, including Feedback, Working Memory, Goals and existing Analyse checks. No network or server used.');

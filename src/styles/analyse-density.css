@@ -60,12 +60,6 @@ body:has(.analyse-shell) .analyse-job-error pre { max-height:240px; overflow:aut
 .analyse-shell .engine-bus-layout.has-detail { grid-template-columns:minmax(0,1fr) minmax(0,1.15fr); }
 .analyse-shell .engine-bus-layout>aside { position:sticky; top:0; height:auto; max-height:calc(100dvh - var(--app-nav-height,0px) - 160px); overflow:auto; }
 .analyse-shell .analyse-detail-back { display:block; width:100%; padding:10px 14px; text-align:left; border-bottom:1px solid var(--an-line); color:var(--an-accent); font-size:14px; }
-.analyse-shell .analyse-feedback-back { display:none; }
-@media(max-width:1023px) {
-  .analyse-shell .analyse-feedback-back { display:block; }
-  .analyse-shell .analyse-feedback-layout[data-has-selection=true]>nav { display:none; }
-  .analyse-shell .analyse-feedback-layout[data-has-selection=false]>article { display:none; }
-}
 .analyse-shell .analyse-record-lookup { padding:8px 0; font-size:13px; }
 .analyse-shell .analyse-record-lookup>summary { cursor:pointer; }
 .analyse-shell .analyse-record-lookup form { margin-top:8px; }

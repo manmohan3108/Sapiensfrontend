@@ -1,69 +1,83 @@
-import { AnalyseControls } from './AnalyseControls';
 import { useEffect, useRef, useState } from 'react';
-import { AlertCircle, Eye, Loader2 } from 'lucide-react';
+import { useLocation, useSearchParams } from 'react-router';
+import { ChevronRight } from 'lucide-react';
 import { feedbackService } from '../../core/services/feedbackService';
-import { FEEDBACK_STATES } from '../../types/feedbackTypes';
-import type { FeedbackReference, FeedbackResponse, FeedbackState } from '../../types/feedbackTypes';
+import { FEEDBACK_STATES, type FeedbackResponse, type FeedbackReference, type FeedbackFinding } from '../../types/feedbackTypes';
 import type { ApiError } from '../../types/apiTypes';
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '../ui/dialog';
+import { AnalyseControls } from './AnalyseControls';
+import { useNavigationMemory } from '../navigation/NavigationState';
+import { DiagnosticDisclosure } from './DiagnosticPrimitives';
+import { FeedbackFindingDetail, FeedbackStateBadge } from './FeedbackFindingDetail';
+import { feedbackLabels, feedbackMode, feedbackOrigin, feedbackQuery, feedbackTime, updateFeedbackQuery } from './feedbackPresentation';
+import '../../../styles/analyse-feedback.css';
 
-const panel = 'rounded-xl border border-white/[.07] bg-white/[.025]';
-const colors: Record<FeedbackState, string> = {
-  unrelated: '#94a3b8', ambiguous: '#fcd34d', interpreted: '#67e8f9', superseded: '#c4b5fd',
-};
-const labels: Record<FeedbackState, string> = {
-  unrelated: 'No clear connection', ambiguous: 'Needs interpretation',
-  interpreted: 'Possible lesson', superseded: 'Replaced by a later finding',
-};
-
-function timestamp(value: string | null | undefined) {
-  if (!value) return 'Not recorded';
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
+/** Key the result as well as the effect: never paint a stale page during a filter/Sapien change. */
+function useFeedbackRead(sapienId: string, query: ReturnType<typeof feedbackQuery>) {
+  const [revision, setRevision] = useState(0);
+  const [result, setResult] = useState<{ key: string; data?: FeedbackResponse; error?: ApiError }>();
+  const key = JSON.stringify([sapienId, query.states, query.limit, query.offset, revision]);
+  useEffect(() => {
+    let active = true;
+    feedbackService.list(sapienId, query.states, query.limit, query.offset).then(data => {
+      if (String(data.sapien_id) !== sapienId) throw new Error('The returned findings belong to a different Sapien. Retry this read.');
+      if (active) setResult({ key, data });
+    }).catch((caught: unknown) => {
+      const error = caught as ApiError | null;
+      if (active) setResult({ key, error: { message: error?.message || 'Could not load feedback findings.', status: error?.status } });
+    });
+    return () => { active = false; };
+    // The key includes every request input; opening/closing a finding does not refetch the list.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
+  const current = result?.key === key ? result : undefined;
+  return { data: current?.data, error: current?.error, loading: !current, refresh: () => setRevision(value => value + 1) };
 }
 
-function MetadataValue({ value }: { value: unknown }) {
-  // React text children escape stored evidence; never render HTML or execute it.
-  const text = typeof value === 'string' ? value : JSON.stringify(value, null, 2) ?? 'Not recorded';
-  return <pre className="max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-md bg-black/20 p-2 font-mono text-[11px] leading-5 text-white/65">{text}</pre>;
+function ReferenceSummary({ reference }: { reference: FeedbackReference }) {
+  const origin = feedbackOrigin(reference);
+  return <span className="feedback-origin"><span>{origin.primary}</span>{origin.secondary && <small>{origin.secondary}</small>}</span>;
 }
 
-function Reference({ label, value }: { label: string; value: FeedbackReference }) {
-  const details = value?.details;
-  const display = details?.available ? details.display : undefined;
-  const metadata = details?.available ? Object.entries(details.metadata ?? {}) : [];
-  const priority = ['server', 'tool', 'is_error', 'arguments'];
-  const orderedMetadata = [...metadata].sort(([a], [b]) => {
-    const rank = (key: string) => priority.includes(key) ? priority.indexOf(key) : priority.length;
-    return rank(a) - rank(b);
-  });
-  return <div className="min-w-0 rounded-lg border border-white/[.07] bg-black/10 p-3">
-    <h4 className="text-xs font-medium text-cyan-200/80">{label}</h4>
-    <dl className="mt-2 space-y-2 text-xs">
-      <div><dt className="text-white/35">Event</dt><dd className="break-words text-white/65">{value?.source?.replaceAll('_', ' ') || 'Not recorded'}</dd></div>
-      {display?.actor && <div><dt className="text-white/35">Who</dt><dd>{display.actor}{display.recipient ? ` → ${display.recipient}` : ''}</dd></div>}
-      {display?.tool && <div><dt className="text-white/35">Action</dt><dd>{display.server} · {display.tool} · {display.outcome || 'Outcome unknown'}</dd></div>}
-      <div><dt className="text-white/35">Occurred at</dt><dd className="text-white/65">{timestamp(value?.occurred_at)}</dd></div>
-    </dl>
-    {details?.available ? <>
-      {(!display?.tool || display.text !== details.content) && <p className="mt-3 max-h-80 overflow-auto whitespace-pre-wrap break-words text-sm leading-6 text-white/75">{display?.text || details.content || 'No stored event text.'}</p>}
-      {display?.tool && display.text === details.content && <p className="mt-3 text-xs text-white/50">The recorded tool action is shown above. Its full request and result are available in technical details.</p>}
-      {details.truncated && <p className="mt-2 text-[11px] text-amber-200/75">Stored evidence is truncated; this is not the full original event.</p>}
-      {details.metadata?._truncated === true && <p className="mt-2 text-[11px] text-amber-200/75">Metadata is truncated. The preview below is only a partial stored snapshot.</p>}
-      <p className="mt-3 text-[11px] text-white/40">Observed at: {timestamp(details.observed_at)}</p>
-      <details className="mt-3">
-        <summary className="cursor-pointer text-xs text-cyan-100/65">Technical details</summary>
-        <MetadataValue value={details.content} />
-        {orderedMetadata.length ? <dl className="mt-2 space-y-2">{orderedMetadata.map(([key, entry]) => <div key={key}>
-          <dt className="mb-1 break-words font-mono text-[11px] text-white/45">{key}</dt>
-          <dd><MetadataValue value={entry} /></dd>
-        </div>)}</dl> : <p className="mt-2 text-xs text-white/40">No stored metadata available.</p>}
-      </details>
-    </> : <p className="mt-3 rounded-lg border border-white/[.07] p-3 text-xs text-white/45">Original details unavailable</p>}
-    <details className="mt-3 border-t border-white/[.07] pt-2">
-      <summary className="cursor-pointer text-[11px] text-white/40">Raw reference ID</summary>
-      <p className="mt-2 break-all font-mono text-[11px] text-white/55">{value?.id || 'Not recorded'}</p>
-    </details>
+export function FeedbackTable({ findings, selectedId, onSelect }: {
+  findings: FeedbackFinding[]; selectedId: string | null; onSelect: (id: string, opener: HTMLButtonElement) => void;
+}) {
+  return <div className="feedback-table-wrap" role="region" aria-label="Feedback findings table" tabIndex={0}><table className="feedback-table">
+    <caption className="sr-only">Saved feedback findings. Open an interpretation to inspect its evidence.</caption>
+    <colgroup><col className="feedback-meaning-col" /><col /><col /><col className="feedback-state-col" /><col className="feedback-date-col" /></colgroup>
+    <thead><tr>{['Recorded interpretation', 'Earlier activity', 'Later experience', 'Finding state', 'Recorded at'].map(label => <th scope="col" key={label}>{label}</th>)}</tr></thead>
+    <tbody>{findings.map(finding => <tr key={finding._id} data-selected={selectedId === finding._id}>
+      <td><button type="button" className="feedback-open" aria-haspopup="dialog" onClick={event => onSelect(finding._id, event.currentTarget)}>
+        <span className="feedback-excerpt">{finding.meaning || 'No interpretation recorded'}</span><ChevronRight size={16} aria-hidden="true" /><span className="sr-only">Open finding details</span>
+      </button></td>
+      <td><ReferenceSummary reference={finding.activity} /></td>
+      <td><ReferenceSummary reference={finding.experience} /></td>
+      <td><FeedbackStateBadge state={finding.state} /></td>
+      <td className="feedback-recorded">{feedbackTime(finding.created_at)}</td>
+    </tr>)}</tbody>
+  </table></div>;
+}
+
+function FeedbackError({ error, retry }: { error: ApiError; retry: () => void }) {
+  return <div role="alert" className="feedback-empty">
+    <h3>{error.status === 503 ? 'Saved feedback temporarily unavailable' : error.status === 400 ? 'Invalid feedback filters' : 'Could not load feedback'}</h3>
+    <p>{error.message}</p><button type="button" className="analyse-button" onClick={retry}>{error.status === 400 ? 'Clear filters and retry' : 'Retry'}</button>
   </div>;
+}
+
+function FeedbackProcessing({ processing }: { processing: NonNullable<FeedbackResponse['processing']> }) {
+  return <DiagnosticDisclosure title="Background reviews and diagnostics">
+    <p className="feedback-help">New experiences collect until the next cognitive-hour boundary. These counts cover saved jobs across all runs, not unique experiences or model calls. A completed review may find nothing to report.</p>
+    <dl className="feedback-processing-counts">{(['pending', 'running', 'completed', 'failed'] as const).map(status => <div key={status}><dt>{({ pending: 'Queued', running: 'Recorded as processing', completed: 'Completed', failed: 'Failed' })[status]}</dt><dd>{processing.counts?.[status] ?? 'Not recorded'}</dd></div>)}</dl>
+    <DiagnosticDisclosure title="Recent review jobs">
+      <p className="feedback-help">Continuations can overlap earlier inputs. Historical empty results are not always retained.</p>
+      {processing.recent_jobs?.length ? <ul className="feedback-review-jobs">{processing.recent_jobs.map(job => <li key={job.id}>
+        <p>{job.status} · {job.reviewed_count} reviewed here / {job.experience_count} supplied · {job.retries} retries</p>
+        <p>Eligible from: {feedbackTime(job.eligible_at)} (cognitive time; not a guaranteed start)</p>
+        <p>{job.run_id ? 'Simulation ' + job.run_id : 'Normal runtime'}</p>
+      </li>)}</ul> : <p className="feedback-help">No recent review job records were supplied.</p>}
+    </DiagnosticDisclosure>
+  </DiagnosticDisclosure>;
 }
 
 export function FeedbackInspection({ sapienId }: { sapienId: string }) {
@@ -71,116 +85,72 @@ export function FeedbackInspection({ sapienId }: { sapienId: string }) {
 }
 
 function FeedbackView({ sapienId }: { sapienId: string }) {
-  const [states, setStates] = useState<FeedbackState[]>([]);
-  const [limit, setLimit] = useState(50);
-  const [offset, setOffset] = useState(0);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [params, setParams] = useSearchParams();
+  const location = useLocation();
+  const navigation = useNavigationMemory();
+  const query = feedbackQuery(params, sapienId);
+  const { states, limit, offset, selectedId } = query;
+  const { data, error, loading, refresh } = useFeedbackRead(sapienId, query);
   const opener = useRef<HTMLButtonElement | null>(null);
-  const reader = useRef<HTMLElement>(null);
-  useEffect(() => { if (selectedId) reader.current?.focus(); }, [selectedId]);
-  const [revision, setRevision] = useState(0);
-  const [data, setData] = useState<FeedbackResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<ApiError | null>(null);
+  const tableHeading = useRef<HTMLHeadingElement>(null);
+  const firstFilter = useRef<HTMLInputElement>(null);
+  const update = (patch: Partial<typeof query>, replace = false) => setParams(current => {
+    const next = updateFeedbackQuery(current, sapienId, patch);
+    // The app restores scroll by the complete URL. Seed the next reader URL with
+    // this list's position so opening/closing details cannot jump to the first row.
+    if ('selectedId' in patch && !('states' in patch || 'limit' in patch || 'offset' in patch)) {
+      const container = firstFilter.current?.closest<HTMLElement>('[data-nav-scroll]');
+      if (container) {
+        const key = `${sapienId}:${location.pathname}?${next}:${container.dataset.navScroll}`;
+        navigation.scroll.set(key, container.scrollTop);
+      }
+    }
+    return next;
+  }, { replace, preventScrollReset: true });
+  const selectedIndex = data?.findings.findIndex(finding => finding._id === selectedId) ?? -1;
+  const selected = selectedIndex >= 0 ? data?.findings[selectedIndex] : undefined;
+  const close = () => update({ selectedId: null }, true);
+  const retry = () => { if (error?.status === 400) update({ states: [], offset: 0, selectedId: null }); refresh(); };
 
-  useEffect(() => {
-    let active = true;
-    setLoading(true); setError(null); setData(null); setSelectedId(null);
-    feedbackService.list(sapienId, states, limit, offset).then(result => {
-      if (active) setData(result);
-    }).catch((caught: unknown) => {
-      if (active) setError({
-        message: (caught as ApiError)?.message || 'Could not load feedback findings.',
-        status: (caught as ApiError)?.status,
-      });
-    }).finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
-  }, [sapienId, states, limit, revision, offset]);
-
-  const selected = data?.findings.find(finding => finding._id === selectedId) ?? data?.findings[0];
-
-  return <div className="space-y-4">
-    <section className={`${panel} p-4`}>
-      <div className="flex flex-wrap items-center gap-2">
-        <Eye className="h-4 w-4 text-cyan-200" />
-        <h2 className="text-sm text-white/80">Feedback findings</h2>
-        <span className="rounded-full border border-cyan-300/20 bg-cyan-300/5 px-2 py-0.5 text-[10px] text-cyan-100/65">Read-only</span>
-        {data && <span className="text-xs text-white/45">Mode: {data.mode}</span>}
-      </div>
-      <p className="mt-2 max-w-3xl text-sm leading-6 text-white/85">What could the Sapien learn from its experience?</p>
-      <p className="mt-2 text-xs text-white/45">{!data ? 'Loading Feedback mode.' : data.mode === 'observe' ? 'Observe mode: findings are recorded for inspection, not applied to behavior.' : data.mode === 'off' ? 'Feedback is off. Previously saved findings remain available.' : 'Active mode can make findings available to other engines; it does not prove they were used.'} Evidence below is a saved, possibly shortened snapshot.</p>
-    </section>
-
-    <AnalyseControls label="Page options" primary={<fieldset><legend className="mb-2 text-xs text-white/50">States (none selected means all)</legend>
-          <div className="flex flex-wrap gap-2">{FEEDBACK_STATES.map(state => <label key={state} className="flex cursor-pointer items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-xs text-white/65">
-            <input type="checkbox" checked={states.includes(state)} onChange={event => { setOffset(0); setStates(current => event.target.checked ? [...current, state] : current.filter(item => item !== state)); }} className="accent-cyan-300" />{labels[state]}
-          </label>)}</div>
-        </fieldset>} summary={`${states.length ? states.map(state => labels[state]).join(', ') : 'All findings'} · ${limit} per page`} onRefresh={() => setRevision(value => value + 1)} busy={loading}>
-      <div className="flex flex-wrap items-end justify-between gap-4">
-
-        <div className="flex items-end gap-2">
-          <label className="text-xs text-white/50"><span className="mb-2 block">Page size</span><select value={limit} onChange={event => { setOffset(0); setLimit(Number(event.target.value)); }} className="rounded-lg border border-white/10 bg-[#0b1220] px-3 py-2 text-white/70">{[10, 25, 50, 100].map(value => <option key={value} value={value}>{value}</option>)}</select></label>
-        </div>
-      </div>
-      <p className="mt-3 text-xs text-white/50">{data?.total !== undefined ? `${data.count} on this page · ${data.total} matching findings` : 'Saved findings'}</p>
+  return <div className="feedback-page">
+    <div className="feedback-intro"><p>Review possible lessons from what Sapiens did and what happened afterward.</p><p className="feedback-help">{loading ? 'Loading saved feedback…' : feedbackMode(data?.mode)}</p></div>
+    <AnalyseControls label="Page options" primary={<fieldset className="feedback-state-filter"><legend>Finding state <span>(all when none selected)</span></legend>
+      <div>{FEEDBACK_STATES.map((state, index) => <label key={state}><input ref={index === 0 ? firstFilter : undefined} type="checkbox" name="feedbackState" value={state} checked={states.includes(state)} onChange={event => update({ states: event.target.checked ? [...states, state] : states.filter(item => item !== state), offset: 0, selectedId: null })} />{feedbackLabels[state]}</label>)}</div>
+    </fieldset>} summary={(states.length ? states.map(state => feedbackLabels[state]).join(', ') : 'All finding states') + ' · ' + limit + ' per page'} onRefresh={refresh} busy={loading}>
+      <label className="feedback-page-size">Findings per page<select name="feedbackLimit" value={limit} onChange={event => update({ limit: Number(event.target.value), offset: 0, selectedId: null })}>{[10, 25, 50, 100].map(value => <option key={value} value={value}>{value}</option>)}</select></label>
     </AnalyseControls>
 
-    {loading && <div role="status" className="flex min-h-40 items-center justify-center gap-2 text-xs text-white/45"><Loader2 className="h-4 w-4 animate-spin" />Loading feedback findings…</div>}
-    {error && <div role="alert" className="rounded-xl border border-amber-300/20 bg-amber-300/5 p-4 text-xs">
-      <div className="flex items-center gap-2 text-amber-100"><AlertCircle className="h-4 w-4" /><h3>{error.status === 503 ? 'Saved feedback temporarily unavailable' : error.status === 400 ? 'Invalid feedback filters' : 'Could not load feedback'}</h3></div>
-      <p className="mt-2 break-words text-white/50">{error.message}</p>
-      <p className="mt-2 text-white/40">{error.status === 503 ? 'Ask an administrator to check engine availability, then retry.' : error.status === 400 ? 'Clear the state filters and retry.' : 'Check your connection or retry the request.'}</p>
-      <button type="button" onClick={() => { if (error.status === 400) setStates([]); setRevision(value => value + 1); }} className="mt-3 rounded-lg border border-white/15 px-3 py-2 text-white/70">{error.status === 400 ? 'Clear filters and retry' : 'Retry'}</button>
-    </div>}
-
-    {data && <section aria-label="Returned feedback findings" className="space-y-3">
-      <p role="status" className="text-xs text-white/45">{data.count} findings returned · Sapiens {data.sapien_id}</p>
-      {!data.findings.length && <div className={`${panel} p-10 text-center text-xs text-white/45`}>No findings returned for these filters.</div>}
-      <div className="analyse-feedback-layout grid items-start gap-4 lg:grid-cols-[minmax(240px,1fr)_minmax(0,2fr)]" data-has-selection={Boolean(selectedId)}>
-      {!!data.findings.length && <nav aria-label="Select a feedback finding" className={`${panel} max-h-[70vh] overflow-auto p-2`}>
-        {data.findings.map(finding => <button type="button" key={finding._id} onClick={event => { opener.current = event.currentTarget; setSelectedId(finding._id); }} aria-pressed={selected?._id === finding._id} className={`mb-1 w-full rounded-lg border p-3 text-left transition-colors ${selected?._id === finding._id ? 'border-cyan-300/40 bg-cyan-300/10' : 'border-transparent hover:bg-white/5'}`}>
-          <span className="text-xs" style={{ color: colors[finding.state] }}>{labels[finding.state] || finding.state}</span>
-          <p className="mt-2 line-clamp-3 text-sm leading-6 text-white/85">{finding.meaning || 'No interpretation recorded'}</p>
-          <p className="mt-2 text-xs text-white/45">{timestamp(finding.created_at)}</p>
-        </button>)}
+    {loading && <p role="status" className="feedback-loading">Loading feedback findings…</p>}
+    {error && <FeedbackError error={error} retry={retry} />}
+    {data && <section aria-label="Returned feedback findings">
+      <div className="feedback-table-heading"><h2 ref={tableHeading} tabIndex={-1}>Findings</h2><p role="status">{data.findings.length} on this page{data.total !== undefined ? ' · ' + data.total + ' matching' : ''} · Sapien {data.sapien_id}</p><span>Open an interpretation to see its evidence.</span></div>
+      {data.findings.length ? <>
+        <p className="feedback-scroll-hint">Scroll across the table for sources, state and time.</p>
+        <FeedbackTable findings={data.findings} selectedId={selectedId} onSelect={(id, button) => { opener.current = button; update({ selectedId: id }); }} />
+      </> : <div className="feedback-empty"><h3>{offset ? 'No findings on this page' : states.length ? 'No findings match these states' : 'No saved findings yet'}</h3>
+        <p>{offset ? 'Return to the first page or refresh the saved findings.' : states.length ? 'Clear the state filters to see all returned findings.' : 'Findings appear here when a feedback review records a connection between an activity and a later experience.'}</p>
+        {(offset > 0 || states.length > 0) && <button type="button" className="analyse-button" onClick={() => update({ states: [], offset: 0, selectedId: null })}>{offset ? 'First page, all states' : 'Clear state filters'}</button>}
+      </div>}
+      {(offset > 0 || data.has_more || (data.total !== undefined && data.total > limit)) && <nav aria-label="Feedback pages" className="feedback-pagination">
+        <button type="button" className="analyse-button" disabled={offset === 0} onClick={() => update({ offset: Math.max(0, offset - limit), selectedId: null })}>Previous page</button>
+        <span>Page {Math.floor(offset / limit) + 1}</span>
+        <button type="button" className="analyse-button" disabled={!data.has_more} onClick={() => update({ offset: offset + limit, selectedId: null })}>Next page</button>
       </nav>}
-      {selected && [selected].map(finding => <article ref={reader} tabIndex={-1} aria-label="Selected feedback finding" key={finding._id} className={`${panel} p-5 sm:p-6`}>
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <span className="rounded-full border px-2 py-1 text-xs" style={{ color: colors[finding.state] ?? '#94a3b8', borderColor: `${colors[finding.state] ?? '#94a3b8'}40` }}>{labels[finding.state] || finding.state}</span>
-          <span className="text-xs text-white/45">Confidence: {Number.isFinite(finding.confidence) ? finding.confidence : 'Not recorded'}</span>
-        </div>
-        <button type="button" className="analyse-feedback-back analyse-detail-back" onClick={() => { setSelectedId(null); requestAnimationFrame(() => opener.current?.focus()); }}>← Back to findings</button>
-        <h3 className="mt-4 text-sm text-cyan-200/80">Recorded interpretation</h3>
-        <p className="mt-2 whitespace-pre-wrap break-words text-lg leading-8 text-white/90">{finding.meaning || 'No interpretation recorded.'}</p>
-        <p className="mt-2 text-xs text-white/45">{finding.state === 'ambiguous' ? 'The relationship is uncertain.' : finding.state === 'interpreted' ? 'A possible lesson was identified; review the evidence below.' : finding.state === 'superseded' ? 'A later interpretation has replaced this one.' : 'No relevant relationship was established.'} Confidence is the model’s estimate, not measured accuracy.</p>
-        <div className="mt-4 grid gap-3 xl:grid-cols-2">
-          <Reference label="1. What the Sapien did" value={finding.activity} />
-          <Reference label="2. What happened afterward" value={finding.experience} />
-        </div>
-        {!!finding.supporting_experiences?.length && <details className="mt-3"><summary className="cursor-pointer text-xs text-cyan-100/65">Other evidence considered ({finding.supporting_experiences.length})</summary><div className="mt-2 grid gap-3 lg:grid-cols-2">{finding.supporting_experiences.map(ref => <Reference key={ref.id} label="Supporting evidence" value={ref} />)}</div></details>}
-        <details className="mt-4 border-t border-white/[.07] pt-3">
-          <summary className="cursor-pointer text-xs text-cyan-100/65">Finding IDs and timestamps</summary>
-          <dl className="mt-3 grid gap-3 text-xs sm:grid-cols-2">
-            <div><dt className="text-white/35">Finding ID</dt><dd className="break-all font-mono text-white/65">{finding._id}</dd></div>
-            <div><dt className="text-white/35">Sapiens ID</dt><dd className="text-white/65">{finding.sapien_id}</dd></div>
-            {(['created_at', 'updated_at', 'last_surfaced_at', 'acknowledged_at'] as const).map(field => <div key={field}><dt className="capitalize text-white/35">{field.replaceAll('_', ' ')}</dt><dd className="text-white/65">{timestamp(finding[field])}</dd></div>)}
-          </dl>
-        </details>
-      </article>)}
-      </div>
-      {data.total !== undefined && <nav aria-label="Feedback pages" className="flex items-center justify-between pt-3"><button type="button" disabled={offset === 0 || loading} onClick={() => setOffset(Math.max(0, offset - limit))} className="rounded-lg border border-white/15 px-4 py-2 text-sm text-white/70 disabled:opacity-40">Previous</button><span className="text-xs text-white/50">Page {Math.floor(offset / limit) + 1} · {data.total} findings</span><button type="button" disabled={!data.has_more || loading} onClick={() => setOffset(offset + limit)} className="rounded-lg border border-white/15 px-4 py-2 text-sm text-white/70 disabled:opacity-40">Next</button></nav>}
     </section>}
-    {data?.processing?.available && <details className={`${panel} p-4`} aria-label="Feedback processing">
-      <summary className="cursor-pointer text-sm text-white/65">Background reviews and diagnostics</summary>
-      <p className="mt-2 text-xs leading-5 text-white/50">New experiences collect until the next cognitive-hour boundary. These counts are saved jobs across all runs, not unique experiences or LLM calls. Continuations overlap earlier job inputs. A completed review may find nothing to report; historical empty results are not always retained.</p>
-      <div className="mt-3 flex flex-wrap gap-4 text-sm text-white/75">{['pending', 'running', 'completed', 'failed'].map(status => <span key={status}>{status === 'pending' ? 'Queued' : status === 'running' ? 'Recorded as processing' : status === 'completed' ? 'Completed' : 'Failed'}: {data.processing?.counts?.[status] ?? 0}</span>)}</div>
-      <details className="mt-3"><summary className="cursor-pointer text-xs text-cyan-100/65">Recent review jobs</summary>
-        <ul className="mt-2 space-y-3">{data.processing.recent_jobs?.map(job => <li key={job.id} className="rounded border border-white/10 p-3 text-xs text-white/65">
-          <p>{job.status} · {job.reviewed_count} reviewed here / {job.experience_count} supplied · {job.retries} retries</p>
-          <p className="mt-1">Eligible from: {timestamp(job.eligible_at)} (cognitive time; not a guaranteed start)</p>
-          <p className="mt-1 break-all">{job.run_id ? `Simulation ${job.run_id}` : 'Normal runtime'}</p>
-        </li>)}</ul>
-      </details>
-    </details>}
+    {data?.processing?.available && <FeedbackProcessing processing={data.processing} />}
+
+    <Dialog open={selectedId !== null} onOpenChange={open => { if (!open) close(); }}>
+      <DialogContent className="feedback-dialog" onCloseAutoFocus={event => { event.preventDefault(); (opener.current?.isConnected ? opener.current : tableHeading.current || firstFilter.current)?.focus({ preventScroll: true }); }}>
+        <header className="feedback-dialog-header"><DialogTitle>Feedback finding</DialogTitle><DialogDescription>Sapien {sapienId} · Saved interpretation and supporting evidence.</DialogDescription>
+          <p className="feedback-help">{feedbackMode(data?.mode)}</p>
+          <div className="feedback-reader-navigation"><button type="button" className="analyse-button" onClick={close}>Back to findings</button>
+            {selected && data && <><span>{selectedIndex + 1} of {data.findings.length} on this page</span><button type="button" className="analyse-button" disabled={selectedIndex === 0} onClick={() => update({ selectedId: data.findings[selectedIndex - 1]._id }, true)}>Previous finding</button><button type="button" className="analyse-button" disabled={selectedIndex === data.findings.length - 1} onClick={() => update({ selectedId: data.findings[selectedIndex + 1]._id }, true)}>Next finding</button></>}
+          </div>
+        </header>
+        <div className="feedback-dialog-body" key={selectedId}>
+          {loading ? <p role="status">Loading saved finding…</p> : error ? <FeedbackError error={error} retry={retry} /> : selected ? <FeedbackFindingDetail finding={selected} /> : <p role="status">This finding is not in the returned page. Return to the findings to select an available record.</p>}
+        </div>
+      </DialogContent>
+    </Dialog>
   </div>;
 }

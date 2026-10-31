@@ -1,0 +1,82 @@
+/* Feedback only; dialogs use the Analyse tokens inherited through the portal. */
+.feedback-page { display:grid; gap:18px; min-width:0; }
+.feedback-intro>p { margin:0; font-size:16px; line-height:1.5; }
+.feedback-page .feedback-help, .feedback-dialog .feedback-help { color:var(--an-muted); font-size:14px; line-height:1.5; margin:6px 0 0; }
+.feedback-state-filter { border:0; min-width:0; }
+.feedback-state-filter legend { font-size:14px; margin-bottom:6px; }
+.feedback-state-filter legend span { color:var(--an-muted); font-weight:400; }
+.feedback-state-filter>div { display:flex; flex-wrap:wrap; gap:6px 16px; }
+.analyse-shell .analyse-controls-primary .feedback-state-filter label { display:inline-flex; align-items:center; gap:7px; min-height:36px; cursor:pointer; font-size:14px; }
+.feedback-state-filter input { accent-color:var(--an-accent); width:16px; height:16px; }
+.feedback-page-size { display:flex; align-items:center; gap:12px; font-size:14px; }
+.feedback-page-size select { padding:8px 12px; border:1px solid var(--an-line); border-radius:5px; }
+.feedback-table-heading { display:flex; align-items:baseline; flex-wrap:wrap; gap:6px 12px; margin-bottom:12px; }
+.feedback-table-heading h2 { margin:0; font:600 18px/1.4 'Source Sans 3',sans-serif; }
+.feedback-table-heading p, .feedback-table-heading>span { font-size:14px; color:var(--an-muted); margin:0; }
+.feedback-table-heading>span { margin-left:auto; }
+.feedback-table-wrap { overflow-x:auto; border:1px solid var(--an-line); border-radius:6px; background:var(--an-panel); }
+.feedback-table-wrap:focus-visible { outline:2px solid var(--an-accent); outline-offset:3px; }
+.feedback-table { width:100%; min-width:870px; table-layout:fixed; border-collapse:collapse; }
+.feedback-meaning-col { width:40%; }
+.feedback-state-col { width:16%; }
+.feedback-date-col { width:15%; }
+body:has(.analyse-shell) .feedback-table :is(th,td) { padding:12px; vertical-align:top; text-align:left; font-size:14px; line-height:1.5; overflow-wrap:anywhere; }
+.feedback-table th { color:var(--an-muted); font-weight:600; }
+.feedback-table tbody tr { border-top:1px solid var(--an-line); }
+.feedback-table tbody tr:hover, .feedback-table tbody tr:focus-within, .feedback-table tr[data-selected=true] { background:var(--an-soft); }
+.feedback-open { display:flex; align-items:center; justify-content:space-between; gap:8px; width:100%; min-height:44px; text-align:left; color:var(--an-ink); border-radius:3px; cursor:pointer; }
+.feedback-open>svg { flex:none; color:var(--an-accent); }
+.feedback-open:hover .feedback-excerpt { text-decoration:underline; text-underline-offset:3px; }
+.feedback-excerpt { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.feedback-origin { display:flex; flex-direction:column; gap:3px; overflow-wrap:anywhere; font-size:14px; }
+.feedback-origin :is(small,span+span) { color:var(--an-muted); font-size:13px; }
+.feedback-recorded { color:var(--an-muted); font-variant-numeric:tabular-nums; }
+.feedback-scroll-hint { display:none; }
+.feedback-loading { padding:28px 0; color:var(--an-muted); }
+.feedback-empty { padding:22px; border:1px solid var(--an-line); border-radius:6px; }
+.feedback-empty h3 { font-size:17px; margin:0; }
+.feedback-empty p { color:var(--an-muted); margin:8px 0 14px; overflow-wrap:anywhere; }
+.feedback-pagination, .feedback-reader-navigation { display:flex; align-items:center; flex-wrap:wrap; gap:8px; font-size:14px; color:var(--an-muted); }
+.feedback-pagination { justify-content:space-between; margin-top:14px; }
+.feedback-page button:disabled, .feedback-dialog button:disabled { opacity:.45; cursor:default; }
+body:has(.analyse-shell) .feedback-dialog { display:flex; flex-direction:column; gap:0; padding:0; width:calc(100% - 32px); max-width:1060px; max-height:calc(100dvh - 32px); overflow:hidden; animation:none; }
+.feedback-dialog-header { flex:none; border-bottom:1px solid var(--an-line); padding:20px 52px 16px 24px; }
+.feedback-dialog>button { width:44px; height:44px; display:grid; place-items:center; top:8px; right:8px; }
+.feedback-dialog-header h2 { margin:0; font-size:21px; line-height:1.3; }
+.feedback-dialog-header>p { color:var(--an-muted); font-size:14px; margin:5px 0 0; }
+.feedback-reader-navigation { margin-top:14px; }
+.feedback-reader-navigation>span { margin-right:auto; }
+.feedback-dialog-body { overflow-y:auto; overscroll-behavior:contain; padding:22px 24px; min-height:0; }
+.feedback-finding-meta { display:flex; align-items:center; flex-wrap:wrap; gap:10px; color:var(--an-muted); font-size:14px; }
+.feedback-finding h3 { font-size:16px; font-weight:600; margin:20px 0 10px; }
+.feedback-interpretation>p:not(.feedback-help) { font-size:17px; line-height:1.6; white-space:pre-wrap; overflow-wrap:anywhere; max-width:82ch; margin:0; }
+.feedback-evidence-pair { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:24px; }
+.feedback-evidence { min-width:0; border-top:2px solid var(--an-line); padding-top:12px; }
+.feedback-evidence h4 { font-size:15px; font-weight:600; color:var(--an-accent); margin:0 0 10px; }
+.feedback-evidence h5 { font-size:14px; margin:14px 0 8px; }
+.feedback-evidence .diagnostic-text { margin-top:14px; }
+.feedback-evidence .diagnostic-text p { margin:0; }
+.feedback-note { color:var(--an-warning); font-size:14px; line-height:1.5; margin:10px 0; }
+.feedback-facts { display:grid; grid-template-columns:minmax(100px,auto) minmax(0,1fr); gap:8px 16px; margin:12px 0 0; font-size:14px; }
+.feedback-facts dt { color:var(--an-muted); }
+.feedback-facts dd { margin:0; overflow-wrap:anywhere; }
+.feedback-facts small { display:block; color:var(--an-muted); font-size:13px; }
+.feedback-facts code { font-size:12px; }
+.feedback-fact-row { display:contents; }
+.feedback-finding>.diagnostic-disclosure { margin-top:20px; border-top:1px solid var(--an-line); padding-top:8px; }
+.feedback-processing-counts { display:flex; flex-wrap:wrap; gap:16px 28px; margin:14px 0; }
+.feedback-processing-counts dt { color:var(--an-muted); font-size:14px; }
+.feedback-processing-counts dd { font-variant-numeric:tabular-nums; margin:0; }
+.feedback-review-jobs { list-style:none; padding:0; }
+.feedback-review-jobs li { border-top:1px solid var(--an-line); padding:12px 0; overflow-wrap:anywhere; }
+.feedback-review-jobs p { margin:0 0 4px; }
+@media(max-width:1050px) { .feedback-scroll-hint { display:block; color:var(--an-muted); font-size:13px; margin:0 0 8px; } }
+@media(max-width:700px) {
+  .feedback-table-heading>span { margin-left:0; }
+  .feedback-evidence-pair { grid-template-columns:minmax(0,1fr); }
+  body:has(.analyse-shell) .feedback-dialog { width:calc(100% - 16px); max-height:calc(100dvh - 16px); }
+  .feedback-dialog-header { padding:16px 42px 12px 16px; }
+  .feedback-dialog-body { padding:18px 16px; }
+  .feedback-reader-navigation>span { flex:1 1 100%; order:3; }
+  .feedback-reader-navigation .analyse-button { white-space:normal; }
+}
