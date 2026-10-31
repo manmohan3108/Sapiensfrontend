@@ -1,6 +1,8 @@
 import { SimulationPurpose } from '../components/simulation/SimulationPurpose';
+import { useRestoreSapienSelection } from '../components/navigation/useRestoreSapienSelection';
 import { useAuth } from '../contexts/AuthContext';
 import { sapiensDirectoryPath } from '../core/auth/navigation';
+import { selectionStorage } from '../core/auth/selectionStorage';
 import {
   Children,
   cloneElement,
@@ -386,9 +388,6 @@ export function SimulationLabPage() {
   })();
   const shortcutId =
     params.get("sapienId") || storedReturnContext?.sapienId || null;
-  const shortcutName =
-    (params.get("sapienId") === shortcutId ? params.get("sapienName") : null) ||
-    (storedReturnContext?.sapienId === shortcutId ? storedReturnContext?.sapienName : null) || null;
   const requestedView = params.get("view");
   const mainView =
     requestedView === "participant" ||
@@ -401,7 +400,13 @@ export function SimulationLabPage() {
   const [allSapiens, setAllSapiens] = useState<Sapiens[]>([]);
   const [sapiens, setSapiens] = useState<Sapiens[]>([]);
   const [sapiensLoading, setSapiensLoading] = useState(true);
+  const [sapiensDirectoryLoaded, setSapiensDirectoryLoaded] = useState(false);
   const [sapiensError, setSapiensError] = useState("");
+  const restoreCandidateId = shortcutId || currentSapiens?.id || selectionStorage.read();
+  const selectionRestore = useRestoreSapienSelection(restoreCandidateId, {
+    available: allSapiens,
+    ready: !sapiensLoading && sapiensDirectoryLoaded,
+  });
   const [selectedSapienId, setSelectedSapienId] = useState(shortcutId ?? "");
   const [caseIndex, setCaseIndex] = useState(0);
   const [runs, setRuns] = useState<SimulationRun[]>([]);
@@ -502,10 +507,14 @@ export function SimulationLabPage() {
 
   const selectedCase = catalog?.cases[caseIndex];
   const purposeSapienId = shortcutId || selectedSapienId;
+  const verifiedShortcutName = shortcutId
+    ? (currentSapiens?.id === shortcutId ? currentSapiens.name : null) ||
+      allSapiens.find(item => item.id === shortcutId)?.name || null
+    : null;
   const purposeSapienName =
     (currentSapiens?.id === purposeSapienId ? currentSapiens.name : null) ||
     allSapiens.find(item => item.id === purposeSapienId)?.name ||
-    (shortcutId === purposeSapienId ? shortcutName : null);
+    (shortcutId === purposeSapienId ? verifiedShortcutName : null);
   const visibleRuns = shortcutId
     ? runs.filter((item) => String(item.sapien_id) === shortcutId)
     : runs;
@@ -604,6 +613,7 @@ export function SimulationLabPage() {
     try {
       const items = await sapiensService.listSapiens();
       setAllSapiens(items);
+      setSapiensDirectoryLoaded(true);
       // Disabled Sapiens are intentionally absent from this selector. Missing metadata
       // remains visible but unavailable so older deployments fail closed with context.
       const eligibleChoices = items.filter(
@@ -636,6 +646,7 @@ export function SimulationLabPage() {
       });
     } catch (problem) {
       setSapiens([]);
+      setSapiensDirectoryLoaded(false);
       setSapiensError(message(problem));
     } finally {
       setSapiensLoading(false);
@@ -993,7 +1004,7 @@ export function SimulationLabPage() {
       : allSapiens.find((sapien) => Number(sapien.id) === item.sapien_id);
   const worldOverviewPath = (item: SimulationRun) => {
     const name = sapienForRun(item)?.name ||
-      (String(item.sapien_id) === shortcutId ? shortcutName : null);
+      (String(item.sapien_id) === shortcutId ? verifiedShortcutName : null);
     const query = name && item.sapien_id != null
       ? `?${new URLSearchParams({ sapienId: String(item.sapien_id), sapienName: name })}`
       : '';
@@ -1042,14 +1053,14 @@ export function SimulationLabPage() {
               disabled={returning}
               className="flex items-center gap-2 text-sm disabled:opacity-50"
               aria-label={
-                `Back to ${shortcutName || "selected Sapiens"}`
+                `Back to ${verifiedShortcutName || `Sapiens ${shortcutId}`}`
               }
             >
               <ArrowLeft className="size-5" />
               <span>
                 {returning
                   ? "Returning…"
-                  : `Back to ${shortcutName || "Sapiens"}`}
+                  : `Back to ${verifiedShortcutName || `Sapiens ${shortcutId}`}`}
               </span>
             </button>}
             <Beaker className="size-6 text-violet-500" />
@@ -1082,7 +1093,7 @@ export function SimulationLabPage() {
           <SimulationPurpose sapienName={purposeSapienName} />
           {shortcutId && (
             <div className="min-w-0 text-sm">
-              <strong>{shortcutName || `Sapiens ${shortcutId}`} simulations</strong>
+              <strong>{verifiedShortcutName || `Sapiens ${shortcutId}`} simulations</strong>
               <p className="mt-1 text-sm text-muted-foreground">
                 Showing runs for Sapiens ID {shortcutId}. New simulations use this Sapiens.
               </p>
@@ -1097,6 +1108,20 @@ export function SimulationLabPage() {
           >
             <AlertTriangle className="size-4 shrink-0" />
             {error}
+          </div>
+        )}
+        {selectionRestore.error && (
+          <div
+            role="alert"
+            className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-800 dark:text-amber-200"
+          >
+            <span className="flex min-w-0 gap-2">
+              <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+              <span>{selectionRestore.error}</span>
+            </span>
+            <Button type="button" variant="outline" size="sm" onClick={selectionRestore.retry}>
+              Try again
+            </Button>
           </div>
         )}
         {catalogError && (
@@ -1524,7 +1549,7 @@ export function SimulationLabPage() {
               <CardTitle className="text-base">
                 Retained runs
                 {shortcutId
-                  ? ` for ${shortcutName || `Sapiens ${shortcutId}`}`
+                  ? ` for ${verifiedShortcutName || `Sapiens ${shortcutId}`}`
                   : ""}
               </CardTitle>
               <p className="text-sm text-muted-foreground">Running and past simulations stay here for review.</p>

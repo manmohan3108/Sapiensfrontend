@@ -102,6 +102,42 @@ assert.equal(await retry.select('58','/workspace'),false);
 t.list = async () => [{id:'58'}];
 assert.equal(await retry.select('58','/workspace'),true,'A failed check must allow retry');
 
+// Simulation routes restore URL/persisted identities only from an account-filtered
+// directory, and a late response cannot replace a newer manual selection.
+globalThis.restoreTest = { version:1, current:null, selected:[], confirmed:[], cleared:[], listCalls:0, states:[] };
+const restoreSource = (await source('components/navigation/useRestoreSapienSelection.ts')).replace(/^import .*;\r?\n/gm, '');
+const restorePrelude = `
+const t=globalThis.restoreTest;
+const useCallback=fn=>fn;
+const useState=value=>[value,next=>t.states.push(typeof next==='function'?next(value):next)];
+const useEffect=effect=>{effect();};
+const resourceSession={get version(){return t.version;},isVerified:id=>t.verified===id,select:id=>{t.version++;t.resource=id;},confirm:id=>{t.verified=id;t.confirmed.push(id);}};
+const selectionStorage={read:()=>t.saved??null,save:id=>{t.saved=id;t.cleared.push(id);}};
+const sapiensService={listSapiens:()=>{t.listCalls++;return t.list();}};
+const useSapiensStore=select=>select({currentSapiens:t.current});
+useSapiensStore.getState=()=>({currentSapiens:t.current,setCurrentSapiens:(value,verified)=>{t.current=value;t.selected.push({value,verified});resourceSession.select(value.id);if(verified)resourceSession.confirm(value.id);}});
+`;
+const {useRestoreSapienSelection}=await load(restorePrelude+restoreSource,'useRestoreSapienSelection.ts');
+const rt=globalThis.restoreTest;
+useRestoreSapienSelection('71',{available:[{id:'71',name:'Rashi'}],ready:true});
+await Promise.resolve();
+assert.equal(rt.current?.id,'71','A verified Simulation URL identity restores the shared selection');
+assert.equal(rt.selected[0]?.verified,true);
+assert.equal(rt.listCalls,0,'Simulation Lab reuses its loaded account directory');
+rt.current={id:'71',name:'Rashi'};rt.saved='99';
+useRestoreSapienSelection('99',{available:[],ready:true});
+await Promise.resolve();
+assert.equal(rt.current.id,'71','An inaccessible URL identity cannot replace a valid selection');
+assert.equal(rt.saved,'71','An inaccessible persisted identity falls back to the valid current selection');
+let resolveRestore;
+rt.list=()=>new Promise(resolve=>{resolveRestore=resolve;});
+const selectedBefore=rt.selected.length;
+useRestoreSapienSelection('72');
+rt.version++;
+resolveRestore([{id:'72',name:'Later'}]);
+await Promise.resolve();
+assert.equal(rt.selected.length,selectedBefore,'A stale restoration cannot overwrite a newer selection');
+
 // Remembered controls retain stable initial values and stay scoped by Sapien/account.
 globalThis.memoryTest = {views:new Map()};
 const stateSource = (await source('components/navigation/NavigationState.tsx')).replace(/^import .*;\r?\n/gm, '');
@@ -120,5 +156,5 @@ assert.deepEqual(useRememberedState('59:tags',[])[0],[],'Another Sapien starts w
 globalThis.memoryTest={views:new Map()};
 assert.deepEqual(useRememberedState('58:tags',[])[0],[],'New account memory contains no previous filters');
 delete globalThis.memoryTest;
-delete globalThis.navTest; delete globalThis.selectTest;
+delete globalThis.navTest; delete globalThis.selectTest; delete globalThis.restoreTest;
 console.log('App navigation passed: role menus, selected/empty/run states, remembered destinations, verified switching, retained conversations, and stale-response protection.');

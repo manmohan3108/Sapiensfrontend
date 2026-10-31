@@ -1,4 +1,6 @@
 import { OpenRunWorkspace } from '../components/navigation/AppNavigation';
+import { useRestoreSapienSelection } from '../components/navigation/useRestoreSapienSelection';
+import { selectionStorage } from '../core/auth/selectionStorage';
 import { useSapiensStore } from '../core/state/sapiensStore';
 import { SimulationVisualOverview } from '../components/simulation/SimulationVisualOverview';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -821,28 +823,22 @@ export function SimulationWorldPage() {
   const [params, setParams] = useSearchParams();
   const [run, setRun] = useState<SimulationRun | null>(null);
   const currentSapiens = useSapiensStore(state => state.currentSapiens);
-  const [storedIdentity, setStoredIdentity] = useState<{ sapienId: string; sapienName?: string } | null>(() => {
-    try {
-      const stored = JSON.parse(sessionStorage.getItem('simulation-lab-return-context') || 'null');
-      return typeof stored?.sapienId === 'string' && typeof stored?.sapienName === 'string'
-        ? { sapienId: stored.sapienId, sapienName: stored.sapienName }
-        : null;
-    } catch { return null; }
-  });
-
   const [error, setError] = useState('');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => sessionStorage.getItem('simulation-world-sidebar-collapsed') === 'true');
   const section = location.pathname.split('/').filter(Boolean).at(-1) || 'overview';
   const valid = ['world','diagnostics','overview','test-case','timeline','progress','people','messages','jira','connections','sapien','results'];
   useEffect(() => { if (!valid.includes(section)) navigate({ pathname: `/admin/simulations/${encodeURIComponent(runId)}/world/overview`, search: location.search, hash: location.hash }, { replace: true }); }, [section, runId, navigate, location.search, location.hash]);
   useEffect(() => { const controller = new AbortController(); let timer = 0; let inFlight = false; const poll = async () => { if (document.hidden || inFlight) return; inFlight = true; try { const next = await simulationService.get(runId, controller.signal); if (controller.signal.aborted) return; setRun(next); setError(''); if (!(next.archived && terminal.has(next.status))) timer = window.setTimeout(poll, next.status === 'scheduled' || next.status === 'paused' ? 30_000 : 15_000); } catch (problem) { if (!controller.signal.aborted) { setError(message(problem)); timer = window.setTimeout(poll, 60_000); } } finally { inFlight = false; } }; const resume = () => { if (!document.hidden) void poll(); }; document.addEventListener('visibilitychange', resume); void poll(); return () => { controller.abort(); window.clearTimeout(timer); document.removeEventListener('visibilitychange', resume); }; }, [runId]);
-  const knownSapienName = run?.run_id !== runId || run.sapien_id == null ? undefined :
-    (currentSapiens?.id === String(run.sapien_id) ? currentSapiens.name : undefined) ||
-    (params.get('sapienId') === String(run.sapien_id) ? params.get('sapienName') : undefined) ||
-    (storedIdentity?.sapienId === String(run.sapien_id) ? storedIdentity.sapienName : undefined);
+  const boundSapienId = run?.run_id === runId && run.sapien_id != null ? String(run.sapien_id) : null;
+  const requestedSapienId = params.get('sapienId');
+  const explicitSapienId = boundSapienId && requestedSapienId === boundSapienId ? boundSapienId : null;
+  const restoreCandidateId = requestedSapienId && !boundSapienId
+    ? null
+    : explicitSapienId || currentSapiens?.id || selectionStorage.read() || boundSapienId;
+  useRestoreSapienSelection(restoreCandidateId);
+  const knownSapienName = boundSapienId && currentSapiens?.id === boundSapienId ? currentSapiens.name : undefined;
   useEffect(() => {
     if (run?.run_id !== runId || run.sapien_id == null) return;
-    setStoredIdentity({ sapienId: String(run.sapien_id), sapienName: knownSapienName || undefined });
     try { sessionStorage.setItem('simulation-lab-return-context', JSON.stringify({
       runId: run.run_id,
       sapienId: String(run.sapien_id),
