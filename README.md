@@ -119,15 +119,15 @@ a Sapien remain admin-only. Manual verification should cover admin, ordinary
 customer and enabled customer navigation/creation, owned live and archived runs,
 cross-account IDs, and permission revocation after reload.
 
-Deployment is NOT verified. Apply backend migration `0004_sapiensmodel_owner`
-before restarting, verifying the host includes `0003_enginejob_origin`; reconcile
-history differences rather than faking migrations. Existing records remain
+Before enabling customer access, apply backend migration `0004_sapiensmodel_owner`
+and verify the host includes `0003_enginejob_origin`. Reconcile migration-history
+differences rather than faking migrations. Existing records remain
 ownerless/admin-only until assigned. Do not release customer access against an
 older backend that does not enforce ownership.
 
-Contract audit: load uses `/api/load-sapien` with `sapiens_id`; save uses
-`/api/<id>/save/`. The existing feedback helper still refers to `/api/chat/signal`,
-which is absent from the current backend URL configuration. A payload mapping to
+Loading uses `/api/load-sapien` with `sapiens_id`. The existing user-signal helper
+refers to `/api/chat/signal`, which is absent from the current backend URL
+configuration. A payload mapping to
 the per-Sapiens feedback endpoint must be agreed separately; no alternative
 endpoint or ownership parameter is invented here.
 
@@ -192,12 +192,8 @@ it as selected source, not a reconstructed focus. Inferred loop numbers remain
 labelled inside individual step details even when loop grouping is off.
 Full retained source details, contributors, understanding and supporting context
 remain in disclosures below the flow. Preview shortening does not replace the
-saved values. No API, persistence or Awareness decision behaviour is changed.
+saved values.
 Candidate impressions and the supplied Working Memory catalogue are available
 in a separate disclosure; the catalogue alone does not prove memory use.
 Exact activity-record fallbacks are labelled as saved composite activity text,
 not raw tool responses. Existing API fields and old-run views remain supported.
-
-The local reader change has been reviewed by source inspection only. No build,
-tests, localhost server, commit or deployment was run for this change; visual
-and live API verification remain pending.

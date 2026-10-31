@@ -447,7 +447,8 @@ globalThis.analyseTest.feedbackPresentation=feedbackPresentation;
 const feedbackEvidence=await load('components/analyse/feedbackEvidence.ts');
 globalThis.analyseTest.feedbackEvidence=feedbackEvidence;
 globalThis.analyseTest.diagnosticUI=await load('components/analyse/DiagnosticPrimitives.tsx','const {useState,useId}=React;');
-const feedbackDetail=await load('components/analyse/FeedbackFindingDetail.tsx','const {DiagnosticBadge,DiagnosticDisclosure,DiagnosticText}=globalThis.analyseTest.diagnosticUI;\nconst {feedbackLabels,feedbackMode,feedbackTime}=globalThis.analyseTest.feedbackPresentation;\nconst {additionalEvidence,changedRequestFields,eventEvidence,evidenceNames}=globalThis.analyseTest.feedbackEvidence;');
+const feedbackDetailPrelude='const {DiagnosticBadge,DiagnosticDisclosure,DiagnosticText}=globalThis.analyseTest.diagnosticUI;\nconst {feedbackLabels,feedbackMode,feedbackTime}=globalThis.analyseTest.feedbackPresentation;\nconst {additionalEvidence,changedRequestFields,eventEvidence,evidenceNames}=globalThis.analyseTest.feedbackEvidence;';
+const feedbackDetail=await load('components/analyse/FeedbackFindingDetail.tsx','const {useId,useRef}=React;\n'+feedbackDetailPrelude);
 globalThis.analyseTest.feedbackDetail=feedbackDetail;
 globalThis.analyseTest.feedbackService={list:async()=>{throw Error('Unexpected request');}};
 globalThis.analyseTest.feedbackNavigation={scroll:new Map()};
@@ -494,9 +495,36 @@ const openerNode={isConnected:true,focus:()=>{}};
 find(tableTree,node=>node.props.className==='feedback-open').props.onClick({currentTarget:openerNode});
 assert.equal(selectedFeedback.id,'finding-1');
 const detailMarkup=html(React.createElement(feedbackDetail.FeedbackFindingDetail,{finding:feedbackRecord}));
-for(const expected of ['Earlier event','Later event','Tool reported:','Who should receive','Address the introduction','What Sapiens concluded','Only part of the original record','The original event could not be loaded','More context used in this review','Full saved tool text','chat-1','not measured accuracy'])assert(detailMarkup.includes(expected),expected);
+for(const expected of ['Activity under review','Evidence compared','Tool reported:','Who should receive','Address the introduction','What Sapiens concluded','Only part of the original record','The original event could not be loaded','More context used in this review','Full saved tool text','chat-1','not measured accuracy'])assert(detailMarkup.includes(expected),expected);
+assert(!detailMarkup.includes('Earlier event')&&!detailMarkup.includes('Later event'));
 assert(detailMarkup.indexOf('Who should receive') < detailMarkup.indexOf('What Sapiens concluded'),'Evidence precedes the saved conclusion');
 assert(detailMarkup.includes('>0<'),'Zero confidence is not treated as missing');
+// The reading guide targets the existing evidence and conclusion, including keyboard focus.
+const controlledFeedbackDetail=await load('components/analyse/FeedbackFindingDetail.tsx','const useId=()=>"feedback-test"; const useRef=globalThis.analyseTest.h.useRef;\n'+feedbackDetailPrelude);
+h.reset();
+const guidedDetail=controlledFeedbackDetail.FeedbackFindingDetail({finding:feedbackRecord});
+const flow=find(guidedDetail,node=>node.type==='nav'&&node.props['aria-label']==='Finding reading order');
+const flowButtons=all(flow).filter(node=>node.type==='button');
+assert.equal(flowButtons.length,3,'All three reading destinations are visible, with nothing hidden behind a next step');
+const targetNodes=all(guidedDetail).filter(node=>node.props.id?.startsWith('feedback-test-step-'));
+for(const [index,button] of flowButtons.entries()){
+  assert.equal(button.props.type,'button');
+  const target=targetNodes.find(node=>node.props.id===button.props['aria-controls']);
+  assert(target,'Every step points to real content');
+  const calls=[];
+  const element={focus:options=>calls.push(['focus',options]),scrollIntoView:options=>calls.push(['scroll',options])};
+  if(target.props.sectionRef)target.props.sectionRef(element);else target.ref(element);
+  button.props.onClick();
+  assert.deepEqual(calls,[['focus',{preventScroll:true}],['scroll',{block:'start',behavior:'instant'}]],`Step ${index+1} moves focus and reveals the selected content without animation`);
+}
+const missingFinding={...feedbackRecord,activity:{id:'missing-a',source:'tool_activity',occurred_at:null,details:{available:false}},experience:{id:'missing-b',source:'unknown',occurred_at:null,details:{available:false}}};
+for(const state of feedbackTypes.FEEDBACK_STATES){
+  const markup=html(React.createElement(feedbackDetail.FeedbackFindingDetail,{finding:{...missingFinding,state},mode:'observe'}));
+  assert(markup.includes('Details unavailable'));
+  assert(markup.includes(feedbackPresentation.feedbackLabels[state]));
+  assert(markup.includes('not applied to Sapiens'),'Reading order does not imply that a lesson was applied');
+  assert(!markup.includes('Tool reported: Succeeded'),'Missing tool evidence is not a successful action');
+}
 const safeMarkup=html(React.createElement(feedbackDetail.FeedbackFindingDetail,{finding:{...feedbackRecord,meaning:'<img src=x onerror=alert(1)>'}}));
 assert(safeMarkup.includes('&lt;img'));assert(!safeMarkup.includes('<img src=x'));
 // Sapien 66-shaped evidence: tool retry, conversations, progress, mixed and incomplete records.

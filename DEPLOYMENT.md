@@ -42,8 +42,7 @@ creating large application data.
 | `/dev/sdb1` | 10 GB (`9.7G`) | `/` | Debian and system packages |
 | `/dev/sda` | 100 GB (`98G`) | `/srv` | Repositories, dependencies, builds, caches, releases |
 
-Confirmed during deployment, `/` had roughly 3.8 GB free and `/srv` roughly
-73 GB free. These values change; use `df` rather than relying on these figures.
+Check current free space with `df` before deployment.
 
 Appropriate locations on the 10 GB root filesystem:
 
@@ -146,9 +145,8 @@ test -f dist/index.html && echo "Frontend build succeeded"
 ```
 
 There must be no tracked source/configuration modifications before deployment.
-Until the repository has a `.gitignore`, generated `node_modules/` and `dist/`
-may appear as untracked entries in `git status`. The Vite build writes
-`dist/index.html` and content-hashed assets under `dist/assets`. A Vite warning
+Keep generated `node_modules/` and `dist/` excluded through `.gitignore`. The Vite
+build writes `dist/index.html` and content-hashed assets under `dist/assets`. A Vite warning
 about JavaScript chunks larger than 500 kB is a performance warning, not a failed
 build.
 

@@ -1,3 +1,4 @@
+import { useId, useRef, type Ref } from 'react';
 import type { FeedbackFinding, FeedbackReference } from '../../types/feedbackTypes';
 import { DiagnosticBadge, DiagnosticDisclosure, DiagnosticText } from './DiagnosticPrimitives';
 import { feedbackLabels, feedbackMode, feedbackTime } from './feedbackPresentation';
@@ -38,14 +39,15 @@ function ToolResult({ event }: { event: ReturnType<typeof eventEvidence> }) {
   </div>;
 }
 
-export function FeedbackReferenceView({ label, value, names = new Map<string, string>() }: {
+export function FeedbackReferenceView({ label, value, names = new Map<string, string>(), step, id, sectionRef }: {
   label: string; value: FeedbackReference; names?: Map<string, string>;
+  step?: number; id?: string; sectionRef?: Ref<HTMLElement>;
 }) {
   const details = value?.details;
   const event = eventEvidence(value, names);
-  return <section className="feedback-evidence" data-kind={event.kind}>
-    <p className="feedback-event-position">{label}</p>
-    <h4>{event.title}</h4>
+  return <section className="feedback-evidence" data-kind={event.kind} id={id} ref={sectionRef} tabIndex={id ? -1 : undefined} aria-labelledby={id ? `${id}-title` : undefined}>
+    <p className="feedback-event-position">{step && <span className="feedback-step-number" aria-hidden="true">{step}</span>}{label}</p>
+    <h4 id={id ? `${id}-title` : undefined}>{event.title}</h4>
     <div className="feedback-event-meta">
       {event.actor && <span>{event.actor}{event.recipient ? ` → ${event.recipient}` : ''}</span>}
       {!event.actor && event.recipient && <span>To {event.recipient}</span>}
@@ -79,16 +81,43 @@ export function FeedbackReferenceView({ label, value, names = new Map<string, st
 }
 
 export function FeedbackFindingDetail({ finding, mode }: { finding: FeedbackFinding; mode?: string }) {
+  const id = useId();
+  const sections = useRef<Array<HTMLElement | null>>([]);
   const names = evidenceNames([finding.activity, finding.experience, ...(finding.supporting_experiences || [])]);
   const changes = changedRequestFields(finding, names);
   const extra = additionalEvidence(finding);
+  const steps = [finding.activity, finding.experience].map((reference, index) => {
+    const event = eventEvidence(reference, names);
+    return {
+      label: index === 0 ? 'Activity under review' : 'Evidence compared',
+      title: event.title,
+      context: !reference?.details?.available ? 'Details unavailable'
+        : event.actor || (event.tool?.outcome ? `Tool reported: ${event.tool.outcome}` : event.state ? `Recorded state: ${event.state}` : ''),
+    };
+  });
+  steps.push({ label: 'Sapiens’ conclusion', title: feedbackLabels[finding.state] || finding.state, context: '' });
+  const jumpToStep = (index: number) => {
+    const section = sections.current[index];
+    section?.focus({ preventScroll: true });
+    section?.scrollIntoView({ block: 'start', behavior: 'instant' });
+  };
   return <article className="feedback-finding">
     <section className="feedback-events" aria-label="Events linked by this finding">
       <h3>What happened</h3>
-      <p className="feedback-help">Feedback linked these saved events. Compare them before reading Sapiens’ conclusion.</p>
+      <p className="feedback-help">Read the linked records, then Sapiens’ conclusion. Select a step to jump to it.</p>
+      <nav className="feedback-reading-flow" aria-label="Finding reading order">
+        <ol>{steps.map((step, index) => <li key={index}>
+          <button type="button" className="feedback-flow-step" aria-controls={`${id}-step-${index}`} onClick={() => jumpToStep(index)}>
+            <span className="feedback-step-number" aria-hidden="true">{index + 1}</span>
+            <span className="feedback-flow-copy"><span className="feedback-flow-label">{step.label}</span><strong>{step.title}</strong>
+              {step.context && <span className="feedback-flow-context">{step.context}</span>}
+            </span>
+          </button>
+        </li>)}</ol>
+      </nav>
       <div className="feedback-evidence-pair">
-        <FeedbackReferenceView label="Earlier event" value={finding.activity} names={names} />
-        <FeedbackReferenceView label="Later event" value={finding.experience} names={names} />
+        <FeedbackReferenceView label={steps[0].label} step={1} id={`${id}-step-0`} sectionRef={node => { sections.current[0] = node; }} value={finding.activity} names={names} />
+        <FeedbackReferenceView label={steps[1].label} step={2} id={`${id}-step-1`} sectionRef={node => { sections.current[1] = node; }} value={finding.experience} names={names} />
       </div>
     </section>
     {!!changes.length && <section className="feedback-request-changes">
@@ -97,15 +126,15 @@ export function FeedbackFindingDetail({ finding, mode }: { finding: FeedbackFind
       <div className="feedback-comparison-wrap" role="region" aria-label="Request changes" tabIndex={0}>
         <table className="feedback-comparison">
           <caption className="sr-only">Recorded request differences, not a claim about what caused the result.</caption>
-          <thead><tr><th scope="col">Field</th><th scope="col">Earlier</th><th scope="col">Later</th></tr></thead>
+          <thead><tr><th scope="col">Field</th><th scope="col">Request in step 1</th><th scope="col">Request in step 2</th></tr></thead>
           <tbody>{changes.map((change, index) => <tr key={index}><th scope="row">{change.label}</th>
             <td><DiagnosticText text={change.earlier} limit={220} /></td><td><DiagnosticText text={change.later} limit={220} /></td>
           </tr>)}</tbody>
         </table>
       </div>
     </section>}
-    <section className="feedback-interpretation">
-      <div className="feedback-conclusion-heading"><h3>What Sapiens concluded</h3><FeedbackStateBadge state={finding.state} /></div>
+    <section className="feedback-interpretation" id={`${id}-step-2`} ref={node => { sections.current[2] = node; }} tabIndex={-1} aria-labelledby={`${id}-conclusion`}>
+      <div className="feedback-conclusion-heading"><span className="feedback-step-number" aria-hidden="true">3</span><h3 id={`${id}-conclusion`}>What Sapiens concluded</h3><FeedbackStateBadge state={finding.state} /></div>
       <p className="feedback-help">{finding.state === 'ambiguous' ? 'Sapiens could not clearly determine how these events are related.'
         : finding.state === 'interpreted' ? 'Sapiens’ interpretation, based on the records shown above.'
         : finding.state === 'superseded' ? 'A newer finding replaced this conclusion. This older record is kept for reference.'

@@ -209,37 +209,10 @@ and “Open research questions.” Links within the current category appear unde
 “In this section”. Existing article IDs and category membership determine these
 groups; there is no separate per-article navigation store.
 
-## Current progress and remaining work
+## Implementation references
 
-Editorial pass: 28 October 2026.
-
-- All 46 visible topics have been revised under the roadmap. The initial batch
-  preserved the reviewed `philosophy` and `emergence` articles and rewrote the
-  other 44 introductions. A subsequent emergence review replaced its learning
-  example with sourced Boids flocking and refocused the whole article on
-  properties arising through interactions.
-- Each article begins with its motivating question, problem or inspiration.
-  Foundations own the scientific explanations; engine articles describe the
-  computational adaptation and its inspected integration status.
-- Scientific and philosophical references accompany the relevant foundations.
-  These are introductory sources, not an exhaustive literature review.
-- Observations from the earlier simulation discussions are separated from proposed
-  comparisons. No new VM inspection or experiment was conducted for this editorial
-  pass, and no claim is made that an engineering change has passed runtime validation.
-- Index and Previous/Next share the roadmap order and skip unpublished topics.
-  Related article links are grouped using existing category membership, with
-  labels for scientific inspiration, computational interpretations, evidence and
-  open questions. Within-category links are labelled “In this section”.
-- This editorial pass is tracked with the frontend. Confirm publication against the deployed frontend
-  revision; content presence determines availability after deployment.
-- Remaining work is editorial feedback, manual page review and progressively
-  deeper studies with reproducible evidence. These introductions do not claim
-  that those studies have already been completed.
-
-### Implementation sources checked for this pass
-
-Use these backend sources when revising implementation claims. They describe
-the inspected code, not a guarantee about any deployed run.
+Consult these backend sources when revising implementation claims. Source code
+alone does not establish what happened in a deployed run.
 
 | Topic | Backend sources |
 | --- | --- |
@@ -260,8 +233,8 @@ Paths abbreviated after the first engine path remain relative to
 `simulation_suite/`. The latest code must be checked again when expanding the
 articles, especially for integrations that are currently disconnected.
 
-Update this progress section as work advances; check Git and deployment state
-rather than assuming these notes remain current.
+Keep this guide focused on editorial direction and source references. Report task
+progress, test results and publication status in the conversation, not in this file.
 
 ## Incremental workflow
 

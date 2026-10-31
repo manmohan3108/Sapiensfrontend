@@ -99,14 +99,16 @@ Styling changes must retain permissions, navigation, validation, search, creatio
 
 Check desktop/mobile, both themes and the relevant states. Use the actual page components for visual verification where possible. When a backend is unavailable, use clearly labelled, isolated sample-data previews and distinguish those checks from live integration testing. Remove temporary preview files and mocks after verification unless retaining a preview is requested.
 
-Report what changed, what was tested and any remaining limitations. Keep changes scoped and reversible. Run the build and checks appropriate to the change. Deploy only when requested; local implementation does not imply a production deployment.
+Report what changed, what was tested and any remaining limitations in the final response. Keep changes scoped and reversible. Run the build and checks appropriate to the change. Deploy only when requested; local implementation does not imply a production deployment.
 
 ## 13. Planning and delivery workflow
 
-Before changing a page, record a short page brief: intended reader, primary question,
-primary action, current friction, data available, proposed reading order and acceptance
-checks. Inspect the actual implementation and, when accessible, the live page for the
-requested Sapien. Distinguish browser observations, source-code findings and proposals.
+Before changing a page, establish a short page brief in the conversation when useful:
+intended reader, primary question/action, current friction, data available, proposed
+reading order and acceptance checks. This does not require a Markdown file or an
+update to an existing document. Inspect the implementation and, when accessible,
+the live page for the requested Sapien. Distinguish browser observations, source-code
+findings and proposals.
 Do not call a code inspection or static render test a visual review.
 
 Work in small, reviewable page changes:
@@ -131,9 +133,9 @@ Sapien action just to obtain attractive screenshots.
 
 ## 14. Analyse and Simulation presentation contract
 
-For the current readiness pass, review only Analyse and Simulation, using Sapien 65
-as the reference account data. Homepage, Workspace and Your Sapiens are outside this
-pass. This is a presentation initiative, not a change to Sapiens' intelligence,
+For Analyse and Simulation presentation work, use the Sapien requested for the task.
+Keep Homepage, Workspace and Your Sapiens outside that scope unless explicitly requested.
+This is a presentation initiative, not a change to Sapiens' intelligence,
 decision-making, memory, learning, scheduling or simulation behaviour.
 
 - Keep the selected Sapien and, where applicable, simulation run unambiguous. A
@@ -200,7 +202,28 @@ checks include `pnpm test:analyse`, `pnpm test:navigation`, the awareness script
 `scripts/`, and `pnpm run build`; select those relevant to the change. The Vite build
 does not replace type checking, browser review or live API integration tests.
 
-The readiness record is `docs/analyse-simulation-readiness.md`. Update its observed
-coverage, priorities and outstanding checks as work proceeds. A page is not visually
-approved because its build passes, and a polished UI is not evidence of an unsupported
-capability. Keep this document a flexible reference, not a forced layout template.
+Use `docs/analyse-simulation-readiness.md` as a concise presentation reference, not a
+development log. Report test results, visual-review coverage and outstanding checks
+in the final response. A page is not visually approved because its build passes, and
+a polished UI is not evidence of an unsupported capability.
+
+## 17. Keep documentation purposeful
+
+- Use Git diffs/commits for change history and the conversation/final response for
+  task plans, progress, test results, review findings and deployment status.
+- Do not create or append routine development diaries, per-task Markdown files,
+  dated implementation reports, audit transcripts, test-output logs or completion
+  checklists unless the user explicitly requests a saved record. Do not move removed
+  logs into a new archive file merely to preserve them; Git retains their history.
+- Update documentation when a change has lasting value: agreed design/writing
+  guidance, architecture or API contracts, setup, deployment, troubleshooting, or
+  important operational constraints. Prefer the existing canonical document. Create
+  a new one only when requested or when necessary durable information has no suitable
+  home; keep it concise and avoid duplicating code or other documentation.
+- Keep AGENTS.md focused on reusable instructions, not current task status, example
+  account IDs or a history of edits. Keep plans and references current by replacing
+  obsolete guidance rather than appending contradictory follow-ups.
+- Preserve useful product specifications, research/editorial guidance, deployment
+  and rollback instructions, API references, attributions and licences. A document's
+  length alone is not a reason to delete it. Documentation-only cleanup needs relevant
+  diff/link checks, not application builds or UI tests.
