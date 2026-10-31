@@ -9,6 +9,7 @@ import { AnalyseControls } from './AnalyseControls';
 import { useNavigationMemory } from '../navigation/NavigationState';
 import { DiagnosticDisclosure } from './DiagnosticPrimitives';
 import { FeedbackFindingDetail, FeedbackStateBadge } from './FeedbackFindingDetail';
+import { feedbackDetailTitle } from './feedbackEvidence';
 import { feedbackLabels, feedbackMode, feedbackOrigin, feedbackQuery, feedbackTime, updateFeedbackQuery } from './feedbackPresentation';
 import '../../../styles/analyse-feedback.css';
 
@@ -67,10 +68,10 @@ function FeedbackError({ error, retry }: { error: ApiError; retry: () => void })
 
 function FeedbackProcessing({ processing }: { processing: NonNullable<FeedbackResponse['processing']> }) {
   return <DiagnosticDisclosure title="Background reviews and diagnostics">
-    <p className="feedback-help">New experiences collect until the next cognitive-hour boundary. These counts cover saved jobs across all runs, not unique experiences or model calls. A completed review may find nothing to report.</p>
+    <p className="feedback-help">Feedback reviews new experiences in batches. A batch becomes eligible at the next hour on Sapiens’ internal clock. These counts cover review jobs across all saved runs. A completed review may produce no findings.</p>
     <dl className="feedback-processing-counts">{(['pending', 'running', 'completed', 'failed'] as const).map(status => <div key={status}><dt>{({ pending: 'Queued', running: 'Recorded as processing', completed: 'Completed', failed: 'Failed' })[status]}</dt><dd>{processing.counts?.[status] ?? 'Not recorded'}</dd></div>)}</dl>
     <DiagnosticDisclosure title="Recent review jobs">
-      <p className="feedback-help">Continuations can overlap earlier inputs. Historical empty results are not always retained.</p>
+      <p className="feedback-help">A follow-up review can include earlier inputs. Some older reviews with no findings were not saved.</p>
       {processing.recent_jobs?.length ? <ul className="feedback-review-jobs">{processing.recent_jobs.map(job => <li key={job.id}>
         <p>{job.status} · {job.reviewed_count} reviewed here / {job.experience_count} supplied · {job.retries} retries</p>
         <p>Eligible from: {feedbackTime(job.eligible_at)} (cognitive time; not a guaranteed start)</p>
@@ -113,7 +114,7 @@ function FeedbackView({ sapienId }: { sapienId: string }) {
   const retry = () => { if (error?.status === 400) update({ states: [], offset: 0, selectedId: null }); refresh(); };
 
   return <div className="feedback-page">
-    <div className="feedback-intro"><p>Review possible lessons from what Sapiens did and what happened afterward.</p><p className="feedback-help">{loading ? 'Loading saved feedback…' : feedbackMode(data?.mode)}</p></div>
+    <div className="feedback-intro"><p>The Feedback engine reviews earlier actions and later events to look for possible lessons. Open a finding to see those events and what Sapiens concluded.</p><p className="feedback-help">{loading ? 'Loading saved feedback…' : feedbackMode(data?.mode)}</p></div>
     <AnalyseControls label="Page options" primary={<fieldset className="feedback-state-filter"><legend>Finding state <span>(all when none selected)</span></legend>
       <div>{FEEDBACK_STATES.map((state, index) => <label key={state}><input ref={index === 0 ? firstFilter : undefined} type="checkbox" name="feedbackState" value={state} checked={states.includes(state)} onChange={event => update({ states: event.target.checked ? [...states, state] : states.filter(item => item !== state), offset: 0, selectedId: null })} />{feedbackLabels[state]}</label>)}</div>
     </fieldset>} summary={(states.length ? states.map(state => feedbackLabels[state]).join(', ') : 'All finding states') + ' · ' + limit + ' per page'} onRefresh={refresh} busy={loading}>
@@ -128,7 +129,7 @@ function FeedbackView({ sapienId }: { sapienId: string }) {
         <p className="feedback-scroll-hint">Scroll across the table for sources, state and time.</p>
         <FeedbackTable findings={data.findings} selectedId={selectedId} onSelect={(id, button) => { opener.current = button; update({ selectedId: id }); }} />
       </> : <div className="feedback-empty"><h3>{offset ? 'No findings on this page' : states.length ? 'No findings match these states' : 'No saved findings yet'}</h3>
-        <p>{offset ? 'Return to the first page or refresh the saved findings.' : states.length ? 'Clear the state filters to see all returned findings.' : 'Findings appear here when a feedback review records a connection between an activity and a later experience.'}</p>
+        <p>{offset ? 'Return to the first page or refresh the saved findings.' : states.length ? 'Clear the state filters to see all returned findings.' : 'Findings appear after Feedback reviews earlier actions alongside later events. Use Refresh to check for new findings.'}</p>
         {(offset > 0 || states.length > 0) && <button type="button" className="analyse-button" onClick={() => update({ states: [], offset: 0, selectedId: null })}>{offset ? 'First page, all states' : 'Clear state filters'}</button>}
       </div>}
       {(offset > 0 || data.has_more || (data.total !== undefined && data.total > limit)) && <nav aria-label="Feedback pages" className="feedback-pagination">
@@ -141,14 +142,13 @@ function FeedbackView({ sapienId }: { sapienId: string }) {
 
     <Dialog open={selectedId !== null} onOpenChange={open => { if (!open) close(); }}>
       <DialogContent className="feedback-dialog" onCloseAutoFocus={event => { event.preventDefault(); (opener.current?.isConnected ? opener.current : tableHeading.current || firstFilter.current)?.focus({ preventScroll: true }); }}>
-        <header className="feedback-dialog-header"><DialogTitle>Feedback finding</DialogTitle><DialogDescription>Sapien {sapienId} · Saved interpretation and supporting evidence.</DialogDescription>
-          <p className="feedback-help">{feedbackMode(data?.mode)}</p>
+        <header className="feedback-dialog-header"><DialogTitle>{selected ? feedbackDetailTitle(selected) : 'Feedback finding'}</DialogTitle><DialogDescription>Sapien {sapienId} · Feedback finding</DialogDescription>
           <div className="feedback-reader-navigation"><button type="button" className="analyse-button" onClick={close}>Back to findings</button>
             {selected && data && <><span>{selectedIndex + 1} of {data.findings.length} on this page</span><button type="button" className="analyse-button" disabled={selectedIndex === 0} onClick={() => update({ selectedId: data.findings[selectedIndex - 1]._id }, true)}>Previous finding</button><button type="button" className="analyse-button" disabled={selectedIndex === data.findings.length - 1} onClick={() => update({ selectedId: data.findings[selectedIndex + 1]._id }, true)}>Next finding</button></>}
           </div>
         </header>
         <div className="feedback-dialog-body" key={selectedId}>
-          {loading ? <p role="status">Loading saved finding…</p> : error ? <FeedbackError error={error} retry={retry} /> : selected ? <FeedbackFindingDetail finding={selected} /> : <p role="status">This finding is not in the returned page. Return to the findings to select an available record.</p>}
+          {loading ? <p role="status">Loading saved finding…</p> : error ? <FeedbackError error={error} retry={retry} /> : selected ? <FeedbackFindingDetail finding={selected} mode={data?.mode} /> : <p role="status">This finding is not in the returned page. Return to the findings to select an available record.</p>}
         </div>
       </DialogContent>
     </Dialog>

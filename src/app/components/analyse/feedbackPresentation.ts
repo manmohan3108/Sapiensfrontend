@@ -6,10 +6,10 @@ export const feedbackLabels: Record<FeedbackState, string> = {
 };
 
 export function feedbackMode(mode?: string) {
-  if (mode === 'observe') return 'Observe mode: findings are recorded for inspection, not applied to behavior.';
+  if (mode === 'observe') return 'Observe mode: possible lessons are saved for review, not applied to Sapiens’ behavior.';
   if (mode === 'off') return 'Feedback is off. Previously saved findings remain available.';
-  if (mode === 'active') return 'Active mode makes findings available to other engines; this does not establish that they were used.';
-  return 'Saved findings do not establish that learning was applied. Feedback mode is not available.';
+  if (mode === 'active') return 'Active mode: Sapiens can use these findings. This record alone does not show whether a finding was used.';
+  return 'Feedback mode is not available. This record does not say whether the finding was applied.';
 }
 
 export function feedbackTime(value?: string | null, precise = false) {

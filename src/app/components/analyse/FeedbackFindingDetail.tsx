@@ -1,34 +1,76 @@
 import type { FeedbackFinding, FeedbackReference } from '../../types/feedbackTypes';
 import { DiagnosticBadge, DiagnosticDisclosure, DiagnosticText } from './DiagnosticPrimitives';
-import { feedbackLabels, feedbackOrigin, feedbackTime } from './feedbackPresentation';
+import { feedbackLabels, feedbackMode, feedbackTime } from './feedbackPresentation';
+import { additionalEvidence, changedRequestFields, eventEvidence, evidenceNames, type EvidenceField } from './feedbackEvidence';
 
 export function FeedbackStateBadge({ state }: { state: FeedbackFinding['state'] }) {
   return <DiagnosticBadge tone={state === 'ambiguous' ? 'warning' : 'neutral'}>{feedbackLabels[state] || state}</DiagnosticBadge>;
 }
 
 function SavedValue({ value }: { value: unknown }) {
-  return <pre>{typeof value === 'string' ? value : JSON.stringify(value, null, 2) ?? 'Not recorded'}</pre>;
+  return <pre tabIndex={0}>{typeof value === 'string' ? value : JSON.stringify(value, null, 2) ?? 'Not recorded'}</pre>;
 }
 
-export function FeedbackReferenceView({ label, value }: { label: string; value: FeedbackReference }) {
+function FieldList({ fields }: { fields: EvidenceField[] }) {
+  return <dl className="feedback-facts">{fields.map(field => <div className="feedback-fact-row" key={field.key}>
+    <dt>{field.label}</dt><dd><DiagnosticText text={field.value} limit={220} /></dd>
+  </div>)}</dl>;
+}
+
+function ToolResult({ event }: { event: ReturnType<typeof eventEvidence> }) {
+  const items = event.resultItems;
+  return <div className="feedback-tool-result">
+    <h5>What the tool returned</h5>
+    {event.error ? <div className="feedback-tool-error"><DiagnosticText text={event.error} limit={400} /></div>
+      : event.resultText ? <DiagnosticText text={event.resultText} limit={500} />
+      : items ? <>
+        <p className="feedback-help">{items.length} {items.length === 1 ? 'entry' : 'entries'} in the saved result.</p>
+        <ol className="feedback-result-items">{items.slice(0, 3).map((item, index) => <li key={index}>
+          {item.text ? <DiagnosticText text={item.text} /> : item.fields.length ? <FieldList fields={item.fields} /> : <p className="feedback-help">Entry {index + 1}: fields are available in the original record.</p>}
+        </li>)}</ol>
+        {items.length > 3 && <DiagnosticDisclosure title={`Show remaining ${items.length - 3} saved entries`}>
+          <ol className="feedback-result-items" start={4}>{items.slice(3).map((item, index) => <li key={index}>
+            {item.text ? <DiagnosticText text={item.text} /> : item.fields.length ? <FieldList fields={item.fields} /> : <p className="feedback-help">Fields are available in the original record.</p>}
+          </li>)}</ol>
+        </DiagnosticDisclosure>}
+      </> : event.resultFields.length ? <FieldList fields={event.resultFields} />
+      : <p className="feedback-help">No readable result details were supplied. The original record is available below.</p>}
+  </div>;
+}
+
+export function FeedbackReferenceView({ label, value, names = new Map<string, string>() }: {
+  label: string; value: FeedbackReference; names?: Map<string, string>;
+}) {
   const details = value?.details;
-  const display = details?.available ? details.display : undefined;
-  const origin = feedbackOrigin(value);
-  return <section className="feedback-evidence">
-    <h4>{label}</h4>
-    <p className="feedback-origin"><strong>{origin.primary}</strong>{origin.secondary && <span>{origin.secondary}</span>}</p>
-    <dl className="feedback-facts">
-      {display?.tool && <><dt>Tool-reported result</dt><dd>{display.outcome || 'Not recorded'}</dd></>}
-      <dt>Event time</dt><dd>{feedbackTime(value?.occurred_at, true)}</dd>
-    </dl>
+  const event = eventEvidence(value, names);
+  return <section className="feedback-evidence" data-kind={event.kind}>
+    <p className="feedback-event-position">{label}</p>
+    <h4>{event.title}</h4>
+    <div className="feedback-event-meta">
+      {event.actor && <span>{event.actor}{event.recipient ? ` → ${event.recipient}` : ''}</span>}
+      {!event.actor && event.recipient && <span>To {event.recipient}</span>}
+      <span>{feedbackTime(value?.occurred_at, true)}</span>
+    </div>
+    {event.tool && <p className="feedback-outcome"><DiagnosticBadge tone={event.tool.outcome === 'Failed' ? 'danger' : event.tool.outcome === 'Uncertain' ? 'warning' : 'neutral'}>Tool reported: {event.tool.outcome || 'result not recorded'}</DiagnosticBadge></p>}
+    {event.state && <p className="feedback-outcome">Recorded state: <strong>{event.state}</strong></p>}
     {details?.available ? <>
-      {(!display?.tool || display.text !== details.content) ? <DiagnosticText text={display?.text || details.content || 'No stored event text.'} limit={600} />
-        : <p className="feedback-help">The tool action is shown above. Its saved request and result are in the technical details.</p>}
-      {details.truncated && <p className="feedback-note">This saved evidence is shortened; it is not the full original event.</p>}
-      {details.metadata?._truncated === true && <p className="feedback-note">Stored metadata is also shortened.</p>}
-    </> : <p className="feedback-help">Original event details are unavailable.</p>}
-    <DiagnosticDisclosure title="Event record and technical details">
-      <dl className="feedback-facts"><dt>Reference ID</dt><dd><code>{value?.id || 'Not recorded'}</code></dd><dt>Source type</dt><dd>{value?.source || 'Not recorded'}</dd>
+      {event.body && <div className={event.kind === 'message' ? 'feedback-message' : 'feedback-event-text'}>
+        <DiagnosticText text={event.body} limit={550} />
+      </div>}
+      {event.tool && event.kind !== 'message' && event.fields.length > 0 && <div className="feedback-request">
+        <h5>What Sapiens requested</h5><FieldList fields={event.fields} />
+      </div>}
+      {event.tool && event.kind !== 'message' && <ToolResult event={event} />}
+      {!event.body && !event.tool && <p className="feedback-help">No event text was saved.</p>}
+      {event.kind === 'message' && event.tool?.outcome === 'Failed' && <ToolResult event={event} />}
+      {event.kind === 'message' && event.tool && !event.body && <p className="feedback-help">The message text was not supplied. Check the original record below.</p>}
+      {(details.truncated || details.metadata?._truncated === true) && <p className="feedback-note">Only part of the original record was saved or supplied here.</p>}
+    </> : <p className="feedback-help">The original event could not be loaded. Its reference is kept below.</p>}
+    <DiagnosticDisclosure title="Original record">
+      <dl className="feedback-facts">
+        <dt>Reference ID</dt><dd><code>{value?.id || 'Not recorded'}</code></dd>
+        <dt>Source type</dt><dd>{value?.source || 'Not recorded'}</dd>
+        <dt>Event time</dt><dd>{feedbackTime(value?.occurred_at, true)}</dd>
         {details?.available && <><dt>Observed at</dt><dd>{feedbackTime(details.observed_at, true)}</dd></>}
       </dl>
       {details?.available && <><h5>Saved event text</h5><SavedValue value={details.content} /><h5>Saved metadata</h5><SavedValue value={details.metadata} /></>}
@@ -36,31 +78,53 @@ export function FeedbackReferenceView({ label, value }: { label: string; value: 
   </section>;
 }
 
-export function FeedbackFindingDetail({ finding }: { finding: FeedbackFinding }) {
+export function FeedbackFindingDetail({ finding, mode }: { finding: FeedbackFinding; mode?: string }) {
+  const names = evidenceNames([finding.activity, finding.experience, ...(finding.supporting_experiences || [])]);
+  const changes = changedRequestFields(finding, names);
+  const extra = additionalEvidence(finding);
   return <article className="feedback-finding">
-    <div className="feedback-finding-meta"><FeedbackStateBadge state={finding.state} /><span>Recorded {feedbackTime(finding.created_at)}</span></div>
-    <section className="feedback-interpretation">
-      <h3>Recorded interpretation</h3>
-      <p>{finding.meaning || 'No interpretation recorded.'}</p>
-      <p className="feedback-help">{finding.state === 'ambiguous' ? 'The relationship between these events is uncertain.'
-        : finding.state === 'interpreted' ? 'A possible lesson, not evidence that behavior changed.'
-        : finding.state === 'superseded' ? 'A later finding replaced this interpretation.'
-        : finding.state === 'unrelated' ? 'No relevant relationship was established.' : 'Review the saved interpretation and its evidence.'}</p>
+    <section className="feedback-events" aria-label="Events linked by this finding">
+      <h3>What happened</h3>
+      <p className="feedback-help">Feedback linked these saved events. Compare them before reading Sapiens’ conclusion.</p>
+      <div className="feedback-evidence-pair">
+        <FeedbackReferenceView label="Earlier event" value={finding.activity} names={names} />
+        <FeedbackReferenceView label="Later event" value={finding.experience} names={names} />
+      </div>
     </section>
-    <h3>Evidence behind this finding</h3>
-    <div className="feedback-evidence-pair">
-      <FeedbackReferenceView label="Earlier activity" value={finding.activity} />
-      <FeedbackReferenceView label="Later experience" value={finding.experience} />
-    </div>
-    {!!finding.supporting_experiences?.length && <DiagnosticDisclosure title={`Other evidence considered (${finding.supporting_experiences.length})`}>
-      <div className="feedback-evidence-pair">{finding.supporting_experiences.map((ref, index) => <FeedbackReferenceView key={`${ref.id}-${index}`} label="Supporting evidence" value={ref} />)}</div>
-    </DiagnosticDisclosure>}
-    <DiagnosticDisclosure title="Finding details and model confidence">
+    {!!changes.length && <section className="feedback-request-changes">
+      <h3>What changed in the request</h3>
+      <p className="feedback-help">Differences in the saved fields for the same tool.</p>
+      <div className="feedback-comparison-wrap" role="region" aria-label="Request changes" tabIndex={0}>
+        <table className="feedback-comparison">
+          <caption className="sr-only">Recorded request differences, not a claim about what caused the result.</caption>
+          <thead><tr><th scope="col">Field</th><th scope="col">Earlier</th><th scope="col">Later</th></tr></thead>
+          <tbody>{changes.map((change, index) => <tr key={index}><th scope="row">{change.label}</th>
+            <td><DiagnosticText text={change.earlier} limit={220} /></td><td><DiagnosticText text={change.later} limit={220} /></td>
+          </tr>)}</tbody>
+        </table>
+      </div>
+    </section>}
+    <section className="feedback-interpretation">
+      <div className="feedback-conclusion-heading"><h3>What Sapiens concluded</h3><FeedbackStateBadge state={finding.state} /></div>
+      <p className="feedback-help">{finding.state === 'ambiguous' ? 'Sapiens could not clearly determine how these events are related.'
+        : finding.state === 'interpreted' ? 'Sapiens’ interpretation, based on the records shown above.'
+        : finding.state === 'superseded' ? 'A newer finding replaced this conclusion. This older record is kept for reference.'
+        : finding.state === 'unrelated' ? 'Sapiens did not find a useful connection between these events.' : 'This is the interpretation saved with the finding.'}</p>
+      <DiagnosticText text={finding.meaning || 'No conclusion was recorded.'} limit={850} />
+      <p className="feedback-help feedback-mode-note">{feedbackMode(mode)}</p>
+    </section>
+    {!!extra.references.length && <section className="feedback-extra-evidence">
+      <h3>More context used in this review</h3>
+      <div className="feedback-evidence-pair">{extra.references.map((ref, index) => <FeedbackReferenceView key={`${ref.id}-${index}`} label="Additional event" value={ref} names={names} />)}</div>
+    </section>}
+    {extra.repeated > 0 && <p className="feedback-help">{extra.repeated} repeated {extra.repeated === 1 ? 'reference is' : 'references are'} shown only once. All references remain in the record details.</p>}
+    <DiagnosticDisclosure title="Record details">
       <dl className="feedback-facts">
-        <dt>Model confidence</dt><dd>{Number.isFinite(finding.confidence) ? finding.confidence : 'Not recorded'}<small>Model estimate, not measured accuracy.</small></dd>
+        <dt>Model confidence</dt><dd>{Number.isFinite(finding.confidence) ? finding.confidence : 'Not recorded'}<small>How certain the model was about this finding; not measured accuracy.</small></dd>
         <dt>Finding ID</dt><dd><code>{finding._id}</code></dd><dt>Sapien ID</dt><dd>{finding.sapien_id}</dd>
-        {(['created_at', 'updated_at', 'last_surfaced_at', 'acknowledged_at'] as const).map(field => <div className="feedback-fact-row" key={field}><dt>{({ created_at: 'Created', updated_at: 'Updated', last_surfaced_at: 'Last surfaced', acknowledged_at: 'Acknowledged' })[field]}</dt><dd>{feedbackTime(finding[field], true)}</dd></div>)}
+        {(['created_at', 'updated_at', 'last_surfaced_at', 'acknowledged_at'] as const).map(field => <div className="feedback-fact-row" key={field}><dt>{({ created_at: 'Finding recorded', updated_at: 'Finding updated', last_surfaced_at: 'Last made available', acknowledged_at: 'Acknowledged' })[field]}</dt><dd>{feedbackTime(finding[field], true)}</dd></div>)}
       </dl>
+      {!!finding.supporting_experiences?.length && <><h5>All supporting references as saved</h5><SavedValue value={finding.supporting_experiences} /></>}
     </DiagnosticDisclosure>
   </article>;
 }

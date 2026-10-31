@@ -1,6 +1,6 @@
 # Analyse and Simulation readiness review
 
-Latest review: 31 October 2026. Status: **Feedback table implemented locally; updated UI browser review pending**.
+Latest review: 31 October 2026. Status: **Feedback table and evidence reader implemented locally; updated UI browser review pending**.
 Reference: Rashi, Sapien **65**. The Simulation redesign was reverted; its legacy
 overview was subsequently removed. Engram remains stashed for later review.
 The initial 30 October audit used local baseline `cd09dea5`; implementation entries
@@ -70,6 +70,91 @@ Simulation, Homepage, Workspace and Your Sapiens are outside this change.
   Localhost was not started, and nothing was committed, pushed or deployed.
 
 ### Evidence from this pass
+
+#### Feedback reader follow-up: Sapien 66, 31 October 2026
+
+Implementation brief approved in the next turn: preserve the table and its controls;
+redesign only the opened finding and simplify Feedback explanations. Reader: an admin
+unfamiliar with engine terms. Primary question: what events were linked, what changed,
+and what did Sapiens conclude? Reading order: compact source-specific title, original
+events with visible messages/request fields/results, saved interpretation, then extra
+context and technical records. Tools, conversations, domain updates and mixed/missing
+records need distinct presentations. Use the existing copper tokens (#1e1916,
+#30251f, #ebe2d5, #deb580; light equivalents unchanged), Source Sans 3, left-aligned
+evidence and quiet dividers. No new cards, theme or animation. Compare only fields
+actually recorded; never generate a new conclusion or infer people from prose.
+Acceptance: multiple Sapien 66 examples, exact-reference deduplication, safe incomplete
+evidence fallback, preserved raw records/navigation, clear observe-mode explanation,
+automated interpretation/render checks and build. No server or localhost startup.
+
+User requested inspection of an opened finding, overriding the reference Sapien for
+this review. Reviewed the deployed page in the in-app browser, including a screenshot
+of the dialog and its expanded original records. Rashi #66 had 31 findings. Opened
+`c0a9d267-67ba-596d-af92-6a1a3bb976c1`: failed Teams chat creation followed by a successful
+retry with Ben. No production actions or data were changed.
+
+Observed issues:
+- The generic dialog header/navigation consumes a large part of the visible area.
+  A long recorded interpretation appears before the reader can understand the events.
+- Both evidence columns say Teams / create chat, then status and time. The decisive
+  facts are hidden in technical details: the earlier request has an empty recipient
+  roles array; the retry supplies owner for both members; the earlier error explicitly
+  requires owner role and user binding. The retry reports success. These facts can
+  be presented without inventing a lesson or causal explanation.
+- `FeedbackFindingDetail.tsx` deliberately suppresses tool text when display text
+  equals stored content, leaving only a sentence directing readers to technical
+  details. Metadata alone contains truncated members, while saved event text contains
+  the fuller request/result. A future reader must handle both honestly and avoid
+  parsing malformed or shortened text as complete evidence.
+- Supporting evidence repeats the exact retry reference
+  `activity:e2b016ba-71a4-4fde-86ef-f100ff42b466`; the other supporting record is Marcus's
+  earlier instruction about whom to contact. Repeating the retry obscures the useful
+  context. Deduplicate by exact reference, retaining access/count scope explicitly.
+- "Not evidence that behavior changed" is too broad for this record: the request
+  visibly changed. Observe mode means this feedback finding was not applied; it does
+  not mean the recorded activity could not change. Keep that distinction precise.
+
+Proposed next brief: keep the table; make the reader lead with the concrete source
+events and their outcome, followed by Sapiens' recorded interpretation and additional
+context. For two tool attempts, compare meaningful request fields and reported results;
+for a message/reply, show the exchange and explicit participants. Do not force every
+finding into a retry comparison. Keep raw records, confidence and infrastructure IDs
+secondary. Preserve the copper tokens, typography, focus return and paging. Accept only
+exact field/reference-based presentation, safe truncated-data fallback, and a clear
+distinction between observed changes and feedback being applied. No application code
+was changed during this follow-up review; mobile/light theme remain unreviewed.
+
+#### Feedback reader implementation: Sapien 66, 31 October 2026
+
+- Implemented the approved reader change; kept the findings table, columns, filters,
+  pagination, selection, focus return and URL state unchanged. Simplified the page
+  purpose, mode explanation, empty-state instructions and background-review wording.
+- The compact dialog leads with saved events. Messages show the recorded participants
+  and message text; tool actions show requests, returned fields/entries and errors;
+  progress updates show the recorded state and description. The saved conclusion follows,
+  without generating a new summary. Mixed/unknown/missing records retain readable
+  fallbacks and all original data remains accessible.
+- Matched tool requests get a comparison of differing saved fields. Member roles are
+  matched by exact user IDs, including reordered arrays, with names from structured
+  returned members. No people or causal relationships are inferred from prose. Exact
+  repeated references/snapshots are displayed once; all references remain in raw details.
+- Read backend serialization/presentation code to verify the canonical tool envelope
+  and domain update format. Only complete JSON fragments are parsed; incomplete JSON
+  is never repaired. Existing redaction and truncation are preserved. No backend or
+  API changes were made.
+- Browser evidence: inspected Sapien 66's Isha message/reply and onboarding progress
+  findings, plus the previous turn's Ben chat retry. These were the deployed baseline,
+  not the new code. Applied both required skills and fresh Web Interface Guidelines.
+- Verification: `pnpm test:analyse` passes with added tool-retry, exact-ID matching,
+  duplicate-reference, conversation, progress/mixed/unknown, structured-result, uncertain
+  outcome, incomplete JSON, conflicting-identity, zero/false and escaping checks. The
+  existing navigation/filter/loading/error/stale-response checks still pass. Build passes
+  with the existing large-chunk warning; `git diff --check` passes.
+- Pending: browser review of the updated implementation at desktop/narrow widths,
+  both themes and real keyboard/scroll interactions. No localhost started or deployment
+  performed, as requested. Engram stash and unrelated pages remain untouched.
+
+#### Original table-first review: Sapien 65
 
 Used the authenticated live site in the in-app browser, with **Rashi #65 selected**,
 and inspected the corresponding frontend components/types. Applied frontend-design
