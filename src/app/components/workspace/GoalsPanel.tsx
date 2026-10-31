@@ -7,6 +7,7 @@ import {
   Send,
 } from 'lucide-react';
 import { goalsService, OverloadedError } from '../../core/services/goalsService';
+import { workflowLifecycle, workflowState } from '../../utils/goalPresentation';
 import { useSapiensStore } from '../../core/state/sapiensStore';
 import type {
   Goal, GoalDetail, GoalStatus, GoalSource, WorkflowRecord, StateRules,
@@ -52,9 +53,9 @@ function fmtDate(iso: string) {
 function StatusPill({ status }: { status: GoalStatus }) {
   const s = Object.prototype.hasOwnProperty.call(STATUS_STYLE, status) ? STATUS_STYLE[status] : STATUS_STYLE.pending;
   return (
-    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium flex-shrink-0"
+    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium min-w-0 break-words"
       style={{ color: s.color, background: s.bg, border: `1px solid ${s.border}` }}>
-      {status || 'State unspecified'}
+      {workflowState(status)}
     </span>
   );
 }
@@ -71,8 +72,8 @@ function SourceBadge({ source }: { source: GoalSource }) {
 
 function Lifecycle({ record }: { record: WorkflowRecord }) {
   return <span className="text-[9px] text-sp-muted">
-    {record.finished === null ? 'Completion unknown' : record.finished ? 'Finished' : 'Unfinished'}
-    {' · '}{record.retired === null ? 'Retirement unknown' : record.retired ? 'Retired' : 'Not retired'}
+    {workflowLifecycle(record)}{record.retired === true && (record.finished === null ? ' · Completion unknown' : record.finished ? ' · Finished' : ' · Unfinished')}
+    {record.retired !== true && (record.retired === null ? ' · Retirement unknown' : ' · Not retired')}
   </span>;
 }
 
@@ -483,7 +484,7 @@ function GoalCard({ goal, sapienId, onClick, compact, inspection = false }: { go
   </article>;
   if (compact) return <button data-record-id={goal.id} className="context-list-row context-goal-row" onClick={onClick}>
     <span className="context-goal-mark" aria-hidden="true">{goal.finished === true ? <CheckCircle2 size={18} /> : <Circle size={18} />}</span>
-    <div><span className="context-row-excerpt">{goal.description}</span><small>{goal.retired === true ? 'Retired' : goal.finished === true ? 'Finished' : goal.finished === false ? 'Open' : 'Completion not supplied'}{goal.current_plan ? ' · ' + done + '/' + total + ' steps finished' : ''}</small></div><ChevronRight size={16} />
+    <div><span className="context-row-excerpt">{goal.description}</span><small>{workflowLifecycle(goal)}{goal.current_plan ? ' · ' + done + '/' + total + ' steps finished' : ''}</small></div><ChevronRight size={16} />
   </button>;
   return (
     <div className="rounded-xl transition-all"
@@ -496,8 +497,8 @@ function GoalCard({ goal, sapienId, onClick, compact, inspection = false }: { go
 
         <div className="flex items-center gap-1.5 flex-wrap">
           <SourceBadge source={goal.source} />
-          <StatusPill  status={goal.state} />
           <Lifecycle record={goal} />
+          <StatusPill status={goal.state} />
           <span className="ml-auto text-[8px] font-mono text-sp-muted">
             {goal.current_plan ? `${done}/${total} tasks finished` : 'No plan created'}
           </span>
@@ -677,12 +678,12 @@ function GoalDetailPane({
             <p className="context-footnote">{goal.retired === true ? 'Retired goal' : goal.finished === true ? 'Marked finished' : goal.finished === false ? 'Open goal' : 'Completion not supplied'} · Updated {recordDate(goal.updated_at)}</p>
             {goal.motivation && <details className="context-technical"><summary>Why this goal exists</summary><RecordText text={goal.motivation} /></details>}
             <section className="context-goal-update"><h4>{remaining ? 'What is still needed' : 'Latest understanding'}</h4>{remaining || understanding ? <><RecordText text={remaining || understanding} /><p className="context-footnote">Recorded {recordDate(detail.attention?.resolved_at)} · An assessment, not a confirmed outcome.</p></> : <p className="context-footnote">No assessment has been supplied for this goal yet.</p>}</section>
-          </> : <><div className="flex items-center gap-1.5"><StatusPill status={goal.state} /><Lifecycle record={goal} /></div><p className="text-base text-sp-ink">{goal.description}</p>{goal.motivation && <p className="text-sm text-sp-muted">{goal.motivation}</p>}</>}
+          </> : <><div className="flex items-center gap-1.5"><Lifecycle record={goal} /><StatusPill status={goal.state} /></div><p className="text-base text-sp-ink">{goal.description}</p>{goal.motivation && <p className="text-sm text-sp-muted">{goal.motivation}</p>}</>}
           <CommentPopover sapienId={sapienId} goalId={goalId} scope="goal" examples={GOAL_EXAMPLES} label={compact ? 'Add information' : 'Comment'} overloaded={isOverloaded} triggerVariant="pill" onSuccess={startFastPoll} />
           {inspection && <div className="analyse-goal-current"><p>{goal.progress === null ? 'Progress not reported' : 'Reported progress: ' + Math.round(goal.progress * 100) + '%'} · {done}/{total} planned steps finished</p>{(remaining || understanding) && <><h4>{remaining ? 'What is still needed' : 'Latest recorded understanding'}</h4><RecordText text={remaining || understanding} /><p className="context-footnote">Recorded {recordDate(detail.attention?.resolved_at)} · An assessment, not a confirmed outcome.</p></>}</div>}
           <CollapsibleSection title="Progress, schedule & technical details" defaultOpen={!compact && !inspection}>
           <div className="text-[10px] text-sp-muted space-y-1">
-            <div className="flex gap-2"><StatusPill status={goal.state} /><Lifecycle record={goal} /></div>
+            <div className="flex gap-2"><Lifecycle record={goal} /><StatusPill status={goal.state} /></div>
             <p>Stored finished flag: {goal.finished === null ? 'Unknown' : String(goal.finished)} · Revision: {goal.revision ?? 'Unknown'}</p>
             <p>Updated: {fmtDate(goal.updated_at || '')}</p>
             <p>Review: {goal.review_enabled === null ? 'Unknown' : goal.review_enabled ? 'Enabled' : 'Disabled'} · Scheduled: {goal.review_at ? fmtDate(goal.review_at) : 'Not scheduled'}</p>
@@ -737,7 +738,7 @@ function GoalDetailPane({
             <div className="px-4 py-3 flex flex-col gap-2">
               <p className="text-[11px] text-sp-ink">{current_plan.description}</p>
               <CollapsibleSection title="Plan details" defaultOpen={!compact}>
-                <div className="flex flex-wrap gap-2"><StatusPill status={current_plan.state} /><Lifecycle record={current_plan} /></div>
+                <div className="flex flex-wrap gap-2"><Lifecycle record={current_plan} /><StatusPill status={current_plan.state} /></div>
                 <p className="text-[10px] text-sp-muted">Plan progress: {current_plan.progress === null ? 'Not reported' : Math.round(current_plan.progress * 100) + '%'}</p>
                 <RecordDetails record={current_plan} /><RulesSummary rules={current_plan.task_rules} label="Task state rules" />
                 {compact && <div className="text-xs text-sp-muted mt-2"><p>Recorded step states are separate from completion:</p>{current_plan.tasks.map((step, i) => <p key={step.id || i}>Step {i + 1}: {step.state || 'Not supplied'}</p>)}</div>}
