@@ -3,12 +3,15 @@ import { readFile } from 'node:fs/promises';
 import { transformWithEsbuild } from 'vite';
 import { create } from 'zustand';
 
-const storage = new Map();
-globalThis.localStorage = {
-  getItem: key => storage.get(key) ?? null,
-  setItem: (key, value) => storage.set(key, value),
-  removeItem: key => storage.delete(key),
-};
+const storageApi = values => ({
+  getItem: key => values.get(key) ?? null,
+  setItem: (key, value) => values.set(key, value),
+  removeItem: key => values.delete(key),
+});
+const localStorageData = new Map();
+const firstTabStorage = new Map();
+globalThis.localStorage = storageApi(localStorageData);
+globalThis.sessionStorage = storageApi(firstTabStorage);
 globalThis.selectionTestCreate = create;
 let confirmed = null;
 globalThis.selectionTestResource = { select() { confirmed = null; }, confirm(id) { confirmed = id; } };
@@ -37,6 +40,18 @@ for (let i = 0; i < 3; i++) {
   assert.equal(session.saved.read(), '12', 'selection survives repeated fresh module loads');
   session.store.getState().setCurrentSapiens({ id: session.saved.read(), name: 'Verified resource' });
 }
+const secondTabStorage = new Map();
+globalThis.sessionStorage = storageApi(secondTabStorage);
+session = await reload('alice');
+assert.equal(session.saved.read(), '12', 'a new tab starts from the account last-used fallback');
+session.store.getState().setCurrentSapiens({ id: '13', name: 'Second tab' }, true);
+globalThis.sessionStorage = storageApi(firstTabStorage);
+session = await reload('alice');
+assert.equal(session.saved.read(), '12', 'the first tab keeps its own selection after reload');
+globalThis.sessionStorage = storageApi(secondTabStorage);
+session = await reload('alice');
+assert.equal(session.saved.read(), '13', 'the second tab keeps its different selection after reload');
+globalThis.sessionStorage = storageApi(firstTabStorage);
 session = await reload('bob');
 assert.equal(session.saved.read(), null, 'another account cannot restore the selection');
 session = await reload('alice');
@@ -46,10 +61,11 @@ assert.equal((await reload('alice')).saved.read(), null, 'logout or resource rev
 session.store.getState().setCurrentSapiens({ id: '13' });
 session.store.getState().setCurrentSapiens(null);
 assert.equal(session.saved.read(), null, 'explicit deselection clears persistence');
-storage.set('sapiens.selection', '{bad json');
+localStorageData.set('sapiens.selection', '{bad json');
 assert.equal(session.saved.read(), null);
 globalThis.localStorage = { getItem() { throw Error('blocked'); }, setItem() { throw Error('blocked'); }, removeItem() { throw Error('blocked'); } };
+globalThis.sessionStorage = { getItem() { throw Error('blocked'); }, setItem() { throw Error('blocked'); }, removeItem() { throw Error('blocked'); } };
 assert.equal(session.saved.read(), null);
 assert.doesNotThrow(() => session.store.getState().setCurrentSapiens({ id: '14' }));
 assert.doesNotThrow(() => session.store.getState().reset());
-console.log('Selection checks passed: repeated reload, account isolation, reset, deselection, malformed and unavailable storage.');
+console.log('Selection checks passed: per-tab reload, new-tab fallback, account isolation, reset, deselection, malformed and unavailable storage.');
