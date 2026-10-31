@@ -102,20 +102,29 @@ const countdown = (value?: string | null) => {
 function LiveCountdown({
   value,
   startedAt,
+  status,
 }: {
   value?: string | null;
   startedAt?: string | null;
+  status: SimulationStatus;
 }) {
   const [, tick] = useState(0);
   useEffect(() => {
-    if (!value || startedAt) return;
+    if (!value || startedAt || status !== "scheduled") return;
     const timer = window.setInterval(
       () => tick((current) => current + 1),
       1000,
     );
     return () => window.clearInterval(timer);
-  }, [value, startedAt]);
-  return startedAt ? <>Started {stamp(startedAt)}</> : <>{countdown(value)}</>;
+  }, [value, startedAt, status]);
+  if (startedAt) return <>Started {stamp(startedAt)}</>;
+  if (status === "starting") return <>Preparing simulation…</>;
+  if (status === "scheduled") {
+    return value && new Date(value).getTime() > Date.now()
+      ? <>Starts in {countdown(value)} once ready</>
+      : <>Ready — starting…</>;
+  }
+  return <>Not started</>;
 }
 function LiveWallBudget({
   remaining,
@@ -859,7 +868,7 @@ export function SimulationLabPage() {
       setRun(created);
       await refresh();
     } catch (problem) {
-      const detail = `Schedule simulation failed: ${message(problem)}`;
+      const detail = `Simulation creation failed: ${message(problem)}`;
       if (problem instanceof HttpError && problem.status === 409)
         await Promise.all([
           refresh(undefined, false).catch(() => undefined),
@@ -867,7 +876,7 @@ export function SimulationLabPage() {
         ]);
       else await refresh(undefined, false).catch(() => undefined);
       setError(
-        `${detail} Retry Schedule simulation to reuse the same run ID, or select the run from Retained runs if it appears there.`,
+        `${detail} Retry creation to reuse the same run ID, or select the run from Retained runs if it appears there.`,
       );
     } finally {
       setBusy("");
@@ -996,6 +1005,7 @@ export function SimulationLabPage() {
         reserving: "Reserving Sapiens",
         draining: "Finishing normal work",
         starting: "Starting cognitive engines",
+        bootstrapping: "Preparing cognitive engines",
         running: "Running",
         stopping: "Draining outstanding work",
         stopped: "Stopped",
@@ -1183,8 +1193,8 @@ export function SimulationLabPage() {
                     : run.status === "running" && hasLiveRuntime(run)
                       ? "Pause to review and continue later. Stop ends the run and keeps its recorded history."
                       : run.status === "scheduled"
-                          ? "This run will start at its scheduled time. Cancel if you no longer want it to start."
-                          : `Run status: ${statusLabel(run.status)}. Available controls appear here.`}
+                          ? "Preparation is complete. Execution starts once its earliest launch time is reached. You can cancel before it starts."
+                          : run.status === "starting" ? "Preparing the simulated workplace and Sapiens runtime. Execution starts automatically once ready; you can cancel during preparation." : `Run status: ${statusLabel(run.status)}. Available controls appear here.`}
               </p>
               {run.start_blocked_reason && <p className="text-sm text-amber-700 dark:text-amber-300">Preparation unavailable: {run.start_blocked_reason}</p>}
               {run.cleanup_required && <p className="text-sm text-red-700 dark:text-red-300">Cleanup needs review. The Sapiens reservation is still retained.</p>}
@@ -1198,6 +1208,7 @@ export function SimulationLabPage() {
                     <LiveCountdown
                       value={run.scheduled_start_at}
                       startedAt={run.execution_started_at}
+                      status={run.status}
                     />
                   </p>
                 </div>
@@ -1438,7 +1449,7 @@ export function SimulationLabPage() {
                           <Label>Preview simulated project start</Label>
                           <InfoHelp
                             label="About the preview start"
-                            text="A preview of the fictional project clock in IST. For a new run, the backend returns the execution appointment after creation; that appointment is authoritative."
+                            text="A preview of the fictional project clock in IST. The backend fixes its initial time when the run is created and keeps it frozen until preparation succeeds."
                           />
                         </span>
                         <output className="rounded-md border bg-muted/50 px-3 py-2 text-sm">
@@ -1494,15 +1505,14 @@ export function SimulationLabPage() {
                       onClick={() => void create()}
                     >
                       {busy === "schedule"
-                        ? "Scheduling…"
+                        ? "Creating…"
                         : pendingCreate.current
-                          ? "Retry schedule"
-                          : "Schedule simulation"}
+                          ? "Retry creation"
+                          : "Start simulation"}
                     </Button>
                     <span className="text-xs text-muted-foreground">
-                      Preparation starts now; the scheduled start time appears
-                      after creation. Waiting for that time does not use the
-                      run’s real-time budget.
+                      Preparation starts immediately. Execution starts automatically
+                      once ready; preparation does not use the run’s real-time budget.
                     </span>
                   </div>
                 </>
@@ -1631,19 +1641,20 @@ export function SimulationLabPage() {
                 <div className="grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
                   <p>
                     <span className="text-muted-foreground">
-                      Real execution appointment
+                      Earliest real start
                     </span>
                     <br />
                     {stamp(run.scheduled_start_at)}
                   </p>
                   <p>
                     <span className="text-muted-foreground">
-                      Real countdown
+                      Execution start
                     </span>
                     <br />
                     <LiveCountdown
                       value={run.scheduled_start_at}
                       startedAt={run.execution_started_at}
+                      status={run.status}
                     />
                   </p>
                   <p>
