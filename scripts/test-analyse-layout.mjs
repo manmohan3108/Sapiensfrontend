@@ -447,8 +447,8 @@ globalThis.analyseTest.feedbackPresentation=feedbackPresentation;
 const feedbackEvidence=await load('components/analyse/feedbackEvidence.ts');
 globalThis.analyseTest.feedbackEvidence=feedbackEvidence;
 globalThis.analyseTest.diagnosticUI=await load('components/analyse/DiagnosticPrimitives.tsx','const {useState,useId}=React;');
-const feedbackDetailPrelude='const {DiagnosticBadge,DiagnosticDisclosure,DiagnosticText}=globalThis.analyseTest.diagnosticUI;\nconst {feedbackLabels,feedbackMode,feedbackTime}=globalThis.analyseTest.feedbackPresentation;\nconst {additionalEvidence,changedRequestFields,eventEvidence,evidenceNames}=globalThis.analyseTest.feedbackEvidence;';
-const feedbackDetail=await load('components/analyse/FeedbackFindingDetail.tsx','const {useId,useRef}=React;\n'+feedbackDetailPrelude);
+const feedbackDetailPrelude='const {DiagnosticBadge,DiagnosticDisclosure,DiagnosticText}=globalThis.analyseTest.diagnosticUI;\nconst {feedbackLabels,feedbackMode,feedbackTime}=globalThis.analyseTest.feedbackPresentation;\nconst {additionalEvidence,changedRequestFields,eventEvidence,evidenceNames,feedbackNodePreview}=globalThis.analyseTest.feedbackEvidence;';
+const feedbackDetail=await load('components/analyse/FeedbackFindingDetail.tsx','const {useId,useRef,useState,useEffect}=React;\n'+feedbackDetailPrelude);
 globalThis.analyseTest.feedbackDetail=feedbackDetail;
 globalThis.analyseTest.feedbackService={list:async()=>{throw Error('Unexpected request');}};
 globalThis.analyseTest.feedbackNavigation={scroll:new Map()};
@@ -495,27 +495,41 @@ const openerNode={isConnected:true,focus:()=>{}};
 find(tableTree,node=>node.props.className==='feedback-open').props.onClick({currentTarget:openerNode});
 assert.equal(selectedFeedback.id,'finding-1');
 const detailMarkup=html(React.createElement(feedbackDetail.FeedbackFindingDetail,{finding:feedbackRecord}));
-for(const expected of ['Activity under review','Evidence compared','Tool reported:','Who should receive','Address the introduction','What Sapiens concluded','Only part of the original record','The original event could not be loaded','More context used in this review','Full saved tool text','chat-1','not measured accuracy'])assert(detailMarkup.includes(expected),expected);
+for(const expected of ['Evidence behind this finding','Tool reported:','Who should receive','Address the introduction','What Sapiens concluded','Partial saved record','The original event could not be loaded','More context used in this review'])assert(detailMarkup.includes(expected),expected);
 assert(!detailMarkup.includes('Earlier event')&&!detailMarkup.includes('Later event'));
 assert(detailMarkup.indexOf('Who should receive') < detailMarkup.indexOf('What Sapiens concluded'),'Evidence precedes the saved conclusion');
-assert(detailMarkup.includes('>0<'),'Zero confidence is not treated as missing');
-// The reading guide targets the existing evidence and conclusion, including keyboard focus.
-const controlledFeedbackDetail=await load('components/analyse/FeedbackFindingDetail.tsx','const useId=()=>"feedback-test"; const useRef=globalThis.analyseTest.h.useRef;\n'+feedbackDetailPrelude);
+assert(!detailMarkup.includes('Full saved tool text'),'Full source details are opened from their node');
+// Both inputs and the interpretation are visible; more info opens one focused reader.
+globalThis.analyseTest.feedbackDetailEffects=[];
+const controlledFeedbackDetail=await load('components/analyse/FeedbackFindingDetail.tsx','const useId=()=>"feedback-test"; const {useRef,useState}=globalThis.analyseTest.h; const useEffect=fn=>globalThis.analyseTest.feedbackDetailEffects.push(fn);\n'+feedbackDetailPrelude);
 h.reset();
-const guidedDetail=controlledFeedbackDetail.FeedbackFindingDetail({finding:feedbackRecord});
-const flow=find(guidedDetail,node=>node.type==='nav'&&node.props['aria-label']==='Finding reading order');
-const flowButtons=all(flow).filter(node=>node.type==='button');
-assert.equal(flowButtons.length,3,'All three reading destinations are visible, with nothing hidden behind a next step');
-const targetNodes=all(guidedDetail).filter(node=>node.props.id?.startsWith('feedback-test-step-'));
-for(const [index,button] of flowButtons.entries()){
+const renderFeedbackGraph=()=>{h.begin();return controlledFeedbackDetail.FeedbackFindingDetail({finding:feedbackRecord});};
+let graphTree=renderFeedbackGraph();
+const graphButtons=all(graphTree).filter(node=>node.type==='button'&&node.props['aria-controls']==='feedback-test-details');
+assert.equal(graphButtons.length,3,'Both source nodes and their conclusion have explicit more-info controls');
+assert.equal(find(graphTree,node=>node.props.id==='feedback-test-details').props.hidden,true);
+const sourceNodes=find(graphTree,node=>node.props.className==='feedback-graph-sources');
+assert.equal(children(sourceNodes).length,2,'The two source records merge; they are not a three-event timeline');
+assert(html(sourceNodes).includes('Who should receive')&&html(sourceNodes).includes('Address the introduction'));
+for(const [index,button] of graphButtons.entries()){
   assert.equal(button.props.type,'button');
-  const target=targetNodes.find(node=>node.props.id===button.props['aria-controls']);
-  assert(target,'Every step points to real content');
   const calls=[];
-  const element={focus:options=>calls.push(['focus',options]),scrollIntoView:options=>calls.push(['scroll',options])};
-  if(target.props.sectionRef)target.props.sectionRef(element);else target.ref(element);
-  button.props.onClick();
-  assert.deepEqual(calls,[['focus',{preventScroll:true}],['scroll',{block:'start',behavior:'instant'}]],`Step ${index+1} moves focus and reveals the selected content without animation`);
+  const opener={focus:options=>calls.push(['return focus',options]),scrollIntoView:options=>calls.push(['return scroll',options])};
+  button.props.onClick({currentTarget:opener});
+  graphTree=renderFeedbackGraph();
+  const panel=find(graphTree,node=>node.props.id==='feedback-test-details');
+  assert.equal(panel.props.hidden,false);
+  assert.equal(all(graphTree).filter(node=>node.type==='button'&&node.props['aria-expanded']===true).length,1);
+  panel.ref.current={focus:options=>calls.push(['focus',options]),scrollIntoView:options=>calls.push(['scroll',options])};
+  globalThis.analyseTest.feedbackDetailEffects.pop()();
+  assert.deepEqual(calls,[['focus',{preventScroll:true}],['scroll',{block:'nearest',behavior:'instant'}]],'Opening details reveals and focuses the reader without animated scrolling');
+  const panelMarkup=html(panel);
+  if(index===0)for(const value of ['Full saved tool text','chat-1','Only part of the original record'])assert(panelMarkup.includes(value));
+  if(index===1)assert(panelMarkup.includes('Address the introduction'));
+  if(index===2){assert(panelMarkup.includes('>0<'),'Zero confidence is not treated as missing');assert(panelMarkup.includes('not measured accuracy'));}
+  find(graphTree,node=>node.type==='button'&&node.props.children==='Back to graph').props.onClick();
+  assert.deepEqual(calls.slice(-2),[['return focus',{preventScroll:true}],['return scroll',{block:'nearest',behavior:'instant'}]],'Returning restores the node opener and graph position');
+  assert.equal(find(renderFeedbackGraph(),node=>node.props.id==='feedback-test-details').props.hidden,true);
 }
 const missingFinding={...feedbackRecord,activity:{id:'missing-a',source:'tool_activity',occurred_at:null,details:{available:false}},experience:{id:'missing-b',source:'unknown',occurred_at:null,details:{available:false}}};
 for(const state of feedbackTypes.FEEDBACK_STATES){
@@ -547,7 +561,7 @@ assert.equal(feedbackEvidence.additionalEvidence({...retryFinding,supporting_exp
 assert.equal(feedbackEvidence.additionalEvidence({...retryFinding,supporting_experiences:[{id:'',source:'unknown'},{id:'',source:'unknown'}]}).repeated,0,'Missing IDs cannot prove duplication');
 const retryMarkup=html(React.createElement(feedbackDetail.FeedbackFindingDetail,{finding:retryFinding,mode:'observe'}));
 for(const expected of ['What changed in the request','Ben Carter','No role supplied','Each member must have owner role','What Sapiens concluded','not applied to Sapiens','1 repeated reference'])assert(retryMarkup.includes(expected),expected);
-assert(retryMarkup.indexOf('Each member must have owner role')<retryMarkup.indexOf('Original record'),'Error is visible before raw details');
+assert(retryMarkup.includes('Error returned by the tool'),'Failure evidence is readable directly in the node');
 assert(!retryMarkup.includes('not evidence that behavior changed'));
 const messageTool=toolReference('message',{body:{body:{content:'Should I contact the internal team?'}}},{id:'saved-message'},{tool:'send-chat-message'});
 const messageFinding={...feedbackRecord,sapien_id:66,activity:messageTool,experience:{...feedbackRecord.experience,details:{...feedbackRecord.experience.details,display:{actor:'Isha Desai',text:'Start with the internal project team.'},content:'Start with the internal project team.'}}};
@@ -577,6 +591,39 @@ assert(!feedbackEvidence.evidenceNames([afterTool,conflicting]).has('ben'),'Conf
 assert.equal(feedbackEvidence.eventEvidence({source:'unknown',details:{available:false}}).kind,'other');
 assert.equal(feedbackEvidence.eventEvidence(toolReference('zero',{},0)).resultText,'0');
 assert.equal(feedbackEvidence.eventEvidence(toolReference('false',{},false)).resultText,'false');
+// Graph previews expose the recorded content, including Jira's rich-text comments.
+const jiraDocument={type:'doc',version:1,content:[
+  {type:'paragraph',content:[{type:'text',text:'This item is proposed, '},{type:'text',text:'not completed.',marks:[{type:'strong'}]}]},
+  {type:'paragraph',content:[{type:'text',text:'Verification and release approval remain separate.'}]},
+]};
+assert.equal(feedbackEvidence.feedbackDocumentText(jiraDocument),'This item is proposed, not completed.\nVerification and release approval remain separate.');
+assert.equal(feedbackEvidence.feedbackDocumentText({type:'unknown',text:'Guess this is a comment'}),'','Do not interpret an unknown document format');
+assert.equal(feedbackEvidence.feedbackDocumentText({type:'doc',content:[{type:'paragraph',content:[{type:'text',text:'Retain [redacted] and [truncated] markers.'}]}]}),'Retain [redacted] and [truncated] markers.');
+const jiraComment=toolReference('jira-comment',{issue_key:'SD-3'},{total:40,comments:[{author:{displayName:'Mei Chen'},body:jiraDocument}]},{server:'jira',tool:'jira_get_comments'});
+const commentPreview=feedbackEvidence.feedbackNodePreview(jiraComment);
+assert.equal(commentPreview.title,'Comment on SD-3');
+assert.equal(commentPreview.context,'Mei Chen');
+assert.equal(commentPreview.caption,'Saved result','A server total is not the number of comments in the saved snapshot');
+assert(commentPreview.excerpt.includes('not completed.')&&commentPreview.excerpt.includes('release approval remain separate.'));
+assert.equal(feedbackEvidence.eventEvidence(jiraComment).resultItems[0].text,commentPreview.excerpt,'Full details and graph previews read the same saved comment');
+const commentFinding={...feedbackRecord,activity:jiraComment,experience:updateRef};
+const commentGraph=html(React.createElement(feedbackDetail.FeedbackFindingDetail,{finding:commentFinding}));
+assert(commentGraph.includes('Comment on SD-3')&&commentGraph.includes('This item is proposed'));
+assert(!commentGraph.includes('jira_get_comments'),'Technical operation names do not replace content in the graph');
+const commentDetails=html(React.createElement(feedbackDetail.FeedbackReferenceView,{value:jiraComment,label:'Record A'}));
+assert(commentDetails.indexOf('This item is proposed')<commentDetails.indexOf('Original record'),'Comment text is visible before raw JSON');
+assert(commentDetails.includes('Mei Chen')&&commentDetails.includes('jira_get_comments'),'Original operation and authorship remain accessible');
+const multiComment=toolReference('jira-comments',{issue_key:'SD-3'},{total:40,comments:[{body:'First saved comment.'},{body:'Second saved comment.'}]},{server:'jira',tool:'jira_get_comments'});
+assert.equal(feedbackEvidence.feedbackNodePreview(multiComment).caption,'First of 2 saved entries');
+assert.equal(feedbackEvidence.feedbackNodePreview(multiComment).excerpt,'First saved comment.');
+const emptyComments=toolReference('no-comments',{issue_key:'SD-3'},{comments:[]},{server:'jira',tool:'jira_get_comments'});
+assert.equal(feedbackEvidence.feedbackNodePreview(emptyComments).excerpt,'The saved result contains no entries.');
+assert.equal(feedbackEvidence.feedbackNodePreview(beforeTool).excerpt,'Each member must have owner role and user binding');
+assert.equal(feedbackEvidence.feedbackNodePreview(uncertain).status,'Tool reported: Uncertain');
+assert(!feedbackEvidence.feedbackNodePreview(broken).excerpt.includes('Ben Carter'),'Incomplete JSON is not repaired or used to invent a result');
+const htmlComment=toolReference('html-comment',{issue_key:'SD-3'},{comments:[{body:'<img src=x onerror=alert(1)>'}]},{server:'jira',tool:'jira_get_comments'});
+const escapedComment=html(React.createElement(feedbackDetail.FeedbackFindingDetail,{finding:{...feedbackRecord,activity:htmlComment}}));
+assert(escapedComment.includes('&lt;img'));assert(!escapedComment.includes('<img src=x'),'Saved content is inert text');
 const feedbackKey=(params='',revision=0)=>{const query=feedbackPresentation.feedbackQuery(new URLSearchParams(params),'65');return JSON.stringify(['65',query.states,query.limit,query.offset,revision]);};
 function setupFeedback(page=feedbackPage,params=''){
   h.reset([0,{key:feedbackKey(params),data:page}]);h.params=new URLSearchParams(params);

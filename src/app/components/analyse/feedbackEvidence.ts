@@ -8,6 +8,36 @@ const readable = (value: string) => value.replace(/[_-]+/g, ' ');
 const parseJson = (value: string): unknown => { try { return JSON.parse(value); } catch { return undefined; } };
 const marker = (value: string) => /\[(?:truncated|redacted)[^\]]*\]/i.test(value);
 
+/** Read saved Jira document text without interpreting markup or repairing cut records. */
+export function feedbackDocumentText(value: unknown): string {
+  if (typeof value === 'string') return value;
+  const doc = object(value);
+  if (doc?.type !== 'doc' || !Array.isArray(doc.content)) return '';
+  let visited = 0, omitted = false;
+  const read = (value: unknown, depth: number): string => {
+    if (++visited > 1000 || depth > 20) { omitted = true; return ''; }
+    const node = object(value);
+    if (!node) return '';
+    if (node.type === 'text') return text(node.text);
+    if (node.type === 'hardBreak') return '\n';
+    if (!Array.isArray(node.content)) return '';
+    const content = node.content.map(child => read(child, depth + 1)).join('');
+    return content + (/^(paragraph|heading|listItem|tableRow|blockquote)$/.test(text(node.type)) ? '\n' : '');
+  };
+  const content = read(doc, 0).trim();
+  return content + (omitted ? '\n[Further document content omitted]' : '');
+}
+
+function resultItem(value: unknown) {
+  const record = object(value);
+  const body = feedbackDocumentText(record?.body) || text(object(record?.body)?.content) || text(record?.text);
+  return {
+    fields: fields(value),
+    text: scalar(value) ?? (body || undefined),
+    author: text(object(record?.author)?.displayName) || text(object(object(record?.from)?.user)?.displayName),
+  };
+}
+
 /** Parse only the backend's documented tool-activity envelope. Never repair cut JSON. */
 export function toolEvidence(reference: FeedbackReference) {
   const details = reference?.details;
@@ -131,9 +161,67 @@ export function eventEvidence(reference: FeedbackReference, names = new Map<stri
     actor: text(display?.actor), recipient: text(display?.recipient),
     fields: tool ? requestFields(tool, names) : [],
     resultFields: resultRecord ? fields(resultRecord).filter(field => !field.key.startsWith('error.')) : [],
-    resultItems: Array.isArray(collection) ? collection.map(item => ({ fields: fields(item), text: scalar(item) })) : undefined,
+    resultItems: Array.isArray(collection) ? collection.map(resultItem) : undefined,
     error: text(error?.message) || text(resultRecord?.error),
     resultText: tool?.resultText || (tool?.result !== undefined && !object(tool.result) && !Array.isArray(tool.result) ? scalar(tool.result) : '') || '',
+  };
+}
+
+/** Exact saved excerpts for graph nodes; no generated summaries, identities or causal claims. */
+export function feedbackNodePreview(reference: FeedbackReference, names = new Map<string, string>()) {
+  const event = eventEvidence(reference, names);
+  const available = !!reference?.details?.available;
+  const issue = text(event.tool?.args?.issue_key || event.tool?.args?.issueKey);
+  const result = object(event.tool?.result);
+  const issueFields = object(result?.fields);
+  const commentTool = event.tool?.server === 'jira' && event.tool.tool === 'jira_get_comments';
+  const issueTool = event.tool?.server === 'jira' && event.tool.tool === 'jira_get_issue';
+  const firstItem = event.resultItems?.[0];
+  let title = event.title;
+  let excerpt = event.body;
+  let caption = '';
+  let context = event.actor;
+  const facts = (values: EvidenceField[]) => values.slice(0, 3).map(field => `${field.label}: ${field.value}`).join('\n');
+
+  if (event.kind === 'message') {
+    title = event.tool ? 'Sapiens’ message request' : event.actor ? `Message from ${event.actor}` : 'Message received';
+    context = event.recipient ? `To ${event.recipient}` : '';
+    caption = 'Saved message';
+    // Do not show an unparsed serialization envelope as a human message.
+    if (event.tool && /^Tool activity /.test(excerpt)) excerpt = '';
+  } else if (event.tool) {
+    title = commentTool ? `${event.resultItems?.length === 1 ? 'Comment' : 'Comments'}${issue ? ` on ${issue}` : ' from Jira'}`
+      : issueTool ? `Jira issue${issue ? ` ${issue}` : ' details'}`
+      : event.tool.server === 'teams' && event.tool.tool === 'create-chat' ? 'Chat creation request'
+      : event.service ? `${event.service} record` : 'Tool record';
+    const resultExcerpt = firstItem?.text || (firstItem ? facts(firstItem.fields) : '')
+      || event.resultText || feedbackDocumentText(issueFields?.description) || text(issueFields?.summary)
+      || facts(event.resultFields);
+    if (event.error) { excerpt = event.error; caption = 'Error returned by the tool'; }
+    else if (event.resultItems?.length === 0) {
+      excerpt = 'The saved result contains no entries.'; caption = 'Saved result';
+    } else if (resultExcerpt) {
+      excerpt = resultExcerpt;
+      caption = event.resultItems ? (event.resultItems.length > 1 ? `First of ${event.resultItems.length} saved entries` : 'Saved result') : 'Saved result';
+      context = firstItem?.author || '';
+    } else if (event.body && !/^Tool activity /.test(event.body)) {
+      excerpt = event.body; caption = 'Saved event text';
+    } else {
+      excerpt = facts(event.fields); caption = 'Saved request';
+    }
+  } else if (event.kind === 'update') {
+    title = event.title.charAt(0).toUpperCase() + event.title.slice(1);
+    caption = 'Saved progress update';
+  } else {
+    title = 'Saved record'; caption = 'Saved event text';
+  }
+
+  return {
+    title, excerpt: available ? excerpt || 'No readable text was supplied. Open the original record for available details.' : 'Details unavailable. The saved reference is available in More info.',
+    caption, context, service: event.service,
+    status: event.tool ? `Tool reported: ${event.tool.outcome || 'result not recorded'}` : event.state ? `Recorded state: ${event.state}` : '',
+    tone: event.tool?.outcome === 'Failed' ? 'danger' as const : event.tool?.outcome === 'Uncertain' ? 'warning' as const : 'neutral' as const,
+    partial: !!(reference?.details?.available && (reference.details.truncated || reference.details.metadata?._truncated === true)),
   };
 }
 
