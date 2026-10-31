@@ -18,10 +18,12 @@ export function appArea(path: string): AppArea | null {
   return null;
 }
 
-// Preserve the section, never carry record IDs or another Sapien's query state
-// into a switch. Runs are bound to their original identity and cannot be switched.
-export function destinationAfterSwitch(path: string): string {
-  if (appArea(path) === 'analyse' || path === '/connections') return path;
+// Preserve Sapien-scoped pages while dropping record-specific query state. A run
+// belongs to its original Sapien, so switching from a world returns to the new
+// Sapien's Simulation Lab instead of trying to reuse the run.
+export function destinationAfterSwitch(path: string, id?: string, name?: string): string {
+  if (appArea(path) === 'analyse' || path === '/connections' || path === '/workspace') return path;
+  if (appArea(path) === 'simulations') return simulationLabPath(id, name);
   return '/workspace';
 }
 

@@ -23,7 +23,7 @@ export function AppNavigationFrame({ children, requiresSelection = false }: { ch
   const memory = useNavigationMemory();
   const [menu, setMenu] = useState(false);
   const [picker, setPicker] = useState(false);
-  const [target, setTarget] = useState('/workspace');
+  const [target, setTarget] = useState<{ path: string; followsCurrentPage: boolean }>({ path: '/workspace', followsCurrentPage: false });
   const [query, setQuery] = useState('');
   const [items, setItems] = useState<Sapiens[]>([]);
   const [loading, setLoading] = useState(false);
@@ -42,7 +42,7 @@ export function AppNavigationFrame({ children, requiresSelection = false }: { ch
 
   useEffect(() => {
     if (requiresSelection && !selected && !selectionStorage.read()) {
-      setTarget(destinationAfterSwitch(location.pathname)); setPicker(true);
+      setTarget({ path: destinationAfterSwitch(location.pathname), followsCurrentPage: true }); setPicker(true);
     }
   }, [requiresSelection, selected?.id, location.pathname]);
 
@@ -60,9 +60,12 @@ export function AppNavigationFrame({ children, requiresSelection = false }: { ch
     return () => { active = false; };
   }, [picker, attempt]);
 
-  const openPicker = (destination: string) => {
-    setTarget(destination); setQuery(''); clearError(); setMenu(false); setPicker(true);
+  const openPicker = (destination: string, followsCurrentPage = false) => {
+    setTarget({ path: destination, followsCurrentPage }); setQuery(''); clearError(); setMenu(false); setPicker(true);
   };
+  const switchDestination = (sapien: Sapiens) => target.followsCurrentPage
+    ? destinationAfterSwitch(location.pathname, sapien.id, sapien.name)
+    : target.path;
   const hrefFor = (item: typeof destinations[number]) => item.id === 'simulations'
     ? simulationLabPath(selected?.id, selected?.name, area === 'analyse' ? location.pathname : '/workspace')
     : memory.destinations.get(keyFor(item.id)) || item.path;
@@ -79,7 +82,7 @@ export function AppNavigationFrame({ children, requiresSelection = false }: { ch
     <header className="app-navigation product-surface science-product-theme">
       <Link to="/" className="app-brand" aria-label="Sapiens website"><SapiensBrandMark /></Link>
       <nav className="app-destinations" aria-label="Main navigation">{links}</nav>
-      <button ref={pickerTrigger} className="app-sapien-picker" onClick={() => openPicker(destinationAfterSwitch(location.pathname))} aria-haspopup="dialog" aria-expanded={picker}>
+      <button ref={pickerTrigger} className="app-sapien-picker" onClick={() => openPicker(destinationAfterSwitch(location.pathname), true)} aria-haspopup="dialog" aria-expanded={picker}>
         <span><small>{isRun ? 'App Sapien' : 'Selected Sapien'}</small><strong>{selected?.name || 'Choose a Sapiens'}{selected && <em> #{selected.id}</em>}</strong></span><ChevronDown size={16} aria-hidden="true" />
       </button>
       <div className="app-account-controls"><ThemeToggle /><details className="app-account" onKeyDown={event => { if (event.key === 'Escape') { event.currentTarget.open = false; event.currentTarget.querySelector('summary')?.focus(); } }}>
@@ -94,11 +97,11 @@ export function AppNavigationFrame({ children, requiresSelection = false }: { ch
     </Dialog.Content></Dialog.Portal></Dialog.Root>
     <Dialog.Root open={picker} onOpenChange={open => { if (!busy) setPicker(open); }}><Dialog.Portal><Dialog.Overlay className="app-nav-scrim" /><Dialog.Content className="app-picker-dialog product-surface science-product-theme" onCloseAutoFocus={event => { event.preventDefault(); pickerTrigger.current?.focus(); }}>
       <Dialog.Title>{selected ? 'Switch Sapiens' : 'Choose a Sapiens'}</Dialog.Title>
-      <Dialog.Description>{isRun ? 'Open a workspace. This simulation keeps its original Sapien.' : `Choose who to open in ${target.startsWith('/admin/analyse') ? 'Analyse' : target === '/connections' ? 'Connections' : 'Workspace'}.`}</Dialog.Description>
+      <Dialog.Description>{isRun ? 'Open the selected Sapien’s Simulation Lab. This run keeps its original Sapien.' : `Choose who to open in ${target.path.startsWith('/admin/analyse') ? 'Analyse' : target.path === '/connections' ? 'Connections' : target.path.startsWith('/admin/simulations') ? 'Simulation Lab' : 'Workspace'}.`}</Dialog.Description>
       <Dialog.Close className="app-dialog-close" aria-label="Close Sapiens picker" disabled={Boolean(busy)}><X size={20} /></Dialog.Close>
       <label className="app-picker-search"><Search size={17} aria-hidden="true" /><input autoComplete="off" aria-label="Search Sapiens by name, ID or role" placeholder="Search name, ID or role" value={query} onChange={event => setQuery(event.target.value)} /></label>
       <div className="app-picker-list" aria-busy={loading || Boolean(busy)}>
-        {loading ? <p role="status"><Loader2 size={18} className="animate-spin" />Loading your Sapiens…</p> : listError ? <div role="alert"><p>Couldn’t load your Sapiens.</p><button onClick={() => setAttempt(value => value + 1)}>Try again</button></div> : !items.length ? <p>No Sapiens yet. Create one from Your Sapiens.</p> : !matched.length ? <p>No Sapiens match this search.</p> : matched.map(item => <button key={item.id} disabled={Boolean(busy)} onClick={async () => { if (await select(item.id, target)) setPicker(false); }}>
+        {loading ? <p role="status"><Loader2 size={18} className="animate-spin" />Loading your Sapiens…</p> : listError ? <div role="alert"><p>Couldn’t load your Sapiens.</p><button onClick={() => setAttempt(value => value + 1)}>Try again</button></div> : !items.length ? <p>No Sapiens yet. Create one from Your Sapiens.</p> : !matched.length ? <p>No Sapiens match this search.</p> : matched.map(item => <button key={item.id} disabled={Boolean(busy)} onClick={async () => { if (await select(item.id, switchDestination(item))) setPicker(false); }}>
           <span><strong>{item.name}</strong><small>{item.role || 'AI individual'} · ID {item.id}</small></span><span>{busy === item.id ? <Loader2 size={18} className="animate-spin" /> : item.id === selected?.id ? 'Current' : 'Open'}</span>
         </button>)}
       </div>

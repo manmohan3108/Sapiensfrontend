@@ -11,7 +11,9 @@ import { DiagnosticDisclosure } from './DiagnosticPrimitives';
 import { FeedbackFindingDetail, FeedbackStateBadge } from './FeedbackFindingDetail';
 import { feedbackDetailTitle } from './feedbackEvidence';
 import { feedbackLabels, feedbackMode, feedbackOrigin, feedbackQuery, feedbackTime, updateFeedbackQuery } from './feedbackPresentation';
+import { hasSelectedRecordText, openRecordFromRow } from './recordRowInteraction';
 import '../../../styles/analyse-feedback.css';
+import '../../../styles/analyse-records.css';
 
 /** Key the result as well as the effect: never paint a stale page during a filter/Sapien change. */
 function useFeedbackRead(sapienId: string, query: ReturnType<typeof feedbackQuery>) {
@@ -47,9 +49,9 @@ export function FeedbackTable({ findings, selectedId, onSelect }: {
     <caption className="sr-only">Saved feedback findings. Open an interpretation to inspect its evidence.</caption>
     <colgroup><col className="feedback-meaning-col" /><col /><col /><col className="feedback-state-col" /><col className="feedback-date-col" /></colgroup>
     <thead><tr>{['Recorded interpretation', 'Earlier activity', 'Later experience', 'Finding state', 'Recorded at'].map(label => <th scope="col" key={label}>{label}</th>)}</tr></thead>
-    <tbody>{findings.map(finding => <tr key={finding._id} data-selected={selectedId === finding._id}>
-      <td><button type="button" className="feedback-open" aria-haspopup="dialog" onClick={event => onSelect(finding._id, event.currentTarget)}>
-        <span className="feedback-excerpt">{finding.meaning || 'No interpretation recorded'}</span><ChevronRight size={16} aria-hidden="true" /><span className="sr-only">Open finding details</span>
+    <tbody>{findings.map(finding => <tr key={finding._id} className="analyse-record-row" data-selected={selectedId === finding._id} onClick={openRecordFromRow}>
+      <td><button type="button" className="feedback-open analyse-record-open" data-record-open aria-haspopup="dialog" onClick={event => { if (event.detail === 0 || !hasSelectedRecordText(event.currentTarget)) onSelect(finding._id, event.currentTarget); }}>
+        <span className="feedback-excerpt">{finding.meaning || 'No interpretation recorded'}</span><span className="analyse-record-cue">View details<ChevronRight size={16} aria-hidden="true" /></span>
       </button></td>
       <td><ReferenceSummary reference={finding.activity} /></td>
       <td><ReferenceSummary reference={finding.experience} /></td>

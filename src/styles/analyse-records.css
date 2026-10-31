@@ -1,0 +1,9 @@
+/* Shared affordances for read-only record tables; preserve native table/button semantics. */
+.analyse-record-row { cursor:pointer; }
+body:has(.analyse-shell) .analyse-record-row:is(:hover,:focus-within,[data-selected=true]) { background:var(--an-raised); }
+body:has(.analyse-shell) .analyse-record-row:focus-within { box-shadow:inset 3px 0 var(--an-accent); }
+.analyse-record-open { display:flex; align-items:center; justify-content:space-between; gap:12px; width:100%; min-height:44px; text-align:left; cursor:pointer; user-select:text; touch-action:manipulation; }
+.analyse-record-open:focus-visible { outline:2px solid var(--an-accent); outline-offset:3px; border-radius:3px; }
+.analyse-record-open>:first-child { min-width:0; }
+.analyse-record-cue { flex:none; display:inline-flex; align-items:center; gap:3px; color:var(--an-accent); font-size:14px; font-weight:600; white-space:nowrap; }
+.analyse-record-row:hover .analyse-record-cue, .analyse-record-open:focus-visible .analyse-record-cue { text-decoration:underline; text-underline-offset:3px; }

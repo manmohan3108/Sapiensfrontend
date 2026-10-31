@@ -264,17 +264,136 @@ for(const [query,entries,expected] of [['nothing',[jiraMemory],'No matching memo
 h.reset([false,{key:memoryKey,data:snapshot,loading:false}]);
 assert(!html(memory.WorkingMemoryAnalysis({sapienId:62,openEngram(){}})).includes('Team prefers morning reviews'),'A previous Sapien snapshot cannot leak while the new request starts');
 
-const inquiries=await load('components/analyse/InquiryInspection.tsx',hooks+'const InquiryContext=()=>null;','export {InquiryList};');
+globalThis.analyseTest.recordRows=await load('components/analyse/recordRowInteraction.ts');
+globalThis.analyseTest.questionTrace=await load('components/workspace/awarenessTrace.ts');
+globalThis.analyseTest.questionDocuments=await load('components/analyse/feedbackEvidence.ts');
+globalThis.analyseTest.questionPresentation=await load('components/analyse/questioningPresentation.ts','const {traceObject:object,traceText:text}=globalThis.analyseTest.questionTrace; const {feedbackDocumentText}=globalThis.analyseTest.questionDocuments;');
+globalThis.analyseTest.questionClock=await load('components/analyse/awarenessPresentation.ts','const {activityView,traceObject,traceText}=globalThis.analyseTest.questionTrace;');
+globalThis.analyseTest.questionDiagnostics=await load('components/analyse/DiagnosticPrimitives.tsx','const {useState,useId}=React;');
+const questionDetail=await load('components/analyse/QuestioningDetail.tsx','const {useId}=React; const Link=({to,children})=>React.createElement("a",{href:to},children); const {DiagnosticBadge,DiagnosticDisclosure}=globalThis.analyseTest.questionDiagnostics; const {absoluteTime}=globalThis.analyseTest.questionClock; const {questionSourceLabel,questionStateLabel,questioningView}=globalThis.analyseTest.questionPresentation;');
+globalThis.analyseTest.questionDetail=questionDetail;
+globalThis.analyseTest.questionNavigation={scroll:new Map()};
+globalThis.analyseTest.inquiryService={};
+const inquiryPrelude=hooks+'const InquiryContext=()=>null; const {QuestioningDetail}=globalThis.analyseTest.questionDetail; const {absoluteTime}=globalThis.analyseTest.questionClock; const {questionQuery,updateQuestionQuery,questionSourceLabel,questionStateLabel}=globalThis.analyseTest.questionPresentation; const {hasSelectedRecordText,openRecordFromRow}=globalThis.analyseTest.recordRows; const useLocation=()=>({pathname:"/admin/analyse/questioning"}); const useNavigationMemory=()=>globalThis.analyseTest.questionNavigation; const inquiryService=globalThis.analyseTest.inquiryService;';
+const inquiries=await load('components/analyse/InquiryInspection.tsx',inquiryPrelude,'export {InquiryList,RecordDetail};');
 h.reset();tree=inquiries.InquiryList({sapienId:'58',kind:'curiosity',initialSource:''});
 controls=find(tree,n=>n.type===Controls);
 assert(all(controls.props.primary).some(n=>n.type==='select'),'Inquiry assessment filter remains immediately available');
+
+// Questioning: reduced Sapien 66 record shapes observed in the live reader.
+const qp=globalThis.analyseTest.questionPresentation;
+const originalQuestion='Has Ravi provided a defined escalation path since I asked him about it?';
+const questionItem={id:'question-66',question:originalQuestion,source:'awareness_engine',source_handle:'awareness:source',state:'answered',simulation_run_id:'simulation-66',created_at:'2026-11-03T15:29:01Z',job_id:'job-66',context:{},outcome:{
+  assessment:{understanding:'No defined escalation path was found in the messages checked. Other conversations remain unknown.',reason:'The retrieved messages do not define a path.',evidence_refs:['action-66'],state:'completed'},
+  evidence:[{id:'action-66',kind:'action',server:'teams',tool:'list-chat-messages',source:'teams.list-chat-messages',content:'[Derived summary; original retained, details may be omitted]\nThe recorded chat discusses assignment and readiness.',content_kind:'derived_summary',result_detail_truncated:true,is_error:false,observed_at:'2026-11-04T16:00:00Z'},
+    {id:'question:question-66',kind:'original_impression',source:'questioning',content:originalQuestion}],
+  context:[{id:'memory-66',kind:'internal_understanding',source:'working_memory',content:'Rashi previously asked Ravi about escalation boundaries.'}]}};
+let questionView=qp.questioningView(questionItem);
+assert.equal(questionView.cited.length,1);assert.equal(questionView.additional.length,1);
+assert.equal(questionView.cited[0].timeLabel,'Observed');assert.equal(questionView.cited[0].derived,true);assert.equal(questionView.cited[0].partial,true);
+assert(!questionView.cited[0].body.startsWith('[Derived'));
+const questionHtml=html(React.createElement(questionDetail.QuestioningDetail,{item:questionItem,asOf:'2026-10-31T10:00:00Z'}));
+for(const expected of ['No defined escalation path','Teams','Read chat messages','Evidence cited in the answer','Saved summary of the source','Simulation record','Supporting records from the later assessment']) assert(questionHtml.includes(expected),expected);
+assert(questionHtml.indexOf('No defined escalation path')<questionHtml.indexOf('What prompted this question'),'The actual answer precedes missing-trigger metadata');
+assert(!questionHtml.includes('No source context retained'),'Initial trigger availability is distinct from retained outcome evidence');
+const openQuestion={...questionItem,id:'question-open',state:'open',question:'Do the acknowledgements include Priya’s clarification?',outcome:{},context:{
+  content:'[list-channel-messages] did: '+JSON.stringify({value:[{from:{user:{displayName:'Ravi Menon'}},body:{contentType:'text',content:'Readiness is confirmed.'},createdDateTime:'2026-11-03T14:30:00Z',channelIdentity:{teamId:'sentinel-desk',channelId:'project'}}]}),
+  items:[{kind:'observation',content:'The update does not specify how the separate requirement was addressed.',data:{outcome:{assessment:{state:'completed',understanding:'THIS IS AN OLDER ASSESSMENT'}}}}]}};
+questionView=qp.questioningView(openQuestion);
+assert.equal(questionView.answer,'','A nested completed assessment must not answer the new open question');
+assert.equal(questionView.trigger[0].messages[0].author,'Ravi Menon');assert.equal(questionView.trigger[0].messages[0].location,'sentinel-desk / project');assert.equal(questionView.trigger[0].body,'');
+const openHtml=html(React.createElement(questionDetail.QuestioningDetail,{item:openQuestion,asOf:''}));
+const initialHtml=openHtml.split('Technical details')[0].replace(/<details[\s\S]*?<\/details>/g,'');
+assert(initialHtml.includes('Ravi Menon')&&initialHtml.includes('Readiness is confirmed.'));
+assert(!initialHtml.includes('createdDateTime')&&!initialHtml.includes('THIS IS AN OLDER ASSESSMENT'));
+assert(initialHtml.includes('This question is still open'));
+const longContext={...openQuestion,context:{items:Array.from({length:12},(_,i)=>({id:String(i),kind:'observation',content:'Saved context '+i}))}};
+assert.equal(qp.questioningView(longContext).trigger.length,12,'No silent eight-item truncation');
+assert.equal(qp.questioningView({...questionItem,outcome:{assessment:{evidence_refs:['other']},evidence:questionItem.outcome.evidence}}).cited.length,0,'Only exact stored evidence references create an answer connection');
+assert.equal(qp.questionEvidence({content:'[list-chat-messages] did: {"value":['}).messages.length,0,'Do not repair incomplete JSON');
+assert.equal(qp.questionEvidence({content:'Ravi said this is from Jira.'}).source,'','Names/services are not inferred from prose');
+const issueEnvelope='[jira_get_issue] did: '+JSON.stringify({key:'SD-32',summary:'Coverage and reviewer delegation',status:'Proposed',description:'Verification remains separate.'});
+assert.equal(qp.questionEvidence({content:issueEnvelope}).body,'Issue: SD-32\nCoverage and reviewer delegation\nRecorded status: Proposed\nVerification remains separate.');
+assert.equal(qp.questionEvidence({content:'[list-chat-messages] did: {"value":[{"body":{"content":"One message"}},{"unknown":"Keep me"}]}'}).messages.length,0,'Keep the original mixed result instead of dropping unsupported entries');
+const escapedQuestion=html(React.createElement(questionDetail.QuestioningDetail,{item:{...openQuestion,question:'<script>bad()</script>'},asOf:''}));
+assert(escapedQuestion.includes('&lt;script&gt;'));assert(!escapedQuestion.includes('<script>'));
+assert(qp.questioningView({...questionItem,context:{legacy:'Retained'},outcome:0}).unknownContext);
+assert(qp.questioningView({...questionItem,outcome:false}).hasOutcome,'False is not missing');
+
+// Whole-row opening preserves independent controls, text selection and native keyboard targets.
+const rows=globalThis.analyseTest.recordRows;
+let rowOpens=0, textSelected=false;
+const rowDOM={ownerDocument:{defaultView:{getSelection:()=>({isCollapsed:!textSelected,anchorNode:{},focusNode:{}})}},contains:()=>true,querySelector:()=>({click(){rowOpens++;}})};
+const rowEvent={currentTarget:rowDOM,target:{closest:()=>null},button:0,defaultPrevented:false};
+rows.openRecordFromRow(rowEvent);assert.equal(rowOpens,1);
+for(const tag of ['a','button','input','select','textarea','summary']) rows.openRecordFromRow({...rowEvent,target:{closest:()=>({tagName:tag})}});
+for(const key of ['ctrlKey','metaKey','shiftKey','altKey','defaultPrevented']) rows.openRecordFromRow({...rowEvent,[key]:true});
+rows.openRecordFromRow({...rowEvent,button:1});
+textSelected=true;rows.openRecordFromRow(rowEvent);assert.equal(rowOpens,1,'Controls, modified clicks and copied text never open the row');textSelected=false;
+const questionDefaults={limit:50,state:'',source:'',channel:'',delivery_state:''};
+const questionPage={sapien_id:66,count:2,total:2,has_more:false,ordering:'created_at_desc',as_of:'2026-10-31T10:00:00Z',items:[questionItem,openQuestion],summary:{states:{answered:1,open:1},sources:{awareness_engine:2}}};
+const questionKey=(params='',revision=0)=>{const q=qp.questionQuery(new URLSearchParams(params),'66');return JSON.stringify(['66','questioning',q.filters,q.offset,revision]);};
+function setupQuestions(page=questionPage,params=''){h.reset([questionDefaults,0,0,page,null,null,questionKey(params)]);h.params=new URLSearchParams(params);}
+const renderQuestions=()=>{h.begin();return inquiries.InquiryList({sapienId:'66',kind:'questioning'});};
+setupQuestions();tree=renderQuestions();
+assert.equal(all(tree).filter(n=>n.type==='table').length,1);assert.equal(all(tree).filter(n=>n.type==='th').length,5);
+assert(html(tree).includes('View details'));assert(all(tree).filter(n=>n.type==='tr'&&n.props.onClick).length===2);
+const questionContainer={dataset:{navScroll:'analyse-content'},scrollTop:620};h.refs[2].current={closest:()=>questionContainer,focus(){}};
+let questionFocused=false;
+const questionOpener={...rowDOM,isConnected:true,focus(){questionFocused=true;}};
+find(tree,n=>n.props['data-record-open']).props.onClick({currentTarget:questionOpener});
+assert.equal(h.params.get('record_id'),'question-66');assert.equal(h.params.get('questionFor'),'66');
+assert.equal(globalThis.analyseTest.questionNavigation.scroll.get(`66:/admin/analyse/questioning?${h.params}:analyse-content`),620);
+tree=renderQuestions();find(tree,n=>n.type==='button'&&n.props.children==='Next question').props.onClick();assert.equal(h.params.get('record_id'),'question-open');
+tree=renderQuestions();find(tree,n=>n.type==='button'&&n.props.children==='Previous question').props.onClick();assert.equal(h.params.get('record_id'),'question-66');
+tree=renderQuestions();find(tree,n=>n.type==='button'&&n.props.children==='Back to questions').props.onClick();assert(!h.params.has('record_id'));
+find(tree,n=>n.props.className==='question-dialog').props.onCloseAutoFocus({preventDefault(){}});assert(questionFocused);
+tree=renderQuestions();find(find(tree,n=>n.type===Controls).props.primary,n=>n.type==='select').props.onChange({target:{value:'open'}});
+assert.equal(h.params.get('questionState'),'open');assert(!html(renderQuestions()).includes(originalQuestion),'Hide the previous filtered result immediately');
+assert.equal(qp.questionQuery(new URLSearchParams('questionFor=65&record_id=old&questionState=open'),'66').selectedId,null);
+assert.equal(qp.questionQuery(new URLSearchParams('questionLimit=500&questionOffset=-2'),'66').filters.limit,50);
+const preserved=qp.updateQuestionQuery(new URLSearchParams('keep=yes&questionFor=66&questionState=open&questionOffset=50'),'66',{selectedId:'question-open'});
+assert.equal(preserved.get('keep'),'yes');assert.equal(preserved.get('questionOffset'),'50');assert.equal(preserved.get('questionState'),'open');
+setupQuestions({...questionPage,items:[],count:0,total:0},'questionState=stale');assert(html(renderQuestions()).includes('No questions match these filters'));
+setupQuestions({...questionPage,items:[],count:0,total:0});assert(html(renderQuestions()).includes('No saved questions yet'));
+// Read lifecycles: actual service calls are replaced with controlled promises, never live APIs.
+globalThis.analyseTest.inquiryEffects=[];
+const asyncInquiries=await load('components/analyse/InquiryInspection.tsx',inquiryPrelude.replace('useEffect=()=>{}','useEffect=fn=>globalThis.analyseTest.inquiryEffects.push(fn)'),'export {InquiryList,RecordDetail};');
+let resolveQuestionList;
+globalThis.analyseTest.inquiryService.list=()=>new Promise(resolve=>{resolveQuestionList=resolve;});
+h.reset();asyncInquiries.InquiryList({sapienId:'66',kind:'questioning'});
+const cancelQuestionList=globalThis.analyseTest.inquiryEffects.pop()();cancelQuestionList();
+globalThis.analyseTest.inquiryService.list=async()=>({...questionPage,sapien_id:67,items:[]});
+h.begin();asyncInquiries.InquiryList({sapienId:'67',kind:'questioning'});globalThis.analyseTest.inquiryEffects.pop()();
+await new Promise(resolve=>setImmediate(resolve));
+resolveQuestionList(questionPage);await new Promise(resolve=>setImmediate(resolve));
+assert.equal(h.values[3].sapien_id,67,'A late Questioning page cannot replace the newly selected Sapien');
+h.begin();assert(!html(asyncInquiries.InquiryList({sapienId:'67',kind:'questioning'})).includes(originalQuestion));
+globalThis.analyseTest.inquiryService.list=async()=>{throw {status:503};};
+h.reset();asyncInquiries.InquiryList({sapienId:'66',kind:'questioning'});globalThis.analyseTest.inquiryEffects.pop()();await new Promise(resolve=>setImmediate(resolve));
+h.begin();assert(html(asyncInquiries.InquiryList({sapienId:'66',kind:'questioning'})).includes('Retry read'));
+let resolveQuestionDetail;
+globalThis.analyseTest.inquiryService.detail=()=>new Promise(resolve=>{resolveQuestionDetail=resolve;});
+h.reset();asyncInquiries.RecordDetail({sapienId:'66',kind:'questioning',id:'question-66',onQuestion(){}});
+const cancelQuestionDetail=globalThis.analyseTest.inquiryEffects.pop()();cancelQuestionDetail();
+resolveQuestionDetail({sapien_id:66,item:questionItem});await new Promise(resolve=>setImmediate(resolve));
+assert.equal(h.values[0],null,'Closing a reader ignores a late detail response');
+for (const detail of [{sapien_id:65,item:questionItem},{sapien_id:66,item:{...questionItem,id:'wrong-question'}}]) {
+  globalThis.analyseTest.inquiryService.detail=async()=>detail;
+  h.reset();asyncInquiries.RecordDetail({sapienId:'66',kind:'questioning',id:'question-66',onQuestion(){}});globalThis.analyseTest.inquiryEffects.pop()();await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(h.values[0],null);assert(h.values[1],'Mismatched Sapien/record detail is rejected');
+}
+globalThis.analyseTest.inquiryService.detail=async()=>({sapien_id:66,item:questionItem,as_of:'2026-10-31T10:00:00Z'});
+h.reset();asyncInquiries.RecordDetail({sapienId:'66',kind:'questioning',id:'question-66',onQuestion(){}});globalThis.analyseTest.inquiryEffects.pop()();await new Promise(resolve=>setImmediate(resolve));
+h.begin();assert(html(asyncInquiries.RecordDetail({sapienId:'66',kind:'questioning',id:'question-66',onQuestion(){}})).includes('No defined escalation path'));
+console.log('Questioning checks passed: Sapien 66 evidence shapes, source/answer separation, complete context, row controls, text selection, filters, reader navigation and list-position preservation.');
 
 // Closing a signal during a slow read must not reopen it when the reply arrives.
 let resolveDetail;
 globalThis.analyseTest.service={detail:()=>new Promise(resolve=>{resolveDetail=resolve;})};
 globalThis.document={activeElement:null};globalThis.requestAnimationFrame=fn=>{fn();return 0;};
 const bus=await load('pages/EngineBusPage.tsx',hooks+'const engineBusService=globalThis.analyseTest.service;');
-h.reset([[{id:'signal-1',name:'Signal',producer:'awareness',status:'completed',occurred_at:new Date().toISOString()}],null,false,false,'',null,false,'',null,false,'']);
+h.reset([[{id:'signal-1',name:'Signal',producer:'awareness',status:'completed',occurred_at:new Date().toISOString()}],null,false,false,'',null,false,'',null,false,'',JSON.stringify(['58','']),'']);
 const renderBus=()=>{h.begin();return bus.EngineBusPage({embedded:true});};
 tree=renderBus();
 find(tree,n=>n.type==='button'&&n.props.className?.startsWith('group grid')).props.onClick();
@@ -453,7 +572,8 @@ globalThis.analyseTest.feedbackDetail=feedbackDetail;
 globalThis.analyseTest.feedbackService={list:async()=>{throw Error('Unexpected request');}};
 globalThis.analyseTest.feedbackNavigation={scroll:new Map()};
 const feedbackPrelude=hooks+'\nconst useLocation=()=>({pathname:"/admin/analyse/feedback"});\nconst useNavigationMemory=()=>globalThis.analyseTest.feedbackNavigation;\nconst {FEEDBACK_STATES}=globalThis.analyseTest.feedbackTypes;\nconst {feedbackLabels,feedbackMode,feedbackOrigin,feedbackQuery,feedbackTime,updateFeedbackQuery}=globalThis.analyseTest.feedbackPresentation;\nconst {feedbackDetailTitle}=globalThis.analyseTest.feedbackEvidence;\nconst {FeedbackFindingDetail,FeedbackStateBadge}=globalThis.analyseTest.feedbackDetail;\nconst {DiagnosticDisclosure}=globalThis.analyseTest.diagnosticUI;\nconst feedbackService=globalThis.analyseTest.feedbackService;';
-const feedbackUI=await load('components/analyse/FeedbackInspection.tsx',feedbackPrelude,'export {FeedbackView,FeedbackProcessing};');
+const feedbackRowPrelude='const {hasSelectedRecordText,openRecordFromRow}=globalThis.analyseTest.recordRows;';
+const feedbackUI=await load('components/analyse/FeedbackInspection.tsx',feedbackPrelude+feedbackRowPrelude,'export {FeedbackView,FeedbackProcessing};');
 const feedbackRecord={
   _id:'finding-1',sapien_id:65,state:'interpreted',meaning:'Mei clarified the intended recipient. No subsequent introduction is established.',
   confidence:0,created_at:'2026-11-04T00:55:35Z',updated_at:null,last_surfaced_at:null,acknowledged_at:null,
@@ -491,9 +611,10 @@ const tableMarkup=html(tableTree);
 assert.equal((tableMarkup.match(/<th scope="col"/g)||[]).length,5);
 assert(tableMarkup.includes('Mei Chen')&&tableMarkup.includes('Teams'));
 assert(!tableMarkup.includes('Full saved tool text'),'Evidence stays out of the directory');
-const openerNode={isConnected:true,focus:()=>{}};
-find(tableTree,node=>node.props.className==='feedback-open').props.onClick({currentTarget:openerNode});
+const openerNode={isConnected:true,focus:()=>{},ownerDocument:{defaultView:{getSelection:()=>null}}};
+find(tableTree,node=>node.props.className?.includes('feedback-open')).props.onClick({currentTarget:openerNode});
 assert.equal(selectedFeedback.id,'finding-1');
+assert(tableMarkup.includes('View details'));assert.equal(all(tableTree).filter(node=>node.type==='tr'&&node.props.onClick===rows.openRecordFromRow).length,2,'Every Feedback row opens through the shared guarded handler');
 const detailMarkup=html(React.createElement(feedbackDetail.FeedbackFindingDetail,{finding:feedbackRecord}));
 for(const expected of ['Evidence behind this finding','Tool reported:','Who should receive','Address the introduction','What Sapiens concluded','Partial saved record','The original event could not be loaded','Supporting record'])assert(detailMarkup.includes(expected),expected);
 assert(!detailMarkup.includes('Earlier event')&&!detailMarkup.includes('Later event'));
@@ -735,7 +856,7 @@ setupFeedback();h.begin();assert(!html(feedbackUI.FeedbackView({sapienId:'66'}))
 assert(html(React.createElement(feedbackUI.FeedbackProcessing,{processing:{available:true}})).includes('Not recorded'),'Missing diagnostics are not zero');
 // Exercise production read effects through cancellation, scope mismatch and errors.
 globalThis.analyseTest.feedbackEffects=[];
-const feedbackAsync=await load('components/analyse/FeedbackInspection.tsx',feedbackPrelude.replace('useEffect=()=>{}','useEffect=fn=>globalThis.analyseTest.feedbackEffects.push(fn)'),'export {useFeedbackRead};');
+const feedbackAsync=await load('components/analyse/FeedbackInspection.tsx',feedbackPrelude.replace('useEffect=()=>{}','useEffect=fn=>globalThis.analyseTest.feedbackEffects.push(fn)')+feedbackRowPrelude,'export {useFeedbackRead};');
 const baseQuery=feedbackPresentation.feedbackQuery(new URLSearchParams(),'65');
 let resolveOldFeedback;let oldFeedbackArgs;
 globalThis.analyseTest.feedbackService.list=(...args)=>{oldFeedbackArgs=args;return new Promise(resolve=>resolveOldFeedback=resolve);};

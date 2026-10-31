@@ -10,13 +10,15 @@ const load = async (text, filename) => {
   return import('data:text/javascript;base64,' + Buffer.from(code).toString('base64'));
 };
 const model = await load(await source('core/navigation/appNavigation.ts'), 'appNavigation.ts');
-assert.deepEqual(model.appDestinations(false).map(item => item.id), ['directory','workspace','connections']);
-assert.deepEqual(model.appDestinations(true).map(item => item.id), ['directory','workspace','connections','analyse','simulations']);
+assert.deepEqual(model.appDestinations(false, false).map(item => item.id), ['directory','workspace','connections']);
+assert.deepEqual(model.appDestinations(true, true).map(item => item.id), ['directory','workspace','connections','analyse','simulations']);
 assert.equal(model.appArea('/admin/analyse/working-memory'), 'analyse');
 assert.equal(model.appArea('/admin/simulations/run-1/world/messages'), 'simulations');
 assert.equal(model.destinationAfterSwitch('/admin/analyse/goals'), '/admin/analyse/goals');
 assert.equal(model.destinationAfterSwitch('/connections'), '/connections');
-assert.equal(model.destinationAfterSwitch('/admin/simulations/run-1/world/messages'), '/workspace', 'A switch must never change a run’s binding');
+assert.equal(model.destinationAfterSwitch('/workspace'), '/workspace');
+assert.equal(model.destinationAfterSwitch('/admin/simulations'), '/admin/simulations');
+assert.equal(model.destinationAfterSwitch('/admin/simulations/run-1/world/messages', '59', 'New Sapien'), '/admin/simulations?sapienId=59&sapienName=New+Sapien&returnTo=%2Fworkspace', 'A switch must never change a run’s binding');
 const lab = new URL(model.simulationLabPath('58','Name & spaces','/admin/analyse/goals'), 'https://example.test');
 assert.equal(lab.searchParams.get('sapienId'), '58');
 assert.equal(lab.searchParams.get('sapienName'), 'Name & spaces');
@@ -30,6 +32,7 @@ const shellPrelude = `
 const React = globalThis.navTest.React;
 const {useEffect,useRef,useState} = React;
 const useAuth = () => ({user:globalThis.navTest.user,logout:()=>{}});
+const canAnalyzeAndSimulate = user => user?.role === 'admin';
 const useSapiensStore = select => select({currentSapiens:globalThis.navTest.selected});
 const useLocation = () => ({pathname:globalThis.navTest.path,search:''});
 const useNavigationMemory = () => globalThis.navTest.memory;
