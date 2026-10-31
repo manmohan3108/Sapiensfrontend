@@ -1,26 +1,20 @@
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router';
+import { ChevronRight } from 'lucide-react';
 import { AnalyseControls } from './AnalyseControls';
-import { RecordText, recordDate, sourceName, useListReaderNavigation } from '../workspace/ContextReader';
+import { sourceName, useListReaderNavigation } from '../workspace/ContextReader';
 import { goalsService } from '../../core/services/goalsService';
 import { useSapiensStore } from '../../core/state/sapiensStore';
-import type { GoalContext, GoalDetail, Plan, WorkflowRecord } from '../../types/goalTypes';
-import { workflowLifecycle, workflowState } from '../../utils/goalPresentation';
+import type { Plan } from '../../types/goalTypes';
+import { GoalRecord, GoalState } from './GoalRecord';
+import { absoluteTime } from './awarenessPresentation';
+import { goalExcerpt, goalTargets, planSummary } from './goalInspectionPresentation';
+import { hasSelectedRecordText } from './recordRowInteraction';
+import { useRememberedState } from '../navigation/NavigationState';
 import '../../../styles/analyse-goals.css';
 
 const views = ['open', 'finished', 'retired'] as const;
 type GoalView = typeof views[number];
-function completion(record: Pick<WorkflowRecord, 'finished'>) {
-  return record.finished === true ? 'Marked finished' : record.finished === false ? 'Unfinished' : 'Completion unknown';
-}
-function planSummary(plan?: Plan | null) {
-  if (!plan) return 'No plan recorded';
-  if (!plan.tasks.length) return 'Plan has no recorded steps';
-  const unknown = plan.tasks.filter(step => step.finished === null).length;
-  return `${plan.tasks.filter(step => step.finished === true).length} of ${plan.tasks.length} steps marked finished${unknown ? ` · ${unknown} unknown` : ''}`;
-}
-const object = (value: unknown): Record<string, unknown> => value !== null && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
-
 // Shared by this screen's list and reader. Poll only visible pages; ignore late
 // responses after a goal/filter/Sapien switch, retaining data on refresh errors.
 function useGoalRead<T>(key: string, load: () => Promise<T>) {
@@ -52,34 +46,33 @@ function useGoalRead<T>(key: string, load: () => Promise<T>) {
   return { data: current?.data, error: current?.error, loading: !current || current.loading, at: current?.at, refresh };
 }
 
-function GoalState({ record }: { record: WorkflowRecord }) {
-  const tone = record.retired === true ? 'muted' : record.finished === true ? 'success' : 'neutral';
-  return <><span className="ag-state" data-tone={tone}>{workflowLifecycle(record)}</span><span>{workflowState(record.state)}</span></>;
-}
-
-function SavedData({ title, value }: { title: string; value: unknown }) {
-  return <details className="ag-disclosure"><summary>{title}</summary><pre>{JSON.stringify(value, null, 2)}</pre></details>;
-}
-
-function GoalRequest({ sapienId, goalId, scope, stepId, onAccepted }: {
+function GoalRequest({ sapienId, goalId, scope, stepId, onAccepted, targets }: {
   sapienId: number; goalId: string; scope: 'goal' | 'plan' | 'step' | 'revise'; stepId?: string; onAccepted: () => void;
+  targets?: ReturnType<typeof goalTargets>;
 }) {
-  const [open, setOpen] = useState(false), [text, setText] = useState('');
+  const [open, setOpen] = useState(false);
+  const draftKey = `analyse-goal-request:${sapienId}:${goalId}:${scope}:${stepId || ''}`;
+  const [text, setText] = useRememberedState(`${draftKey}:text`, '');
   const [busy, setBusy] = useState(false), [error, setError] = useState(''), [notice, setNotice] = useState('');
+  const [targetKey, setTargetKey] = useRememberedState(`${draftKey}:target`, 'goal');
+  const target = targets?.find(item => item.key === targetKey);
+  const targetMissing = !!targets && !target;
+  const selectedScope = target?.scope || scope;
+  const selectedStep = target && 'stepId' in target ? target.stepId : stepId;
   const trigger = useRef<HTMLButtonElement>(null), field = useRef<HTMLTextAreaElement>(null);
   const mounted = useRef(true), submitting = useRef(false);
   const id = useId();
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   useEffect(() => { if (open) field.current?.focus(); }, [open]);
-  const label = scope === 'revise' ? 'Ask to revise the plan' : `Add information to this ${scope}`;
+  const label = scope === 'revise' ? 'Request a plan review' : targets ? 'Add information' : `Add information to this ${scope}`;
   const close = () => { if (!submitting.current) { setOpen(false); setError(''); trigger.current?.focus(); } };
   async function submit() {
-    if (submitting.current || !text.trim()) return;
+    if (submitting.current || !text.trim() || targetMissing) return;
     submitting.current = true; setBusy(true); setError(''); setNotice('');
     try {
       let queued = false;
       if (scope === 'revise') await goalsService.replan(sapienId, goalId, text.trim());
-      else queued = (await goalsService.comment(sapienId, goalId, { comment: text.trim(), scope, ...(stepId ? { step_id: stepId } : {}) }))?.queued === true;
+      else queued = (await goalsService.comment(sapienId, goalId, { comment: text.trim(), scope: selectedScope as 'goal' | 'plan' | 'step', ...(selectedStep ? { step_id: selectedStep } : {}) }))?.queued === true;
       if (!mounted.current) return;
       setNotice(scope === 'revise' ? 'Revision request accepted for background processing. The plan has not been confirmed as changed.' : queued ? 'Information queued for background processing.' : 'Request received. Changes have not been confirmed.');
       setText(''); setOpen(false); trigger.current?.focus(); onAccepted();
@@ -87,31 +80,36 @@ function GoalRequest({ sapienId, goalId, scope, stepId, onAccepted }: {
     finally { submitting.current = false; if (mounted.current) setBusy(false); }
   }
   return <div className="ag-request">
-    <button ref={trigger} type="button" className="ag-text-button" aria-expanded={open} aria-controls={id} onClick={() => { if (open) close(); else setOpen(true); }}>{label}</button>
+    <button ref={trigger} type="button" className="ag-text-button" aria-expanded={open} aria-controls={id} onClick={() => { if (open) close(); else setOpen(true); }}>{label}{!open && text.trim() ? ' (draft)' : ''}</button>
     {open && <form id={id} onSubmit={event => { event.preventDefault(); void submit(); }} onKeyDown={event => { if (event.key === 'Escape') { event.stopPropagation(); close(); } }}>
-      <label htmlFor={`${id}-text`}>{scope === 'revise' ? 'What changed, or what should be different?' : `What should Sapiens know about this ${scope}?`}</label>
-      <textarea ref={field} id={`${id}-text`} value={text} onChange={event => setText(event.target.value)} rows={3} disabled={busy} aria-describedby={`${id}-help`} />
+      {targets && <><label htmlFor={`${id}-target`}>Attach information to</label><select name="informationTarget" id={`${id}-target`} value={targetKey} disabled={busy} onChange={event => setTargetKey(event.target.value)}>
+        {targetMissing && <option value={targetKey}>Previous target is no longer in this plan</option>}{targets.map(item => <option key={item.key} value={item.key}>{item.label}</option>)}
+      </select>{targetMissing && <p role="status" className="ag-error">The plan changed. Choose a target before sending; your draft is kept.</p>}</>}
+      <label htmlFor={`${id}-text`}>{scope === 'revise' ? 'What should Sapiens reconsider when planning?' : `What should Sapiens know about this ${selectedScope}?`}</label>
+      <textarea ref={field} name="information" autoComplete="off" id={`${id}-text`} value={text} onChange={event => setText(event.target.value)} rows={3} disabled={busy} aria-describedby={`${id}-help`} />
       <p id={`${id}-help`} className="ag-muted">This sends a request for background processing; it does not directly edit the record.</p>
       {error && <p role="alert" className="ag-error">{error}</p>}
-      <div className="ag-actions"><button className="analyse-button" disabled={busy || !text.trim()}>{busy ? 'Sending…' : scope === 'revise' ? 'Send revision request' : 'Send information'}</button><button type="button" className="ag-text-button" disabled={busy} onClick={close}>Cancel</button></div>
+      <div className="ag-actions"><button className="analyse-button" disabled={busy || !text.trim() || targetMissing}>{busy ? 'Sending…' : scope === 'revise' ? 'Send revision request' : 'Send information'}</button><button type="button" className="ag-text-button" disabled={busy} onClick={close}>Cancel</button></div>
     </form>}
     {notice && <p role="status" className="ag-muted">{notice}</p>}
   </div>;
 }
 
-function GoalContextView({ context, title }: { context: GoalContext | null; title: string }) {
-  if (!context) return <p className="ag-muted">{title}: no context supplied.</p>;
-  const empty = !context.facts.length && !context.decisions.length && !context.assumptions.length && !context.open_questions.length;
-  return <section className="ag-context"><h4>{title}</h4>{empty && <p className="ag-muted">No context entries recorded.</p>}
-    {context.open_questions.length > 0 && <><h5>Questions and answers</h5><ul>{context.open_questions.map(question => <li key={question.id}><p>{question.question}</p><small>{question.resolved_at ? `Resolved ${recordDate(question.resolved_at)}` : 'Unresolved'}</small>{question.resolution && <RecordText text={question.resolution} />}</li>)}</ul></>}
-    {context.decisions.length > 0 && <><h5>Recorded decisions</h5><ul>{context.decisions.map((decision, index) => <li key={index}><RecordText text={decision.decision} />{decision.rationale && <p className="ag-muted">{decision.rationale}</p>}<small>{recordDate(decision.at)}</small></li>)}</ul></>}
-    {context.facts.length > 0 && <><h5>Saved facts</h5><dl>{context.facts.map((fact, index) => <div key={index}><dt>{fact.key}</dt><dd><RecordText text={fact.value} /><small>Source: {fact.source || 'Not recorded'}</small></dd></div>)}</dl></>}
-    {context.assumptions.length > 0 && <><h5>Assumptions</h5><ul>{context.assumptions.map((assumption, index) => <li key={index}><RecordText text={assumption.text} /><small>{assumption.status || 'Status not recorded'}</small></li>)}</ul></>}
+function GoalActions({ request, plan, overloaded }: { request: { sapienId: number; goalId: string; onAccepted: () => void }; plan: Plan | null; overloaded?: boolean }) {
+  return <section className="ag-section ag-request-section"><h3>Requests to Sapiens</h3>
+    <p className="ag-muted">These actions send information for background processing. They do not directly edit the saved record.</p>
+    {overloaded && <p className="ag-muted">Sapiens is busy. New requests may take longer to process.</p>}
+    <GoalRequest {...request} scope="goal" targets={goalTargets(plan)} />
+    <GoalRequest {...request} scope="revise" />
   </section>;
 }
 
-function GoalReader({ sapienId, goalId, close }: { sapienId: number; goalId: string; close: () => void }) {
-  const read = useGoalRead(`${sapienId}/${goalId}`, () => goalsService.getGoal(sapienId, goalId));
+function GoalReader({ sapienId, goalId, close, previous, next }: { sapienId: number; goalId: string; close: () => void; previous?: () => void; next?: () => void }) {
+  const read = useGoalRead(`${sapienId}/${goalId}`, async () => {
+    const detail = await goalsService.getGoal(sapienId, goalId);
+    if (detail.goal.id !== goalId || detail.goal.sapien_id !== sapienId) throw new Error('This response does not match the selected goal and Sapien. Refresh to try again.');
+    return detail;
+  });
   const [submitted, setSubmitted] = useState(0);
   const overloaded = useSapiensStore(state => state.isOverloaded);
   useEffect(() => {
@@ -122,58 +120,12 @@ function GoalReader({ sapienId, goalId, close }: { sapienId: number; goalId: str
   const accepted = () => setSubmitted(value => value + 1);
   const request = { sapienId, goalId, onAccepted: accepted };
   return <article className="ag-reader" aria-label="Selected goal">
-    <div className="ag-reader-toolbar"><button type="button" className="ag-text-button" data-reader-back onClick={close}>← All goals</button><button className="analyse-button" disabled={read.loading} onClick={read.refresh}>Refresh details</button></div>
+    <nav className="ag-reader-toolbar" aria-label="Goal details navigation"><button type="button" className="ag-text-button" data-reader-back onClick={close}>Back to goals</button><div className="ag-reader-adjacent"><button className="analyse-button" disabled={!previous} onClick={previous}>Previous goal</button><button className="analyse-button" disabled={!next} onClick={next}>Next goal</button></div><button type="button" className="ag-text-button" disabled={read.loading} onClick={read.refresh}>Refresh details</button></nav>
     {read.error && <p role="alert" className="ag-error">{read.error} {read.data && 'Showing the previously loaded record.'}</p>}
     {read.loading && <p role="status" className="ag-muted">{read.data ? 'Refreshing goal…' : 'Loading goal…'}</p>}
-    {read.data && <GoalRecord detail={read.data} request={request} overloaded={overloaded} />}
+    {read.data && <GoalRecord detail={read.data} actions={<GoalActions request={request} plan={read.data.current_plan} overloaded={overloaded} />} />}
+    {read.at && <p className="ag-muted ag-refresh-time">Details refreshed {absoluteTime(read.at)} · real time</p>}
   </article>;
-}
-
-function GoalRecord({ detail, request, overloaded }: { detail: GoalDetail; request: { sapienId: number; goalId: string; onAccepted: () => void }; overloaded?: boolean }) {
-  const { goal, current_plan: plan, attention, history } = detail;
-  const assessment = object(attention?.outcome?.assessment);
-  const pending = !!attention?.request_id && attention.request_id !== attention.resolved_id;
-  const understanding = typeof assessment.understanding === 'string' ? assessment.understanding : '';
-  const remaining = typeof assessment.remaining === 'string' ? assessment.remaining : '';
-  return <>
-    <header className="ag-goal-header"><h2>{goal.description || 'Goal description not recorded'}</h2><div className="ag-meta"><GoalState record={goal} />{goal.retired === true && <span>{completion(goal)}</span>}<span>Updated {recordDate(goal.updated_at)}</span></div>
-      {goal.motivation && <div className="ag-motivation"><h3>Why this goal exists</h3><RecordText text={goal.motivation} /></div>}
-      <p className="ag-muted">{planSummary(plan)}{goal.progress !== null && ` · Reported goal progress: ${Math.round(goal.progress * 100)}%`}</p>
-      {goal.progress === null && <p className="ag-muted">Goal progress not reported.</p>}
-      <GoalRequest {...request} scope="goal" />
-      {overloaded && <p className="ag-muted">Sapiens is busy. New information and plan revision requests may take longer to process.</p>}
-    </header>
-    <section className="ag-section"><h3>{pending ? 'Last retained assessment' : 'Latest recorded assessment'}</h3>
-      {pending && <p className="ag-muted">A newer review was requested {recordDate(attention?.requested_at)}. No matching resolution is recorded yet.</p>}
-      {!understanding && !remaining ? <p className="ag-muted">No assessment text supplied for this goal.</p> : <>
-        {understanding && <RecordText text={understanding} />}
-        {remaining && <div className="ag-remaining"><h4>What remains, according to this assessment</h4><RecordText text={remaining} /></div>}
-        <p className="ag-muted">Recorded {recordDate(attention?.resolved_at)}. An assessment is not confirmation of completion.</p>
-      </>}
-    </section>
-    <section className="ag-section"><h3>Current plan</h3>
-      {!plan ? <p className="ag-muted">No plan has been recorded for this goal.</p> : <>
-        <RecordText text={plan.description || 'Plan description not recorded'} />
-        <div className="ag-meta"><GoalState record={plan} />{plan.retired === true && <span>{completion(plan)}</span>}<span>{planSummary(plan)}</span></div>
-        <GoalRequest {...request} scope="plan" />
-        {!plan.tasks.length && <p className="ag-muted">This plan has no recorded steps yet.</p>}
-        <ol className="ag-steps">{plan.tasks.map((step, index) => <li key={step.id || index}><span className="ag-step-number" aria-hidden="true">{index + 1}</span><div>
-          <RecordText text={step.description || 'Step description not recorded'} />
-          <div className="ag-meta"><span>{workflowLifecycle(step)}</span><span>{workflowState(step.state)}</span></div>
-          {(step.result || step.evidence_refs.length > 0) && <details className="ag-disclosure"><summary>{step.result ? 'View result' : 'View evidence references'}</summary>{step.result && <RecordText text={step.result} />}{step.evidence_refs.length > 0 && <p className="ag-muted">Evidence references: {step.evidence_refs.join(', ')}</p>}</details>}
-          {step.id && <GoalRequest {...request} scope="step" stepId={step.id} />}
-        </div></li>)}</ol>
-      </>}
-      <GoalRequest {...request} scope="revise" />
-      <p className="ag-muted">Workflow state, reported progress and completion flags are separate. A step marked finished does not establish success.</p>
-    </section>
-    <section className="ag-section"><h3>Supporting information</h3><GoalContextView context={detail.context} title="Goal context" />{plan && <GoalContextView context={detail.plan_context} title="Plan context" />}</section>
-    <section className="ag-section"><h3>History & record details</h3>
-      <details className="ag-disclosure"><summary>Goal change history{history ? ` (${history.length})` : ''}</summary><p className="ag-muted">Up to 100 stored changes, oldest first; not a complete lifetime history.</p>{history === undefined ? <p>History was not supplied by the API.</p> : !history.length ? <p>No changes returned.</p> : <ol className="ag-history">{history.map((entry, index) => <li key={index}><p>{entry.reason || 'No reason recorded'}</p><small>{entry.operation || 'Operation not recorded'} · {entry.actor || 'Actor unknown'} · {recordDate(entry.at)}</small></li>)}</ol>}</details>
-      <details className="ag-disclosure"><summary>Ownership, schedule & provenance</summary><dl className="ag-facts"><div><dt>Source</dt><dd>{sourceName(goal.source)}</dd></div><div><dt>Owner</dt><dd>{goal.owner || 'Not recorded'}</dd></div><div><dt>Created by</dt><dd>{goal.creator || 'Not recorded'}</dd></div><div><dt>Requested by</dt><dd>{goal.requested_by || 'Not recorded'}</dd></div><div><dt>Review enabled</dt><dd>{goal.review_enabled === null ? 'Unknown' : goal.review_enabled ? 'Yes' : 'No'}</dd></div><div><dt>Scheduled review</dt><dd>{goal.review_at ? recordDate(goal.review_at) : 'Not scheduled'}</dd></div></dl></details>
-      <SavedData title="Full saved record, evidence & state rules" value={detail} />
-    </section>
-  </>;
 }
 
 export function AnalyseGoals({ sapienId }: { sapienId: number }) {
@@ -189,12 +141,13 @@ export function AnalyseGoals({ sapienId }: { sapienId: number }) {
   const goals = read.data?.goals || [];
   const sources = [...new Set([...goals.map(goal => goal.source), ...(source ? [source] : [])])].filter(Boolean);
   const visible = goals.filter(goal => (!source || goal.source === source) && `${goal.description} ${goal.id} ${goal.state}`.toLowerCase().includes(search.toLowerCase().trim()));
+  const selectedIndex = visible.findIndex(goal => goal.id === selected);
   return <div className="analyse-goals" ref={container}>
     <p className="analyse-page-purpose">See what this Sapien is working towards, its current plans and the progress recorded so far.</p>
     <AnalyseControls primary={<>
       <div role="group" aria-label="Goal lifecycle" className="ag-views">{views.map(value => <button type="button" key={value} aria-pressed={view === value} onClick={() => update('goalView', value)}>{value === 'open' ? 'Open' : value === 'finished' ? 'Finished' : 'Retired'}</button>)}</div>
-      <label>Search loaded goals<input value={search} onChange={event => update('goalSearch', event.target.value, true)} placeholder="Goal, workflow state or ID…" /></label>
-      <label>Source<select value={source} onChange={event => update('goalSource', event.target.value)}><option value="">All loaded sources</option>{sources.map(value => <option key={value} value={value}>{sourceName(value)}</option>)}</select></label>
+      <label>Search loaded goals<input type="search" name="goalSearch" autoComplete="off" value={search} onChange={event => update('goalSearch', event.target.value, true)} placeholder="Goal, workflow state or ID…" /></label>
+      <label>Source<select name="goalSource" value={source} onChange={event => update('goalSource', event.target.value)}><option value="">All loaded sources</option>{sources.map(value => <option key={value} value={value}>{sourceName(value)}</option>)}</select></label>
     </>} summary={`${visible.length} shown from ${goals.length} loaded · Up to 30 goals, ordered by priority. Search and source filter this loaded set.${view === 'retired' ? ' Retired goals are set aside; this does not mean they succeeded.' : ''}`} onRefresh={read.refresh} busy={read.loading} />
     {read.error && <p role="alert" className="ag-error">{read.error} {read.data && 'Showing the previously loaded list.'}</p>}
     <div className={`ag-layout ${selected ? 'has-selection' : ''}`}>
@@ -202,10 +155,13 @@ export function AnalyseGoals({ sapienId }: { sapienId: number }) {
         <h2 data-reader-heading tabIndex={-1} className="ag-list-heading">{view === 'open' ? 'Open goals' : view === 'finished' ? 'Finished goals' : 'Retired goals'}</h2>
         {read.loading && <p role="status" className="ag-muted">{read.data ? 'Refreshing goals…' : 'Loading goals…'}</p>}
         {!read.loading && !read.error && !visible.length && <div className="ag-empty"><h3>{search || source ? 'No goals match these filters' : `No ${view} goals returned`}</h3><p>{search || source ? 'Search only covers the loaded goals. Clear these filters to see the returned list.' : 'Goals appear here when Sapiens records something to work towards. Try another view or refresh.'}</p>{(search || source) && <button className="analyse-button" onClick={() => setParams(current => { const next = new URLSearchParams(current); next.delete('goalSearch'); next.delete('goalSource'); return next; })}>Clear search and source</button>}</div>}
-        {visible.map(goal => <button type="button" key={goal.id} data-record-id={goal.id} aria-pressed={selected === goal.id} className="ag-goal-row" onClick={() => { remember(goal.id); update('goal', goal.id); }}><strong>{goal.description || 'Goal description not recorded'}</strong><div className="ag-meta"><GoalState record={goal} /><span>{planSummary(goal.current_plan)}</span></div><small>Updated {recordDate(goal.updated_at)}</small></button>)}
+        {visible.map(goal => <button type="button" key={goal.id} data-record-id={goal.id} aria-pressed={selected === goal.id} className="ag-goal-row" onClick={event => { if (event.detail !== 0 && hasSelectedRecordText(event.currentTarget)) return; remember(goal.id); update('goal', goal.id); }}>
+          <span className="ag-row-title"><strong>{goalExcerpt(goal.description)}</strong><span className="ag-view-cue">View details<ChevronRight size={16} aria-hidden="true" /></span></span>
+          <span className="ag-meta"><GoalState record={goal} /><span>{planSummary(goal.current_plan)}</span></span><small>Updated {absoluteTime(goal.updated_at)}</small>
+        </button>)}
       </section>
-      {selected && <GoalReader key={`${sapienId}/${selected}`} sapienId={sapienId} goalId={selected} close={() => update('goal', null)} />}
+      {selected && <GoalReader key={`${sapienId}/${selected}`} sapienId={sapienId} goalId={selected} close={() => update('goal', null)} previous={selectedIndex > 0 ? () => update('goal', visible[selectedIndex - 1].id, true) : undefined} next={selectedIndex >= 0 && selectedIndex < visible.length - 1 ? () => update('goal', visible[selectedIndex + 1].id, true) : undefined} />}
     </div>
-    {read.at && <p className="ag-muted">List refreshed {recordDate(read.at)}</p>}
+    {read.at && <p className="ag-muted">List refreshed {absoluteTime(read.at)} · real time</p>}
   </div>;
 }

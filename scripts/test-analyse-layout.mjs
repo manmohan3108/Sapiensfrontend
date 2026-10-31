@@ -450,13 +450,27 @@ reader.remember('goal-2');readerFor('goal-2');commit();reader=readerFor(null,59)
 // Analyse Goals has a separate presentation; workspace GoalsPanel is not used.
 globalThis.analyseTest.goalReaders=readers;
 globalThis.analyseTest.goalService={};
+globalThis.analyseTest.goalWorkflow=await load('utils/goalPresentation.ts');
+globalThis.analyseTest.goalPresentation=await load('components/analyse/goalInspectionPresentation.ts', 'const {traceObject,traceText}=globalThis.analyseTest.questionTrace; const {questionEvidence}=globalThis.analyseTest.questionPresentation;');
+globalThis.analyseTest.goalRecordUI=await load('components/analyse/GoalRecord.tsx', `
+const {sourceName}=globalThis.analyseTest.goalReaders;
+const {workflowLifecycle,workflowState}=globalThis.analyseTest.goalWorkflow;
+const {DiagnosticDisclosure,DiagnosticText}=globalThis.analyseTest.questionDiagnostics;
+const {absoluteTime}=globalThis.analyseTest.questionClock;
+const {completion,contextCount,goalInspection,goalText,planSummary}=globalThis.analyseTest.goalPresentation;
+`);
 const goalPrelude=hooks+`
 const useId=()=>"goal-request";
-const {RecordText,recordDate,sourceName}=globalThis.analyseTest.goalReaders;
+const {sourceName}=globalThis.analyseTest.goalReaders;
+const {GoalRecord,GoalState}=globalThis.analyseTest.goalRecordUI;
+const {completion,goalExcerpt,goalTargets,planSummary}=globalThis.analyseTest.goalPresentation;
+const {absoluteTime}=globalThis.analyseTest.questionClock;
+const {hasSelectedRecordText}=globalThis.analyseTest.recordRows;
 const useListReaderNavigation=()=>({container:{current:null},list:{current:null},remember:()=>{}});
+const useRememberedState=(_key,initial)=>h.useState(initial);
 const goalsService=globalThis.analyseTest.goalService;
 `;
-const goalsUI=await load('components/analyse/AnalyseGoals.tsx',goalPrelude,'export {GoalRecord, GoalRequest, planSummary, completion, useGoalRead};');
+const goalsUI=await load('components/analyse/AnalyseGoals.tsx',goalPrelude,'export {GoalRecord, GoalRequest, GoalReader, GoalActions, planSummary, completion, useGoalRead};');
 const goalRecord={id:'goal-1',description:'Prepare the release',state:'waiting',finished:false,retired:false,progress:null,motivation:'The team needs a release checklist.',source:'user',owner:'Levi',creator:'Maya',requested_by:'Maya',review_enabled:true,review_at:null,updated_at:'2026-10-27T10:00:00Z',metadata:{},evidence_refs:[]};
 const planRecord={...goalRecord,id:'plan-1',description:'Confirm the release checks',tasks:[{id:'step-1',description:'Check the build',state:'failed',finished:true,result:'Build failed in CI.',evidence_refs:['build-42']},{id:'step-2',description:'Review tests',state:'waiting',finished:null,result:'',evidence_refs:[]}]};
 assert.equal(goalsUI.planSummary(null),'No plan recorded');
@@ -469,12 +483,12 @@ let goalHtml=html(goalsUI.GoalRecord({detail:goalDetail,request:{sapienId:58,goa
 for(const expected of ['Prepare the release','Last retained assessment','A newer review was requested','Fix CI.','Build failed in CI.','Completion unknown'])assert(goalHtml.includes(expected),expected);
 assert(!goalHtml.includes('line-through'));
 assert(goalHtml.indexOf('Current plan')<goalHtml.indexOf('History &amp; record details'));
-h.reset();goalHtml=html(goalsUI.GoalRecord({detail:{...goalDetail,current_plan:null},request:{sapienId:58,goalId:'goal-1',onAccepted(){}}}));
-assert(!goalHtml.includes('0/0'));assert(goalHtml.includes('No plan has been recorded'));
+h.reset();goalHtml=html(goalsUI.GoalRecord({detail:{...goalDetail,current_plan:null}}));
+assert(!goalHtml.includes('0/0'));assert(goalHtml.includes('Not supplied in this record: plan, supporting context.'));
 h.reset([0,{key:'58/open',loading:false,data:{goals:[{...goalRecord,current_plan:planRecord}],count:1}}]);
 tree=goalsUI.AnalyseGoals({sapienId:58});
 assert(html(tree).includes('Up to 30 goals'));assert(html(tree).includes('Search and source filter this loaded set'));
-find(tree,n=>n.props['data-record-id']==='goal-1').props.onClick();assert.equal(h.params.get('goal'),'goal-1');
+find(tree,n=>n.props['data-record-id']==='goal-1').props.onClick({detail:0});assert.equal(h.params.get('goal'),'goal-1');
 h.begin();tree=goalsUI.AnalyseGoals({sapienId:58});
 controls=find(tree,n=>n.type===Controls);
 find(controls.props.primary,n=>n.type==='input').props.onChange({target:{value:'release'}});
@@ -515,7 +529,7 @@ for(const [query,data,error,expected] of [
 }
 // Drive the real polling effect through a goal switch and a failed refresh.
 globalThis.analyseTest.goalEffects=[];
-const goalHooks=await load('components/analyse/AnalyseGoals.tsx',goalPrelude.replace('useEffect=()=>{}','useEffect=fn=>globalThis.analyseTest.goalEffects.push(fn)'),'export {useGoalRead};');
+const goalHooks=await load('components/analyse/AnalyseGoals.tsx',goalPrelude.replace('useEffect=()=>{}','useEffect=fn=>globalThis.analyseTest.goalEffects.push(fn)'),'export {useGoalRead, GoalReader};');
 const originalDocument=globalThis.document,originalInterval=globalThis.setInterval,originalClearInterval=globalThis.clearInterval;
 let intervals=new Map(),timerId=0,listeners=new Set();
 globalThis.document={visibilityState:'visible',addEventListener:(_,fn)=>listeners.add(fn),removeEventListener:(_,fn)=>listeners.delete(fn)};
@@ -530,8 +544,100 @@ assert.equal(h.values[1].data.description,'New goal');newCleanup();
 h.begin();goalHooks.useGoalRead('new',async()=>{throw Error('Refresh failed');});
 const failedCleanup=globalThis.analyseTest.goalEffects.pop()();await new Promise(resolve=>setImmediate(resolve));
 assert.equal(h.values[1].data.description,'New goal');assert.equal(h.values[1].error,'Refresh failed');failedCleanup();
+for(const received of [{...goalRecord,id:'different',sapien_id:66},{...goalRecord,sapien_id:67}]) {
+  h.reset();globalThis.analyseTest.goalService.getGoal=async()=>({goal:received,current_plan:null});
+  goalHooks.GoalReader({sapienId:66,goalId:'goal-1',close(){}});
+  const cleanups=globalThis.analyseTest.goalEffects.splice(0).map(effect=>effect());
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(h.values[1].data,undefined);assert(h.values[1].error.includes('does not match the selected goal and Sapien'));
+  for(const cleanup of cleanups)if(typeof cleanup==='function')cleanup();
+}
 assert.equal(intervals.size,0);assert.equal(listeners.size,0);
 globalThis.document=originalDocument;globalThis.setInterval=originalInterval;globalThis.clearInterval=originalClearInterval;
+
+// Sapien 66's no-plan records, plus isolated saved-plan cases (no live writes).
+const gp=globalThis.analyseTest.goalPresentation;
+const evidenceId='185eef2d-4eba-468d-96ff-6e9766a20423';
+const contextId='context:'+'a'.repeat(64);
+const coverageText=`Coordinate authorized review coverage for Aisha’s absence under SD-32. First obtain Marcus’s confirmation of the dates. Do not represent coverage as authorized while the conditions remain unmet. [${evidenceId}] [Evidence: ${contextId}; ${evidenceId}]`;
+assert.deepEqual(gp.goalText(coverageText).refs,[evidenceId,contextId]);
+assert(gp.goalText(coverageText).text.includes('Do not represent coverage as authorized'));
+for(const qualification of ['[SD-32]','[redacted]','[truncated]','[Human approval required]',`[${evidenceId}; approval required]`]) assert(gp.goalText(qualification).text.includes(qualification),'Only entire ID-only citations may move out of prose');
+assert(gp.goalExcerpt(coverageText).endsWith('…'));assert(!gp.goalExcerpt(coverageText).includes(evidenceId));
+const emptyContext={facts:[],decisions:[],assumptions:[],open_questions:[]};
+const noPlan66={goal:{...goalRecord,sapien_id:66,description:coverageText,state:'pending',motivation:'',progress:0},current_plan:null,context:emptyContext,plan_context:null,history:[],attention:null};
+const renderGoal=detail=>{h.reset();return html(goalsUI.GoalRecord({detail}));};
+goalHtml=renderGoal(noPlan66);
+assert(goalHtml.includes('Not supplied in this record: assessment text, plan, supporting context.'));
+assert(!goalHtml.includes('<h3>Current plan</h3>'));assert(!goalHtml.includes('<h3>Supporting information</h3>'));
+assert(goalHtml.includes('Reported progress: 0%'));assert(!goalHtml.includes('Read full text'));
+const descriptionHtml=goalHtml.match(/<p class="ag-description">([\s\S]*?)<\/p>/)[1];
+assert(!descriptionHtml.includes(evidenceId));assert(descriptionHtml.includes('conditions remain unmet'));
+assert(goalHtml.includes(evidenceId),'Original references remain available');
+assert(!/<h2>[^<]*Coordinate/.test(goalHtml),'Long goal text is body text, not an oversized heading');
+assert(!goalHtml.includes('<table'),'Goal detail stays an inspection reader, not a forced table');
+
+const finished66={...noPlan66,goal:{...noPlan66.goal,description:'Review Jira details and discussions for SD-1 through SD-32.',finished:true,progress:1},attention:{request_id:'same',resolved_id:'same',resolved_at:'2026-11-07T01:17:00Z',outcome:{assessment:{state:'completed',understanding:'The review is complete. No issue statuses or approvals were changed.',evidence_refs:['jira-read']},evidence:[{id:'jira-read',kind:'action',server:'jira',tool:'jira_get_comments',is_error:false,content:'Retrieved comments for SD-32.'}]}}};
+goalHtml=renderGoal(finished66);
+assert(goalHtml.includes('Marked finished; the saved workflow state is “pending”'));
+assert(goalHtml.includes('Reported progress: 100%'));assert(goalHtml.includes('No issue statuses or approvals were changed.'));
+assert(goalHtml.includes('Cited in the recorded assessment'));assert(goalHtml.includes('Retrieved comments for SD-32.'));
+assert(goalHtml.indexOf('Latest recorded assessment')<goalHtml.indexOf('Evidence saved with the assessment'));
+assert(goalHtml.includes(globalThis.analyseTest.questionClock.absoluteTime(finished66.attention.resolved_at)),'Goal assessment time uses the shared timezone formatter');
+assert(!/data-tone="success"/.test(goalHtml),'A finished flag is not independently verified success');
+
+goalHtml=renderGoal({...goalDetail,goal:{...goalRecord,sapien_id:66},current_plan:{...planRecord,tasks:[...planRecord.tasks,{id:'s3',description:'Follow up <script>alert(1)</script>',state:'pending',finished:false,result:'Approval is still required.',evidence_refs:[]}]},context:{...emptyContext,open_questions:[{id:'q',question:'Who can approve?',resolved_at:null}],decisions:[{decision:'Wait for review',rationale:'Approval not received',at:null}]}});
+assert(goalHtml.includes('saved plan order, not a history of execution'));
+assert(goalHtml.includes('Recorded result'));assert(goalHtml.includes('Build failed in CI.'));assert(goalHtml.includes('No result recorded for this step.'));
+assert(goalHtml.includes('Completion unknown'));assert(!goalHtml.includes('<script>'));assert(goalHtml.includes('&lt;script&gt;'));
+assert(goalHtml.includes('Who can approve?'));assert(goalHtml.includes('Wait for review'));
+assert(!goalHtml.includes('0%'),'Missing progress is not zero');
+const emptyPlanHtml=renderGoal({...noPlan66,current_plan:{...planRecord,tasks:[]}});
+assert(emptyPlanHtml.includes('Plan has no recorded steps'));assert(!emptyPlanHtml.includes('0 of 0'));
+assert.deepEqual(gp.goalTargets(null).map(t=>t.scope),['goal']);
+assert.deepEqual(gp.goalTargets(planRecord).map(t=>t.scope),['goal','plan','step','step']);
+
+// Plan and step requests keep the original API scopes, and do not silently retarget after refresh.
+globalThis.analyseTest.goalService.comment=async(...args)=>{writes.push(args);return {queued:true};};
+for(const target of gp.goalTargets(planRecord)) {
+  writes=[];h.reset([true,'Keep this qualification.',false,'','',target.key]);
+  tree=goalsUI.GoalRequest({sapienId:66,goalId:'goal-1',scope:'goal',targets:gp.goalTargets(planRecord),onAccepted(){}});
+  find(tree,n=>n.type==='form').props.onSubmit({preventDefault(){}});await new Promise(resolve=>setImmediate(resolve));
+  assert.deepEqual(writes[0],[66,'goal-1',{comment:'Keep this qualification.',scope:target.scope,...(target.stepId?{step_id:target.stepId}:{})}]);
+}
+writes=[];h.reset([true,'Do not lose my draft.',false,'','','step:plan-1:step-1']);
+tree=goalsUI.GoalRequest({sapienId:66,goalId:'goal-1',scope:'goal',targets:gp.goalTargets(null),onAccepted(){}});
+find(tree,n=>n.type==='form').props.onSubmit({preventDefault(){}});await new Promise(resolve=>setImmediate(resolve));
+assert.equal(writes.length,0);assert.equal(h.values[1],'Do not lose my draft.');
+assert(html(tree).includes('The plan changed. Choose a target'));
+h.reset();const actionsHtml=html(goalsUI.GoalActions({request:{sapienId:66,goalId:'goal-1',onAccepted(){}},plan:planRecord}));
+assert.equal((actionsHtml.match(/<button /g)||[]).length,2,'A single information form and a separate plan review action replace repeated per-step controls');
+assert(actionsHtml.includes('Request a plan review'));assert(!actionsHtml.includes('Ask to revise the plan'));
+
+// The same list filters persist during adjacent navigation; a deep link outside the list has no guessed neighbours.
+h.reset([0,{key:'66/open',loading:false,data:{goals:[noPlan66.goal,{...noPlan66.goal,id:'goal-2'}],count:2}}]);
+h.params=new URLSearchParams('goal=goal-1&goalView=open&goalSource=user');
+tree=goalsUI.AnalyseGoals({sapienId:66});
+let readerNode=find(tree,n=>n.type===goalsUI.GoalReader);
+assert.equal(readerNode.props.previous,undefined);readerNode.props.next();assert.equal(h.params.get('goal'),'goal-2');assert.equal(h.params.get('goalSource'),'user');
+h.begin();tree=goalsUI.AnalyseGoals({sapienId:66});readerNode=find(tree,n=>n.type===goalsUI.GoalReader);assert.equal(readerNode.props.next,undefined);readerNode.props.previous();assert.equal(h.params.get('goal'),'goal-1');
+h.params.set('goal','external-record');h.begin();readerNode=find(goalsUI.AnalyseGoals({sapienId:66}),n=>n.type===goalsUI.GoalReader);assert.equal(readerNode.props.next,undefined);assert.equal(readerNode.props.previous,undefined);
+readerNode.props.close();assert(!h.params.has('goal'));assert.equal(h.params.get('goalSource'),'user');
+// The real shared memory hook retains drafts across reader remounts, scoped to Sapien and goal.
+globalThis.analyseTest.goalDraftMemory={views:new Map(),scroll:new Map(),destinations:new Map()};
+globalThis.analyseTest.goalMemory=await load('components/navigation/NavigationState.tsx',`
+const {createContext}=React;const useState=globalThis.analyseTest.h.useState,useCallback=fn=>fn;
+const useContext=()=>globalThis.analyseTest.goalDraftMemory;const useAuth=()=>({user:null});
+`);
+const goalsWithDrafts=await load('components/analyse/AnalyseGoals.tsx',goalPrelude.replace('const useRememberedState=(_key,initial)=>h.useState(initial);','const {useRememberedState}=globalThis.analyseTest.goalMemory;'),'export {GoalRequest};');
+const draftRequest=(sapienId,goalId)=>{h.reset([true]);return goalsWithDrafts.GoalRequest({sapienId,goalId,scope:'goal',targets:gp.goalTargets(planRecord),onAccepted(){}});};
+tree=draftRequest(66,'goal-1');find(tree,n=>n.type==='textarea').props.onChange({target:{value:'Retain the step qualification.'}});find(tree,n=>n.type==='select').props.onChange({target:{value:'step:plan-1:step-1'}});
+tree=draftRequest(66,'other-goal');assert.equal(find(tree,n=>n.type==='textarea').props.value,'');
+tree=draftRequest(67,'goal-1');assert.equal(find(tree,n=>n.type==='textarea').props.value,'');
+tree=draftRequest(66,'goal-1');assert.equal(find(tree,n=>n.type==='textarea').props.value,'Retain the step qualification.');assert.equal(find(tree,n=>n.type==='select').props.value,'step:plan-1:step-1');
+globalThis.analyseTest.goalDraftMemory={views:new Map(),scroll:new Map(),destinations:new Map()};
+assert.equal(find(draftRequest(66,'goal-1'),n=>n.type==='textarea').props.value,'','A fresh session does not inherit drafts');
+console.log('Goals checks passed: Sapien 66 no-plan and finished/pending records; saved, empty and failed plans; evidence, timestamps, filters, reader navigation and unchanged request scopes.');
 // Working Memory ignores late reads on filter changes/unmount and keeps data
 // during a failed refresh. Exercise the actual effect and service call options.
 globalThis.analyseTest.wmEffects=[];
