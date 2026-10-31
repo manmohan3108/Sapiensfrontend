@@ -172,9 +172,14 @@ export function useSapiens() {
           setOverloaded(chatResponse.overloaded);
         }
 
-        // 3. Replace loading placeholder with real response + metadata
+        // 3. Replace the loading placeholder with a completed response. An empty
+        // reply is a completed-but-invalid state, not a blank chat message.
+        const reply = chatResponse.reply ?? '';
+        const emptyResponse = reply.trim().length === 0;
         updateChatMessage(assistantMsgId, {
-          content: chatResponse.reply ?? '',
+          content: emptyResponse ? 'No response text was returned. Check this conversation before sending your message again.' : reply,
+          isError: emptyResponse,
+          emptyResponse,
           isLoading: false,
           timestamp: now(),
           memoryUnits,
@@ -218,13 +223,19 @@ export function useSapiens() {
     const messages = [...detail.messages]
       .sort((a, b) => new Date(a.occurred_at).getTime() - new Date(b.occurred_at).getTime())
       .filter((message) => !seen.has(message.id) && seen.add(message.id))
-      .map((message) => ({
-        id: message.id,
-        role: message.role,
-        content: message.content,
-        timestamp: message.occurred_at,
-        sessionId: detail.thread_id,
-      }));
+      .map((message) => {
+        const content = typeof message.content === 'string' ? message.content : '';
+        const emptyResponse = message.role === 'assistant' && !content.trim();
+        return {
+          id: message.id,
+          role: message.role,
+          content: emptyResponse ? 'No response text was recorded. Check this conversation before sending your message again.' : content,
+          timestamp: message.occurred_at,
+          sessionId: detail.thread_id,
+          isError: emptyResponse,
+          emptyResponse,
+        };
+      });
     setChatMessages(messages);
     setChatSessionId(detail.thread_id);
     setLastMemoryUnits([]);

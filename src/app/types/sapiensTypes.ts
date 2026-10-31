@@ -121,6 +121,8 @@ export interface ChatApiResponse {
  */
 export interface ChatMessage {
   isError?: boolean;
+  /** The request completed, but no assistant message text was returned or recorded. */
+  emptyResponse?: boolean;
   id: string;
   role: 'user' | 'assistant';
   content: string;

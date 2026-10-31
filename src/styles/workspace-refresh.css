@@ -68,6 +68,16 @@
 .workspace-chat-heading { display:flex; flex-shrink:0; align-items:center; justify-content:space-between; gap:12px; padding:14px 20px; border-bottom:1px solid var(--sp-line); position:relative; z-index:25; }
 .workspace-chat-heading h2 { font-size:16px; font-weight:600; margin:0; }
 .workspace-chat-heading p { font-size:13px; margin:2px 0 0; color:var(--sp-muted); }
+.workspace-thinking { display:flex; align-items:center; min-height:20px; }
+.workspace-thinking-dots { display:inline-flex; flex-shrink:0; align-items:center; gap:4px; }
+.workspace-thinking-dot { width:6px; height:6px; border-radius:999px; background:var(--sp-accent); opacity:.42; transform:translateY(0) scale(.82); }
+@media(prefers-reduced-motion:no-preference) {
+  .workspace-thinking-dot { animation:workspace-thinking-pulse 1.05s ease-in-out infinite; }
+}
+@keyframes workspace-thinking-pulse {
+  0%,60%,100% { opacity:.42; transform:translateY(0) scale(.82); }
+  30% { opacity:1; transform:translateY(-3px) scale(1); }
+}
 .workspace-history-toggle { display:none; align-items:center; gap:6px; padding:9px; font-size:13px; border:1px solid var(--sp-line); border-radius:6px; }
 .workspace-history-popover { display:flex; flex-direction:column; position:absolute; top:calc(100% + 4px); right:12px; width:min(320px,calc(100% - 24px)); max-height:min(500px,65dvh); background:var(--sp-panel); border:1px solid var(--sp-line); border-radius:8px; box-shadow:0 12px 32px #0002; }
 .workspace-welcome-title { font:450 28px/1.2 'Source Serif 4',Georgia,serif; margin:0 0 12px; }

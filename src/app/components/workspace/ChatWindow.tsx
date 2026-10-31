@@ -22,13 +22,14 @@ import { CombinedInputPanel } from './CombinedInputPanel';
 import { SapiensPresence } from '../customer/SapiensPresence';
 
 // ─── Typing dots ──────────────────────────────────────────────────────────────
-function TypingDots() {
+function TypingDots({ name }: { name: string }) {
   return (
-    <span className="flex items-center gap-1 py-0.5">
-      {[0, 160, 320].map((d) => (
-        <span key={d} className="w-1.5 h-1.5 rounded-full bg-sp-accent/70 animate-bounce"
-          style={{ animationDelay: `${d}ms`, animationDuration: '1s' }} />
-      ))}
+    <span className="workspace-thinking" role="status" aria-live="polite" aria-label={`${name} is typing…`}>
+      <span className="workspace-thinking-dots" aria-hidden="true">
+        {[0, 140, 280].map((delay) => (
+          <span key={delay} className="workspace-thinking-dot" style={{ animationDelay: `${delay}ms` }} />
+        ))}
+      </span>
     </span>
   );
 }
@@ -193,9 +194,10 @@ function SignalControls({ msg, onSignal }: { msg: ChatMessage; onSignal: (s: Use
 
 // ─── Message Bubble ───────────────────────────────────────────────────────────
 function MessageBubble({
-  msg, onSignal, isHighlighted,
+  msg, sapienName, onSignal, isHighlighted,
 }: {
   msg: ChatMessage;
+  sapienName: string;
   onSignal: (id: string, s: UserSignalType) => void;
   isHighlighted: boolean;
 }) {
@@ -252,7 +254,7 @@ function MessageBubble({
               }
             >
               {msg.isLoading
-                ? <TypingDots />
+                ? <TypingDots name={sapienName} />
                 : <p className="whitespace-pre-wrap break-words">{msg.content ?? ''}</p>
               }
             </div>
@@ -280,12 +282,10 @@ function MessageBubble({
           </>
         )}
 
-        <div className={`flex items-center gap-2 px-1 ${isUser ? 'flex-row-reverse' : ''}`}>
-          <span className="text-[10px] text-sp-muted font-mono opacity-100 transition-opacity">
-            {formatTime(msg.timestamp)}
-          </span>
-          {!msg.isLoading && !isUser && msg.content && <CopyBtn text={msg.content} />}
-        </div>
+        {!msg.isLoading && <div className={`flex items-center gap-2 px-1 ${isUser ? 'flex-row-reverse' : ''}`}>
+          <span className="text-[10px] text-sp-muted font-mono opacity-100 transition-opacity">{formatTime(msg.timestamp)}</span>
+          {!isUser && msg.content && !msg.emptyResponse && <CopyBtn text={msg.content} />}
+        </div>}
       </div>
     </div>
   );
@@ -523,6 +523,7 @@ export function ChatWindow() {
                   <MessageBubble
                     key={m.id}
                     msg={m}
+                    sapienName={currentSapiens?.name ?? 'Sapiens'}
                     onSignal={handleSignal}
                     isHighlighted={highlightedId === m.id}
                   />
