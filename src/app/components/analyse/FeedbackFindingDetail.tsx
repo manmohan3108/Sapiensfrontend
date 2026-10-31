@@ -90,8 +90,9 @@ export function FeedbackFindingDetail({ finding, mode }: { finding: FeedbackFind
   const names = evidenceNames([finding.activity, finding.experience, ...(finding.supporting_experiences || [])]);
   const changes = changedRequestFields(finding, names);
   const extra = additionalEvidence(finding);
-  const sources = [finding.activity, finding.experience];
+  const sources = [finding.activity, finding.experience, ...extra.references];
   const previews = sources.map(reference => feedbackNodePreview(reference, names));
+  const sourceRole = (index: number) => index === 0 ? 'Activity under review' : index === 1 ? 'Compared record' : 'Supporting record';
   const closeDetails = () => {
     setSelected(null);
     opener.current?.focus({ preventScroll: true });
@@ -111,68 +112,64 @@ export function FeedbackFindingDetail({ finding, mode }: { finding: FeedbackFind
   return <article className="feedback-finding">
     <section className="feedback-events" aria-labelledby={`${id}-graph-title`}>
       <h3 id={`${id}-graph-title`}>Evidence behind this finding</h3>
-      <p className="feedback-help">Sapiens compared these records to form the interpretation below.</p>
+      <p className="feedback-help">The linked records feed into Sapiens’ interpretation below. Supporting records are included where available.</p>
       <div className="feedback-merge-graph">
         <div className="feedback-graph-sources">
           {previews.map((preview, index) => <section key={index} className="feedback-graph-node" data-selected={selected === index} aria-labelledby={`${id}-source-${index}`}>
-            <div className="feedback-node-heading"><span className="feedback-node-marker" aria-hidden="true">{index === 0 ? 'A' : 'B'}</span>
-              <h4 id={`${id}-source-${index}`}>{preview.title}</h4>
-            </div>
-            <p className="feedback-node-context">{[preview.service, preview.context].filter(Boolean).join(' · ') || (index === 0 ? 'Activity under review' : 'Record compared with it')}</p>
+            <p className="feedback-node-role">{sourceRole(index)}</p>
+            <h4 id={`${id}-source-${index}`}>{preview.title}</h4>
+            {(preview.service || preview.context) && <p className="feedback-node-context">{[preview.service, preview.context].filter(Boolean).join(' · ')}</p>}
             {preview.caption && <p className="feedback-node-caption">{preview.caption}</p>}
-            <p className="feedback-node-excerpt">{preview.excerpt}</p>
+            {preview.excerpt && <p className="feedback-node-excerpt">{preview.excerpt}</p>}
+            {preview.entries && <ol className="feedback-graph-entries" aria-label="Entries in the saved result">{preview.entries.map((item, itemIndex) => <li key={itemIndex}>
+              {item.author && <p className="feedback-result-author">{item.author}</p>}
+              <p className="feedback-node-excerpt">{item.text || item.fields.map(field => `${field.label}: ${field.value}`).join('\n') || 'No readable text was supplied for this entry.'}</p>
+            </li>)}</ol>}
             {preview.status && <DiagnosticBadge tone={preview.tone}>{preview.status}</DiagnosticBadge>}
             {preview.partial && <p className="feedback-note">Partial saved record</p>}
             <footer className="feedback-node-footer"><span>{feedbackTime(sources[index]?.occurred_at)}</span>
-              <button type="button" className="diagnostic-link" aria-expanded={selected === index} aria-controls={`${id}-details`} aria-label={`More info: ${preview.title} (record ${index === 0 ? 'A' : 'B'})`} onClick={event => inspect(index, event.currentTarget)}>More info</button>
+              <button type="button" className="diagnostic-link" aria-expanded={selected === index} aria-controls={`${id}-details`} aria-label={`${preview.detailAction}: ${preview.title} (${sourceRole(index).toLowerCase()})`} onClick={event => inspect(index, event.currentTarget)}>{preview.detailAction}</button>
             </footer>
           </section>)}
         </div>
         <div className="feedback-merge-connector" aria-hidden="true"><span /></div>
-        <section className="feedback-graph-conclusion" data-selected={selected === 2} aria-labelledby={`${id}-conclusion`}>
-          <div className="feedback-conclusion-heading"><h3 id={`${id}-conclusion`}>What Sapiens concluded</h3><FeedbackStateBadge state={finding.state} /></div>
-          <p className="feedback-node-excerpt">{finding.meaning || 'No conclusion was recorded.'}</p>
-          <div className="feedback-node-footer"><span>Saved interpretation</span>
-            <button type="button" className="diagnostic-link" aria-expanded={selected === 2} aria-controls={`${id}-details`} aria-label="More info: Sapiens’ conclusion" onClick={event => inspect(2, event.currentTarget)}>More info</button>
+        {!!changes.length && <section className="feedback-request-changes" aria-labelledby={`${id}-changes`}>
+          <h3 id={`${id}-changes`}>What changed in the request</h3>
+          <p className="feedback-help">Same tool, two saved requests. These differences alone do not prove what caused the result.</p>
+          <dl className="feedback-change-list">{changes.map((change, index) => <div key={index}>
+            <dt>{change.label}</dt><dd>
+              <span><small>Activity request</small>{change.earlier}</span>
+              <span className="feedback-change-arrow" aria-hidden="true">→</span>
+              <span><small>Compared request</small>{change.later}</span>
+            </dd>
+          </div>)}</dl>
+        </section>}
+        <section className="feedback-graph-conclusion" aria-labelledby={`${id}-conclusion`}>
+          <div className="feedback-conclusion-heading"><h3 id={`${id}-conclusion`}>What Sapiens concluded</h3>
+            {finding.state === 'interpreted' ? <DiagnosticBadge>Interpretation recorded</DiagnosticBadge> : <FeedbackStateBadge state={finding.state} />}
           </div>
+          {finding.state === 'ambiguous' && <p className="feedback-help">Sapiens could not clearly determine how these records are related.</p>}
+          {finding.state === 'unrelated' && <p className="feedback-help">Sapiens did not find a useful connection between these records.</p>}
+          {finding.state === 'superseded' && <p className="feedback-help">A newer finding replaced this interpretation. This record is kept for reference.</p>}
+          <p className="feedback-node-excerpt">{finding.meaning || 'No conclusion was recorded.'}</p>
+          <p className="feedback-mode-note">{mode === 'observe'
+            ? <><strong>Saved for review — not applied.</strong> Observe mode does not apply these findings to Sapiens’ behavior.</>
+            : feedbackMode(mode)}</p>
         </section>
       </div>
-      <p className="feedback-help feedback-mode-note">{feedbackMode(mode)}</p>
     </section>
     <section className="feedback-node-details" id={`${id}-details`} ref={detailPanel} tabIndex={-1} aria-labelledby={`${id}-details-title`} hidden={selected === null}>
       {selected !== null && <div key={selected}>
-        <header className="feedback-detail-heading"><h3 id={`${id}-details-title`}>{selected === 2 ? 'Conclusion details' : `Record ${selected === 0 ? 'A' : 'B'} details`}</h3>
+        <header className="feedback-detail-heading"><h3 id={`${id}-details-title`}>{previews[selected].title}</h3>
           <button type="button" className="analyse-button" onClick={closeDetails}>Back to graph</button>
         </header>
-        {selected < 2 ? <FeedbackReferenceView label={selected === 0 ? 'Activity under review' : 'Record compared with it'} value={sources[selected]} names={names} /> : <section className="feedback-interpretation">
-          <p className="feedback-help">{finding.state === 'ambiguous' ? 'Sapiens could not clearly determine how these events are related.'
-            : finding.state === 'interpreted' ? 'Sapiens’ interpretation, based on the linked records.'
-            : finding.state === 'superseded' ? 'A newer finding replaced this conclusion. This older record is kept for reference.'
-            : finding.state === 'unrelated' ? 'Sapiens did not find a useful connection between these events.' : 'This is the interpretation saved with the finding.'}</p>
-          <DiagnosticText text={finding.meaning || 'No conclusion was recorded.'} limit={850} />
-          <dl className="feedback-facts"><dt>Model confidence</dt><dd>{Number.isFinite(finding.confidence) ? finding.confidence : 'Not recorded'}<small>How certain the model was about this finding; not measured accuracy.</small></dd></dl>
-        </section>}
+        <FeedbackReferenceView label={sourceRole(selected)} value={sources[selected]} names={names} />
       </div>}
     </section>
-    {!!changes.length && <DiagnosticDisclosure title="Compare the two requests"><section className="feedback-request-changes">
-      <h3>What changed in the request</h3>
-      <p className="feedback-help">Differences in the saved fields for the same tool.</p>
-      <div className="feedback-comparison-wrap" role="region" aria-label="Request changes" tabIndex={0}>
-        <table className="feedback-comparison">
-          <caption className="sr-only">Recorded request differences, not a claim about what caused the result.</caption>
-          <thead><tr><th scope="col">Field</th><th scope="col">Record A request</th><th scope="col">Record B request</th></tr></thead>
-          <tbody>{changes.map((change, index) => <tr key={index}><th scope="row">{change.label}</th>
-            <td><DiagnosticText text={change.earlier} limit={220} /></td><td><DiagnosticText text={change.later} limit={220} /></td>
-          </tr>)}</tbody>
-        </table>
-      </div>
-    </section></DiagnosticDisclosure>}
-    {!!extra.references.length && <DiagnosticDisclosure title={`More context used in this review (${extra.references.length})`}><section className="feedback-extra-evidence">
-      <div className="feedback-evidence-pair">{extra.references.map((ref, index) => <FeedbackReferenceView key={`${ref.id}-${index}`} label="Additional event" value={ref} names={names} />)}</div>
-    </section></DiagnosticDisclosure>}
     {extra.repeated > 0 && <p className="feedback-help">{extra.repeated} repeated {extra.repeated === 1 ? 'reference is' : 'references are'} shown only once. All references remain in the record details.</p>}
     <DiagnosticDisclosure title="Record details">
       <dl className="feedback-facts">
+        <dt>Model confidence</dt><dd>{Number.isFinite(finding.confidence) ? finding.confidence : 'Not recorded'}<small>How certain the model was about this finding; not measured accuracy.</small></dd>
         <dt>Finding ID</dt><dd><code>{finding._id}</code></dd><dt>Sapien ID</dt><dd>{finding.sapien_id}</dd>
         {(['created_at', 'updated_at', 'last_surfaced_at', 'acknowledged_at'] as const).map(field => <div className="feedback-fact-row" key={field}><dt>{({ created_at: 'Finding recorded', updated_at: 'Finding updated', last_surfaced_at: 'Last made available', acknowledged_at: 'Acknowledged' })[field]}</dt><dd>{feedbackTime(finding[field], true)}</dd></div>)}
       </dl>

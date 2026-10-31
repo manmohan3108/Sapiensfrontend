@@ -495,21 +495,21 @@ const openerNode={isConnected:true,focus:()=>{}};
 find(tableTree,node=>node.props.className==='feedback-open').props.onClick({currentTarget:openerNode});
 assert.equal(selectedFeedback.id,'finding-1');
 const detailMarkup=html(React.createElement(feedbackDetail.FeedbackFindingDetail,{finding:feedbackRecord}));
-for(const expected of ['Evidence behind this finding','Tool reported:','Who should receive','Address the introduction','What Sapiens concluded','Partial saved record','The original event could not be loaded','More context used in this review'])assert(detailMarkup.includes(expected),expected);
+for(const expected of ['Evidence behind this finding','Tool reported:','Who should receive','Address the introduction','What Sapiens concluded','Partial saved record','The original event could not be loaded','Supporting record'])assert(detailMarkup.includes(expected),expected);
 assert(!detailMarkup.includes('Earlier event')&&!detailMarkup.includes('Later event'));
 assert(detailMarkup.indexOf('Who should receive') < detailMarkup.indexOf('What Sapiens concluded'),'Evidence precedes the saved conclusion');
 assert(!detailMarkup.includes('Full saved tool text'),'Full source details are opened from their node');
-// Both inputs and the interpretation are visible; more info opens one focused reader.
+// All linked evidence and the interpretation are visible; only source diagnostics need a reader.
 globalThis.analyseTest.feedbackDetailEffects=[];
 const controlledFeedbackDetail=await load('components/analyse/FeedbackFindingDetail.tsx','const useId=()=>"feedback-test"; const {useRef,useState}=globalThis.analyseTest.h; const useEffect=fn=>globalThis.analyseTest.feedbackDetailEffects.push(fn);\n'+feedbackDetailPrelude);
 h.reset();
 const renderFeedbackGraph=()=>{h.begin();return controlledFeedbackDetail.FeedbackFindingDetail({finding:feedbackRecord});};
 let graphTree=renderFeedbackGraph();
 const graphButtons=all(graphTree).filter(node=>node.type==='button'&&node.props['aria-controls']==='feedback-test-details');
-assert.equal(graphButtons.length,3,'Both source nodes and their conclusion have explicit more-info controls');
+assert.equal(graphButtons.length,3,'Both main records and the supporting record have explicit source-detail controls');
 assert.equal(find(graphTree,node=>node.props.id==='feedback-test-details').props.hidden,true);
 const sourceNodes=find(graphTree,node=>node.props.className==='feedback-graph-sources');
-assert.equal(children(sourceNodes).length,2,'The two source records merge; they are not a three-event timeline');
+assert.equal(children(sourceNodes).length,3,'Supporting evidence joins the same graph instead of being hidden');
 assert(html(sourceNodes).includes('Who should receive')&&html(sourceNodes).includes('Address the introduction'));
 for(const [index,button] of graphButtons.entries()){
   assert.equal(button.props.type,'button');
@@ -526,7 +526,7 @@ for(const [index,button] of graphButtons.entries()){
   const panelMarkup=html(panel);
   if(index===0)for(const value of ['Full saved tool text','chat-1','Only part of the original record'])assert(panelMarkup.includes(value));
   if(index===1)assert(panelMarkup.includes('Address the introduction'));
-  if(index===2){assert(panelMarkup.includes('>0<'),'Zero confidence is not treated as missing');assert(panelMarkup.includes('not measured accuracy'));}
+  if(index===2)assert(panelMarkup.includes('The original event could not be loaded'));
   find(graphTree,node=>node.type==='button'&&node.props.children==='Back to graph').props.onClick();
   assert.deepEqual(calls.slice(-2),[['return focus',{preventScroll:true}],['return scroll',{block:'nearest',behavior:'instant'}]],'Returning restores the node opener and graph position');
   assert.equal(find(renderFeedbackGraph(),node=>node.props.id==='feedback-test-details').props.hidden,true);
@@ -535,8 +535,8 @@ const missingFinding={...feedbackRecord,activity:{id:'missing-a',source:'tool_ac
 for(const state of feedbackTypes.FEEDBACK_STATES){
   const markup=html(React.createElement(feedbackDetail.FeedbackFindingDetail,{finding:{...missingFinding,state},mode:'observe'}));
   assert(markup.includes('Details unavailable'));
-  assert(markup.includes(feedbackPresentation.feedbackLabels[state]));
-  assert(markup.includes('not applied to Sapiens'),'Reading order does not imply that a lesson was applied');
+  assert(markup.includes(state==='interpreted'?'Interpretation recorded':feedbackPresentation.feedbackLabels[state]));
+  assert(markup.includes('Saved for review — not applied.'),'Reading order does not imply that a lesson was applied');
   assert(!markup.includes('Tool reported: Succeeded'),'Missing tool evidence is not a successful action');
 }
 const safeMarkup=html(React.createElement(feedbackDetail.FeedbackFindingDetail,{finding:{...feedbackRecord,meaning:'<img src=x onerror=alert(1)>'}}));
@@ -554,18 +554,18 @@ const retryFinding={...feedbackRecord,sapien_id:66,activity:beforeTool,experienc
 const names=feedbackEvidence.evidenceNames([beforeTool,afterTool]);
 assert.equal(names.get('ben'),'Ben Carter');
 assert.deepEqual(feedbackEvidence.changedRequestFields(retryFinding,names),[{label:'Ben Carter — roles',earlier:'No role supplied',later:'owner'}],'Match members by exact user ID even when order changes');
-assert.equal(feedbackEvidence.feedbackDetailTitle(retryFinding),'Teams · create chat');
+assert.equal(feedbackEvidence.feedbackDetailTitle(retryFinding),'Review of Teams chat requests');
 assert.equal(feedbackEvidence.additionalEvidence(retryFinding).repeated,1);
 assert.equal(feedbackEvidence.additionalEvidence(retryFinding).references.length,1);
 assert.equal(feedbackEvidence.additionalEvidence({...retryFinding,supporting_experiences:[{...afterTool,details:{available:false}}]}).references.length,1,'Keep different saved snapshots of the same reference');
 assert.equal(feedbackEvidence.additionalEvidence({...retryFinding,supporting_experiences:[{id:'',source:'unknown'},{id:'',source:'unknown'}]}).repeated,0,'Missing IDs cannot prove duplication');
 const retryMarkup=html(React.createElement(feedbackDetail.FeedbackFindingDetail,{finding:retryFinding,mode:'observe'}));
-for(const expected of ['What changed in the request','Ben Carter','No role supplied','Each member must have owner role','What Sapiens concluded','not applied to Sapiens','1 repeated reference'])assert(retryMarkup.includes(expected),expected);
+for(const expected of ['What changed in the request','Ben Carter','No role supplied','Each member must have owner role','What Sapiens concluded','Saved for review — not applied.','1 repeated reference'])assert(retryMarkup.includes(expected),expected);
 assert(retryMarkup.includes('Error returned by the tool'),'Failure evidence is readable directly in the node');
 assert(!retryMarkup.includes('not evidence that behavior changed'));
 const messageTool=toolReference('message',{body:{body:{content:'Should I contact the internal team?'}}},{id:'saved-message'},{tool:'send-chat-message'});
 const messageFinding={...feedbackRecord,sapien_id:66,activity:messageTool,experience:{...feedbackRecord.experience,details:{...feedbackRecord.experience.details,display:{actor:'Isha Desai',text:'Start with the internal project team.'},content:'Start with the internal project team.'}}};
-assert.equal(feedbackEvidence.feedbackDetailTitle(messageFinding),'Messages and feedback');
+assert.equal(feedbackEvidence.feedbackDetailTitle(messageFinding),'Conversation feedback involving Isha Desai');
 const messageMarkup=html(React.createElement(feedbackDetail.FeedbackFindingDetail,{finding:messageFinding}));
 assert(messageMarkup.includes('Should I contact the internal team?')&&messageMarkup.includes('Isha Desai'));
 assert(messageMarkup.includes('Start with the internal project team.'));
@@ -576,7 +576,7 @@ assert.equal(feedbackEvidence.eventEvidence({...updateRef,details:{...updateRef.
 assert.equal(feedbackEvidence.changedRequestFields({...retryFinding,experience:updateRef},names).length,0,'Mixed entries are not a tool retry');
 const unnamedTool={source:'tool_activity',details:{available:true,metadata:{arguments:{query:'first'}}}};
 assert.equal(feedbackEvidence.changedRequestFields({...retryFinding,activity:unnamedTool,experience:{...unnamedTool,details:{available:true,metadata:{arguments:{query:'second'}}}}},names).length,0,'Unknown tools cannot be assumed to be the same tool');
-assert.equal(feedbackEvidence.feedbackDetailTitle({...retryFinding,experience:updateRef}),'Activity and follow-up');
+assert.equal(feedbackEvidence.feedbackDetailTitle({...retryFinding,experience:updateRef,supporting_experiences:[]}),'Feedback on linked activity');
 const listTool=toolReference('list',{}, {value:[{displayName:'Recorded person',role:'Engineer'}]},{tool:'list-users'});
 assert.equal(feedbackEvidence.eventEvidence(listTool).resultItems[0].fields[0].value,'Recorded person');
 const uncertain=toolReference('uncertain',{},'Delivery not confirmed',{status:'has an uncertain result'});
@@ -601,21 +601,21 @@ assert.equal(feedbackEvidence.feedbackDocumentText({type:'unknown',text:'Guess t
 assert.equal(feedbackEvidence.feedbackDocumentText({type:'doc',content:[{type:'paragraph',content:[{type:'text',text:'Retain [redacted] and [truncated] markers.'}]}]}),'Retain [redacted] and [truncated] markers.');
 const jiraComment=toolReference('jira-comment',{issue_key:'SD-3'},{total:40,comments:[{author:{displayName:'Mei Chen'},body:jiraDocument}]},{server:'jira',tool:'jira_get_comments'});
 const commentPreview=feedbackEvidence.feedbackNodePreview(jiraComment);
-assert.equal(commentPreview.title,'Comment on SD-3');
-assert.equal(commentPreview.context,'Mei Chen');
+assert.equal(commentPreview.title,'Comment from Mei Chen on SD-3');
 assert.equal(commentPreview.caption,'Saved result','A server total is not the number of comments in the saved snapshot');
 assert(commentPreview.excerpt.includes('not completed.')&&commentPreview.excerpt.includes('release approval remain separate.'));
 assert.equal(feedbackEvidence.eventEvidence(jiraComment).resultItems[0].text,commentPreview.excerpt,'Full details and graph previews read the same saved comment');
 const commentFinding={...feedbackRecord,activity:jiraComment,experience:updateRef};
 const commentGraph=html(React.createElement(feedbackDetail.FeedbackFindingDetail,{finding:commentFinding}));
-assert(commentGraph.includes('Comment on SD-3')&&commentGraph.includes('This item is proposed'));
+assert(commentGraph.includes('Comment from Mei Chen on SD-3')&&commentGraph.includes('This item is proposed'));
 assert(!commentGraph.includes('jira_get_comments'),'Technical operation names do not replace content in the graph');
 const commentDetails=html(React.createElement(feedbackDetail.FeedbackReferenceView,{value:jiraComment,label:'Record A'}));
 assert(commentDetails.indexOf('This item is proposed')<commentDetails.indexOf('Original record'),'Comment text is visible before raw JSON');
 assert(commentDetails.includes('Mei Chen')&&commentDetails.includes('jira_get_comments'),'Original operation and authorship remain accessible');
 const multiComment=toolReference('jira-comments',{issue_key:'SD-3'},{total:40,comments:[{body:'First saved comment.'},{body:'Second saved comment.'}]},{server:'jira',tool:'jira_get_comments'});
-assert.equal(feedbackEvidence.feedbackNodePreview(multiComment).caption,'First of 2 saved entries');
-assert.equal(feedbackEvidence.feedbackNodePreview(multiComment).excerpt,'First saved comment.');
+assert.equal(feedbackEvidence.feedbackNodePreview(multiComment).caption,'2 entries in this saved result');
+assert.equal(feedbackEvidence.feedbackNodePreview(multiComment).excerpt,'','Do not arbitrarily elevate the first entry as relevant');
+assert.deepEqual(feedbackEvidence.feedbackNodePreview(multiComment).entries.map(item=>item.text),['First saved comment.','Second saved comment.']);
 const emptyComments=toolReference('no-comments',{issue_key:'SD-3'},{comments:[]},{server:'jira',tool:'jira_get_comments'});
 assert.equal(feedbackEvidence.feedbackNodePreview(emptyComments).excerpt,'The saved result contains no entries.');
 assert.equal(feedbackEvidence.feedbackNodePreview(beforeTool).excerpt,'Each member must have owner role and user binding');
@@ -624,6 +624,47 @@ assert(!feedbackEvidence.feedbackNodePreview(broken).excerpt.includes('Ben Carte
 const htmlComment=toolReference('html-comment',{issue_key:'SD-3'},{comments:[{body:'<img src=x onerror=alert(1)>'}]},{server:'jira',tool:'jira_get_comments'});
 const escapedComment=html(React.createElement(feedbackDetail.FeedbackFindingDetail,{finding:{...feedbackRecord,activity:htmlComment}}));
 assert(escapedComment.includes('&lt;img'));assert(!escapedComment.includes('<img src=x'),'Saved content is inert text');
+// Verify the first view without expanding a disclosure or source-detail reader.
+function withoutSecondaryDetails(node){
+  if(Array.isArray(node))return node.map(withoutSecondaryDetails);
+  if(!React.isValidElement(node))return node;
+  if(node.type===globalThis.analyseTest.diagnosticUI.DiagnosticDisclosure||node.type==='details'||node.props.hidden)return null;
+  return React.cloneElement(node,{},...children(node).map(withoutSecondaryDetails));
+}
+const initialFeedbackHtml=finding=>{h.reset();h.begin();return html(withoutSecondaryDetails(controlledFeedbackDetail.FeedbackFindingDetail({finding,mode:'observe'})));};
+const clarification='Please introduce yourself to me, Mei, in this existing Teams chat.';
+const followThrough='Hi Mei, I’m Rashi, the Scrum Master supporting this project.';
+const clarificationFinding={...feedbackRecord,sapien_id:66,experience:toolReference('read-messages',{},'[truncated]',{tool:'list-chat-messages'}),supporting_experiences:[
+  {...feedbackRecord.experience,details:{...feedbackRecord.experience.details,content:clarification,display:{actor:'Mei Chen',text:clarification}}},
+  toolReference('intro',{body:{body:{content:followThrough}}},{id:'message'},{tool:'send-chat-message'}),
+]};
+const initialClarification=initialFeedbackHtml(clarificationFinding);
+for(const value of [clarification,followThrough,'Request to read Teams messages',feedbackRecord.meaning,'Saved for review — not applied.'])assert(initialClarification.includes(value),`Essential context is visible without a click: ${value}`);
+assert(initialClarification.indexOf(clarification)<initialClarification.indexOf('What Sapiens concluded'));
+assert.equal((initialClarification.match(/class="feedback-graph-node"/g)||[]).length,4,'The two main records and both supporting messages remain visible');
+assert(initialClarification.includes('Tool reported: Succeeded'),'A message request retains its tool outcome, without claiming delivery');
+const initialRetry=initialFeedbackHtml(retryFinding);
+for(const value of ['Ben Carter — roles','No role supplied','owner','Same tool, two saved requests'])assert(initialRetry.includes(value));
+assert(initialRetry.indexOf('What changed in the request')<initialRetry.indexOf('What Sapiens concluded'));
+assert(!initialRetry.includes('Compare the two requests'),'The useful request difference no longer requires a disclosure');
+const qualifiedMeaning='Recorded context. '.repeat(120)+'This is partial progress, not proof that the task is satisfied.';
+const qualifiedEvidence='Saved information. '.repeat(120)+'The work remains proposed, not completed.';
+const initialLong=initialFeedbackHtml({...commentFinding,meaning:qualifiedMeaning,experience:{...updateRef,details:{...updateRef.details,content:qualifiedEvidence,display:{text:qualifiedEvidence}}}});
+assert(initialLong.includes(qualifiedMeaning)&&initialLong.includes(qualifiedEvidence),'Do not truncate qualifications at the end of long evidence or conclusions');
+const feedbackCSS=await readFile(new URL('../src/styles/analyse-feedback.css',import.meta.url),'utf8');
+assert(!/line-clamp|overflow\s*:\s*hidden/.test(feedbackCSS.match(/\.feedback-node-excerpt\s*\{([^}]+)\}/)[1]),'Readable source text and conclusions must not be visually clipped');
+const initialBatch=initialFeedbackHtml({...commentFinding,activity:multiComment});
+assert(initialBatch.includes('First saved comment.')&&initialBatch.includes('Second saved comment.'),'Every entry in a saved batch is visible, not just an arbitrary first item');
+assert(!initialBatch.includes('40 entries'),'Server total does not inflate the saved snapshot scope');
+assert.equal(feedbackEvidence.feedbackNodePreview(updateRef).title,'Recorded goal progress');
+assert.equal(feedbackEvidence.feedbackNodePreview(unnamedTool).title,'Tool record','Missing operation metadata still has a usable heading');
+const oneTeamsMessage=toolReference('teams-result',{}, {value:[{from:{user:{displayName:'Mei Chen'}},body:{content:'Use this chat.'}}]},{tool:'list-chat-messages'});
+assert.equal(feedbackEvidence.feedbackNodePreview(oneTeamsMessage).context,'From Mei Chen','A single returned message retains its recorded sender');
+assert.equal(feedbackEvidence.feedbackNodePreview(oneTeamsMessage).excerpt,'Use this chat.');
+assert.equal(feedbackEvidence.feedbackDetailTitle(commentFinding),'Feedback on Jira issue SD-3');
+assert(detailMarkup.includes('>0<')&&detailMarkup.includes('not measured accuracy'),'Confidence is retained in optional record details');
+assert.equal(feedbackEvidence.feedbackDetailTitle({...feedbackRecord,activity:{source:'unknown',details:{available:true,metadata:{},content:'Mei mentioned Jira SD-3'}},experience:{source:'unknown',details:{available:false}},supporting_experiences:[]}),'Feedback on linked activity','Do not infer topic, issue, service or identity from prose');
+assert.equal(html(feedbackUI.FeedbackTable({findings:feedbackPage.findings,selectedId:null,onSelect:()=>{}})),tableMarkup,'The directory table remains unchanged');
 const feedbackKey=(params='',revision=0)=>{const query=feedbackPresentation.feedbackQuery(new URLSearchParams(params),'65');return JSON.stringify(['65',query.states,query.limit,query.offset,revision]);};
 function setupFeedback(page=feedbackPage,params=''){
   h.reset([0,{key:feedbackKey(params),data:page}]);h.params=new URLSearchParams(params);

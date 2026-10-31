@@ -176,49 +176,65 @@ export function feedbackNodePreview(reference: FeedbackReference, names = new Ma
   const issueFields = object(result?.fields);
   const commentTool = event.tool?.server === 'jira' && event.tool.tool === 'jira_get_comments';
   const issueTool = event.tool?.server === 'jira' && event.tool.tool === 'jira_get_issue';
-  const firstItem = event.resultItems?.[0];
+  // A batch is evidence as a whole. Its first entry is not necessarily the one
+  // that explains the finding, so expose every saved entry without ranking it.
+  const singleItem = event.resultItems?.length === 1 ? event.resultItems[0] : undefined;
+  const entries = !event.error && (event.resultItems?.length || 0) > 1 ? event.resultItems : undefined;
   let title = event.title;
   let excerpt = event.body;
   let caption = '';
   let context = event.actor;
-  const facts = (values: EvidenceField[]) => values.slice(0, 3).map(field => `${field.label}: ${field.value}`).join('\n');
+  const facts = (values: EvidenceField[]) => values.map(field => `${field.label}: ${field.value}`).join('\n');
 
   if (event.kind === 'message') {
     title = event.tool ? 'Sapiens’ message request' : event.actor ? `Message from ${event.actor}` : 'Message received';
     context = event.recipient ? `To ${event.recipient}` : '';
-    caption = 'Saved message';
+    caption = event.tool ? 'Message submitted to the tool' : 'Saved message';
     // Do not show an unparsed serialization envelope as a human message.
     if (event.tool && /^Tool activity /.test(excerpt)) excerpt = '';
   } else if (event.tool) {
-    title = commentTool ? `${event.resultItems?.length === 1 ? 'Comment' : 'Comments'}${issue ? ` on ${issue}` : ' from Jira'}`
+    title = commentTool ? `${singleItem ? 'Comment' : 'Comments'}${singleItem?.author ? ` from ${singleItem.author}` : ''}${issue ? ` on ${issue}` : ' from Jira'}`
       : issueTool ? `Jira issue${issue ? ` ${issue}` : ' details'}`
-      : event.tool.server === 'teams' && event.tool.tool === 'create-chat' ? 'Chat creation request'
-      : event.service ? `${event.service} record` : 'Tool record';
-    const resultExcerpt = firstItem?.text || (firstItem ? facts(firstItem.fields) : '')
+      : event.tool.server === 'teams' && event.tool.tool === 'create-chat' ? 'Create a Teams chat'
+      : event.tool.server === 'teams' && /^(list-chat-messages|list-channel-messages)$/.test(event.tool.tool) ? 'Request to read Teams messages'
+      : event.title || 'Tool record';
+    const resultExcerpt = singleItem?.text || (singleItem ? facts(singleItem.fields) : '')
       || event.resultText || feedbackDocumentText(issueFields?.description) || text(issueFields?.summary)
       || facts(event.resultFields);
     if (event.error) { excerpt = event.error; caption = 'Error returned by the tool'; }
+    else if (entries) {
+      excerpt = ''; caption = `${entries.length} entries in this saved result`;
+    }
     else if (event.resultItems?.length === 0) {
       excerpt = 'The saved result contains no entries.'; caption = 'Saved result';
     } else if (resultExcerpt) {
       excerpt = resultExcerpt;
-      caption = event.resultItems ? (event.resultItems.length > 1 ? `First of ${event.resultItems.length} saved entries` : 'Saved result') : 'Saved result';
-      context = firstItem?.author || '';
+      caption = 'Saved result';
+      context = singleItem?.author && !commentTool ? `From ${singleItem.author}` : issueTool ? text(issueFields?.summary) : '';
     } else if (event.body && !/^Tool activity /.test(event.body)) {
       excerpt = event.body; caption = 'Saved event text';
     } else {
-      excerpt = facts(event.fields); caption = 'Saved request';
+      excerpt = 'No readable result was supplied.'; caption = 'Result unavailable';
+    }
+    const members = object(event.tool.args?.body)?.members;
+    if (event.tool.server === 'teams' && event.tool.tool === 'create-chat' && Array.isArray(members) && members.length) {
+      context = `Participants: ${members.map((value, index) => {
+        const member = object(value);
+        return member && names.get(memberId(member)) || `Member ${index + 1} (name not supplied)`;
+      }).join(', ')}`;
     }
   } else if (event.kind === 'update') {
-    title = event.title.charAt(0).toUpperCase() + event.title.slice(1);
-    caption = 'Saved progress update';
+    const domain = reference.details?.available ? text(reference.details.metadata?.domain) : '';
+    title = domain ? `Recorded ${readable(domain)} progress` : 'Recorded progress update';
+    caption = 'Saved assessment of progress';
   } else {
     title = 'Saved record'; caption = 'Saved event text';
   }
 
   return {
-    title, excerpt: available ? excerpt || 'No readable text was supplied. Open the original record for available details.' : 'Details unavailable. The saved reference is available in More info.',
-    caption, context, service: event.service,
+    title, excerpt: available ? excerpt || (entries ? '' : 'No readable text was supplied.') : 'Details unavailable. The original event could not be loaded.',
+    caption, context, entries, service: event.service,
+    detailAction: event.tool ? event.kind === 'message' ? 'View tool details' : 'View request and result' : available ? 'View source details' : 'View saved reference',
     status: event.tool ? `Tool reported: ${event.tool.outcome || 'result not recorded'}` : event.state ? `Recorded state: ${event.state}` : '',
     tone: event.tool?.outcome === 'Failed' ? 'danger' as const : event.tool?.outcome === 'Uncertain' ? 'warning' as const : 'neutral' as const,
     partial: !!(reference?.details?.available && (reference.details.truncated || reference.details.metadata?._truncated === true)),
@@ -226,11 +242,17 @@ export function feedbackNodePreview(reference: FeedbackReference, names = new Ma
 }
 
 export function feedbackDetailTitle(finding: FeedbackFinding) {
-  const a = eventEvidence(finding.activity), b = eventEvidence(finding.experience);
-  if (a.kind === 'message' && b.kind === 'message') return 'Messages and feedback';
-  if (a.tool && b.tool && a.tool.server === b.tool.server && a.tool.tool === b.tool.tool) return a.title;
-  if (a.kind === 'update' && b.kind === 'update') return a.title === b.title ? a.title : 'Progress updates';
-  return 'Activity and follow-up';
+  const events = [finding.activity, finding.experience, ...(finding.supporting_experiences || [])].map(ref => eventEvidence(ref));
+  const issues = [...new Set(events.filter(event => event.tool?.server === 'jira')
+    .map(event => text(event.tool?.args?.issue_key || event.tool?.args?.issueKey)).filter(Boolean))];
+  if (issues.length === 1) return `Feedback on Jira issue ${issues[0]}`;
+  const [a, b] = events;
+  if (a.tool?.server === 'teams' && b.tool?.server === 'teams' && a.tool.tool === 'create-chat' && b.tool.tool === 'create-chat') return 'Review of Teams chat requests';
+  const actors = [...new Set(events.map(event => event.actor).filter(Boolean))];
+  if (actors.length === 1 && events.some(event => event.kind === 'message')) return `Conversation feedback involving ${actors[0]}`;
+  if (events.some(event => event.service === 'Teams') && events.some(event => event.kind === 'message')) return 'Feedback on a Teams conversation';
+  if (a.kind === 'update' && b.kind === 'update') return 'Feedback on recorded progress';
+  return 'Feedback on linked activity';
 }
 
 /** Compare only matching stored fields of the same tool, not arbitrary event pairs. */
