@@ -22,12 +22,12 @@ class EngineBusService {
     return (await apiClient.get<EngineBusSignalsResponse>(`${base(sapienId)}/signals${query(filters)}`)).data;
   }
 
-  async detail(sapienId: string | number, signalId: string) {
-    return (await apiClient.get<EngineBusSignalDetailResponse>(`${base(sapienId)}/signals/${encodeURIComponent(signalId)}`)).data;
+  async detail(sapienId: string | number, signalId: string, filters: EngineBusSignalFilters = {}) {
+    return (await apiClient.get<EngineBusSignalDetailResponse>(`${base(sapienId)}/signals/${encodeURIComponent(signalId)}${query(filters)}`)).data;
   }
 
-  async correlation(sapienId: string | number, correlationId: string, limit = 200, before?: string) {
-    return (await apiClient.get<EngineBusCorrelationResponse>(`${base(sapienId)}/correlations/${encodeURIComponent(correlationId)}${query({ limit, before })}`)).data;
+  async correlation(sapienId: string | number, correlationId: string, limit = 200, before?: string, filters: EngineBusSignalFilters = {}) {
+    return (await apiClient.get<EngineBusCorrelationResponse>(`${base(sapienId)}/correlations/${encodeURIComponent(correlationId)}${query({ ...filters, limit, before })}`)).data;
   }
 }
 

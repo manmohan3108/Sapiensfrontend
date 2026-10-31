@@ -86,6 +86,19 @@ Recheck current consumers, permissions, redaction, pagination, clocks and compat
 before proposing a frontend-facing API change. These references do not authorize
 changes to intelligence, learning, scheduling, grading or simulation execution.
 
+## Engine Bus scope and time
+
+Engine Bus reads retained transport metadata without starting a runtime. Its list
+defaults to all saved history across the selected Sapien's runtimes. Exact run
+filtering, detail, causation and correlation links must preserve the run ID;
+normal-runtime links use an explicit normal scope. Legacy records have no run ID.
+Simulations that used in-memory transport cannot supply historical Bus records.
+
+List time filters use real publication time. Event time can be simulated and is
+labelled separately in detail. Changing Sapien or filters must invalidate pending
+list/detail requests and clear pagination. Verify these states manually against
+the matching deployed API; source review is not a live integration check.
+
 ## Review standard
 
 Use AGENTS.md's state, accessibility and navigation checks. Verify both themes,

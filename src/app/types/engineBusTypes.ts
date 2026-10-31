@@ -12,6 +12,7 @@ export interface EngineBusSignal {
   expires_at: string | null;
   updated_at: string | null;
   payload_scrubbed_at: string | null;
+  run_id?: string | null;
 }
 
 export interface EngineBusDelivery {
@@ -45,6 +46,10 @@ export interface EngineBusCorrelationResponse extends EngineBusSignalsResponse {
 }
 
 export interface EngineBusSignalFilters {
+  scope?: 'all' | 'normal' | 'run';
+  run_id?: string;
+  time_field?: 'occurred_at' | 'published_at';
+  since?: string;
   name?: string;
   producer?: string;
   target?: string;

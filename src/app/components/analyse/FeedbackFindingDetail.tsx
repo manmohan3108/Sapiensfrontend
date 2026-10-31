@@ -112,7 +112,7 @@ export function FeedbackFindingDetail({ finding, mode }: { finding: FeedbackFind
   return <article className="feedback-finding">
     <section className="feedback-events" aria-labelledby={`${id}-graph-title`}>
       <h3 id={`${id}-graph-title`}>Evidence behind this finding</h3>
-      <p className="feedback-help">Read the saved evidence alongside Sapiens’ interpretation.</p>
+      <p className="feedback-help">Each card is a saved record. The connections show which records Sapiens used for its conclusion.</p>
       <div className="feedback-merge-graph">
         <div className="feedback-graph-summary">
           <section className="feedback-graph-conclusion" aria-labelledby={`${id}-conclusion`}>
@@ -139,20 +139,24 @@ export function FeedbackFindingDetail({ finding, mode }: { finding: FeedbackFind
             </div>)}</dl>
           </section>}
         </div>
-        <div className="feedback-graph-sources">
+        <div className="feedback-graph-sources" role="group" aria-label="Records used for this finding">
           {previews.map((preview, index) => <section key={index} className="feedback-graph-node" data-selected={selected === index} aria-labelledby={`${id}-source-${index}`}>
-            <p className="feedback-node-role">{sourceRole(index)}</p>
-            <h4 id={`${id}-source-${index}`}>{preview.title}</h4>
-            {(preview.service || preview.context) && <p className="feedback-node-context">{[preview.service, preview.context].filter(Boolean).join(' · ')}</p>}
-            {preview.issueStatus && <p className="feedback-node-fact">Jira status: <strong>{preview.issueStatus}</strong></p>}
-            {preview.caption && !['Saved result', 'Saved message', 'Issue description'].includes(preview.caption) && <p className="feedback-node-caption">{preview.caption}</p>}
-            {preview.excerpt && <p className="feedback-node-excerpt">{preview.excerpt}</p>}
-            {preview.entries && <ol className="feedback-graph-entries" aria-label="Entries in the saved result">{preview.entries.map((item, itemIndex) => <li key={itemIndex}>
-              {item.author && <p className="feedback-result-author">{item.author}</p>}
-              <p className="feedback-node-excerpt">{item.text || item.fields.map(field => `${field.label}: ${field.value}`).join('\n') || 'No readable text was supplied for this entry.'}</p>
-            </li>)}</ol>}
-            <div className="feedback-node-status">{preview.status && <DiagnosticBadge tone={preview.tone}>{preview.status}</DiagnosticBadge>}
-              {preview.partial && <span className="feedback-note">Partial saved record</span>}</div>
+            <header className="feedback-node-header">
+              <p className="feedback-node-role">{sourceRole(index)}</p>
+              <h4 id={`${id}-source-${index}`}>{preview.title}</h4>
+              {(preview.service || preview.context) && <p className="feedback-node-context">{[preview.service, preview.context].filter(Boolean).join(' · ')}</p>}
+            </header>
+            <div className="feedback-node-body">
+              {preview.issueStatus && <p className="feedback-node-fact">Jira status: <strong>{preview.issueStatus}</strong></p>}
+              {preview.caption && !['Saved result', 'Saved message', 'Issue description'].includes(preview.caption) && <p className="feedback-node-caption">{preview.caption}</p>}
+              {preview.excerpt && <p className="feedback-node-excerpt">{preview.excerpt}</p>}
+              {preview.entries && <ol className="feedback-graph-entries" aria-label="Entries in the saved result">{preview.entries.map((item, itemIndex) => <li key={itemIndex}>
+                {item.author && <p className="feedback-result-author">{item.author}</p>}
+                <p className="feedback-node-excerpt">{item.text || item.fields.map(field => `${field.label}: ${field.value}`).join('\n') || 'No readable text was supplied for this entry.'}</p>
+              </li>)}</ol>}
+              {(preview.status || preview.partial) && <div className="feedback-node-status">{preview.status && <DiagnosticBadge tone={preview.tone}>{preview.status}</DiagnosticBadge>}
+                {preview.partial && <span className="feedback-note">Partial saved record</span>}</div>}
+            </div>
             <footer className="feedback-node-footer"><span>{feedbackTime(sources[index]?.occurred_at)}</span>
               <button type="button" className="diagnostic-link" aria-expanded={selected === index} aria-controls={`${id}-details`} aria-label={`${preview.detailAction}: ${preview.title} (${sourceRole(index).toLowerCase()})`} onClick={event => inspect(index, event.currentTarget)}>{preview.detailAction}</button>
             </footer>
