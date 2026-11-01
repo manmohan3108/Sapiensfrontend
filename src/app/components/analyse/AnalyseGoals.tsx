@@ -96,8 +96,7 @@ function GoalRequest({ sapienId, goalId, scope, stepId, onAccepted, targets }: {
 }
 
 function GoalActions({ request, plan, overloaded }: { request: { sapienId: number; goalId: string; onAccepted: () => void }; plan: Plan | null; overloaded?: boolean }) {
-  return <section className="ag-section ag-request-section"><h3>Requests to Sapiens</h3>
-    <p className="ag-muted">These actions send information for background processing. They do not directly edit the saved record.</p>
+  return <section className="ag-request-section" aria-label="Requests to Sapiens">
     {overloaded && <p className="ag-muted">Sapiens is busy. New requests may take longer to process.</p>}
     <GoalRequest {...request} scope="goal" targets={goalTargets(plan)} />
     <GoalRequest {...request} scope="revise" />
@@ -143,12 +142,14 @@ export function AnalyseGoals({ sapienId }: { sapienId: number }) {
   const visible = goals.filter(goal => (!source || goal.source === source) && `${goal.description} ${goal.id} ${goal.state}`.toLowerCase().includes(search.toLowerCase().trim()));
   const selectedIndex = visible.findIndex(goal => goal.id === selected);
   return <div className="analyse-goals" ref={container}>
+    <div className="ag-list-controls" hidden={!!selected}>
     <p className="analyse-page-purpose">See what this Sapien is working towards, its current plans and the progress recorded so far.</p>
     <AnalyseControls primary={<>
       <div role="group" aria-label="Goal lifecycle" className="ag-views">{views.map(value => <button type="button" key={value} aria-pressed={view === value} onClick={() => update('goalView', value)}>{value === 'open' ? 'Open' : value === 'finished' ? 'Finished' : 'Retired'}</button>)}</div>
       <label>Search loaded goals<input type="search" name="goalSearch" autoComplete="off" value={search} onChange={event => update('goalSearch', event.target.value, true)} placeholder="Goal, workflow state or ID…" /></label>
       <label>Source<select name="goalSource" value={source} onChange={event => update('goalSource', event.target.value)}><option value="">All loaded sources</option>{sources.map(value => <option key={value} value={value}>{sourceName(value)}</option>)}</select></label>
     </>} summary={`${visible.length} shown from ${goals.length} loaded · Up to 30 goals, ordered by priority. Search and source filter this loaded set.${view === 'retired' ? ' Retired goals are set aside; this does not mean they succeeded.' : ''}`} onRefresh={read.refresh} busy={read.loading} />
+    </div>
     {read.error && <p role="alert" className="ag-error">{read.error} {read.data && 'Showing the previously loaded list.'}</p>}
     <div className={`ag-layout ${selected ? 'has-selection' : ''}`}>
       <section className="ag-list" ref={list} aria-label="Goals">
@@ -162,6 +163,6 @@ export function AnalyseGoals({ sapienId }: { sapienId: number }) {
       </section>
       {selected && <GoalReader key={`${sapienId}/${selected}`} sapienId={sapienId} goalId={selected} close={() => update('goal', null)} previous={selectedIndex > 0 ? () => update('goal', visible[selectedIndex - 1].id, true) : undefined} next={selectedIndex >= 0 && selectedIndex < visible.length - 1 ? () => update('goal', visible[selectedIndex + 1].id, true) : undefined} />}
     </div>
-    {read.at && <p className="ag-muted">List refreshed {absoluteTime(read.at)} · real time</p>}
+    {!selected && read.at && <p className="ag-muted">List refreshed {absoluteTime(read.at)} · real time</p>}
   </div>;
 }

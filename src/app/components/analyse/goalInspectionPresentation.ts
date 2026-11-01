@@ -45,17 +45,40 @@ export function goalInspection(detail: GoalDetail) {
   const records = Array.isArray(outcome.evidence) ? outcome.evidence : [];
   const evidence = records.map((entry, index) => {
     const record = traceObject(entry);
-    return { ...questionEvidence(entry, index), cited: [record.id, record.handle, traceObject(record.source_reference).id].some(id => typeof id === 'string' && refs.includes(id)) };
+    const saved = questionEvidence(entry, index);
+    const source = traceText(record.source), kind = traceText(record.kind);
+    // Retrieved context can contain a tool name without being an action taken
+    // for this goal. Classify from recorded provenance, never from its prose.
+    const guidance = source === 'tool_learning_engine' || kind === 'learned_tool_guidance';
+    const original = kind === 'original_impression';
+    const earlier = kind === 'context' || kind === 'internal_understanding' || kind === 'prior_understanding' || kind === 'outcome_assessment';
+    const label = guidance ? 'Earlier tool guidance' : original ? 'Review input'
+      : earlier && source === 'user' ? 'Earlier message'
+      : earlier && source === 'motor' ? 'Earlier tool activity'
+      : earlier && source === 'stream' ? 'Earlier understanding'
+      : earlier ? 'Earlier context' : kind === 'action' || kind === 'action_outcome' ? 'Recorded action' : 'Saved evidence';
+    const category = guidance ? 'guidance' : original ? 'input' : 'evidence';
+    const title = saved.title === 'Saved context' || original ? label
+      : guidance ? `Tool guidance: ${saved.title}` : earlier && source === 'motor' ? `Earlier: ${saved.title}` : saved.title;
+    return { ...saved, key: `${saved.id}:${index}`, title, label, category, earlier,
+      cited: [record.id, record.handle, traceObject(record.source_reference).id].some(id => typeof id === 'string' && refs.includes(id)) };
   });
   const understanding = traceText(assessment.understanding);
   const remaining = traceText(assessment.remaining);
   const reason = traceText(assessment.reason);
   const pending = !!detail.attention?.request_id && detail.attention.request_id !== detail.attention.resolved_id;
-  const absent = [!understanding && !remaining && !reason && 'assessment text', !detail.current_plan && 'plan',
-    !contextCount(detail.context) && !contextCount(detail.plan_context) && 'supporting context'].filter(Boolean);
-  return { understanding, remaining, reason, pending, evidence, refs,
-    absent: absent.length ? `Not supplied in this record: ${absent.join(', ')}.` : '',
-  };
+  const state = traceText(assessment.state);
+  return { understanding, remaining, reason, pending, evidence, refs, state };
+}
+
+/** Keep every record; put cited evidence before other context, without implying a timeline. */
+export function goalEvidenceGroups(evidence: ReturnType<typeof goalInspection>['evidence']) {
+  return [
+    { key: 'cited', title: 'Cited evidence', entries: evidence.filter(item => item.category === 'evidence' && item.cited) },
+    { key: 'other', title: 'Other saved evidence', entries: evidence.filter(item => item.category === 'evidence' && !item.cited) },
+    { key: 'guidance', title: 'Earlier tool guidance', entries: evidence.filter(item => item.category === 'guidance') },
+    { key: 'input', title: 'Review input', entries: evidence.filter(item => item.category === 'input') },
+  ].filter(group => group.entries.length);
 }
 
 export function goalTargets(plan?: Plan | null) {

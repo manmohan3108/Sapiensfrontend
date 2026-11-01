@@ -453,11 +453,12 @@ globalThis.analyseTest.goalService={};
 globalThis.analyseTest.goalWorkflow=await load('utils/goalPresentation.ts');
 globalThis.analyseTest.goalPresentation=await load('components/analyse/goalInspectionPresentation.ts', 'const {traceObject,traceText}=globalThis.analyseTest.questionTrace; const {questionEvidence}=globalThis.analyseTest.questionPresentation;');
 globalThis.analyseTest.goalRecordUI=await load('components/analyse/GoalRecord.tsx', `
+const useState=globalThis.analyseTest.h.useState, useRef=globalThis.analyseTest.h.useRef, useId=()=>"goal-record";
 const {sourceName}=globalThis.analyseTest.goalReaders;
 const {workflowLifecycle,workflowState}=globalThis.analyseTest.goalWorkflow;
 const {DiagnosticDisclosure,DiagnosticText}=globalThis.analyseTest.questionDiagnostics;
-const {absoluteTime}=globalThis.analyseTest.questionClock;
-const {completion,contextCount,goalInspection,goalText,planSummary}=globalThis.analyseTest.goalPresentation;
+const {absoluteTime,assessmentLabel}=globalThis.analyseTest.questionClock;
+const {completion,contextCount,goalEvidenceGroups,goalExcerpt,goalInspection,goalText,planSummary}=globalThis.analyseTest.goalPresentation;
 `);
 const goalPrelude=hooks+`
 const useId=()=>"goal-request";
@@ -482,9 +483,9 @@ h.reset();
 let goalHtml=html(goalsUI.GoalRecord({detail:goalDetail,request:{sapienId:58,goalId:'goal-1',onAccepted(){}}}));
 for(const expected of ['Prepare the release','Last retained assessment','A newer review was requested','Fix CI.','Build failed in CI.','Completion unknown'])assert(goalHtml.includes(expected),expected);
 assert(!goalHtml.includes('line-through'));
-assert(goalHtml.indexOf('Current plan')<goalHtml.indexOf('History &amp; record details'));
+assert(goalHtml.includes('Current plan'));assert(!goalHtml.includes('History &amp; record details'),'The initial view does not stack the record history beneath the plan');
 h.reset();goalHtml=html(goalsUI.GoalRecord({detail:{...goalDetail,current_plan:null}}));
-assert(!goalHtml.includes('0/0'));assert(goalHtml.includes('Not supplied in this record: plan, supporting context.'));
+assert(!goalHtml.includes('0/0'));assert(goalHtml.includes('No plan recorded for this goal.'));
 h.reset([0,{key:'58/open',loading:false,data:{goals:[{...goalRecord,current_plan:planRecord}],count:1}}]);
 tree=goalsUI.AnalyseGoals({sapienId:58});
 assert(html(tree).includes('Up to 30 goals'));assert(html(tree).includes('Search and source filter this loaded set'));
@@ -566,36 +567,96 @@ for(const qualification of ['[SD-32]','[redacted]','[truncated]','[Human approva
 assert(gp.goalExcerpt(coverageText).endsWith('…'));assert(!gp.goalExcerpt(coverageText).includes(evidenceId));
 const emptyContext={facts:[],decisions:[],assumptions:[],open_questions:[]};
 const noPlan66={goal:{...goalRecord,sapien_id:66,description:coverageText,state:'pending',motivation:'',progress:0},current_plan:null,context:emptyContext,plan_context:null,history:[],attention:null};
-const renderGoal=detail=>{h.reset();return html(goalsUI.GoalRecord({detail}));};
+const renderGoal=(detail,section='situation',evidenceKey='')=>{h.reset([section,evidenceKey]);return html(goalsUI.GoalRecord({detail}));};
 goalHtml=renderGoal(noPlan66);
-assert(goalHtml.includes('Not supplied in this record: assessment text, plan, supporting context.'));
+assert(goalHtml.includes('No assessment was supplied.'));assert(goalHtml.includes('No plan recorded for this goal.'));
 assert(!goalHtml.includes('<h3>Current plan</h3>'));assert(!goalHtml.includes('<h3>Supporting information</h3>'));
-assert(goalHtml.includes('Reported progress: 0%'));assert(!goalHtml.includes('Read full text'));
-const descriptionHtml=goalHtml.match(/<p class="ag-description">([\s\S]*?)<\/p>/)[1];
+assert(!goalHtml.includes('Reported progress:'));assert(renderGoal(noPlan66,'record').includes('Reported progress: 0%'));
+const descriptionHtml=goalHtml.match(/<div class="ag-description">([\s\S]*?)<\/div>/)[1];
 assert(!descriptionHtml.includes(evidenceId));assert(descriptionHtml.includes('conditions remain unmet'));
-assert(goalHtml.includes(evidenceId),'Original references remain available');
+assert(renderGoal(noPlan66,'record').includes(evidenceId),'Original references remain available in record details');
 assert(!/<h2>[^<]*Coordinate/.test(goalHtml),'Long goal text is body text, not an oversized heading');
 assert(!goalHtml.includes('<table'),'Goal detail stays an inspection reader, not a forced table');
 
 const finished66={...noPlan66,goal:{...noPlan66.goal,description:'Review Jira details and discussions for SD-1 through SD-32.',finished:true,progress:1},attention:{request_id:'same',resolved_id:'same',resolved_at:'2026-11-07T01:17:00Z',outcome:{assessment:{state:'completed',understanding:'The review is complete. No issue statuses or approvals were changed.',evidence_refs:['jira-read']},evidence:[{id:'jira-read',kind:'action',server:'jira',tool:'jira_get_comments',is_error:false,content:'Retrieved comments for SD-32.'}]}}};
 goalHtml=renderGoal(finished66);
-assert(goalHtml.includes('Marked finished; the saved workflow state is “pending”'));
-assert(goalHtml.includes('Reported progress: 100%'));assert(goalHtml.includes('No issue statuses or approvals were changed.'));
-assert(goalHtml.includes('Cited in the recorded assessment'));assert(goalHtml.includes('Retrieved comments for SD-32.'));
-assert(goalHtml.indexOf('Latest recorded assessment')<goalHtml.indexOf('Evidence saved with the assessment'));
+assert(renderGoal(finished66,'record').includes('Marked finished; the saved workflow state is “pending”'));
+assert(renderGoal(finished66,'record').includes('Reported progress: 100%'));assert(goalHtml.includes('No issue statuses or approvals were changed.'));
+assert(renderGoal(finished66,'evidence').includes('Cited in the recorded assessment'));assert(renderGoal(finished66,'evidence').includes('Retrieved comments for SD-32.'));
+assert(!goalHtml.includes('Retrieved comments for SD-32.'),'The situation does not repeat its source evidence');
 assert(goalHtml.includes(globalThis.analyseTest.questionClock.absoluteTime(finished66.attention.resolved_at)),'Goal assessment time uses the shared timezone formatter');
 assert(!/data-tone="success"/.test(goalHtml),'A finished flag is not independently verified success');
 
-goalHtml=renderGoal({...goalDetail,goal:{...goalRecord,sapien_id:66},current_plan:{...planRecord,tasks:[...planRecord.tasks,{id:'s3',description:'Follow up <script>alert(1)</script>',state:'pending',finished:false,result:'Approval is still required.',evidence_refs:[]}]},context:{...emptyContext,open_questions:[{id:'q',question:'Who can approve?',resolved_at:null}],decisions:[{decision:'Wait for review',rationale:'Approval not received',at:null}]}});
+const plannedDetail={...goalDetail,goal:{...goalRecord,sapien_id:66},current_plan:{...planRecord,tasks:[...planRecord.tasks,{id:'s3',description:'Follow up <script>alert(1)</script>',state:'pending',finished:false,result:'Approval is still required.',evidence_refs:[]}]},context:{...emptyContext,open_questions:[{id:'q',question:'Who can approve?',resolved_at:null}],decisions:[{decision:'Wait for review',rationale:'Approval not received',at:null}]}};
+goalHtml=renderGoal(plannedDetail);
 assert(goalHtml.includes('saved plan order, not a history of execution'));
 assert(goalHtml.includes('Recorded result'));assert(goalHtml.includes('Build failed in CI.'));assert(goalHtml.includes('No result recorded for this step.'));
 assert(goalHtml.includes('Completion unknown'));assert(!goalHtml.includes('<script>'));assert(goalHtml.includes('&lt;script&gt;'));
-assert(goalHtml.includes('Who can approve?'));assert(goalHtml.includes('Wait for review'));
+assert(renderGoal(plannedDetail,'evidence').includes('Who can approve?'));assert(renderGoal(plannedDetail,'evidence').includes('Wait for review'));
 assert(!goalHtml.includes('0%'),'Missing progress is not zero');
 const emptyPlanHtml=renderGoal({...noPlan66,current_plan:{...planRecord,tasks:[]}});
 assert(emptyPlanHtml.includes('Plan has no recorded steps'));assert(!emptyPlanHtml.includes('0 of 0'));
 assert.deepEqual(gp.goalTargets(null).map(t=>t.scope),['goal']);
 assert.deepEqual(gp.goalTargets(planRecord).map(t=>t.scope),['goal','plan','step','step']);
+
+// Sapien 71's waiting review: retrieved messages and guidance must not look
+// like fresh actions. The API's workflow state and assessment remain distinct.
+const pending71={...noPlan66,goal:{...noPlan66.goal,sapien_id:71,description:'Record the customer-source authorization as pending in the case or record Sofia identifies.'},history:[{reason:'Goal recorded',actor:'awareness',operation:'create',at:'2026-11-06T09:00:00Z'}],attention:{
+  request_id:'resolved-71',resolved_id:'resolved-71',resolved_at:'2026-11-06T11:04:31Z',outcome:{
+    assessment:{state:'waiting',remaining:'A specific case or record must be identified before the pending status can be entered.',understanding:'No separate record was changed; the pending entry remains unmade until a target is identified.',reason:'The request does not authorize an unspecified update.',evidence_refs:['input-71','message-71','read-71']},
+    evidence:[
+      {id:'input-71',kind:'original_impression',source:'goal',content:'Reconsider the goal using its original request and current evidence.'},
+      {id:'read-71',kind:'context',source:'motor',content_kind:'derived_summary',content:'Earlier Teams messages established the requested status, but no record identifier was supplied.',evidence:{server:'teams',tool:'list-chat-messages'}},
+      {id:'message-71',kind:'context',source:'user',content:'I do not have a separate case or record identifier to give you.',event_at:'2026-11-06T08:31:44Z'},
+      {id:'guidance-71',kind:'context',source:'tool_learning_engine',content:'Earlier Jira guidance: retrieve edit fields before preparing an update.',evidence:{server:'jira',tool:'jira_get_issue'}},
+      {id:'other-71',kind:'context',source:'stream',content:'Earlier saved understanding of the pending request.'},
+    ],
+  },
+}};
+const inspected71=gp.goalInspection(pending71);
+assert.equal(inspected71.state,'waiting');assert.equal(inspected71.evidence[3].category,'guidance');
+assert.equal(inspected71.evidence[1].label,'Earlier tool activity');assert(inspected71.evidence[1].title.startsWith('Earlier: Teams'));
+assert.equal(inspected71.evidence[2].title,'Earlier message','Do not infer a sender from the prose');
+assert.deepEqual(gp.goalEvidenceGroups(inspected71.evidence).map(g=>[g.key,g.entries.length]),[['cited',2],['other',1],['guidance',1],['input',1]]);
+goalHtml=renderGoal(pending71);
+for(const phrase of ['Waiting','Workflow state: pending',pending71.attention.outcome.assessment.remaining,pending71.attention.outcome.assessment.understanding])assert(goalHtml.includes(phrase),phrase);
+assert(goalHtml.indexOf('What remains')<goalHtml.indexOf('What Sapiens understood'),'Lead with the unresolved work');
+assert(!goalHtml.includes('Earlier Jira guidance:'),'The initial view contains no guidance dump');
+assert(!goalHtml.includes('Goal change history'),'History has its own view');
+
+h.reset();const actionNode=React.createElement('div',{'data-goal-actions':true},'Action form');
+const drawGoal=()=>{h.begin();return goalsUI.GoalRecord({detail:pending71,actions:actionNode});};
+tree=drawGoal();let focusedEvidence=false;h.refs[0].current={focus(){focusedEvidence=true;}};
+find(tree,n=>n.type==='button'&&n.props.children[0]==='Inspect the evidence (').props.onClick();
+assert(focusedEvidence,'The shortcut moves keyboard focus to the evidence view control');
+tree=drawGoal();assert.equal(find(tree,n=>n.props['aria-label']==='Evidence').props.role,'region');
+assert.equal(find(tree,n=>n.props.children===actionNode).props.hidden,true,'Request forms stay mounted while hidden, retaining pending submissions');
+assert(html(tree).includes('Source: Teams'));assert(html(tree).includes('Saved summary of the source'));
+assert.equal(all(tree).filter(n=>n.type==='option').length,5,'Every saved record remains selectable');
+find(tree,n=>n.type==='select').props.onChange({target:{value:inspected71.evidence[3].key}});
+tree=drawGoal();goalHtml=html(tree);
+assert(goalHtml.includes('This does not establish that the tool was used for this goal.'));
+assert(goalHtml.includes('Earlier Jira guidance: retrieve edit fields'));
+assert(!goalHtml.includes('Source: user'),'Only one evidence record is expanded');
+find(tree,n=>n.type==='button'&&n.props.children==='Record details').props.onClick();
+tree=drawGoal();assert(html(tree).includes('Goal change history (1)'));
+assert(html(tree).includes('Full saved record, evidence &amp; state rules'));
+find(tree,n=>n.type==='button'&&n.props.children==='Situation & plan').props.onClick();
+tree=drawGoal();assert.equal(find(tree,n=>n.props.children===actionNode).props.hidden,false);
+assert(html(tree).includes(pending71.attention.outcome.assessment.remaining));
+
+// An unknown record shape is retained, duplicate IDs do not hide entries, and
+// refresh may remove the selected entry without leaving a broken inspector.
+const duplicateDetail={...pending71,attention:{...pending71.attention,outcome:{evidence:[
+  {id:'same',content:'First retained record'}, {id:'same',content:'Second retained record'},
+]}}};
+const duplicates=gp.goalInspection(duplicateDetail).evidence;
+assert.equal(new Set(duplicates.map(entry=>entry.key)).size,2);
+assert(renderGoal(duplicateDetail,'evidence',duplicates[1].key).includes('Second retained record'));
+assert(renderGoal(duplicateDetail,'evidence','removed-key').includes('First retained record'));
+assert(renderGoal(noPlan66,'evidence').includes('No evidence records were supplied'));
+const longGoal={...noPlan66,goal:{...noPlan66.goal,description:'Long recorded qualification. '.repeat(90)}};
+assert(renderGoal(longGoal).includes('Show full text'));assert(renderGoal(longGoal,'record').includes(longGoal.goal.description));
 
 // Plan and step requests keep the original API scopes, and do not silently retarget after refresh.
 globalThis.analyseTest.goalService.comment=async(...args)=>{writes.push(args);return {queued:true};};
@@ -618,6 +679,7 @@ assert(actionsHtml.includes('Request a plan review'));assert(!actionsHtml.includ
 h.reset([0,{key:'66/open',loading:false,data:{goals:[noPlan66.goal,{...noPlan66.goal,id:'goal-2'}],count:2}}]);
 h.params=new URLSearchParams('goal=goal-1&goalView=open&goalSource=user');
 tree=goalsUI.AnalyseGoals({sapienId:66});
+assert.equal(find(tree,n=>n.props.className==='ag-list-controls').props.hidden,true,'Goal filters no longer crowd the selected reader');
 let readerNode=find(tree,n=>n.type===goalsUI.GoalReader);
 assert.equal(readerNode.props.previous,undefined);readerNode.props.next();assert.equal(h.params.get('goal'),'goal-2');assert.equal(h.params.get('goalSource'),'user');
 h.begin();tree=goalsUI.AnalyseGoals({sapienId:66});readerNode=find(tree,n=>n.type===goalsUI.GoalReader);assert.equal(readerNode.props.next,undefined);readerNode.props.previous();assert.equal(h.params.get('goal'),'goal-1');
@@ -637,7 +699,7 @@ tree=draftRequest(67,'goal-1');assert.equal(find(tree,n=>n.type==='textarea').pr
 tree=draftRequest(66,'goal-1');assert.equal(find(tree,n=>n.type==='textarea').props.value,'Retain the step qualification.');assert.equal(find(tree,n=>n.type==='select').props.value,'step:plan-1:step-1');
 globalThis.analyseTest.goalDraftMemory={views:new Map(),scroll:new Map(),destinations:new Map()};
 assert.equal(find(draftRequest(66,'goal-1'),n=>n.type==='textarea').props.value,'','A fresh session does not inherit drafts');
-console.log('Goals checks passed: Sapien 66 no-plan and finished/pending records; saved, empty and failed plans; evidence, timestamps, filters, reader navigation and unchanged request scopes.');
+console.log('Goals checks passed: Sapien 71 assessment and earlier-context separation; selectable evidence; reader views and preserved request forms; no-plan, saved/empty/failed plans; timestamps, filters, navigation and unchanged request scopes.');
 // Working Memory ignores late reads on filter changes/unmount and keeps data
 // during a failed refresh. Exercise the actual effect and service call options.
 globalThis.analyseTest.wmEffects=[];
