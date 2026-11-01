@@ -59,6 +59,14 @@ and separate from fetching and rendering; do not rewrite Workspace to improve An
 - **Time and scope:** retain event time, observation time and fetch time separately.
   Show timezone and simulation scope when supplied. Simulation's `through` watermark
   pins evidence even while runtime status changes.
+- **Jira action history:** use `/world/activity/` with the participant filter,
+  `kind=tools`, `order=desc` and `before=next_before` for older pages. Keep `through`
+  fixed until Refresh. Apply tool, issue, outcome and content filters on the server,
+  not just to loaded rows. `total` describes filtered matches; `tool_summary`
+  describes all participant Jira actions in the snapshot before those filters and
+  provides complete tool/issue options. Count successful writes separately from
+  failed attempts, and retain raw request/result evidence. `/world/comments/`
+  remains the issue discussion view; it does not replace the action history.
 - **Feedback records:** the backend supplies bounded, redacted snapshots. Tool-event
   text can contain fuller request/result fields than shortened metadata. Parse only
   the known serialization format and complete JSON; never repair cut records or

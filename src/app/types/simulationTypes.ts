@@ -21,8 +21,10 @@ export interface WorldTicket { connection: string; issue_key: string; summary: s
 export interface WorldCollection<T> extends WorldBase { items: T[]; total: number; next_offset: number; has_more: boolean }
 export type WorldActivityCategory = 'messages' | 'tools' | 'changes' | 'rejections' | 'notifications';
 export interface WorldActivityItem { category: WorldActivityCategory; actor_id: string | null; connection: string; issue_key: string | null; event: SimulationEvent; recipient_ids?: string[]; delivery_evidence_ids?: string[] }
-export interface WorldActivityPage extends WorldBase { items: WorldActivityItem[]; next_after: number; has_more: boolean }
-export interface WorldQuery { through?: number; offset?: number; after?: number; limit?: number; person_id?: string; channel_id?: string; connection?: string; issue_key?: string; kind?: WorldActivityCategory; direction?: 'sent' | 'received'; scope?: 'direct'; search?: string; status?: string }
+export interface WorldToolCounts { total: number; succeeded: number; failed: number }
+export interface WorldToolSummary extends WorldToolCounts { by_tool: Record<string, WorldToolCounts>; issue_keys: string[] }
+export interface WorldActivityPage extends WorldBase { items: WorldActivityItem[]; next_after: number; has_more: boolean; order?: 'asc' | 'desc'; next_before?: number | null; total?: number; tool_summary?: WorldToolSummary }
+export interface WorldQuery { through?: number; offset?: number; after?: number; before?: number; order?: 'asc' | 'desc'; limit?: number; person_id?: string; channel_id?: string; connection?: string; issue_key?: string; kind?: WorldActivityCategory; tool?: string; outcome?: 'succeeded' | 'failed'; direction?: 'sent' | 'received'; scope?: 'direct'; search?: string; status?: string }
 export interface WorldComment { comment_id: string; issue_key: string; connection: string; author_id: string | null; author_name: string | null; body: string | Record<string, unknown> | null; text: string | null; created_at: string | null; updated_at: string | null; occurred_at: string; observed_at: string; evidence_id: string; sequence: number; operation_id: string | null; state_basis: 'recorded_evidence' }
 export interface WorldCommentsPage extends Omit<WorldBase, 'directory_available'> { coverage: 'recorded_additions'; connection: string; issue_key: string; issue_known: boolean; comment_support: 'available' | 'unknown'; items: WorldComment[]; total: number; next_offset: number; has_more: boolean }
 
