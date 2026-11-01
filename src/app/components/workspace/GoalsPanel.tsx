@@ -7,6 +7,7 @@ import {
   Send,
 } from 'lucide-react';
 import { goalsService, OverloadedError } from '../../core/services/goalsService';
+import { useGoalChangeGuard } from './GoalChangeGuard';
 import { workflowLifecycle, workflowState } from '../../utils/goalPresentation';
 import { useSapiensStore } from '../../core/state/sapiensStore';
 import type {
@@ -239,6 +240,7 @@ function CommentPopover({
   const [text, setText]         = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [inlineError, setInlineError] = useState<string | null>(null);
+  const guard = useGoalChangeGuard(sapienId, goalId);
   const lastSubmitRef = useRef(0);
   const wrapRef       = useRef<HTMLDivElement>(null);
   const textareaRef   = useRef<HTMLTextAreaElement>(null);
@@ -277,6 +279,7 @@ function CommentPopover({
       toast.success(response?.queued ? 'Note queued for background processing.' : 'Note request received; completion is not confirmed.');
       onSuccess?.(submittedAt);
     } catch (e) {
+      if (guard.handleError(e)) { setOpen(false); return; }
       if (e instanceof OverloadedError) {
         toast.warning("Sapien is busy right now — try again in a moment.");
         setOpen(false);
@@ -302,10 +305,12 @@ function CommentPopover({
 
   return (
     <div ref={wrapRef} style={{ position: 'relative', display: 'inline-block', maxWidth: '100%' }} onKeyDown={event => { if (event.key === 'Escape') { setOpen(false); wrapRef.current?.querySelector('button')?.focus(); } }}>
+      {guard.dialog}
       {/* Trigger */}
       {triggerVariant === 'icon' ? (
         <button
-          onClick={e => { e.stopPropagation(); setOpen(v => !v); }}
+          disabled={guard.checking || submitting} aria-busy={guard.checking} aria-label={guard.checking ? 'Checking availability' : label}
+          onClick={e => { e.stopPropagation(); if (open) setOpen(false); else void guard.openIfAllowed(() => setOpen(true), e.currentTarget); }}
           title={overloaded
             ? 'Sapien is catching up — comments may take longer to apply.'
             : label}
@@ -314,11 +319,12 @@ function CommentPopover({
           onMouseEnter={e => { if (!open) (e.currentTarget as HTMLElement).style.color = 'var(--sp-accent, rgb(var(--sp-accent-rgb, 129 140 248) / 0.7))'; }}
           onMouseLeave={e => { if (!open) (e.currentTarget as HTMLElement).style.color = 'var(--sp-muted, rgb(var(--sp-ink-rgb, 255 255 255) / 0.2))'; }}
         >
-          <MessageSquare className="w-3 h-3" />
+          {guard.checking ? <Loader2 className="w-3 h-3 animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <MessageSquare className="w-3 h-3" aria-hidden="true" />}
         </button>
       ) : (
         <button
-          onClick={e => { e.stopPropagation(); setOpen(v => !v); }}
+          disabled={guard.checking || submitting} aria-busy={guard.checking} aria-label={guard.checking ? 'Checking availability' : label}
+          onClick={e => { e.stopPropagation(); if (open) setOpen(false); else void guard.openIfAllowed(() => setOpen(true), e.currentTarget); }}
           title={overloaded ? 'Sapien is catching up — comments may take longer to apply.' : undefined}
           className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] transition-all"
           style={{
@@ -327,8 +333,8 @@ function CommentPopover({
             color: open ? 'var(--sp-accent, #a5b4fc)' : overloaded ? 'var(--sp-warning)' : 'var(--sp-muted)',
           }}
         >
-          <MessageSquare className="w-3 h-3" />
-          {label}
+          <MessageSquare className="w-3 h-3" aria-hidden="true" />
+          {guard.checking ? 'Checking availability…' : label}
         </button>
       )}
 
@@ -556,6 +562,7 @@ function GoalDetailPane({
   const [replanReason, setReplanReason] = useState('');
   const [replanning, setReplanning]     = useState(false);
   const [replanOpen, setReplanOpen]     = useState(false);
+  const guard = useGoalChangeGuard(sapienId, goalId, inspection);
   // Epoch ms of last successful comment — drives fast poll + decision highlights
   const [lastCommentAt, setLastCommentAt] = useState<number>(0);
 
@@ -626,7 +633,8 @@ function GoalDetailPane({
       toast.success('Replan request accepted for background processing.');
       delayedFetchesRef.current.push(setTimeout(() => fetchDetail(false), 30_000));
     } catch (e) {
-      setError((e as Error).message);
+      if (guard.handleError(e)) setReplanOpen(false);
+      else setError((e as Error).message);
     } finally {
       setReplanning(false);
     }
@@ -661,6 +669,7 @@ function GoalDetailPane({
 
   return (
     <div className="flex flex-col h-full gap-3 overflow-hidden">
+      {guard.dialog}
       <div className="flex items-center justify-between gap-2">
         <BackBtn onClick={onBack} autoFocus={compact} />
         <button onClick={() => fetchDetail(true)} disabled={loading} aria-label="Refresh goal details"
@@ -773,9 +782,9 @@ function GoalDetailPane({
           {/* Replan */}
           <div className="px-4 pb-3" style={{ borderTop: '1px solid rgb(var(--sp-ink-rgb, 255 255 255) / 0.05)', paddingTop: 10 }}>
             {!replanOpen ? (
-              <button onClick={() => setReplanOpen(true)}
+              <button disabled={guard.checking} aria-busy={guard.checking} onClick={event => { void guard.openIfAllowed(() => setReplanOpen(true), event.currentTarget); }}
                 className="flex items-center gap-1.5 text-[10px] text-sp-muted hover:text-sp-muted transition-colors">
-                <RotateCcw className="w-3 h-3" /> {compact ? 'Ask to revise the plan' : 'Request replan'}
+                <RotateCcw className="w-3 h-3" /> {guard.checking ? 'Checking availability…' : compact ? 'Ask to revise the plan' : 'Request replan'}
               </button>
             ) : (
               <div className="flex flex-col gap-2">

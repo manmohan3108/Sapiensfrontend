@@ -4,6 +4,7 @@ import { ChevronRight } from 'lucide-react';
 import { AnalyseControls } from './AnalyseControls';
 import { sourceName, useListReaderNavigation } from '../workspace/ContextReader';
 import { goalsService } from '../../core/services/goalsService';
+import { useGoalChangeGuard } from '../workspace/GoalChangeGuard';
 import { useSapiensStore } from '../../core/state/sapiensStore';
 import type { Plan } from '../../types/goalTypes';
 import { GoalRecord, GoalState } from './GoalRecord';
@@ -51,6 +52,7 @@ function GoalRequest({ sapienId, goalId, scope, stepId, onAccepted, targets }: {
   targets?: ReturnType<typeof goalTargets>;
 }) {
   const [open, setOpen] = useState(false);
+  const guard = useGoalChangeGuard(sapienId, goalId, true);
   const draftKey = `analyse-goal-request:${sapienId}:${goalId}:${scope}:${stepId || ''}`;
   const [text, setText] = useRememberedState(`${draftKey}:text`, '');
   const [busy, setBusy] = useState(false), [error, setError] = useState(''), [notice, setNotice] = useState('');
@@ -76,11 +78,12 @@ function GoalRequest({ sapienId, goalId, scope, stepId, onAccepted, targets }: {
       if (!mounted.current) return;
       setNotice(scope === 'revise' ? 'Revision request accepted for background processing. The plan has not been confirmed as changed.' : queued ? 'Information queued for background processing.' : 'Request received. Changes have not been confirmed.');
       setText(''); setOpen(false); trigger.current?.focus(); onAccepted();
-    } catch (caught) { if (mounted.current) setError((caught as Error).message || 'Could not send the request. Please try again.'); }
+    } catch (caught) { if (mounted.current && !guard.handleError(caught)) setError((caught as Error).message || 'Could not send the request. Please try again.'); }
     finally { submitting.current = false; if (mounted.current) setBusy(false); }
   }
   return <div className="ag-request">
-    <button ref={trigger} type="button" className="ag-text-button" aria-expanded={open} aria-controls={id} onClick={() => { if (open) close(); else setOpen(true); }}>{label}{!open && text.trim() ? ' (draft)' : ''}</button>
+    {guard.dialog}
+    <button ref={trigger} type="button" className="ag-text-button" aria-expanded={open} aria-controls={id} disabled={guard.checking || busy} aria-busy={guard.checking} onClick={event => { if (open) close(); else void guard.openIfAllowed(() => setOpen(true), event.currentTarget); }}>{guard.checking ? 'Checking availability…' : label}{!open && text.trim() ? ' (draft)' : ''}</button>
     {open && <form id={id} onSubmit={event => { event.preventDefault(); void submit(); }} onKeyDown={event => { if (event.key === 'Escape') { event.stopPropagation(); close(); } }}>
       {targets && <><label htmlFor={`${id}-target`}>Attach information to</label><select name="informationTarget" id={`${id}-target`} value={targetKey} disabled={busy} onChange={event => setTargetKey(event.target.value)}>
         {targetMissing && <option value={targetKey}>Previous target is no longer in this plan</option>}{targets.map(item => <option key={item.key} value={item.key}>{item.label}</option>)}

@@ -1,9 +1,17 @@
 import { apiConfig } from '../config/apiConfig';
 import type { Goal, GoalDetail, GoalsListResponse, Plan, WorkflowRecord, StateRules, GoalContext } from '../../types/goalTypes';
-import { authenticatedFetch } from '../auth/authSession';
+import { authenticatedFetch, HttpError, ACCESS_CHECK_TIMEOUT_MS } from '../auth/authSession';
+import type { SapiensDirectoryEntry } from '../../types/sapiensTypes';
 
 export class OverloadedError extends Error {
   constructor() { super('Sapien is busy right now. Try again in a moment.'); this.name = 'OverloadedError'; }
+}
+
+export class SimulationGoalChangeError extends Error {
+  constructor() {
+    super('Comments and plan reviews are unavailable during simulation.');
+    this.name = 'SimulationGoalChangeError';
+  }
 }
 
 export interface CommentResponse {
@@ -111,9 +119,35 @@ async function goalsFetch<T>(url: string, options?: RequestInit): Promise<T> {
   }
   const json = await res.json();
   if (!res.ok) {
-    throw new Error(string(object(json).error) || `HTTP ${res.status}`);
+    throw new HttpError(string(object(json).error) || `HTTP ${res.status}`, res.status, string(object(json).code));
   }
   return json as T;
+}
+
+/** Check current ownership, not simulation eligibility or cached directory data. */
+async function checkGoalChanges(sapienId: number): Promise<void> {
+  const result = await goalsFetch<{ sapiens?: SapiensDirectoryEntry[] }>(
+    `${base}/get-all-sapiens`,
+    { cache: 'no-store', signal: AbortSignal.timeout(ACCESS_CHECK_TIMEOUT_MS) },
+  );
+  if (!Array.isArray(result.sapiens)) throw new Error('Could not check availability. Please try again.');
+  const selected = result.sapiens.find(item => item && String(item.id) === String(sapienId));
+  if (!selected) throw new Error('This Sapien is no longer available to this account.');
+  if (selected.simulation_unavailable_reason === 'runtime_reserved') throw new SimulationGoalChangeError();
+}
+
+async function goalChange<T>(sapienId: number, url: string, payload: unknown): Promise<T> {
+  await checkGoalChanges(sapienId);
+  try {
+    return await goalsFetch<T>(url, { method: 'POST', body: JSON.stringify(payload) });
+  } catch (error) {
+    // Ownership may have changed after the check; the backend remains authoritative.
+    if (error instanceof HttpError && error.status === 409 && error.code === 'runtime_unavailable') {
+      try { await checkGoalChanges(sapienId); }
+      catch (checkError) { if (checkError instanceof SimulationGoalChangeError) throw checkError; }
+    }
+    throw error;
+  }
 }
 
 export interface GoalListParams {
@@ -129,6 +163,7 @@ export interface GoalListParams {
 }
 
 export const goalsService = {
+  checkGoalChanges,
   async listGoals(sapienId: number, params: GoalListParams = {}): Promise<GoalsListResponse> {
     const q = new URLSearchParams();
     if (params.activeOnly !== undefined) q.set('active_only', String(params.activeOnly));
@@ -175,28 +210,15 @@ export const goalsService = {
   },
 
   replan(sapienId: number, goalId: string, reason: string): Promise<void> {
-    return goalsFetch<void>(`${base}/sapien/${sapienId}/goals/${encodeURIComponent(goalId)}/replan`, {
-      method: 'POST',
-      body: JSON.stringify({ reason }),
-    });
+    return goalChange<void>(sapienId, `${base}/sapien/${sapienId}/goals/${encodeURIComponent(goalId)}/replan`, { reason });
   },
 
-  // ── Comment ───────────────────────────────────────────────────────────────
-  async comment(sapienId: number, goalId: string, params: {
+  comment(sapienId: number, goalId: string, params: {
     comment: string;
     scope: 'goal' | 'plan' | 'step';
     step_id?: string;
   }): Promise<CommentResponse> {
-    const res = await authenticatedFetch(`${base}/sapien/${sapienId}/goals/${encodeURIComponent(goalId)}/comment`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(params),
-    });
-    const ct = res.headers.get('content-type') ?? '';
-    const json = ct.includes('application/json') ? await res.json() : null;
-    if (res.status === 503) throw new OverloadedError();
-    if (!res.ok) throw new Error((json as { error?: string })?.error ?? `HTTP ${res.status}`);
-    return json as CommentResponse;
+    return goalChange<CommentResponse>(sapienId, `${base}/sapien/${sapienId}/goals/${encodeURIComponent(goalId)}/comment`, params);
   },
 };
 
