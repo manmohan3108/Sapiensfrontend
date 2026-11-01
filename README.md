@@ -88,8 +88,11 @@ child alone does not discard an accessible Sapien, while an inconclusive check
 blocks protected content until retry. Confirmed loss of access clears private
 state. Admin scoped-resource 404 handling remains conservative and clears the
 selection; job-inspection failures are handled locally.
-Selection/account changes discard in-flight response bodies. Only an account-scoped
-selected ID is retained for restoration; Sapien records, chat and memory data stay
+Restoring or re-verifying the same selected ID preserves its request lifetime;
+actual selection/account changes still discard in-flight response bodies. Simulation
+views wait for selection restoration before loading dependent data, and locally
+discarded responses are distinguished from server-reported run conflicts. Only an
+account-scoped selected ID is retained for restoration; Sapien records, chat and memory data stay
 in memory. Theme preference is shared.
 
 The permission-gated Simulation Lab at `/admin/simulations` uses the backend-authored

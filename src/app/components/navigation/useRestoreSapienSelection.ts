@@ -73,7 +73,8 @@ export function useRestoreSapienSelection(candidateId: string | null, options: R
         const store = useSapiensStore.getState();
         if (store.currentSapiens?.id === candidateId) {
           // Establish a verified resource session without clearing an existing chat.
-          resourceSession.select(candidateId);
+          // Re-verifying the same identity is not a selection change.
+          if (resourceSession.selectedId !== candidateId) resourceSession.select(candidateId);
           resourceSession.confirm(candidateId);
         } else {
           store.setCurrentSapiens(selected, true);
@@ -95,5 +96,7 @@ export function useRestoreSapienSelection(candidateId: string | null, options: R
   }, [candidateId, currentId, ready, available, attempt]);
 
   const retry = useCallback(() => setAttempt(value => value + 1), []);
-  return { ...state, retry };
+  // Include the first render, before the restoration effect has started.
+  const restoring = !!candidateId && (state.candidateId !== candidateId || state.status === 'idle' || state.status === 'restoring');
+  return { ...state, restoring, retry };
 }

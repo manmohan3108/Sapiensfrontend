@@ -230,7 +230,7 @@ const pollDelay = (status: SimulationStatus) =>
       : 15_000;
 const message = (error: unknown) =>
   error instanceof HttpError
-    ? `${error.status === 404 ? "Run or evidence not found in live runtime or saved history: " : error.status === 409 ? "Run changed; refresh and try again: " : error.status === 403 ? "Admin access required: " : error.status === 401 ? "Session expired: " : ""}${error.message}`
+    ? `${error.status === 404 ? "Run or evidence not found in live runtime or saved history: " : error.status === 409 && error.code !== "context_changed" ? "Run changed; refresh and try again: " : error.status === 403 ? "Admin access required: " : error.status === 401 ? "Session expired: " : ""}${error.message}`
     : error instanceof Error
       ? error.message
       : "Request failed";
@@ -446,6 +446,7 @@ export function SimulationLabPage() {
     evidence: 0,
   });
   const [error, setError] = useState("");
+  const [pollError, setPollError] = useState("");
   const requestedReturn = params.get("returnTo") || "";
   const returnPath =
     requestedReturn === "/workspace" ||
@@ -520,10 +521,12 @@ export function SimulationLabPage() {
     : runs;
   const refresh = useCallback(
     async (signal?: AbortSignal, clearError = true) => {
+      if (selectionRestore.restoring) return;
       const [casesResult, listResult] = await Promise.allSettled([
         simulationService.cases(signal),
         simulationService.list(signal),
       ]);
+      signal?.throwIfAborted();
       if (listResult.status === "fulfilled") {
         const list = listResult.value;
         const contextualRuns = shortcutId
@@ -574,7 +577,7 @@ export function SimulationLabPage() {
       if (listResult.status === "rejected") throw listResult.reason;
       if (clearError) setError("");
     },
-    [shortcutId, requestedRunId],
+    [shortcutId, requestedRunId, selectionRestore.restoring],
   );
   useEffect(() => {
     const controller = new AbortController();
@@ -584,7 +587,7 @@ export function SimulationLabPage() {
     return () => controller.abort();
   }, [refresh]);
   useEffect(() => {
-    if (!requestedRunId || runs.some((item) => item.run_id === requestedRunId))
+    if (selectionRestore.restoring || !requestedRunId || runs.some((item) => item.run_id === requestedRunId))
       return;
     const controller = new AbortController();
     simulationService
@@ -607,7 +610,7 @@ export function SimulationLabPage() {
         if (!controller.signal.aborted) setError(message(problem));
       });
     return () => controller.abort();
-  }, [requestedRunId, shortcutId, runs]);
+  }, [requestedRunId, shortcutId, runs, selectionRestore.restoring]);
   const loadSapiens = useCallback(async () => {
     setSapiensLoading(true);
     try {
@@ -703,7 +706,8 @@ export function SimulationLabPage() {
     setRun(null);
     setLastOutcome(null);
     setPendingAction(null);
-    if (!selectedId) return;
+    setPollError("");
+    if (!selectedId || selectionRestore.restoring) return;
     const controller = new AbortController();
     let timer = 0;
     let failed = 0;
@@ -716,6 +720,7 @@ export function SimulationLabPage() {
         if (controller.signal.aborted) return;
         if (next.delete_requested) acknowledgedDeletes.current.add(next.run_id);
         setRun(next);
+        setPollError("");
         setRuns((current) =>
           current.map((item) => (item.run_id === next.run_id ? next : item)),
         );
@@ -736,7 +741,7 @@ export function SimulationLabPage() {
           acknowledgedDeletes.current.has(selectedId)
         ) {
           acknowledgedDeletes.current.delete(selectedId);
-          setError("");
+          setPollError("");
           setRun(null);
           setRuns((current) =>
             current.filter((item) => item.run_id !== selectedId),
@@ -748,7 +753,7 @@ export function SimulationLabPage() {
           ]);
           return;
         }
-        setError(message(problem));
+        setPollError(message(problem));
         if (problem instanceof HttpError && problem.status === 404) return;
         failed++;
         timer = window.setTimeout(
@@ -769,7 +774,7 @@ export function SimulationLabPage() {
       window.clearTimeout(timer);
       document.removeEventListener("visibilitychange", resume);
     };
-  }, [selectedId, refresh, loadSapiens]);
+  }, [selectedId, refresh, loadSapiens, selectionRestore.restoring]);
 
   async function mutate(
     label: string,
@@ -789,7 +794,7 @@ export function SimulationLabPage() {
       await refresh();
     } catch (problem) {
       const detail = `${label === "resume" ? "Resume failed" : label === "pause" ? "Pause failed" : label === "stop" ? "Stop failed" : label === "speed" ? "Speed change failed" : "Operation failed"}: ${message(problem)}`;
-      if (problem instanceof HttpError && problem.status === 409)
+      if (problem instanceof HttpError && problem.status === 409 && problem.code !== "context_changed")
         await Promise.all([
           refresh(undefined, false).catch(() => undefined),
           loadSapiens(),
@@ -880,7 +885,7 @@ export function SimulationLabPage() {
       await refresh();
     } catch (problem) {
       const detail = `Simulation creation failed: ${message(problem)}`;
-      if (problem instanceof HttpError && problem.status === 409)
+      if (problem instanceof HttpError && problem.status === 409 && problem.code !== "context_changed")
         await Promise.all([
           refresh(undefined, false).catch(() => undefined),
           loadSapiens(),
@@ -930,7 +935,7 @@ export function SimulationLabPage() {
         await Promise.all([refresh(undefined, false), loadSapiens()]);
       }
     } catch (problem) {
-      if (problem instanceof HttpError && problem.status === 409)
+      if (problem instanceof HttpError && problem.status === 409 && problem.code !== "context_changed")
         setError(
           "Execution began before cancellation won the race. Stop and drain the run before deleting it.",
         );
@@ -1101,13 +1106,16 @@ export function SimulationLabPage() {
           )}
 
         </div>
-        {error && (
+        {selectionRestore.restoring && (
+          <p role="status" className="text-sm text-muted-foreground">Verifying the selected Sapiens before loading simulation data…</p>
+        )}
+        {(error || pollError) && (
           <div
             role="alert"
             className="flex gap-2 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-700 dark:text-red-300"
           >
             <AlertTriangle className="size-4 shrink-0" />
-            {error}
+            {error || pollError}
           </div>
         )}
         {selectionRestore.error && (

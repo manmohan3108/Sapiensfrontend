@@ -105,7 +105,7 @@ async function responseMessage(response: Response) {
 }
 
 export class HttpError extends Error {
-  constructor(message: string, public status: number) {
+  constructor(message: string, public status: number, public code?: string) {
     super(message);
     this.name = 'HttpError';
   }
@@ -165,7 +165,7 @@ export async function authenticatedFetch(input: RequestInfo | URL, init: Request
     const body = response.status === 204 ? null : await response.arrayBuffer();
     init.signal?.throwIfAborted();
     if (version !== sessionVersion || selectionVersion !== resourceSession.version) {
-      throw new HttpError('The active account or Sapiens changed. Please try again.', 409);
+      throw new HttpError('The active account or Sapiens changed. Please try again.', 409, 'context_changed');
     }
     const path = new URL(typeof input === 'string' ? input : input instanceof URL ? input.href : input.url, window.location.origin).pathname;
     const scoped = /\/api\/(sapien\/|engram\/(?!sapiens$)|sapiens\/|chat$|run-engines$|load-sapien$|\d+\/save\/)/.test(path);
@@ -177,7 +177,7 @@ export async function authenticatedFetch(input: RequestInfo | URL, init: Request
         // A missing thread or other child does not prove loss of the individual.
         // Hide protected content until the authoritative owner-filtered list answers.
         await verifyResourceAccess(selectedId);
-        if (version !== sessionVersion || selectionVersion !== resourceSession.version) throw new HttpError('Session changed.', 409);
+        if (version !== sessionVersion || selectionVersion !== resourceSession.version) throw new HttpError('Session changed.', 409, 'context_changed');
         return new Response(body, { status: response.status, statusText: response.statusText, headers: response.headers });
       }
       resourceSession.select(null);
