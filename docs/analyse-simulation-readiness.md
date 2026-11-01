@@ -67,6 +67,10 @@ and separate from fetching and rendering; do not rewrite Workspace to improve An
   provides complete tool/issue options. Count successful writes separately from
   failed attempts, and retain raw request/result evidence. `/world/comments/`
   remains the issue discussion view; it does not replace the action history.
+  Successful comment actions open the recorded comment ID on its issue, paging the
+  same saved discussion until found and visibly highlighting it. Keep action filters,
+  loaded pages and list position when returning; do not infer comments from failed
+  attempts or match by similar text. Linked issues may be outside the loaded list.
 - **Feedback records:** the backend supplies bounded, redacted snapshots. Tool-event
   text can contain fuller request/result fields than shortened metadata. Parse only
   the known serialization format and complete JSON; never repair cut records or

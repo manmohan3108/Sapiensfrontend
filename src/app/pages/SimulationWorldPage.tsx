@@ -47,6 +47,17 @@ function JiraPortal({ runId, eventCount }: { runId: string; eventCount: number }
   const [refresh, setRefresh] = useState(0);
   const previousEventCount = useRef(eventCount);
   const detailPaneRef = useRef<HTMLElement | null>(null);
+  const actionPaneRef = useRef<HTMLElement | null>(null);
+  const actionScrollTop = useRef(0);
+  const loadedActionQuery = useRef('');
+  const [actionTarget, setActionTarget] = useState<{ runId: string; issueKey: string; commentId?: string } | null>(null);
+  const focusedIssueKey = actionTarget?.runId === runId ? actionTarget.issueKey : '';
+  const focusedCommentId = focusedIssueKey && focusedIssueKey === selected ? actionTarget?.commentId : undefined;
+  const focusedCommentRef = useRef<HTMLElement | null>(null);
+  const positionedComment = useRef('');
+  const commentRequest = useRef<AbortController | null>(null);
+  const [loadingComments, setLoadingComments] = useState(false);
+  const [linkedTickets, setLinkedTickets] = useState<WorldCollection<WorldTicket> | null>(null);
   const [jiraView, setJiraView] = useState<'issues' | 'notifications' | 'sapien-actions'>('issues');
   const [detailTab, setDetailTab] = useState<'comments' | 'activity'>('comments');
   const [comments, setComments] = useState<WorldCommentsPage | null>(null);
@@ -74,9 +85,9 @@ function JiraPortal({ runId, eventCount }: { runId: string; eventCount: number }
     if (eventCount !== previousEventCount.current) {
       previousEventCount.current = eventCount;
       // Keep the actions snapshot fixed while the reader filters or loads older pages.
-      if (jiraView !== 'sapien-actions') setRefresh(current => current + 1);
+      if (jiraView !== 'sapien-actions' && !(jiraView === 'issues' && focusedIssueKey)) setRefresh(current => current + 1);
     }
-  }, [eventCount, jiraView]);
+  }, [eventCount, jiraView, focusedIssueKey]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -97,14 +108,15 @@ function JiraPortal({ runId, eventCount }: { runId: string; eventCount: number }
       ...(debounced ? { search: debounced } : {}),
     }, controller.signal)
       .then(page => {
+        if (controller.signal.aborted) return;
         setTickets(page);
-        setSelected(current => current && page.items.some(ticket => ticket.issue_key === current)
+        setSelected(current => current && (current === focusedIssueKey || page.items.some(ticket => ticket.issue_key === current))
           ? current
           : page.items[0]?.issue_key ?? '');
       })
       .catch(problem => { if (!controller.signal.aborted) setError(message(problem)); });
     return () => controller.abort();
-  }, [runId, overview?.through, debounced]);
+  }, [runId, overview?.through, debounced, focusedIssueKey]);
 
   useEffect(() => {
     if (!overview || !selected) {
@@ -127,18 +139,65 @@ function JiraPortal({ runId, eventCount }: { runId: string; eventCount: number }
     return () => controller.abort();
   }, [runId, overview?.through, selected]);
 
-  const ticket = tickets?.items.find(item => item.issue_key === selected);
+  const listedTicket = tickets?.items.find(item => item.issue_key === selected);
+  const ticket = listedTicket || (linkedTickets?.run_id === runId && linkedTickets.through === overview?.through
+    ? linkedTickets.items.find(item => item.issue_key === selected) : undefined);
   useEffect(() => { detailPaneRef.current?.scrollTo({ top: 0 }); }, [selected]);
 
+  // An action's issue may be outside the loaded/search-filtered issue list.
   useEffect(() => {
-    if (!overview || !selected || detailTab !== 'comments') return;
+    setLinkedTickets(null);
+    if (!overview || overview.run_id !== runId || !focusedIssueKey || selected !== focusedIssueKey || listedTicket) return;
     const controller = new AbortController();
-    setComments(null);
-    simulationService.worldComments(runId, { through: overview.through, connection: 'jira', issue_key: selected, offset: 0, limit: 50 }, controller.signal)
-      .then(setComments)
+    simulationService.worldTickets(runId, { through: overview.through, connection: 'jira', issue_key: selected, limit: 1 }, controller.signal)
+      .then(page => { if (!controller.signal.aborted) setLinkedTickets(page); })
       .catch(problem => { if (!controller.signal.aborted) setError(message(problem)); });
     return () => controller.abort();
-  }, [runId, overview?.through, selected, detailTab]);
+  }, [runId, overview?.through, focusedIssueKey, selected, listedTicket]);
+
+  useEffect(() => {
+    setComments(null);
+    setLoadingComments(false);
+    if (!overview || overview.run_id !== runId || !selected || detailTab !== 'comments' || jiraView !== 'issues') return;
+    const controller = new AbortController();
+    commentRequest.current = controller;
+    setLoadingComments(true);
+    const load = async () => {
+      try {
+        let page = await simulationService.worldComments(runId, { through: overview.through, connection: 'jira', issue_key: selected, offset: 0, limit: 50 }, controller.signal);
+        if (controller.signal.aborted) return;
+        setComments(page);
+        // Follow existing bounded pages only for an explicitly selected comment.
+        while (focusedCommentId && !page.items.some(comment => comment.comment_id === focusedCommentId) && page.has_more) {
+          const offset = page.next_offset;
+          const next = await simulationService.worldComments(runId, { through: page.through, connection: 'jira', issue_key: selected, offset, limit: 200 }, controller.signal);
+          if (controller.signal.aborted) return;
+          if (next.next_offset <= offset) throw new Error('Comment paging did not advance. Refresh and try again.');
+          page = { ...next, items: [...page.items, ...next.items] };
+          setComments(page);
+        }
+      } catch (problem) {
+        if (!controller.signal.aborted) setError(message(problem));
+      } finally {
+        if (!controller.signal.aborted) setLoadingComments(false);
+      }
+    };
+    void load();
+    return () => controller.abort();
+  }, [runId, overview?.through, selected, detailTab, jiraView, focusedCommentId]);
+
+  useEffect(() => {
+    if (jiraView !== 'issues' || detailTab !== 'comments' || !focusedCommentId || !ticket || !focusedCommentRef.current || comments?.run_id !== runId || comments.issue_key !== selected) return;
+    const key = JSON.stringify([runId, selected, focusedCommentId]);
+    if (positionedComment.current === key) return;
+    focusedCommentRef.current.scrollIntoView({ block: 'center', behavior: 'instant' });
+    focusedCommentRef.current.focus({ preventScroll: true });
+    positionedComment.current = key;
+  }, [runId, selected, focusedCommentId, comments, ticket, jiraView, detailTab]);
+
+  useEffect(() => {
+    if (jiraView === 'sapien-actions') actionPaneRef.current?.scrollTo({ top: actionScrollTop.current });
+  }, [jiraView]);
 
   useEffect(() => {
     if (!overview || jiraView !== 'notifications') return;
@@ -166,21 +225,27 @@ function JiraPortal({ runId, eventCount }: { runId: string; eventCount: number }
   }), [overview?.through, overview?.participant_id, actionTool, actionIssue, actionOutcome, debouncedActionSearch]);
 
   useEffect(() => {
-    setSapienActions(null);
-    setSapienActionItems([]);
     setLoadingOlderActions(false);
     if (!overview?.participant_id || overview.run_id !== runId || jiraView !== 'sapien-actions') return;
     const controller = new AbortController();
     actionRequest.current = controller;
     setError('');
-    simulationService.worldActivity(runId, actionQuery, controller.signal)
-      .then(page => {
-        if (controller.signal.aborted) return;
-        setSapienActions(page);
-        setSapienActionItems(page.items);
-      })
-      .catch(problem => { if (!controller.signal.aborted) setError(message(problem)); });
-    return () => { controller.abort(); };
+    const key = JSON.stringify([runId, actionQuery]);
+    if (loadedActionQuery.current !== key) {
+      loadedActionQuery.current = '';
+      setSapienActions(null);
+      setSapienActionItems([]);
+      actionScrollTop.current = 0;
+      simulationService.worldActivity(runId, actionQuery, controller.signal)
+        .then(page => {
+          if (controller.signal.aborted) return;
+          loadedActionQuery.current = key;
+          setSapienActions(page);
+          setSapienActionItems(page.items);
+        })
+        .catch(problem => { if (!controller.signal.aborted) setError(message(problem)); });
+    }
+    return () => controller.abort();
   }, [runId, actionQuery, jiraView, overview]);
   const recordedFields = useMemo(() => {
     const result: Record<string, string> = {};
@@ -208,9 +273,17 @@ function JiraPortal({ runId, eventCount }: { runId: string; eventCount: number }
   };
 
   const loadMoreComments = async () => {
-    if (!comments?.has_more) return;
-    const next = await simulationService.worldComments(runId, { through: comments.through, connection: 'jira', issue_key: selected, offset: comments.next_offset, limit: 50 });
-    setComments(current => current ? { ...next, items: [...current.items, ...next.items] } : next);
+    const controller = commentRequest.current;
+    if (!comments?.has_more || loadingComments || !controller || controller.signal.aborted) return;
+    setLoadingComments(true);
+    try {
+      const next = await simulationService.worldComments(runId, { through: comments.through, connection: 'jira', issue_key: selected, offset: comments.next_offset, limit: 50 }, controller.signal);
+      if (!controller.signal.aborted) setComments(current => current ? { ...next, items: [...current.items, ...next.items] } : next);
+    } catch (problem) {
+      if (!controller.signal.aborted) setError(message(problem));
+    } finally {
+      if (!controller.signal.aborted) setLoadingComments(false);
+    }
   };
 
   const loadMoreNotifications = async () => {
@@ -237,7 +310,17 @@ function JiraPortal({ runId, eventCount }: { runId: string; eventCount: number }
     }
   };
 
-  const openIssue = (issueKey: string) => { setSelected(issueKey); setMobileIssueOpen(true); };
+  const openIssue = (issueKey: string) => { setActionTarget(null); setSelected(issueKey); setMobileIssueOpen(true); };
+  const openActionIssue = (issueKey: string, commentId?: string) => {
+    actionScrollTop.current = actionPaneRef.current?.scrollTop ?? 0;
+    positionedComment.current = '';
+    setError('');
+    setActionTarget({ runId, issueKey, commentId });
+    setSelected(issueKey);
+    setDetailTab(commentId ? 'comments' : 'activity');
+    setMobileIssueOpen(true);
+    setJiraView('issues');
+  };
   const notificationCards = notificationItems.filter(item => payload(item.event).type === 'ConnectionNotification').map(item => { const body = payload(item.event); const notificationId = value(body.notification_id); const delivery = notificationItems.find(candidate => payload(candidate.event).type === 'NotificationDelivery' && value(payload(candidate.event).notification_id) === notificationId); const deliveryBody = delivery ? payload(delivery.event) : null; const details = jsonObject(body.details_json); const recipient = value(body.recipient_id) || 'Unknown recipient'; const status = value(deliveryBody?.status); return <article key={item.event.record_id} className="rounded-xl border border-[#dfe1e6] bg-white p-4 dark:border-white/10 dark:bg-[#10172a]"><div className="flex flex-wrap items-center gap-2"><Badge variant="outline">{value(body.event_kind).replaceAll('_',' ') || 'Jira notification'}</Badge>{item.issue_key && <Badge variant="secondary">{item.issue_key}</Badge>}<strong className="text-sm">To {recipient}{recipient === overview?.participant_id ? ` (${overview?.participant_name || 'Participant'})` : ''}</strong><span className="ml-auto text-xs text-slate-500">{time(item.event.occurred_at)}</span></div><p className="mt-3 whitespace-pre-wrap text-sm leading-6">{value(body.content) || value(details.summary) || 'Notification content was not recorded.'}</p><p className="mt-3 text-xs text-slate-500">{status === 'delivered' ? 'Handed to Awareness; understanding or action is not confirmed.' : status === 'uncertain' ? 'Delivery outcome is uncertain.' : 'No delivery confirmation in loaded evidence.'}</p><details className="mt-2 text-xs text-slate-500"><summary className="cursor-pointer">Evidence details</summary><pre className="mt-2 max-h-64 overflow-auto rounded bg-[#f4f5f7] p-3 dark:bg-black/30">{JSON.stringify({ notification_id: notificationId, details, creation_evidence: item.event.record_id, delivery_evidence: delivery?.event.record_id || null }, null, 2)}</pre></details></article>; });
   const actionRows = sapienActionItems.map(item => {
     const body = payload(item.event);
@@ -274,9 +357,11 @@ function JiraPortal({ runId, eventCount }: { runId: string; eventCount: number }
     ...actionRows.map(({ item, tool, args, result, failed, issueKey }) => {
       const fields = jsonObject(args.fields);
       const kind = jiraActionKind(tool);
+      const commentId = tool === 'jira_add_comment' && !failed && typeof result.id === 'string' ? result.id : '';
       return <article key={item.event.record_id} className={`overflow-hidden rounded-xl border bg-white shadow-sm dark:bg-[#10172a] ${failed ? 'border-red-300 dark:border-red-900' : 'border-[#dfe1e6] dark:border-white/10'}`}>
-        <div className="flex gap-3 p-4 sm:p-5"><span className={`grid size-10 shrink-0 place-items-center rounded-full text-xs font-bold ${failed ? 'bg-red-100 text-red-700 dark:bg-red-950' : kind === 'Change' ? 'bg-violet-100 text-violet-700 dark:bg-violet-950' : 'bg-blue-100 text-blue-700 dark:bg-blue-950'}`}>{(overview?.participant_name || 'SP').slice(0,2).toUpperCase()}</span><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><strong>{failed ? `Attempt: ${jiraActionName(tool)}` : jiraActionName(tool)}</strong><Badge variant={kind === 'Change' ? 'default' : 'outline'}>{kind}</Badge>{issueKey && <button type="button" onClick={() => { setSelected(issueKey); setJiraView('issues'); setMobileIssueOpen(true); }} className="rounded border border-[#0052cc]/30 px-2 py-0.5 text-xs font-semibold text-[#0052cc] hover:bg-blue-50 dark:hover:bg-blue-950">{issueKey}</button>}<Badge variant={failed ? 'destructive' : 'secondary'}>{failed ? 'Failed' : 'Succeeded'}</Badge></div><p className="mt-1 text-xs text-slate-500">{overview?.participant_name || overview?.participant_id || 'Simulation participant'} · {time(item.event.occurred_at)}</p>
+        <div className="flex gap-3 p-4 sm:p-5"><span className={`grid size-10 shrink-0 place-items-center rounded-full text-xs font-bold ${failed ? 'bg-red-100 text-red-700 dark:bg-red-950' : kind === 'Change' ? 'bg-violet-100 text-violet-700 dark:bg-violet-950' : 'bg-blue-100 text-blue-700 dark:bg-blue-950'}`}>{(overview?.participant_name || 'SP').slice(0,2).toUpperCase()}</span><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><strong>{failed ? `Attempt: ${jiraActionName(tool)}` : jiraActionName(tool)}</strong><Badge variant={kind === 'Change' ? 'default' : 'outline'}>{kind}</Badge>{issueKey && <button type="button" onClick={() => openActionIssue(issueKey)} className="rounded border border-[#0052cc]/30 px-2 py-0.5 text-xs font-semibold text-[#0052cc] hover:bg-blue-50 dark:hover:bg-blue-950">{issueKey}</button>}<Badge variant={failed ? 'destructive' : 'secondary'}>{failed ? 'Failed' : 'Succeeded'}</Badge></div><p className="mt-1 text-xs text-slate-500">{overview?.participant_name || overview?.participant_id || 'Simulation participant'} · {time(item.event.occurred_at)}</p>
           {tool === 'jira_add_comment' && <div className="mt-3"><p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{failed ? 'Comment attempted' : 'Comment added'}</p><p className="mt-1 whitespace-pre-wrap rounded-lg bg-[#f4f5f7] p-3 text-sm leading-6 dark:bg-black/20">{value(args.body) || 'Comment text unavailable'}</p></div>}
+          {issueKey && commentId && <Button type="button" variant="outline" size="sm" className="mt-3" onClick={() => openActionIssue(issueKey, commentId)}>View comment in {issueKey}</Button>}
           {tool === 'jira_update_issue' && <div className="mt-3"><p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{failed ? 'Requested fields' : 'Fields changed'}</p><div className="mt-2 flex flex-wrap gap-2">{Object.entries(fields).map(([field, nextValue]) => <span key={field} className="rounded-lg bg-violet-50 px-2.5 py-1.5 text-xs text-violet-800 dark:bg-violet-950 dark:text-violet-200"><strong>{statusName(field)}</strong>: {value(nextValue)}</span>)}{!Object.keys(fields).length && <span className="text-sm text-slate-500">Changed fields were not recorded.</span>}</div></div>}
           {tool === 'jira_transition_issue' && <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">{failed ? 'Requested status transition' : 'Changed status using transition'} <strong>{value(args.transition_id) || 'not recorded'}</strong>.</p>}
           {tool === 'jira_get_issue' && !failed && <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">Opened the issue to inspect its recorded details.</p>}
@@ -309,6 +394,7 @@ function JiraPortal({ runId, eventCount }: { runId: string; eventCount: number }
 
       {error && <div className="border-b border-red-300 bg-red-50 px-4 py-2 text-sm text-red-700 dark:bg-red-950/30 dark:text-red-300">{error}</div>}
 
+      {jiraView === 'issues' && focusedIssueKey && <div className="border-b border-[#dfe1e6] px-4 py-2 dark:border-white/10"><Button type="button" size="sm" variant="outline" onClick={() => setJiraView('sapien-actions')}><ArrowLeft aria-hidden="true" className="mr-2 size-4" />Back to {participantActionsLabel}</Button></div>}
       <div className={`${jiraView === 'issues' ? 'grid' : 'hidden'} min-h-0 flex-1 lg:grid-cols-[220px_340px_minmax(0,1fr)]`}>
         <aside className="hidden border-r border-[#dfe1e6] bg-[#f4f5f7] p-4 dark:border-white/10 dark:bg-[#10172a] lg:block">
           <div className="flex items-center gap-3 border-b border-[#dfe1e6] pb-4 dark:border-white/10">
@@ -373,10 +459,12 @@ function JiraPortal({ runId, eventCount }: { runId: string; eventCount: number }
                   <section>
                     <div className="flex items-center gap-5 overflow-x-auto border-b border-[#dfe1e6] dark:border-white/10">{(['comments','activity'] as const).map(tab => <button key={tab} onClick={() => setDetailTab(tab)} className={`shrink-0 border-b-2 pb-3 text-sm font-semibold ${detailTab === tab ? 'border-[#0052cc] text-[#0052cc]' : 'border-transparent text-slate-500'}`}>{statusName(tab)}</button>)}</div>
                     <div className="mt-5 space-y-5">
-                      {detailTab === 'comments' && comments?.items.map(comment => <article key={comment.comment_id} className="flex gap-3"><span className={`grid size-9 shrink-0 place-items-center rounded-full text-xs font-bold ${comment.author_id === overview?.participant_id ? 'bg-violet-600 text-white' : 'bg-[#deebff] text-[#0052cc] dark:bg-blue-950'}`}>{(comment.author_name || comment.author_id || '?').slice(0,2).toUpperCase()}</span><div className="min-w-0 flex-1"><div className="flex flex-wrap items-baseline gap-2"><strong className="text-sm">{comment.author_name || comment.author_id || 'Unknown author'}</strong>{comment.author_id === overview?.participant_id && <Badge variant="secondary">Participant</Badge>}<span className="text-xs text-slate-500">{time(comment.occurred_at)}</span></div><p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-slate-700 dark:text-slate-300">{comment.text || (typeof comment.body === 'string' ? comment.body : 'Comment text was not recorded.')}</p><details className="mt-2 text-xs text-slate-500"><summary className="cursor-pointer">Evidence details</summary><dl className="mt-2 grid gap-1 rounded bg-[#f4f5f7] p-3 dark:bg-black/30"><div>Comment ID: {comment.comment_id}</div><div>Evidence: {comment.evidence_id}</div><div>Sequence: {comment.sequence}</div>{comment.operation_id && <div>Operation: {comment.operation_id}</div>}<div>Observed: {time(comment.observed_at)}</div></dl></details></div></article>)}
-                      {detailTab === 'comments' && comments?.has_more && <Button variant="outline" onClick={() => void loadMoreComments()}>Load more comments ({comments.items.length} of {comments.total})</Button>}
+                      {detailTab === 'comments' && comments?.items.map(comment => <article key={comment.comment_id} ref={comment.comment_id === focusedCommentId ? focusedCommentRef : undefined} tabIndex={comment.comment_id === focusedCommentId ? -1 : undefined} className={`flex scroll-mt-4 gap-3 rounded-lg p-2 ${comment.comment_id === focusedCommentId ? 'bg-[#deebff]/60 ring-2 ring-[#0052cc] dark:bg-blue-950/40' : ''}`}><span className={`grid size-9 shrink-0 place-items-center rounded-full text-xs font-bold ${comment.author_id === overview?.participant_id ? 'bg-violet-600 text-white' : 'bg-[#deebff] text-[#0052cc] dark:bg-blue-950'}`}>{(comment.author_name || comment.author_id || '?').slice(0,2).toUpperCase()}</span><div className="min-w-0 flex-1"><div className="flex flex-wrap items-baseline gap-2"><strong className="text-sm">{comment.author_name || comment.author_id || 'Unknown author'}</strong>{comment.comment_id === focusedCommentId && <Badge variant="outline">Selected comment</Badge>}{comment.author_id === overview?.participant_id && <Badge variant="secondary">Participant</Badge>}<span className="text-xs text-slate-500">{time(comment.occurred_at)}</span></div><p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-slate-700 dark:text-slate-300">{comment.text || (typeof comment.body === 'string' ? comment.body : 'Comment text was not recorded.')}</p><details className="mt-2 text-xs text-slate-500"><summary className="cursor-pointer">Evidence details</summary><dl className="mt-2 grid gap-1 rounded bg-[#f4f5f7] p-3 dark:bg-black/30"><div>Comment ID: {comment.comment_id}</div><div>Evidence: {comment.evidence_id}</div><div>Sequence: {comment.sequence}</div>{comment.operation_id && <div>Operation: {comment.operation_id}</div>}<div>Observed: {time(comment.observed_at)}</div></dl></details></div></article>)}
+                      {detailTab === 'comments' && comments?.has_more && <Button variant="outline" disabled={loadingComments} onClick={() => void loadMoreComments()}>{loadingComments ? 'Loading comments…' : `Load more comments (${comments.items.length} of ${comments.total})`}</Button>}
+                      {detailTab === 'comments' && focusedCommentId && loadingComments && <p role="status" className="text-sm text-slate-500">Finding the selected comment…</p>}
+                      {detailTab === 'comments' && focusedCommentId && comments && !loadingComments && !comments.has_more && !comments.items.some(comment => comment.comment_id === focusedCommentId) && <p role="status" className="rounded border border-dashed p-3 text-sm text-slate-500">The selected comment is not available in this saved discussion. Its original action evidence remains available.</p>}
                       {detailTab === 'comments' && comments && !comments.items.length && <div className="rounded border border-dashed p-5 text-sm text-slate-500">{comments.comment_support === 'unknown' ? 'Comment coverage is unavailable for this legacy record; no comments can be established from saved evidence.' : 'No comments were recorded for this issue.'}</div>}
-                      {detailTab === 'comments' && !comments && <p className="text-sm text-slate-500">Loading recorded comments…</p>}
+                      {detailTab === 'comments' && !comments && loadingComments && <p className="text-sm text-slate-500">Loading recorded comments…</p>}
                       {detailTab === 'activity' && history?.events.map(event => {
                         const body = payload(event);
                         return <details key={event.record_id} className="group"><summary className="flex cursor-pointer list-none gap-3"><span className="grid size-8 shrink-0 place-items-center rounded-full bg-[#deebff] text-xs font-bold text-[#0052cc] dark:bg-blue-950">A</span><span className="min-w-0 flex-1"><span className="flex flex-wrap items-baseline gap-2"><strong className="text-sm">{value(body.actor_id || body.sender_id || 'Simulation actor')}</strong><span className="text-xs text-slate-500">{time(event.occurred_at)}</span></span><span className="mt-1 block text-sm text-slate-600 dark:text-slate-300">{value(body.tool || body.action || body.status || body.type || event.source)}</span></span></summary><pre className="ml-11 mt-2 max-h-72 overflow-auto rounded bg-[#f4f5f7] p-3 text-xs dark:bg-black/30">{JSON.stringify(body, null, 2)}</pre></details>;
@@ -410,11 +498,11 @@ function JiraPortal({ runId, eventCount }: { runId: string; eventCount: number }
               </div>
             </div>
           ) : (
-            <div className="grid h-full place-items-center text-center text-slate-500"><div><FolderKanban className="mx-auto size-10 opacity-30" /><p className="mt-3">Select an issue to inspect its recorded Jira state.</p></div></div>
+            <div className="grid h-full place-items-center text-center text-slate-500"><div><FolderKanban className="mx-auto size-10 opacity-30" /><p className="mt-3">{focusedIssueKey === selected ? (error ? 'Could not load the linked issue. Use Refresh to try again.' : linkedTickets ? 'The linked issue is not available in this saved snapshot.' : 'Loading the linked issue…') : 'Select an issue to inspect its recorded Jira state.'}</p></div></div>
           )}
         </main>
       </div>
-      {jiraView !== 'issues' && <main className="min-h-0 flex-1 overflow-y-auto bg-[#f4f5f7] px-4 py-5 dark:bg-[#0f1628] sm:px-6 lg:px-8"><div className="mx-auto max-w-5xl"><div className="flex flex-wrap items-start gap-3 border-b border-[#dfe1e6] pb-5 dark:border-white/10"><div className="min-w-0 flex-1"><p className="text-xs font-semibold uppercase tracking-wide text-[#0052cc]">Sentinel Desk · global Jira</p><h1 className="mt-1 text-pretty text-2xl font-semibold">{jiraView === 'notifications' ? 'Notifications' : participantActionsLabel}</h1><p className="mt-2 text-sm text-slate-500">{jiraView === 'notifications' ? `Updates from across the project. These are notifications, not actions taken by ${participantName || 'the Sapien'}.` : `Every recorded Jira action by ${participantName || 'the simulation participant'}, across all issues.`}</p></div><Badge variant="outline">Evidence through #{overview?.through ?? '—'}</Badge></div><div className="mt-5 space-y-4">{jiraView === 'notifications' ? notificationCards : sapienActionCards}{jiraView === 'notifications' && notifications?.has_more && <Button variant="outline" onClick={() => void loadMoreNotifications()}>Load more notifications</Button>}{jiraView === 'notifications' && notifications && !notificationCards.length && <p className="rounded-xl border border-dashed bg-white p-6 text-center text-sm text-slate-500 dark:bg-[#10172a]">No Jira notifications were recorded at this evidence watermark.</p>}{jiraView === 'notifications' && !notifications && <p className="text-sm text-slate-500">Loading recorded notifications…</p>}{jiraView === 'sapien-actions' && sapienActions?.has_more && <Button variant="outline" disabled={loadingOlderActions} onClick={() => void loadMoreSapienActions()}>{loadingOlderActions ? 'Loading older actions…' : 'Load older actions'}</Button>}{jiraView === 'sapien-actions' && sapienActions && !sapienActionCards.length && <p className="rounded-xl border border-dashed bg-white p-6 text-center text-sm text-slate-500 dark:bg-[#10172a]">No Jira actions were recorded for {participantName || 'this participant'} at this evidence watermark.</p>}{jiraView === 'sapien-actions' && !sapienActions && <p className="text-sm text-slate-500">Loading recorded {participantActionsLabel}…</p>}</div></div></main>}
+      {jiraView !== 'issues' && <main ref={actionPaneRef} className="min-h-0 flex-1 overflow-y-auto bg-[#f4f5f7] px-4 py-5 dark:bg-[#0f1628] sm:px-6 lg:px-8"><div className="mx-auto max-w-5xl"><div className="flex flex-wrap items-start gap-3 border-b border-[#dfe1e6] pb-5 dark:border-white/10"><div className="min-w-0 flex-1"><p className="text-xs font-semibold uppercase tracking-wide text-[#0052cc]">Sentinel Desk · global Jira</p><h1 className="mt-1 text-pretty text-2xl font-semibold">{jiraView === 'notifications' ? 'Notifications' : participantActionsLabel}</h1><p className="mt-2 text-sm text-slate-500">{jiraView === 'notifications' ? `Updates from across the project. These are notifications, not actions taken by ${participantName || 'the Sapien'}.` : `Every recorded Jira action by ${participantName || 'the simulation participant'}, across all issues.`}</p></div><Badge variant="outline">Evidence through #{overview?.through ?? '—'}</Badge></div><div className="mt-5 space-y-4">{jiraView === 'notifications' ? notificationCards : sapienActionCards}{jiraView === 'notifications' && notifications?.has_more && <Button variant="outline" onClick={() => void loadMoreNotifications()}>Load more notifications</Button>}{jiraView === 'notifications' && notifications && !notificationCards.length && <p className="rounded-xl border border-dashed bg-white p-6 text-center text-sm text-slate-500 dark:bg-[#10172a]">No Jira notifications were recorded at this evidence watermark.</p>}{jiraView === 'notifications' && !notifications && <p className="text-sm text-slate-500">Loading recorded notifications…</p>}{jiraView === 'sapien-actions' && sapienActions?.has_more && <Button variant="outline" disabled={loadingOlderActions} onClick={() => void loadMoreSapienActions()}>{loadingOlderActions ? 'Loading older actions…' : 'Load older actions'}</Button>}{jiraView === 'sapien-actions' && sapienActions && !sapienActionCards.length && <p className="rounded-xl border border-dashed bg-white p-6 text-center text-sm text-slate-500 dark:bg-[#10172a]">No Jira actions were recorded for {participantName || 'this participant'} at this evidence watermark.</p>}{jiraView === 'sapien-actions' && !sapienActions && <p className="text-sm text-slate-500">Loading recorded {participantActionsLabel}…</p>}</div></div></main>}
     </div>
   );
 }
@@ -883,5 +971,5 @@ export function SimulationWorldPage() {
   const links = useMemo(() => [{ to: `${base}/overview`, label: 'Overview', icon: LayoutDashboard }, { to: `${base}/test-case`, label: 'Test case', icon: BookOpen }, { to: `${base}/sapien`, label: 'Sapien journey', icon: Bot }, { to: `${base}/messages`, label: 'Messages', icon: MessageSquare }, { to: `${base}/jira`, label: 'Jira', icon: FolderKanban }, { to: `${base}/results`, label: 'Results', icon: CheckCircle2 }, { to: `${base}/diagnostics`, label: 'Diagnostics', icon: Activity }], [base]);
   const toggleSidebar = () => setSidebarCollapsed(collapsed => { const next = !collapsed; sessionStorage.setItem('simulation-world-sidebar-collapsed', String(next)); return next; });
   if (!run || run.run_id !== runId || selectionRestore.restoring) return <div className="grid min-h-screen place-items-center bg-[#07101f] text-white"><div className="text-center"><Beaker className="mx-auto size-9 animate-pulse text-violet-300" /><p className="mt-3 text-sm text-white/60">{error || (selectionRestore.restoring ? 'Verifying the selected Sapiens…' : 'Opening simulation world…')}</p><Button className="mt-4" variant="outline" onClick={() => navigate('/admin/simulations')}>Back to Simulation Lab</Button></div></div>;
-  return <div className="simulation-world-shell flex h-[100dvh] overflow-hidden bg-background text-foreground"><aside className={`hidden shrink-0 flex-col border-r bg-[#07101f] text-white transition-[width] duration-200 lg:flex ${sidebarCollapsed ? 'w-[72px]' : 'w-64'}`}><div className={`flex items-center border-b border-white/10 ${sidebarCollapsed ? 'flex-col gap-2 p-3' : 'gap-3 p-4'}`}><span className="grid size-10 shrink-0 place-items-center rounded-xl bg-violet-500/20"><Beaker className="size-5 text-violet-200" /></span>{!sidebarCollapsed && <div className="min-w-0 flex-1"><p className="font-semibold">Simulation World</p><p className="truncate text-xs text-white/40">{run.case_id}</p></div>}<button type="button" onClick={toggleSidebar} title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} className="grid size-8 shrink-0 place-items-center rounded-lg text-white/55 hover:bg-white/10 hover:text-white">{sidebarCollapsed ? <PanelLeftOpen className="size-4" /> : <PanelLeftClose className="size-4" />}</button></div><nav className={`flex-1 space-y-1 ${sidebarCollapsed ? 'px-3 py-3' : 'p-3'}`}>{links.map(item => { const Icon = item.icon; return <NavLink key={item.to} to={item.to} title={sidebarCollapsed ? item.label : undefined} aria-label={sidebarCollapsed ? item.label : undefined} className={({ isActive }) => `flex items-center rounded-lg py-2.5 text-sm transition ${sidebarCollapsed ? 'justify-center px-2' : 'gap-3 px-3'} ${isActive ? 'bg-white/10 text-white' : 'text-white/55 hover:bg-white/5 hover:text-white'}`}><Icon className="size-4 shrink-0" />{!sidebarCollapsed && item.label}</NavLink>; })}</nav><div className="border-t border-white/10 p-3"><button title={sidebarCollapsed ? 'Simulation Lab' : undefined} aria-label={sidebarCollapsed ? 'Simulation Lab' : undefined} onClick={() => navigate(`/admin/simulations?runId=${encodeURIComponent(run.run_id)}`)} className={`flex w-full items-center rounded-lg py-2 text-sm text-white/55 hover:bg-white/5 ${sidebarCollapsed ? 'justify-center px-2' : 'gap-2 px-3'}`}><ArrowLeft className="size-4 shrink-0" />{!sidebarCollapsed && 'Simulation Lab'}</button></div></aside><div className="flex min-w-0 flex-1 flex-col"><header className="border-b bg-card"><div className="flex flex-wrap items-center gap-3 px-4 py-3"><button aria-label="Back to Simulation Lab" onClick={() => navigate(`/admin/simulations?runId=${encodeURIComponent(run.run_id)}`)} className="p-2 lg:hidden"><ArrowLeft className="size-5" /></button><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><h1 className="truncate font-semibold">{run.case_id}</h1><Badge variant="secondary">{statusName(run.status)}</Badge>{run.archived && <Badge variant="outline">Archived</Badge>}</div><p className="truncate text-xs text-muted-foreground">{run.run_id} · {run.sapien_id ? `Sapiens ${run.sapien_id}` : 'No bound Sapiens'}</p></div><div className="hidden items-center gap-5 text-xs md:flex"><p><span className="text-muted-foreground">Simulated time</span><br />{time(run.simulated_time)}</p><p><span className="text-muted-foreground">Speed</span><br />{run.speed}×</p><p><span className="text-muted-foreground">Evidence</span><br />{run.event_count} records</p></div>{run.sapien_id != null && <OpenRunWorkspace sapienId={String(run.sapien_id)} />}</div><nav className="flex overflow-x-auto border-t px-2 lg:hidden">{links.map(item => <NavLink key={item.to} to={item.to} className={({ isActive }) => `whitespace-nowrap border-b-2 px-3 py-2 text-xs ${isActive ? 'border-violet-500' : 'border-transparent text-muted-foreground'}`}>{item.label}</NavLink>)}</nav></header>{error && <p className="border-b border-red-500/20 bg-red-500/10 px-4 py-2 text-sm text-red-600">{error}</p>}<main data-nav-scroll="simulation-content" className="min-h-0 flex-1 overflow-y-auto">{['timeline','progress','people','connections'].includes(section) && <div className="border-b px-6 py-3 text-sm"><NavLink className="text-violet-500 underline" to={`${base}/diagnostics`}>← All diagnostics</NavLink></div>}{section === 'diagnostics' ? <DiagnosticsPortal run={run} /> : section === 'overview' ? <SimulationVisualOverview key={run.run_id} run={run} knownSapienName={knownSapienName} /> : section === 'test-case' ? <TestCasePortal run={run} /> : section === 'timeline' ? <TimelinePortal runId={run.run_id} /> : section === 'progress' ? <ProgressPortal key={run.run_id} runId={run.run_id} /> : section === 'people' ? <PeoplePortal runId={run.run_id} /> : section === 'jira' ? <JiraPortal runId={run.run_id} eventCount={run.event_count} /> : section === 'messages' ? <ChatPortal runId={run.run_id} eventCount={run.event_count} /> : section === 'sapien' ? <SimulationJourney key={run.run_id} run={run} /> : section === 'results' ? <SimulationResults key={run.run_id} run={run} /> : <div className="p-4 lg:p-6"><SimulationWorldExplorer key={`${run.run_id}:${section}`} runId={run.run_id} eventCount={run.event_count} archived={!!run.archived} /></div>}</main></div></div>;
+  return <div className="simulation-world-shell flex h-[100dvh] overflow-hidden bg-background text-foreground"><aside className={`hidden shrink-0 flex-col border-r bg-[#07101f] text-white transition-[width] duration-200 lg:flex ${sidebarCollapsed ? 'w-[72px]' : 'w-64'}`}><div className={`flex items-center border-b border-white/10 ${sidebarCollapsed ? 'flex-col gap-2 p-3' : 'gap-3 p-4'}`}><span className="grid size-10 shrink-0 place-items-center rounded-xl bg-violet-500/20"><Beaker className="size-5 text-violet-200" /></span>{!sidebarCollapsed && <div className="min-w-0 flex-1"><p className="font-semibold">Simulation World</p><p className="truncate text-xs text-white/40">{run.case_id}</p></div>}<button type="button" onClick={toggleSidebar} title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} className="grid size-8 shrink-0 place-items-center rounded-lg text-white/55 hover:bg-white/10 hover:text-white">{sidebarCollapsed ? <PanelLeftOpen className="size-4" /> : <PanelLeftClose className="size-4" />}</button></div><nav className={`flex-1 space-y-1 ${sidebarCollapsed ? 'px-3 py-3' : 'p-3'}`}>{links.map(item => { const Icon = item.icon; return <NavLink key={item.to} to={item.to} title={sidebarCollapsed ? item.label : undefined} aria-label={sidebarCollapsed ? item.label : undefined} className={({ isActive }) => `flex items-center rounded-lg py-2.5 text-sm transition ${sidebarCollapsed ? 'justify-center px-2' : 'gap-3 px-3'} ${isActive ? 'bg-white/10 text-white' : 'text-white/55 hover:bg-white/5 hover:text-white'}`}><Icon className="size-4 shrink-0" />{!sidebarCollapsed && item.label}</NavLink>; })}</nav><div className="border-t border-white/10 p-3"><button title={sidebarCollapsed ? 'Simulation Lab' : undefined} aria-label={sidebarCollapsed ? 'Simulation Lab' : undefined} onClick={() => navigate(`/admin/simulations?runId=${encodeURIComponent(run.run_id)}`)} className={`flex w-full items-center rounded-lg py-2 text-sm text-white/55 hover:bg-white/5 ${sidebarCollapsed ? 'justify-center px-2' : 'gap-2 px-3'}`}><ArrowLeft className="size-4 shrink-0" />{!sidebarCollapsed && 'Simulation Lab'}</button></div></aside><div className="flex min-w-0 flex-1 flex-col"><header className="border-b bg-card"><div className="flex flex-wrap items-center gap-3 px-4 py-3"><button aria-label="Back to Simulation Lab" onClick={() => navigate(`/admin/simulations?runId=${encodeURIComponent(run.run_id)}`)} className="p-2 lg:hidden"><ArrowLeft className="size-5" /></button><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><h1 className="truncate font-semibold">{run.case_id}</h1><Badge variant="secondary">{statusName(run.status)}</Badge>{run.archived && <Badge variant="outline">Archived</Badge>}</div><p className="truncate text-xs text-muted-foreground">{run.run_id} · {run.sapien_id ? `Sapiens ${run.sapien_id}` : 'No bound Sapiens'}</p></div><div className="hidden items-center gap-5 text-xs md:flex"><p><span className="text-muted-foreground">Simulated time</span><br />{time(run.simulated_time)}</p><p><span className="text-muted-foreground">Speed</span><br />{run.speed}×</p><p><span className="text-muted-foreground">Evidence</span><br />{run.event_count} records</p></div>{run.sapien_id != null && <OpenRunWorkspace sapienId={String(run.sapien_id)} />}</div><nav className="flex overflow-x-auto border-t px-2 lg:hidden">{links.map(item => <NavLink key={item.to} to={item.to} className={({ isActive }) => `whitespace-nowrap border-b-2 px-3 py-2 text-xs ${isActive ? 'border-violet-500' : 'border-transparent text-muted-foreground'}`}>{item.label}</NavLink>)}</nav></header>{error && <p className="border-b border-red-500/20 bg-red-500/10 px-4 py-2 text-sm text-red-600">{error}</p>}<main data-nav-scroll="simulation-content" className="min-h-0 flex-1 overflow-y-auto">{['timeline','progress','people','connections'].includes(section) && <div className="border-b px-6 py-3 text-sm"><NavLink className="text-violet-500 underline" to={`${base}/diagnostics`}>← All diagnostics</NavLink></div>}{section === 'diagnostics' ? <DiagnosticsPortal run={run} /> : section === 'overview' ? <SimulationVisualOverview key={run.run_id} run={run} knownSapienName={knownSapienName} /> : section === 'test-case' ? <TestCasePortal run={run} /> : section === 'timeline' ? <TimelinePortal runId={run.run_id} /> : section === 'progress' ? <ProgressPortal key={run.run_id} runId={run.run_id} /> : section === 'people' ? <PeoplePortal runId={run.run_id} /> : section === 'jira' ? <JiraPortal key={run.run_id} runId={run.run_id} eventCount={run.event_count} /> : section === 'messages' ? <ChatPortal runId={run.run_id} eventCount={run.event_count} /> : section === 'sapien' ? <SimulationJourney key={run.run_id} run={run} /> : section === 'results' ? <SimulationResults key={run.run_id} run={run} /> : <div className="p-4 lg:p-6"><SimulationWorldExplorer key={`${run.run_id}:${section}`} runId={run.run_id} eventCount={run.event_count} archived={!!run.archived} /></div>}</main></div></div>;
 }

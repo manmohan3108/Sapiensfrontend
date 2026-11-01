@@ -225,9 +225,11 @@ const hasLiveRuntime = (run: SimulationRun) =>
 const pollDelay = (status: SimulationStatus) =>
   status === "scheduled" || status === "paused"
     ? 30_000
-    : status === "starting" || status === "stopping"
-      ? 10_000
-      : 15_000;
+    : status === "starting"
+      ? 2_000
+      : status === "stopping"
+        ? 10_000
+        : 15_000;
 const message = (error: unknown) =>
   error instanceof HttpError
     ? `${error.status === 404 ? "Run or evidence not found in live runtime or saved history: " : error.status === 409 && error.code !== "context_changed" ? "Run changed; refresh and try again: " : error.status === 403 ? "Admin access required: " : error.status === 401 ? "Session expired: " : ""}${error.message}`
