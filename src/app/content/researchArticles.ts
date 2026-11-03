@@ -8,23 +8,23 @@ export type ResearchArticle = {
 // Introductions describe current code and research directions, not deployment guarantees.
 export const researchArticles: Partial<Record<string, ResearchArticle>> = {
   "philosophy": {
-    "opening": "We often face new situations without being told exactly what to do. We use what we know, ask questions and change our approach as we learn more. AI can also reason about a situation and suggest useful steps. The challenge we want to explore is how an AI can keep understanding and acting as things change, with less need for a person to explain every detail and choose each next step.",
+    "opening": "We often face new situations without being told exactly what to do. We use what we know, ask questions and change our approach as we learn more. AI can also reason about a situation and suggest useful steps. But can AI develop the kind of understanding that allows people to learn from experience and adapt to new situations? This is one of the questions behind Sapiens.",
     "sections": [
       {
-        "title": "When the situation changes",
-        "text": "For example, someone joining a team might notice that two colleagues expect different things. They could ask about the difference and bring it up again when they learn something new. An AI assistant can suggest similar steps. To follow through later, it also needs a way to remember the discussion, receive updates and return to the question. A language model can help reason about these events, while the system around it determines what information reaches it and when it gets another chance to act."
+        "title": "What a new experience can change",
+        "text": "For example, someone joining a team might think two colleagues disagree. After talking with them, they learn that each is describing a different part of the work. That changes how they understand the discussion and may help them interpret a similar situation later. An AI can reason about this too when given the details. We want to study how its experience of one situation could shape its understanding of another."
       },
       {
         "title": "Why this matters",
-        "text": "If a person has to keep reminding the AI what happened and telling it what to do next, that person still does much of the thinking. We want Sapiens to do more of this for itself: notice what needs attention, ask about what it does not understand and change its decisions when it learns more. Remembering facts helps, but it also needs to work out what those facts mean and whether to do anything about them."
+        "text": "New situations often differ from the ones we have seen before. What we learned may help, but we may also need to question it or try another explanation. We want to understand how AI could develop knowledge that it can use across these changes. This includes learning from what happens, connecting ideas and recognizing when an earlier belief no longer fits. Remembering facts is part of the question; how those facts become useful is another."
       },
       {
         "title": "Why learn from the brain?",
-        "text": "People can use a past experience in a new situation, imagine what might happen and change their minds. We look to neuroscience, the study of the brain and nervous system, for ideas about how these abilities work. Those ideas may help us design AI that handles changing situations better. We want to understand why each process matters and what role it could play in Sapiens."
+        "text": "People can use a past experience in a new situation, imagine what might happen and change their minds. We look to neuroscience, the study of the brain and nervous system, for ideas about how these abilities work. Those ideas may help us explore how understanding and learning could develop in artificial systems. We want to understand why each process matters and what role it could play in Sapiens."
       },
       {
         "title": "Why philosophy matters too",
-        "text": "An AI might explain something well but fail to use that knowledge when it needs to. Does it understand? What does it mean for a system to decide something for itself? Philosophy helps us think carefully about questions like these. It helps us decide what we are trying to achieve and what the behaviour we observe actually tells us. Sounding human alone does not settle those questions."
+        "text": "What do we mean when we say that a person or an AI understands something? How could we tell whether it has learned something it can use in a different situation? People make mistakes too, so a single success or failure cannot answer these questions. Philosophy helps us examine what we mean by intelligence, understanding and making decisions. It helps us ask what the behaviour we observe can tell us, and what remains uncertain."
       },
       {
         "title": "The idea we want to test",
@@ -32,7 +32,7 @@ export const researchArticles: Partial<Record<string, ResearchArticle>> = {
       },
       {
         "title": "Why we are building Sapiens",
-        "text": "Sapiens gives us a way to try these ideas in practice. We can observe how it handles new information, what it remembers and whether it changes an earlier decision when there is a reason to. When something goes wrong, we can look at what happened and improve the design. Building and studying it helps us find out which ideas help, which do not and what we still need to understand."
+        "text": "Sapiens gives us a way to explore these questions in practice. We can study how earlier experiences affect its response to a new situation, whether it notices a conflict and whether it changes its mind for a good reason. Those observations can help us examine the ideas behind the design. We want to learn which ideas help explain the behaviour, where they fall short and what to explore next."
       }
     ],
     "related": [

@@ -96,10 +96,16 @@ the brain?” currently belongs inside the first article, not a new duplicate pa
 | `continuity` — Development over time | Explore development and revision across experience, beyond accumulating records |
 
 The first article should follow:
-problem and why it matters → human–AI comparison with a supporting example →
-what we want to address → why neuroscience → why philosophy → brief hypothesis →
+problem → human–AI comparison → explicit research question → supporting example
+and why it matters → why neuroscience → why philosophy → brief hypothesis →
 why build Sapiens to investigate. Open with the problem, not the example or the
 proposed solution. Its purpose is motivation, not an explanation of emergence.
+
+Keep the motivation about intelligence: understanding, learning and adapting.
+Do not narrow it to reducing supervision, reminders or instructions for the next
+step. Let the human–AI comparison lead to a question before introducing our
+approach. Keep software plumbing in the architecture articles; neither a single
+success nor a single failure establishes whether a person or AI understands.
 
 Where useful, explain how AI handles a human ability being discussed and what
 remains difficult. Distinguish language-model abilities from the surrounding
