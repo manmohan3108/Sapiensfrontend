@@ -32,6 +32,8 @@ reproduced the brain or demonstrated emergence.
 - Explain why that question matters, then develop the idea or approach. Names and
   implementation follow the motivation.
 - Use plain language with enough detail to make the reasoning meaningful.
+  Prefer direct sentences about what someone does or what happens. Avoid abstract
+  openings such as “Everyday life asks us” when “We often face” says it plainly.
   Introduce necessary technical terms beside their meaning. Explain a familiar
   example before naming its model or creator; the name should add context after
   the reader understands the idea.
