@@ -8,27 +8,31 @@ export type ResearchArticle = {
 // Introductions describe current code and research directions, not deployment guarantees.
 export const researchArticles: Partial<Record<string, ResearchArticle>> = {
   "philosophy": {
-    "opening": "What would it take to build an artificial intelligence that can make sense of unfamiliar situations, form its own questions and find ways to respond? We are building Sapiens to investigate that ambition, drawing inspiration from the brain and from philosophical thinking about intelligence.",
+    "opening": "Everyday life asks us to make sense of situations that have not been fully explained. People can draw on what they know, notice gaps and reconsider what to do as things change. AI can reason about a situation and offer useful answers, but a good answer does not by itself show that a system can keep understanding and responding as that situation develops. This continuing flexibility is the problem we want to investigate.",
     "sections": [
       {
-        "title": "The ambition behind Sapiens",
-        "text": "Imagine joining an unfamiliar team. Knowing the words people use is only a beginning. You need to work out what they mean in this setting, notice what you do not yet understand and decide what is worth asking or trying. As the situation changes, you may need to reconsider your first impression. We want to explore how an artificial individual could develop this kind of understanding while taking part in the world."
+        "title": "What changes when the situation moves on?",
+        "text": "Someone joining a team may notice that two colleagues have different expectations, ask about the difference and return to it when new information appears. Nobody needs to specify every step beforehand. An AI assistant might suggest the same steps when given those details. Following through later also depends on the surrounding system: what it retains, what new information reaches the model and when it asks the model to reconsider. Those steps can be automated, but each still needs to work for the situation at hand. We want to understand how an artificial individual could handle this with less continual direction from a person."
+      },
+      {
+        "title": "What we want to make possible",
+        "text": "If someone must repeatedly explain the situation, point out every important change and choose each next step, much of the judgement still rests with that person. Our ambition is for Sapiens to take a greater part in that work: recognize what needs attention, explore what it does not understand and revise its decisions as it learns more. Remembering earlier events is one part of this challenge; knowing what to make of them and when to act matters too."
       },
       {
         "title": "Why the brain is our starting point",
-        "text": "The brain is our inspiration because human intelligence spans many kinds of activity: making sense of what we encounter, recalling something relevant, imagining possibilities and choosing how to act. Neuroscience gives us ideas to investigate how these abilities are possible. We want to examine those ideas broadly, including concepts that may not yet have a place in our software. The question is which principles we can meaningfully adapt, and what building with them might help us discover."
+        "text": "Human flexibility makes the brain a natural source of inspiration. How do we recognize something familiar in a new setting, imagine possibilities or change our minds? Neuroscience offers ideas about the processes involved. We want to investigate which principles could help artificial systems develop these abilities. That means looking beyond a list of useful features to ask why each process is needed and how it contributes to the individual as a whole."
       },
       {
         "title": "Why philosophy belongs in the work",
-        "text": "Building a system also requires deciding what we are trying to build. What would count as understanding? What does it mean for an action to belong to an individual? Could intelligent behaviour tell us anything about consciousness? Philosophical questions help us examine our assumptions and distinguish claims that might otherwise be mixed together. They guide both what we choose to investigate and how we interpret what we observe."
+        "text": "A system might describe a situation convincingly while failing to use that information when it matters. What would justify saying that it understands? When it chooses an action, what would make that a decision of its own? Philosophy helps us examine what we mean by intelligence, understanding and agency. These questions guide what we try to build and how we interpret its behaviour, without assuming that a human-like response implies a human-like mind."
       },
       {
         "title": "The hypothesis we want to explore",
-        "text": "Our central hypothesis is that intelligence may emerge as we bring brain-inspired processes together in software. This gives the research a direction; it is not an established result. “What we mean by emergence” develops that idea and its examples separately."
+        "text": "Our central hypothesis is that intelligence may emerge as we bring brain-inspired processes together in software. This is a possibility we want to investigate. The article “What we mean by emergence” explains the idea and its examples."
       },
       {
         "title": "Why build Sapiens to study these questions?",
-        "text": "Building makes us turn an idea into specific choices. If we think experience should influence understanding, we must decide what can be retained, when it becomes relevant and how it could change a later decision. We can then observe what happens and revise the design. Sapiens is where we explore these questions in practice. The articles that follow introduce the concepts, explain our design choices and examine what our experiments can tell us."
+        "text": "Building lets us turn these questions into choices we can examine. If we want a Sapien to reconsider an earlier decision, we must give it a way to encounter new information, relate it to what happened and decide whether anything should change. We can then observe where the approach helps and where it fails. Sapiens is our way of exploring these ideas in practice, with the design open to revision as we learn."
       }
     ],
     "related": [

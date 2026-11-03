@@ -150,6 +150,7 @@ export function ResearchPage() {
         </nav>
       </header>
       <main id="research-main" tabIndex={-1} className="direction-wrap research-main">
+        <p className="research-update-note">These articles are being updated and may not yet reflect the latest product changes or research findings.</p>
         {slug ? article && articleSection && articleContent ? <div className="research-article-layout">
           <nav className="research-breadcrumb" aria-label="Breadcrumb">
             <Link to={browseUrl}>Research</Link><span aria-hidden="true">/</span>

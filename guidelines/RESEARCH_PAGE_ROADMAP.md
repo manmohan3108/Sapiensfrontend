@@ -85,7 +85,7 @@ the brain?” currently belongs inside the first article, not a new duplicate pa
 
 | Existing article | Question or responsibility |
 | --- | --- |
-| `philosophy` — Why we are building Sapiens | Establish our ambition, why neuroscience and philosophy guide it, and why we build to investigate; introduce the hypothesis briefly |
+| `philosophy` — Why we are building Sapiens | Establish the problem through human–AI comparisons, why it matters, our ambition and inspiration, then the brief hypothesis and why we build to investigate |
 | `intelligence-understanding` — Intelligence and understanding | Clarify what we want to investigate and why fluent responses alone do not settle it |
 | `emergence` — What we mean by emergence | Explain the intended meaning and what distinguishes it from merely surprising output |
 | `self-agency` — Self and agency | Explore continuity, perspective and responsibility before describing shared-self implementation |
@@ -94,9 +94,15 @@ the brain?” currently belongs inside the first article, not a new duplicate pa
 | `continuity` — Development over time | Explore development and revision across experience, beyond accumulating records |
 
 The first article should follow:
-question → ambition illustrated by a familiar situation → why the brain inspires
-us → how philosophical questions guide the work → brief hypothesis → why build
-to investigate. Its purpose is motivation, not an explanation of emergence.
+problem and why it matters → human–AI comparison with a supporting example →
+what we want to address → why neuroscience → why philosophy → brief hypothesis →
+why build Sapiens to investigate. Open with the problem, not the example or the
+proposed solution. Its purpose is motivation, not an explanation of emergence.
+
+Where useful, explain how AI handles a human ability being discussed and what
+remains difficult. Distinguish language-model abilities from the surrounding
+system, without blanket claims that AI cannot reason, learn or act independently.
+Memory and continuity illustrate the broader challenge; they are not its entirety.
 
 Keep these neighbouring articles distinct: the first explains why we are building
 Sapiens; Intelligence and understanding examines what those terms mean; Emergence
