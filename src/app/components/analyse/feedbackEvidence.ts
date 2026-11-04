@@ -56,7 +56,7 @@ export function toolEvidence(reference: FeedbackReference) {
   const outcome = matched?.[2] === 'has an uncertain result' ? 'Uncertain' : text(display?.outcome)
     || (matched?.[2] === 'failed' ? 'Failed' : matched?.[2] === 'succeeded' ? 'Succeeded'
       : typeof metadata.is_error === 'boolean' ? metadata.is_error ? 'Failed' : 'Succeeded' : '');
-  return { server, tool, args, result, resultText, outcome, parsed: !!matched };
+  return { server, tool, args, result, resultText, resultSource: matched?.[4], outcome, parsed: !!matched };
 }
 
 function memberId(member: RecordValue) {

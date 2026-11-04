@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useSearchParams } from 'react-router';
 import { motorService, type MotorDetail, type MotorPage, type MotorStatus } from '../../core/services/motorService';
+import { MotorEvidence } from './MotorEvidence';
 import { AnalyseControls } from './AnalyseControls';
-import { DiagnosticBadge, DiagnosticDisclosure } from './DiagnosticPrimitives';
+import { DiagnosticBadge } from './DiagnosticPrimitives';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '../ui/dialog';
 import { useNavigationMemory } from '../navigation/NavigationState';
 import { openRecordFromRow } from './recordRowInteraction';
@@ -45,16 +46,10 @@ function MotorRecord({ sapienId, id, scope }: { sapienId: string; id: string; sc
     <h3>{item.server || 'Unknown service'} / {item.tool || 'Unknown tool'}</h3>
     <Result status={item.status} />
     <p className="motor-help">A tool result describes this attempt; it does not prove the overall task was completed.</p>
-    <dl><div><dt>Occurred</dt><dd>{time(item.occurred_at)}</dd></div><div><dt>Saved observation time</dt><dd>{time(item.observed_at)}</dd></div><div><dt>Requested by</dt><dd>{item.caller || 'Not recorded'}</dd></div><div><dt>Environment</dt><dd>{scopeLabel(item.scope)}</dd></div></dl>
+    <dl className="motor-summary-facts"><div><dt>Occurred</dt><dd>{time(item.occurred_at)}</dd></div><div><dt>Saved observation time</dt><dd>{time(item.observed_at)}</dd></div><div><dt>Requested by</dt><dd>{item.caller || 'Not recorded'}</dd></div><div><dt>Environment</dt><dd>{scopeLabel(item.scope)}</dd></div></dl>
     {item.caller === 'awareness_engine' && item.execution_id && <Link className="diagnostic-link" to={'/admin/analyse/awareness?' + new URLSearchParams({ awarenessFor: sapienId, awarenessRun: item.execution_id })}>Open originating Awareness run</Link>}
     {item.scope && <Link className="diagnostic-link" to={`/admin/simulations/${encodeURIComponent(item.scope)}/world/overview`}>Open simulation</Link>}
-    <h3>Recorded result and inputs</h3>
-    <p className="motor-help">Retained, redacted evidence; the provider’s complete response may not have been saved. Times in simulations follow the simulated clock.</p>
-    {item.evidence.truncated && <p className="motor-help">This inspection preview is shortened.</p>}
-    <pre>{item.evidence.content || 'No result text was retained.'}</pre>
-    <DiagnosticDisclosure title="Tool inputs"><pre>{JSON.stringify(item.arguments, null, 2) ?? 'Not recorded'}</pre></DiagnosticDisclosure>
-    {item.communication != null && <DiagnosticDisclosure title="Recorded message delivery"><pre>{JSON.stringify(item.communication, null, 2)}</pre></DiagnosticDisclosure>}
-    <DiagnosticDisclosure title="Origin and technical references"><p>References identify the recorded source; an execution ID is not necessarily an Awareness run ID. Shortened values are marked.</p><pre>{JSON.stringify({ activity_id: item.id, execution_id: item.execution_id, context: item.context, correlation_id: item.correlation_id, source_ref: item.source_ref }, null, 2)}</pre></DiagnosticDisclosure>
+    <MotorEvidence item={item} />
   </div>;
 }
 

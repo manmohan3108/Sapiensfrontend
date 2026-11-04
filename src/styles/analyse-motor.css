@@ -20,8 +20,27 @@ body:has(.analyse-shell) .motor-dialog { width:calc(100% - 32px); max-width:1000
 .motor-dialog>h2 { padding-right:32px; }
 .motor-record { min-width:0; display:grid; gap:12px; }
 .motor-record h3 { font-size:18px; margin-top:8px; overflow-wrap:anywhere; }
-.motor-record dl { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.motor-record .motor-summary-facts { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
 .motor-record dt { color:var(--an-muted); font-size:14px; }
 .motor-record dd { overflow-wrap:anywhere; }
 .motor-record pre { white-space:pre-wrap; overflow-wrap:anywhere; font-size:14px; line-height:1.6; padding:12px; background:var(--an-panel); border:1px solid var(--an-line); border-radius:5px; max-height:440px; overflow:auto; }
-@media(max-width:640px) { .motor-table-wrap table { min-width:700px; } .motor-record dl { grid-template-columns:1fr; } body:has(.analyse-shell) .motor-dialog { padding:16px; } }
+@media(max-width:640px) { .motor-table-wrap table { min-width:700px; } .motor-record .motor-summary-facts { grid-template-columns:1fr; } body:has(.analyse-shell) .motor-dialog { padding:16px; } }
+
+.motor-evidence-flow { display:grid; grid-template-columns:minmax(0,1fr) 24px minmax(0,1.2fr); align-items:start; gap:12px; margin-top:8px; }
+.motor-evidence-step { min-width:0; padding:16px; background:var(--an-panel); border:1px solid var(--an-line); border-radius:6px; }
+.motor-evidence-step>h3 { margin:0 0 16px; font-size:17px; }
+.motor-evidence-arrow { color:var(--an-accent); align-self:start; padding-top:18px; text-align:center; font-size:22px; }
+.motor-record .stored-value-fields { display:block; margin:0; }
+.motor-record .stored-value-fields>div { display:grid; grid-template-columns:minmax(90px, .38fr) minmax(0,1fr); gap:10px; padding:9px 0; border-bottom:1px solid var(--an-line); }
+.motor-record .stored-value-fields>div:last-child { border-bottom:0; }
+.motor-record .stored-value-fields .stored-value-fields>div { display:block; padding-left:10px; border-left:1px solid var(--an-line); }
+.motor-record .stored-value-fields dt { overflow-wrap:anywhere; font-size:14px; }
+.motor-record .stored-value-fields dd { margin:0; min-width:0; font-size:15px; }
+.motor-record .stored-value-fields p { margin:0; white-space:pre-wrap; }
+.motor-record .stored-value-empty, .motor-record .stored-value-caption { color:var(--an-muted); font-size:14px; }
+.motor-record .stored-value-list ol { list-style:decimal; padding-left:24px; }
+.motor-record .stored-value-list li { padding:8px 0; overflow-wrap:anywhere; content-visibility:auto; }
+.motor-record .diagnostic-link { min-height:32px; text-align:left; }
+.motor-record .diagnostic-text p { white-space:pre-wrap; overflow-wrap:anywhere; }
+@media(max-width:800px) { .motor-evidence-flow { grid-template-columns:minmax(0,1fr); } .motor-evidence-arrow { transform:rotate(90deg); padding:0; } }
+@media(max-width:480px) { .motor-record .stored-value-fields>div { grid-template-columns:minmax(0,1fr); gap:4px; } }
