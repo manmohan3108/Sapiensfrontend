@@ -1,9 +1,8 @@
 .analyse-explanation { max-width:85ch; margin:0 0 16px; color:var(--an-ink); font-family:'Source Sans 3',sans-serif; overflow-wrap:anywhere; }
-.analyse-explanation .analyse-explanation-lead { margin:0; font-size:17px; font-weight:600; line-height:1.45; text-wrap:pretty; }
-.analyse-explanation .analyse-explanation-summary { margin:4px 0 0; font-size:15px; line-height:1.55; }
-.analyse-explanation details { margin-top:6px; }
-.analyse-explanation summary { width:fit-content; min-height:36px; padding:6px 2px; color:var(--an-accent); font-size:14px; cursor:pointer; }
-.analyse-explanation summary:hover { text-decoration:underline; text-underline-offset:3px; }
-.analyse-explanation summary:focus-visible { outline:2px solid var(--an-accent); outline-offset:3px; border-radius:3px; }
-.analyse-explanation-details { padding:0 0 4px 12px; border-left:2px solid var(--an-line); }
-.analyse-explanation .analyse-explanation-details p { margin:8px 0 0; color:var(--an-muted); font-size:14px; line-height:1.6; }
+.analyse-explanation .analyse-explanation-preview, .analyse-explanation-continuation p { margin:0; font-size:15px; line-height:1.6; }
+.analyse-explanation-preview strong { font-weight:600; }
+.analyse-explanation-continuation[hidden] { display:none; }
+.analyse-explanation-continuation p { margin-top:8px; }
+.analyse-explanation-toggle { display:block; width:fit-content; min-height:36px; margin-top:2px; padding:6px 2px; color:var(--an-accent); font-size:14px; cursor:pointer; }
+.analyse-explanation-toggle:hover { text-decoration:underline; text-underline-offset:3px; }
+.analyse-explanation-toggle:focus-visible { outline:2px solid var(--an-accent); outline-offset:3px; border-radius:3px; }
