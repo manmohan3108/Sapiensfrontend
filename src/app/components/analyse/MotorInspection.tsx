@@ -96,28 +96,35 @@ function MotorView({ sapienId }: { sapienId: string }) {
   return <div ref={container} className="motor-page">
     <p>See which tools the Sapien used and what each attempt returned. Open an action for its inputs, result and origin.</p>
     <form key={`${sapienId}:${queryText}`} onSubmit={event => { event.preventDefault(); apply(new FormData(event.currentTarget)); }}>
-      <AnalyseControls summary={`${scope === null ? 'All saved scopes' : scopeLabel(scope)} · Newest event first · 25 per page`} busy={read.loading} onRefresh={read.refresh} primary={<>
+      <AnalyseControls filters={(['server', 'tool', 'q', 'status', 'since', 'until'] as const).filter(field => query.has(field)).map(field => ({
+        label: ({ server: 'Service', tool: 'Tool', q: 'Search', status: 'Result', since: 'From', until: 'Until' })[field] + ': ' + (field === 'status' ? labels[query.get(field) as MotorStatus] || query.get(field) : query.get(field)),
+        onRemove: () => update({ [`motor_${field}`]: null, motor_offset: null, motorRecord: null }),
+      }))} summary={`${scope === null ? 'All saved scopes' : scopeLabel(scope)} · Newest event first · 25 per page`} busy={read.loading} onRefresh={read.refresh} primary={<>
         <label>Search saved activity<input name="q" maxLength={160} defaultValue={query.get('q') || ''} placeholder="Tool, caller or recorded text…" /></label>
         <label>Result<select name="status" defaultValue={query.get('status') || ''}><option value="">All results</option>{Object.entries(labels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+        <label>Exact service<input name="server" maxLength={160} defaultValue={query.get('server') || ''} placeholder="teams" /></label>
+        <label>Exact tool<input name="tool" maxLength={160} defaultValue={query.get('tool') || ''} /></label>
         <button className="analyse-button" type="submit">Apply filters</button><button className="analyse-button" type="button" onClick={clear}>Clear</button>
       </>}>
         <label>Environment<select name="environment" defaultValue={scope === null ? 'all' : scope ? 'simulation' : 'live'}><option value="all">All saved scopes</option><option value="live">Normal / live</option><option value="simulation">Specific simulation</option></select></label>
         <label>Simulation run ID<input name="run" maxLength={160} defaultValue={scope || ''} placeholder="run-…" /></label>
-        <label>Exact service<input name="server" maxLength={160} defaultValue={query.get('server') || ''} placeholder="teams" /></label>
-        <label>Exact tool<input name="tool" maxLength={160} defaultValue={query.get('tool') || ''} /></label>
         <label>Occurred from (ISO with timezone)<input name="since" defaultValue={query.get('since') || ''} placeholder="2026-11-01T00:00:00Z" /></label>
         <label>Occurred until (ISO with timezone)<input name="until" defaultValue={query.get('until') || ''} placeholder="2026-11-30T23:59:59Z" /></label>
       </AnalyseControls>
       {formError && <p role="alert">{formError}</p>}
     </form>
-    <p className="motor-help">Search covers stored result/input text, service, tool and caller across matching saved records. Missing history cannot be reconstructed here.</p>
+    <p className="motor-help">Use “Only this tool” to see matching attempts across all pages, within the other selected filters. Search covers saved input/result text, service, tool and caller.</p>
     {read.loading && <p role="status">Loading saved activity…</p>}
     {read.error && <div role="alert"><p>{read.error}</p><button className="analyse-button" onClick={read.refresh}>Retry</button></div>}
     {read.data && <section aria-label="Motor activity">
       <h2 ref={heading} tabIndex={-1}>Tool attempts</h2><p role="status">{read.data.items.length} on this page · {read.data.total} matching saved records</p>
       <div className="motor-table-wrap" tabIndex={0} role="region" aria-label="Tool attempts; scroll horizontally on small screens"><table><thead><tr>{['Time', 'Service / action', 'Result', 'Origin'].map(label => <th scope="col" key={label}>{label}</th>)}</tr></thead><tbody>
         {read.data.items.map(item => <tr key={item.id} data-selected={item.id === selected} onClick={openRecordFromRow}>
-          <td>{time(item.occurred_at)}</td><td><button type="button" data-record-open className="motor-open" onClick={event => { opener.current = event.currentTarget; update({ motorRecord: item.id }); }}>{item.tool || 'Unknown tool'}<small>{item.server || 'Unknown service'}</small></button></td>
+          <td>{time(item.occurred_at)}</td><td><button type="button" data-record-open className="motor-open" onClick={event => { opener.current = event.currentTarget; update({ motorRecord: item.id }); }}>{item.tool || 'Unknown tool'}<small>{item.server || 'Unknown service'}</small></button>
+            {item.tool && item.server && <button type="button" className="motor-tool-filter" aria-label={`Show only ${item.server} ${item.tool} activity`} disabled={query.get('server') === item.server && query.get('tool') === item.tool} onClick={() => {
+              setFormError(''); update({ motor_server: item.server, motor_tool: item.tool, motor_offset: null, motorRecord: null });
+            }}>{query.get('server') === item.server && query.get('tool') === item.tool ? 'Tool filter applied' : 'Only this tool'}</button>}
+          </td>
           <td><Result status={item.status} /></td><td>{item.caller || 'Caller not recorded'}<small>{item.scope === null ? 'Scope not recorded' : item.scope ? 'Simulation' : 'Normal / live'}</small></td>
         </tr>)}
       </tbody></table></div>
