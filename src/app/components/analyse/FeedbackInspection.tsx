@@ -116,7 +116,7 @@ function FeedbackView({ sapienId }: { sapienId: string }) {
   const retry = () => { if (error?.status === 400) update({ states: [], offset: 0, selectedId: null }); refresh(); };
 
   return <div className="feedback-page">
-    <div className="feedback-intro"><p>The Feedback engine reviews earlier actions and later events to look for possible lessons. Open a finding to see those events and what Sapiens concluded.</p><p className="feedback-help">{loading ? 'Loading saved feedback…' : feedbackMode(data?.mode)}</p></div>
+    <div className="feedback-intro"><p>Open a finding to see its evidence and what Sapiens concluded.</p><p className="feedback-help">{loading ? 'Loading saved feedback…' : feedbackMode(data?.mode)}</p></div>
     <AnalyseControls label="Page options" primary={<fieldset className="feedback-state-filter"><legend>Finding state <span>(all when none selected)</span></legend>
       <div>{FEEDBACK_STATES.map((state, index) => <label key={state}><input ref={index === 0 ? firstFilter : undefined} type="checkbox" name="feedbackState" value={state} checked={states.includes(state)} onChange={event => update({ states: event.target.checked ? [...states, state] : states.filter(item => item !== state), offset: 0, selectedId: null })} />{feedbackLabels[state]}</label>)}</div>
     </fieldset>} summary={(states.length ? states.map(state => feedbackLabels[state]).join(', ') : 'All finding states') + ' · ' + limit + ' per page'} onRefresh={refresh} busy={loading}>

@@ -1,3 +1,4 @@
+import { AnalyseIntroduction } from '../analyse/AnalyseIntroduction';
 import { useCallback, useEffect, useState } from 'react';
 import { AlertCircle, BarChart3, Loader2, RefreshCw } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog';
@@ -151,7 +152,7 @@ export function LlmUsageDialog({ open, onOpenChange, sapienId, sapienName, compa
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90dvh] w-[calc(100%-1rem)] max-w-3xl overflow-y-auto border-white/10 bg-[#090e1c] p-0 text-white shadow-2xl sm:w-full">
         <DialogHeader className="border-b border-white/[.07] px-5 py-4 pr-12 text-left sm:px-6"><DialogTitle className="flex items-center gap-2 text-base"><BarChart3 className="h-4 w-4 text-cyan-300" />AI usage & limits</DialogTitle><DialogDescription className="text-xs text-white/35">LLM and embedding accounting reset on UTC dates. History covers the latest 7 recorded days.</DialogDescription></DialogHeader>
-        <div className="space-y-6 px-5 pb-6 sm:px-6" aria-live="polite"><UsageKindSection compactDetails={compactDetails} kind="llm" state={states.llm} sapienId={sapienId} sapienName={sapienName} onRetry={() => void loadKind('llm')} /><div className="border-t border-white/10" /><UsageKindSection compactDetails={compactDetails} kind="embedding" state={states.embedding} sapienId={sapienId} sapienName={sapienName} onRetry={() => void loadKind('embedding')} /></div>
+        <div className="space-y-6 px-5 pb-6 sm:px-6" aria-live="polite">{compactDetails && <AnalyseIntroduction section="usage" />}<UsageKindSection compactDetails={compactDetails} kind="llm" state={states.llm} sapienId={sapienId} sapienName={sapienName} onRetry={() => void loadKind('llm')} /><div className="border-t border-white/10" /><UsageKindSection compactDetails={compactDetails} kind="embedding" state={states.embedding} sapienId={sapienId} sapienName={sapienName} onRetry={() => void loadKind('embedding')} /></div>
       </DialogContent>
     </Dialog>
   );

@@ -70,7 +70,7 @@ function RunBrowser({ sapienId }: { sapienId: string }) {
     if (rows[index]) setParams(query({ awarenessRun: rows[index].id }), { replace: true });
   };
   return <div className="awareness-reader">
-    <header className="awareness-intro"><div><h2>Follow Sapiens’ understanding and actions.</h2><p>A run is a saved review of a situation: what prompted it, what Sapiens understood and what happened next.</p></div>
+    <header className="awareness-intro"><div><h2>Saved runs</h2><p>Open a run to inspect its trigger, decisions, actions and outcome.</p></div>
       <button type="button" className="analyse-button" onClick={refresh} disabled={loading}>{loading ? <Loader2 size={16} className="animate-spin" aria-hidden="true"/> : <RefreshCw size={16} aria-hidden="true"/>}Refresh</button>
     </header>
     {!scoped && params.has('awarenessFor') && <p role="status" className="awareness-caption">The linked selection belongs to another Sapien. Showing records for the currently selected Sapien.</p>}

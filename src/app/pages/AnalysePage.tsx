@@ -1,3 +1,4 @@
+import { AnalyseIntroduction } from '../components/analyse/AnalyseIntroduction';
 import { WorkingMemoryAnalysis } from '../components/analyse/WorkingMemoryAnalysis';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
@@ -53,6 +54,7 @@ export function AnalysePage() {
     navigate(hrefFor(id, params));
   };
   return <AnalyseShell section={section} name={currentSapiens.name} sapienId={currentSapiens.id} go={go}>
+    {section !== 'engram' && section !== 'engine-bus' && section !== 'simulation' && section !== 'usage' && <AnalyseIntroduction key={section} section={section} />}
     {section === 'overview' && <AnalyseOverview go={go} hrefFor={hrefFor} />}
     {section === 'awareness' && <AwarenessAnalysis sapienId={currentSapiens.id} />}
     {section === 'working-memory' && <WorkingMemoryAnalysis key={currentSapiens.id} sapienId={Number(currentSapiens.id)} openEngram={() => go('engram')} />}
@@ -62,7 +64,6 @@ export function AnalysePage() {
     {developmentDescription && <section className="analyse-development" aria-labelledby="development-heading">
       <span className="analyse-development-status">Under development</span>
       <h2 id="development-heading">Analysis is not available yet</h2>
-      <p>{developmentDescription}</p>
       <p>This analysis view will be available after implementation and validation are complete.</p>
       <p className="analyse-development-note">This notice does not indicate whether the engine has recorded activity for this Sapien.</p>
     </section>}

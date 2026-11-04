@@ -117,7 +117,6 @@ function MotorView({ sapienId }: { sapienId: string }) {
     setFormError(''); update(values);
   };
   return <div ref={container} className="motor-page">
-    <p>See which tools the Sapien used and what each attempt returned. Open an action for its inputs, result and origin.</p>
     <form key={`${sapienId}:${queryText}:${formRevision}`} onSubmit={event => { event.preventDefault(); apply(new FormData(event.currentTarget)); }}>
       <AnalyseControls filters={(['server', 'tool', 'q', 'status', 'since', 'until'] as const).filter(field => query.has(field)).map(field => ({
         label: ({ server: 'Service', tool: 'Tool', q: 'Search', status: 'Result', since: 'From', until: 'Until' })[field] + ': ' + (field === 'status' ? labels[query.get(field) as MotorStatus] || query.get(field) : query.get(field)),

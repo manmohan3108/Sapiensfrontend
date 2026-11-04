@@ -186,7 +186,7 @@ function JobList({ sapienId, initialEngine, initialJob }: { sapienId: string; in
   function restart() { setRequest(current => ({ ...current, cursors: [null], revision: current.revision + 1 })); }
 
   return <div className="space-y-4">
-    <p className="analyse-page-purpose">Inspect saved engine work, execution status and failures. <span className="analyse-inline-note">Read-only · counts cover the filtered creation window.</span></p>
+    <p className="analyse-page-purpose"><span className="analyse-inline-note">Read-only · counts cover the filtered creation window.</span></p>
 <form onSubmit={event => {
       event.preventDefault();
       if (!Number.isInteger(draft.days) || draft.days < 1 || draft.days > 90 || !Number.isInteger(draft.limit) || draft.limit < 1 || draft.limit > 200) return;

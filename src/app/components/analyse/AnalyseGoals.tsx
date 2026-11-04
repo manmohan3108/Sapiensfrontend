@@ -146,7 +146,6 @@ export function AnalyseGoals({ sapienId }: { sapienId: number }) {
   const selectedIndex = visible.findIndex(goal => goal.id === selected);
   return <div className="analyse-goals" ref={container}>
     <div className="ag-list-controls" hidden={!!selected}>
-    <p className="analyse-page-purpose">See what this Sapien is working towards, its current plans and the progress recorded so far.</p>
     <AnalyseControls primary={<>
       <div role="group" aria-label="Goal lifecycle" className="ag-views">{views.map(value => <button type="button" key={value} aria-pressed={view === value} onClick={() => update('goalView', value)}>{value === 'open' ? 'Open' : value === 'finished' ? 'Finished' : 'Retired'}</button>)}</div>
       <label>Search loaded goals<input type="search" name="goalSearch" autoComplete="off" value={search} onChange={event => update('goalSearch', event.target.value, true)} placeholder="Goal, workflow state or ID…" /></label>

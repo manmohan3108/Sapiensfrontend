@@ -25,7 +25,6 @@ const descriptions: Record<Exclude<AnalyseSection, 'overview'>, string> = {
 
 export function AnalyseOverview({ go, hrefFor }: { go: (section: AnalyseSection) => void; hrefFor: (section: AnalyseSection) => string }) {
   return <div className="analyse-overview">
-    <p className="analyse-index-purpose">Explore this Sapien’s saved understanding, learning and activity.</p>
     <div className="analyse-index-groups">{ANALYSE_GROUPS.map((group, index) => <section className="analyse-index-group" key={group.label} aria-labelledby={'analyse-group-' + index}>
       <h2 id={'analyse-group-' + index}>{group.label}</h2>
       <ul>{group.items.map(item => {

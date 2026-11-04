@@ -1,3 +1,4 @@
+import { AnalyseIntroduction } from '../components/analyse/AnalyseIntroduction';
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { BarChart2, Table2, User, Search, Share2, Cpu, Brain, Home } from 'lucide-react';
@@ -150,6 +151,7 @@ export function EngramPage({ embedded = false }: { embedded?: boolean } = {}) {
             transition: 'border-color 0.3s, box-shadow 0.3s',
           }}
         >
+          {embedded && <AnalyseIntroduction section="engram" />}
           {/* Section header */}
           {!embedded && <div className="engram-main-heading flex items-center gap-2 mb-5 pb-3" style={{ borderBottom: `1px solid ${accent}15` }}>
             <span style={{ color: accent }}>{TABS.find(t => t.id === tab)?.icon}</span>
