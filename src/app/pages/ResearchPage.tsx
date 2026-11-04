@@ -150,7 +150,7 @@ export function ResearchPage() {
         </nav>
       </header>
       <main id="research-main" tabIndex={-1} className="direction-wrap research-main">
-        <p className="research-update-note">These articles are being updated and may not yet reflect the latest product changes or research findings.</p>
+        {slug && <p className="research-update-note">These articles are being updated and may not yet reflect the latest product changes or research findings.</p>}
         {slug ? article && articleSection && articleContent ? <div className="research-article-layout">
           <nav className="research-breadcrumb" aria-label="Breadcrumb">
             <Link to={browseUrl}>Research</Link><span aria-hidden="true">/</span>
@@ -208,8 +208,14 @@ export function ResearchPage() {
           <Link className="research-back" to="/research">Browse research</Link>
         </div> : <>
           <header className="research-opening research-overview">
-            <h1>Research</h1>
-            <p className="research-intro">Can intelligence emerge from interacting brain-inspired mechanisms? We explore this question through neuroscience, philosophy, computational design and experiments.</p>
+            <div className="research-overview-copy">
+              <h1>Research</h1>
+              <p className="research-intro">Can intelligence emerge from interacting brain-inspired mechanisms? We explore this question through neuroscience, philosophy, computational design and experiments.</p>
+            </div>
+            <aside className="research-update-card" aria-label="Article update notice">
+              <strong>Articles are being updated</strong>
+              <p>Some articles may not yet reflect the latest product changes or research findings.</p>
+            </aside>
           </header>
           <div className="research-controls">
             <label className="research-search" htmlFor="research-search">Search topics

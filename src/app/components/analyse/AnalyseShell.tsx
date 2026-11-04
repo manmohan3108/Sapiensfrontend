@@ -19,6 +19,7 @@ export const ANALYSE_GROUPS = [
     { id: 'tool-learning', label: 'Tool Learning', icon: Sparkles },
   ] },
   { label: 'Operations', items: [
+    { id: 'motor', label: 'Motor', icon: Activity },
     { id: 'engine-bus', label: 'Engine Bus', icon: Activity },
     { id: 'engine-jobs', label: 'Engine Jobs', icon: Activity },
     { id: 'timeline', label: 'Timeline', icon: Clock3 },

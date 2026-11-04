@@ -14,6 +14,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { sapiensDirectoryPath } from '../core/auth/navigation';
 import { AwarenessDiagnostics as AwarenessAnalysis } from '../components/analyse/AwarenessDiagnostics';
 import { FeedbackInspection } from '../components/analyse/FeedbackInspection';
+import { MotorInspection } from '../components/analyse/MotorInspection';
 import { ToolLearningInspection } from '../components/analyse/ToolLearningInspection';
 import { EngineJobsInspection } from '../components/analyse/EngineJobsInspection';
 import { QuestioningInspection } from '../components/analyse/QuestioningInspection';
@@ -57,6 +58,7 @@ export function AnalysePage() {
     {section === 'goals' && <AnalyseGoals key={currentSapiens.id} sapienId={Number(currentSapiens.id)} />}
     {section === 'engram' && <EngramPage embedded />}
     {section === 'engine-bus' && <EngineBusPage embedded />}
+    {section === 'motor' && <MotorInspection sapienId={currentSapiens.id} />}
     {section === 'engine-jobs' && <EngineJobsInspection sapienId={currentSapiens.id} />}
     {section === 'questioning' && <QuestioningInspection sapienId={currentSapiens.id} />}
     {section === 'curiosity' && <CuriosityInspection sapienId={currentSapiens.id} />}

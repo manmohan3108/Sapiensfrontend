@@ -1,0 +1,27 @@
+.motor-page { display:grid; gap:16px; color:var(--an-ink); }
+.motor-page p, .motor-record p { line-height:1.5; max-width:85ch; }
+.motor-help, .motor-page small { color:var(--an-muted); font-size:14px; }
+.motor-page label { display:flex; flex-direction:column; gap:6px; font-size:14px; }
+.motor-page input, .motor-page select { background:var(--an-panel); color:var(--an-ink); border:1px solid var(--an-line); border-radius:5px; padding:9px 12px; min-width:0; max-width:100%; }
+.motor-page :focus-visible, .motor-dialog :focus-visible { outline:2px solid var(--an-accent); outline-offset:3px; }
+.motor-table-wrap { overflow-x:auto; border:1px solid var(--an-line); border-radius:6px; background:var(--an-panel); }
+.motor-table-wrap table { width:100%; border-collapse:collapse; text-align:left; font-size:15px; }
+.motor-table-wrap th, .motor-table-wrap td { padding:12px 16px; vertical-align:top; }
+.motor-table-wrap th { color:var(--an-muted); font-weight:600; }
+.motor-table-wrap td { border-top:1px solid var(--an-line); overflow-wrap:anywhere; }
+.motor-table-wrap td:first-child { width:210px; font-variant-numeric:tabular-nums; }
+.motor-table-wrap tbody tr { cursor:pointer; }
+.motor-table-wrap tbody tr:hover, .motor-table-wrap tbody tr:focus-within, .motor-table-wrap tr[data-selected=true] { background:var(--an-soft); }
+.motor-open { display:block; width:100%; min-height:44px; text-align:left; color:var(--an-ink); cursor:pointer; }
+.motor-page small { display:block; margin-top:4px; }
+.motor-pagination { display:flex; flex-wrap:wrap; gap:16px; align-items:center; margin-top:16px; }
+.motor-page button:disabled { opacity:.5; cursor:default; }
+body:has(.analyse-shell) .motor-dialog { width:calc(100% - 32px); max-width:1000px; max-height:calc(100dvh - 32px); overflow-y:auto; overscroll-behavior:contain; padding:24px; }
+.motor-dialog>h2 { padding-right:32px; }
+.motor-record { min-width:0; display:grid; gap:12px; }
+.motor-record h3 { font-size:18px; margin-top:8px; overflow-wrap:anywhere; }
+.motor-record dl { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.motor-record dt { color:var(--an-muted); font-size:14px; }
+.motor-record dd { overflow-wrap:anywhere; }
+.motor-record pre { white-space:pre-wrap; overflow-wrap:anywhere; font-size:14px; line-height:1.6; padding:12px; background:var(--an-panel); border:1px solid var(--an-line); border-radius:5px; max-height:440px; overflow:auto; }
+@media(max-width:640px) { .motor-table-wrap table { min-width:700px; } .motor-record dl { grid-template-columns:1fr; } body:has(.analyse-shell) .motor-dialog { padding:16px; } }

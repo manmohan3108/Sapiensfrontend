@@ -13,6 +13,7 @@ const descriptions: Record<Exclude<AnalyseSection, 'overview'>, string> = {
   curiosity: 'Explore the information gaps and inquiries Sapiens identifies.',
   feedback: 'Review possible lessons and the evidence behind them.',
   'tool-learning': 'Read what Sapiens learned from each service and tool.',
+  motor: 'Inspect saved tool attempts, inputs and recorded results.',
   'engine-bus': 'Trace signals passed between engines and their delivery.',
   'engine-jobs': 'Inspect scheduled work, execution status and failures.',
   timeline: 'Browse conversation and memory events in time order.',
