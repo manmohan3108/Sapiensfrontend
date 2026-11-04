@@ -120,3 +120,9 @@ body:has(.analyse-shell) .analyse-content .recharts-cartesian-grid line { stroke
   background-image:linear-gradient(var(--an-grid-major) 1px,transparent 1px),linear-gradient(90deg,var(--an-grid-major) 1px,transparent 1px),linear-gradient(var(--an-grid) 1px,transparent 1px),linear-gradient(90deg,var(--an-grid) 1px,transparent 1px);
   background-size:96px 96px,96px 96px,24px 24px,24px 24px;
 }
+
+.analyse-development { max-width:640px; padding:24px; border:1px solid var(--an-line); border-radius:8px; background:var(--an-panel); }
+.analyse-development-status { display:inline-block; padding:4px 10px; border-radius:4px; background:var(--an-soft); color:var(--an-accent); font-size:14px; font-weight:600; }
+.analyse-development h2 { margin:16px 0 8px; color:var(--an-ink); font-size:22px; line-height:1.3; }
+.analyse-development p { margin:8px 0 0; color:var(--an-ink); font-size:16px; line-height:1.6; }
+.analyse-development .analyse-development-note { margin-top:16px; color:var(--an-muted); font-size:14px; }

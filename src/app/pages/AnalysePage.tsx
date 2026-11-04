@@ -58,6 +58,12 @@ export function AnalysePage() {
     {section === 'goals' && <AnalyseGoals key={currentSapiens.id} sapienId={Number(currentSapiens.id)} />}
     {section === 'engram' && <EngramPage embedded />}
     {section === 'engine-bus' && <EngineBusPage embedded />}
+    {(section === 'hold' || section === 'dopamine') && <section className="analyse-development" aria-labelledby="development-heading">
+      <span className="analyse-development-status">Under development</span>
+      <h2 id="development-heading">Analysis is not available yet</h2>
+      <p>The {section === 'hold' ? 'Hold' : 'Dopamine'} engine is still being implemented and tested. Its analysis view will be available after validation.</p>
+      <p className="analyse-development-note">This notice does not indicate whether the engine has recorded activity for this Sapien.</p>
+    </section>}
     {section === 'motor' && <MotorInspection sapienId={currentSapiens.id} />}
     {section === 'engine-jobs' && <EngineJobsInspection sapienId={currentSapiens.id} />}
     {section === 'questioning' && <QuestioningInspection sapienId={currentSapiens.id} />}

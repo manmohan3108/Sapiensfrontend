@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { useRef, useState } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
-import { Activity, ArrowUpRight, BarChart3, Beaker, BrainCircuit, Bug, Clock3, DatabaseZap, Eye, LayoutDashboard, Menu, Search, Sparkles, Target, X } from 'lucide-react';
+import { Activity, ArrowUpRight, BarChart3, Beaker, BrainCircuit, Bug, Clock3, DatabaseZap, Eye, LayoutDashboard, Menu, PauseCircle, Gauge, Search, Sparkles, Target, X } from 'lucide-react';
 import '../../../styles/analyse.css';
 import '../../../styles/analyse-density.css';
 
@@ -23,6 +23,10 @@ export const ANALYSE_GROUPS = [
     { id: 'engine-bus', label: 'Engine Bus', icon: Activity },
     { id: 'engine-jobs', label: 'Engine Jobs', icon: Activity },
     { id: 'timeline', label: 'Timeline', icon: Clock3 },
+  ] },
+  { label: 'Under development', items: [
+    { id: 'hold', label: 'Hold', icon: PauseCircle },
+    { id: 'dopamine', label: 'Dopamine', icon: Gauge },
   ] },
   { label: 'Analysis tools', items: [
     { id: 'simulation', label: 'Simulation', icon: Beaker },
