@@ -1,6 +1,6 @@
 import { ArrowUpRight } from 'lucide-react';
 import { Link } from 'react-router';
-import { ANALYSE_GROUPS } from './AnalyseShell';
+import { ANALYSE_GROUPS, ANALYSE_DEVELOPMENT_DESCRIPTIONS } from './AnalyseShell';
 import type { AnalyseSection } from './AnalyseShell';
 import '../../../styles/analyse-overview-notebook.css';
 
@@ -14,8 +14,7 @@ const descriptions: Record<Exclude<AnalyseSection, 'overview'>, string> = {
   feedback: 'Review possible lessons and the evidence behind them.',
   'tool-learning': 'Read what Sapiens learned from each service and tool.',
   motor: 'Inspect saved tool attempts, inputs and recorded results.',
-  hold: 'Implementation and validation are in progress. Analysis is not available yet.',
-  dopamine: 'Implementation and validation are in progress. Analysis is not available yet.',
+  ...ANALYSE_DEVELOPMENT_DESCRIPTIONS,
   'engine-bus': 'Trace signals passed between engines and their delivery.',
   'engine-jobs': 'Inspect scheduled work, execution status and failures.',
   timeline: 'Browse conversation and memory events in time order.',

@@ -20,7 +20,7 @@ import { EngineJobsInspection } from '../components/analyse/EngineJobsInspection
 import { QuestioningInspection } from '../components/analyse/QuestioningInspection';
 import { CuriosityInspection } from '../components/analyse/CuriosityInspection';
 
-import { AnalyseShell, ANALYSE_NAV } from '../components/analyse/AnalyseShell';
+import { AnalyseShell, ANALYSE_NAV, ANALYSE_DEVELOPMENT_DESCRIPTIONS } from '../components/analyse/AnalyseShell';
 import type { AnalyseSection } from '../components/analyse/AnalyseShell';
 import { AnalyseOverview } from '../components/analyse/AnalyseOverview';
 
@@ -36,6 +36,7 @@ export function AnalysePage() {
   const [usageOpen, setUsageOpen] = useState(false);
   useOrchestratorStatus();
   const section = (ANALYSE_NAV.some(n => n.id === rawSection) ? rawSection : 'overview') as AnalyseSection;
+  const developmentDescription = Object.entries(ANALYSE_DEVELOPMENT_DESCRIPTIONS).find(([id]) => id === section)?.[1];
   useEffect(() => { if (!currentSapiens) navigate(sapiensDirectoryPath(user?.role ?? 'customer')); }, [currentSapiens, navigate, user?.role]);
   useEffect(() => { if (section === 'usage') setUsageOpen(true); }, [section]);
   if (!currentSapiens) return null;
@@ -58,10 +59,11 @@ export function AnalysePage() {
     {section === 'goals' && <AnalyseGoals key={currentSapiens.id} sapienId={Number(currentSapiens.id)} />}
     {section === 'engram' && <EngramPage embedded />}
     {section === 'engine-bus' && <EngineBusPage embedded />}
-    {(section === 'hold' || section === 'dopamine') && <section className="analyse-development" aria-labelledby="development-heading">
+    {developmentDescription && <section className="analyse-development" aria-labelledby="development-heading">
       <span className="analyse-development-status">Under development</span>
       <h2 id="development-heading">Analysis is not available yet</h2>
-      <p>The {section === 'hold' ? 'Hold' : 'Dopamine'} engine is still being implemented and tested. Its analysis view will be available after validation.</p>
+      <p>{developmentDescription}</p>
+      <p>This analysis view will be available after implementation and validation are complete.</p>
       <p className="analyse-development-note">This notice does not indicate whether the engine has recorded activity for this Sapien.</p>
     </section>}
     {section === 'motor' && <MotorInspection sapienId={currentSapiens.id} />}

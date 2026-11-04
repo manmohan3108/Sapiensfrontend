@@ -27,6 +27,11 @@ export const ANALYSE_GROUPS = [
   { label: 'Under development', items: [
     { id: 'hold', label: 'Hold', icon: PauseCircle },
     { id: 'dopamine', label: 'Dopamine', icon: Gauge },
+    { id: 'prediction', label: 'Prediction & surprise', icon: Activity },
+    { id: 'abstraction', label: 'Abstraction', icon: BrainCircuit },
+    { id: 'evaluation', label: 'Evaluation', icon: Eye },
+    { id: 'belief-revision', label: 'Belief revision', icon: Search },
+    { id: 'synthesis', label: 'Synthesis', icon: Sparkles },
   ] },
   { label: 'Analysis tools', items: [
     { id: 'simulation', label: 'Simulation', icon: Beaker },
@@ -34,6 +39,16 @@ export const ANALYSE_GROUPS = [
     { id: 'usage', label: 'AI Usage', icon: BarChart3 },
   ] },
 ] as const;
+export const ANALYSE_DEVELOPMENT_DESCRIPTIONS = {
+  hold: 'Implementation and validation are in progress.',
+  dopamine: 'Implementation and validation are in progress.',
+  prediction: 'Compare expectations with what actually happens. The predictive loop is not connected to normal runtime yet.',
+  abstraction: 'Find general patterns across experiences. Implementation and integration are incomplete.',
+  evaluation: 'Assess claims against evidence. Implementation and integration are incomplete.',
+  'belief-revision': 'Reconsider beliefs when evidence changes. Implementation and integration are incomplete.',
+  synthesis: 'Combine existing understanding into new knowledge. Implementation and integration are incomplete.',
+} as const;
+
 export type AnalyseSection = 'overview' | typeof ANALYSE_GROUPS[number]['items'][number]['id'];
 type AnalyseNavItem = { id: AnalyseSection; label: string; icon: typeof Eye };
 export const ANALYSE_NAV: AnalyseNavItem[] = [{ id: 'overview', label: 'Overview', icon: LayoutDashboard }, ...ANALYSE_GROUPS.flatMap<AnalyseNavItem>(group => [...group.items])];
