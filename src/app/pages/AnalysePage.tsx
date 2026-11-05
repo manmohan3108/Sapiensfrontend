@@ -64,7 +64,7 @@ export function AnalysePage() {
     {developmentDescription && <section className="analyse-development" aria-labelledby="development-heading">
       <span className="analyse-development-status">Under development</span>
       <h2 id="development-heading">Analysis is not available yet</h2>
-      <p>This analysis view will be available after implementation and validation are complete.</p>
+      <p>This capability is currently being implemented and validated, and will be available soon.</p>
       <p className="analyse-development-note">This notice does not indicate whether the engine has recorded activity for this Sapien.</p>
     </section>}
     {section === 'motor' && <MotorInspection sapienId={currentSapiens.id} />}
