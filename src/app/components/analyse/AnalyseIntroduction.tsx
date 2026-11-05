@@ -100,6 +100,11 @@ const introductions: Record<Exclude<AnalyseSection, 'simulation'>, Introduction>
     summary: "The aim is to combine what is already known into possible explanations or new ideas.",
     details: ["A new explanation would still need to be distinguished from established evidence. Partial code exists under Weave, but it is not connected to normal runtime or ready for analysis."],
   },
+  imagination: {
+    lead: 'What else could be possible?',
+    summary: 'The aim is to imagine different explanations, situations and approaches to explore new directions. These possibilities remain separate from established facts and need evidence before being accepted.',
+    details: ['A what-if idea can open another direction of thought, even when it is not yet supported by evidence. The intention is to explore alternatives, compare them with what is known and keep clear which parts are imagined. This analysis view is under development and does not show generated possibilities yet.'],
+  },
   timeline: {
     lead: 'Sequence helps explain how a conversation unfolded.',
     summary: 'Browse the selected conversation’s recorded messages in time order.',

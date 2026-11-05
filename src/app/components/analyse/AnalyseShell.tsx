@@ -32,6 +32,7 @@ export const ANALYSE_GROUPS = [
     { id: 'evaluation', label: 'Evaluation', icon: Eye },
     { id: 'belief-revision', label: 'Belief revision', icon: Search },
     { id: 'synthesis', label: 'Synthesis', icon: Sparkles },
+    { id: 'imagination', label: 'Imagination & possibilities', icon: Sparkles },
   ] },
   { label: 'Analysis tools', items: [
     { id: 'simulation', label: 'Simulation', icon: Beaker },
@@ -47,6 +48,7 @@ export const ANALYSE_DEVELOPMENT_DESCRIPTIONS = {
   evaluation: 'Assess claims against evidence. Implementation and integration are incomplete.',
   'belief-revision': 'Reconsider beliefs when evidence changes. Implementation and integration are incomplete.',
   synthesis: 'Combine existing understanding into new knowledge. Implementation and integration are incomplete.',
+  imagination: 'Explore different explanations, situations and approaches while keeping possibilities separate from facts.',
 } as const;
 
 export type AnalyseSection = 'overview' | typeof ANALYSE_GROUPS[number]['items'][number]['id'];
