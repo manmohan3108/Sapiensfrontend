@@ -1,5 +1,6 @@
 import { SimulationPurpose } from '../components/simulation/SimulationPurpose';
 import { useRestoreSapienSelection } from '../components/navigation/useRestoreSapienSelection';
+import { LiveSimulatedTime } from '../components/simulation/LiveSimulatedTime';
 import { useAuth } from '../contexts/AuthContext';
 import { sapiensDirectoryPath } from '../core/auth/navigation';
 import { selectionStorage } from '../core/auth/selectionStorage';
@@ -77,17 +78,6 @@ const stamp = (value?: string | Date | null) =>
         },
       ) + " IST"
     : "—";
-const simulatedStamp = (value: Date) =>
-  value.toLocaleString("en-IN", {
-    timeZone: "Asia/Kolkata",
-    weekday: "long",
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-    second: "2-digit",
-  }) + " IST";
 const countdown = (value?: string | null) => {
   if (!value) return "—";
   const seconds = Math.max(
@@ -156,60 +146,6 @@ function LiveWallBudget({
     return () => window.clearInterval(timer);
   }, [remaining, counting]);
   return <>{seconds}s</>;
-}
-function LiveSimulatedTime({
-  value,
-  endAt,
-  speed,
-  advancing,
-}: {
-  value: string;
-  endAt: string;
-  speed: number;
-  advancing: boolean;
-}) {
-  const anchor = useRef({
-    value,
-    endAt,
-    speed,
-    advancing,
-    receivedAt: Date.now(),
-  });
-  const current = anchor.current;
-  if (
-    current.value !== value ||
-    current.endAt !== endAt ||
-    current.speed !== speed ||
-    current.advancing !== advancing
-  )
-    anchor.current = { value, endAt, speed, advancing, receivedAt: Date.now() };
-  const [, tick] = useState(0);
-  useEffect(() => {
-    if (!advancing) return;
-    let frame = 0,
-      lastPaint = 0;
-    const paint = (now: number) => {
-      if (now - lastPaint >= 250) {
-        lastPaint = now;
-        tick((count) => count + 1);
-      }
-      frame = window.requestAnimationFrame(paint);
-    };
-    frame = window.requestAnimationFrame(paint);
-    return () => window.cancelAnimationFrame(frame);
-  }, [advancing]);
-  const snapshot = anchor.current;
-  const base = new Date(snapshot.value).getTime();
-  const projected = snapshot.advancing
-    ? base + (Date.now() - snapshot.receivedAt) * snapshot.speed
-    : base;
-  return (
-    <>
-      {simulatedStamp(
-        new Date(Math.min(projected, new Date(snapshot.endAt).getTime())),
-      )}
-    </>
-  );
 }
 const statusLabel = (status: SimulationStatus) =>
   ({
