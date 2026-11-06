@@ -101,6 +101,14 @@ const countdown = (value?: string | null) => {
     ? `${hours}h ${minutes}m ${remainder}s`
     : `${minutes}m ${remainder}s`;
 };
+const isReadyToStart = (
+  status: SimulationStatus,
+  scheduledStartAt?: string | null,
+  executionStartedAt?: string | null,
+) =>
+  status === "scheduled" &&
+  !executionStartedAt &&
+  !(scheduledStartAt && new Date(scheduledStartAt).getTime() > Date.now());
 function LiveCountdown({
   value,
   startedAt,
@@ -122,9 +130,9 @@ function LiveCountdown({
   if (startedAt) return <>Started {stamp(startedAt)}</>;
   if (status === "starting") return <>Preparing simulation…</>;
   if (status === "scheduled") {
-    return value && new Date(value).getTime() > Date.now()
-      ? <>Starts in {countdown(value)} once ready</>
-      : <>Ready — starting…</>;
+    return isReadyToStart(status, value, startedAt)
+      ? <>Ready — starting…</>
+      : <>Starts in {countdown(value)} once ready</>;
   }
   return <>Not started</>;
 }
@@ -222,14 +230,22 @@ const hasLiveRuntime = (run: SimulationRun) =>
   !terminal.has(run.status) &&
   !run.archived &&
   run.runtime_available !== false;
-const pollDelay = (status: SimulationStatus) =>
-  status === "scheduled" || status === "paused"
+const pollDelay = (run: SimulationRun) => {
+  if (isReadyToStart(run.status, run.scheduled_start_at, run.execution_started_at))
+    return 5_000;
+  if (run.status === "scheduled" && run.scheduled_start_at) {
+    const untilReady = new Date(run.scheduled_start_at).getTime() - Date.now();
+    if (Number.isFinite(untilReady) && untilReady > 0)
+      return Math.min(30_000, Math.max(1_000, untilReady));
+  }
+  return run.status === "scheduled" || run.status === "paused"
     ? 30_000
-    : status === "starting"
+    : run.status === "starting"
       ? 2_000
-      : status === "stopping"
+      : run.status === "stopping"
         ? 10_000
         : 15_000;
+};
 const message = (error: unknown) =>
   error instanceof HttpError
     ? `${error.status === 404 ? "Run or evidence not found in live runtime or saved history: " : error.status === 409 && error.code !== "context_changed" ? "Run changed; refresh and try again: " : error.status === 403 ? "Admin access required: " : error.status === 401 ? "Session expired: " : ""}${error.message}`
@@ -734,7 +750,7 @@ export function SimulationLabPage() {
           return;
         failed = 0;
         if (!(next.archived && terminal.has(next.status)))
-          timer = window.setTimeout(poll, pollDelay(next.status));
+          timer = window.setTimeout(poll, pollDelay(next));
       } catch (problem) {
         if (controller.signal.aborted) return;
         if (
