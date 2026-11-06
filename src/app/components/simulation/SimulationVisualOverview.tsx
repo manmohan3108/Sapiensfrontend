@@ -1,4 +1,5 @@
 import { SimulationPurpose } from './SimulationPurpose';
+import { LiveSimulatedTime } from './LiveSimulatedTime';
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import { ArrowLeft, ArrowRight, Bot, Check, ChevronDown, CircleHelp, FileText, MessageSquare, RefreshCw, X } from 'lucide-react';
@@ -209,7 +210,7 @@ export function SimulationVisualOverview({ run, knownSapienName }: { run: Simula
   const phases = spec?.specification?.overview?.phases || [];
   const now = Date.parse(overview?.run_state?.simulated_time || run.simulated_time);
   return <div className="sv-overview">
-    <header className="sv-header"><div><p className="sv-eyebrow">A simulated workplace</p><h1 className="capitalize">{readable(run.case_id)}<span>.</span></h1></div><div className="sv-run-state"><span className="sv-status">{readable(overview?.run_status || run.status)}</span><small>Simulated time · {stamp(overview?.run_state?.simulated_time || run.simulated_time)}</small><Button variant="ghost" size="sm" disabled={loading} onClick={() => setRefresh(value => value + 1)}><RefreshCw className="mr-2 size-3.5" />{loading ? 'Loading…' : 'Refresh'}</Button></div></header>
+    <header className="sv-header"><div><p className="sv-eyebrow">A simulated workplace</p><h1 className="capitalize">{readable(run.case_id)}<span>.</span></h1></div><div className="sv-run-state"><span className="sv-status">{readable(overview?.run_status || run.status)}</span><small>Simulated time · <LiveSimulatedTime value={run.simulated_time} endAt={run.end_at} speed={run.speed} advancing={run.status === 'running' && !run.paused && !run.archived && run.runtime_available !== false} variant="compact" /></small><Button variant="ghost" size="sm" disabled={loading} onClick={() => setRefresh(value => value + 1)}><RefreshCw className="mr-2 size-3.5" />{loading ? 'Loading…' : 'Refresh'}</Button></div></header>
     {error && <p role="alert" className="sv-inline-error">{error}</p>}
     <OverviewRunDetail run={run} />
     <div className="mb-4"><SimulationPurpose sapienName={run.sapien_id ? knownSapienName || people.get(run.participant_id || '') : null} /></div>
