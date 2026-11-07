@@ -13,6 +13,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import { resourceSession } from '../../core/auth/authSession';
 import { useSapiens } from '../../hooks/useSapiens';
+import { useChatUpdates } from '../../hooks/useChatUpdates';
 import { useSapiensStore } from '../../core/state/sapiensStore';
 import { sapiensService } from '../../core/services/sapiensService';
 import { formatTime } from '../../utils/formatters';
@@ -192,6 +193,21 @@ function SignalControls({ msg, onSignal }: { msg: ChatMessage; onSignal: (s: Use
   );
 }
 
+function TurnStatus({ status }: { status: ChatMessage['turnStatus'] }) {
+  if (!status || status === 'completed') return null;
+  const labels = {
+    rejected: 'Message was not accepted. Check your connection and selected Sapien before trying again.',
+    sending: 'Sending…', queued: 'Message saved · Queued…',
+    processing: 'Processing…', waiting: 'Message saved · Waiting for completion…',
+    no_reply: 'Processed without a written reply.',
+    failed: 'Could not complete this turn. Check the conversation before sending again.',
+    unknown: 'Couldn’t confirm acceptance. Check conversation history before sending again.',
+  };
+  return <p role="status" aria-live="polite" className="px-1 text-xs leading-relaxed text-sp-muted">
+    {labels[status]}
+  </p>;
+}
+
 // ─── Message Bubble ───────────────────────────────────────────────────────────
 function MessageBubble({
   msg, sapienName, onSignal, isHighlighted,
@@ -282,6 +298,7 @@ function MessageBubble({
           </>
         )}
 
+        {isUser && <TurnStatus status={msg.turnStatus} />}
         {!msg.isLoading && <div className={`flex items-center gap-2 px-1 ${isUser ? 'flex-row-reverse' : ''}`}>
           <span className="text-[10px] text-sp-muted font-mono opacity-100 transition-opacity">{formatTime(msg.timestamp)}</span>
           {msg.content && !msg.emptyResponse && <CopyBtn text={msg.content} />}
@@ -333,6 +350,7 @@ function EmptyState({ name, onHint, recent, onResume, loading }: { name: string;
 export function ChatWindow() {
   const { user } = useAuth();
   const sending = useRef(false);
+  const chatUpdates = useChatUpdates();
   const draftSapienId = useSapiensStore(state => state.currentSapiens?.id);
   const [input, setInput] = useRememberedState(`conversation:${draftSapienId}:draft`, '');
   const [focused, setFocused] = useState(false);
@@ -445,9 +463,9 @@ export function ChatWindow() {
     if (textareaRef.current) textareaRef.current.style.height = 'auto';
     atBottomRef.current = true;
     setShowScroll(false);
-    const sent = await sendTextInput(t);
+    await sendTextInput(t);
     if (resourceSession.version === version) {
-      if (sent === false && user?.role !== 'admin') setInput(t);
+      // Unconfirmed submissions are not automatically restored for a second send.
       await refreshHistory();
     }
     sending.current = false;
@@ -509,6 +527,10 @@ export function ChatWindow() {
         </div>}
       </div>
 
+      {chatUpdates.error && <div role="status" aria-live="polite" className="flex flex-wrap items-center gap-3 border-b border-sp-line px-5 py-3 text-sm text-sp-muted">
+        <span>{chatUpdates.error}</span>
+        <button type="button" onClick={chatUpdates.refresh} className="rounded px-2 py-1 text-sp-accent hover:bg-sp-accent/10 focus-visible:outline focus-visible:outline-2">Refresh conversation</button>
+      </div>}
       {/* ── Messages ── */}
       <div className="flex-1 min-h-0 relative">
         <div className="absolute top-0 left-0 right-0 h-8 z-10 pointer-events-none"

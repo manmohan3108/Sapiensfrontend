@@ -7,10 +7,9 @@ import {
   Sapiens,
   UserSignalType,
   UserSignalPayload,
-  DebugInfo,
 } from '../types/sapiensTypes';
 import { logger } from '../utils/logger';
-import { generateId } from '../utils/formatters';
+import { chatMessages } from '../core/services/chatMessages';
 import { resourceSession } from '../core/auth/authSession';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -103,140 +102,72 @@ export function useSapiens() {
     [currentSapiens, setStatus]
   );
 
-  // ── Send chat message ────────────────────────────────────────────────────────
-  const sendTextInput = useCallback(
-    async (text: string) => {
-      if (!currentSapiens) {
-        logger.warn('No current Sapiens for text input');
-        return;
-      }
-
-      const now = () => new Date().toISOString();
-      const version = resourceSession.version;
-
-      // 1. Add user message immediately
-      const userMsgId = generateId('user');
-      addChatMessage({
-        id: userMsgId,
-        role: 'user',
-        content: text,
-        timestamp: now(),
+  // Acceptance and completion are separate: the chat window follows saved status.
+  const sendTextInput = useCallback(async (text: string) => {
+    if (!currentSapiens || useSapiensStore.getState().status === 'processing') return false;
+    const version = resourceSession.version;
+    const requestId = crypto.randomUUID();
+    const sessionId = useSapiensStore.getState().chatSessionId;
+    const current = () => resourceSession.version === version
+      && useSapiensStore.getState().currentSapiens?.id === currentSapiens.id
+      && useSapiensStore.getState().chatSessionId === sessionId;
+    addChatMessage({ id: requestId, role: 'user', content: text,
+      timestamp: new Date().toISOString(), turnStatus: 'sending' });
+    setStatus('processing');
+    try {
+      const response = await sapiensService.sendTextInput({
+        sapiensId: currentSapiens.id, text, sessionId, requestId,
       });
-
-      // 2. Add loading assistant placeholder
-      const assistantMsgId = generateId('assistant');
-      addChatMessage({
-        id: assistantMsgId,
-        role: 'assistant',
-        content: '',
-        timestamp: now(),
-        isLoading: true,
-      });
-
-      // Capture the request body for debug panel
-      const sessionId = useSapiensStore.getState().chatSessionId ?? null;
-      const rawRequest = {
-        sapien_id: parseInt(currentSapiens.id, 10),
-        session_id: sessionId,
-        message: text,
-      };
-
-      try {
-        setStatus('processing');
-
-        const chatResponse = await sapiensService.sendTextInput({
-          sapiensId: currentSapiens.id,
-          text,
-          sessionId: sessionId,
+      if (!current()) return false;
+      if (response.status === 'accepted') {
+        if (!response.thread_id || !response.message_id) throw new Error('Acceptance was not confirmed');
+        updateChatMessage(requestId, { id: response.message_id, sessionId: response.thread_id, turnStatus: 'queued' });
+      } else {
+        // Rolling deployment compatibility with the earlier synchronous endpoint.
+        updateChatMessage(requestId, { turnStatus: response.reply?.trim() ? 'completed' : 'no_reply' });
+        if (response.reply?.trim()) addChatMessage({
+          id: `${requestId}:reply`, role: 'assistant', content: response.reply,
+          timestamp: new Date().toISOString(), sessionId: response.thread_id,
+          memoryUnits: response.memory_units, contextUsed: response.context_used,
         });
-
-        // ── Persist thread_id for next turn (sent back as session_id) ──
-        if (chatResponse.thread_id) {
-          setChatSessionId(chatResponse.thread_id);
-        }
-
-        // ── Build augmented DebugInfo ──
-        const debugInfo: DebugInfo = {
-          ...(chatResponse.debug_info ?? { latency: {}, engine_flow: [] }),
-          raw_request: rawRequest,
-          raw_response: chatResponse,
-        };
-        setLastDebugInfo(debugInfo);
-
-        // ── Persist memory units ──
-        const memoryUnits = chatResponse.memory_units ?? [];
-        setLastMemoryUnits(memoryUnits);
-
-        // ── Overload signal ──
-        if (chatResponse.overloaded !== undefined) {
-          setOverloaded(chatResponse.overloaded);
-        }
-
-        // 3. Replace the loading placeholder with a completed response. An empty
-        // reply is a completed-but-invalid state, not a blank chat message.
-        const reply = chatResponse.reply ?? '';
-        const emptyResponse = reply.trim().length === 0;
-        updateChatMessage(assistantMsgId, {
-          content: emptyResponse ? 'No response text was returned. Check this conversation before sending your message again.' : reply,
-          isError: emptyResponse,
-          emptyResponse,
-          isLoading: false,
-          timestamp: now(),
-          memoryUnits,
-          contextUsed: chatResponse.context_used ?? 0,
-          sessionId: chatResponse.thread_id,
-          overloaded: chatResponse.overloaded,
-        });
-
-        setStatus('idle');
-        return true;
-      } catch (error) {
-        logger.error('Failed to send chat message', error);
-        if (resourceSession.version !== version) return false;
-        updateChatMessage(assistantMsgId, {
-          content: user?.role === 'admin' ? 'An error occurred while processing your request. Please try again.' : 'We couldn’t confirm the result. Your message may have been saved. Check this conversation before sending it again; we haven’t resent it.',
-          isError: true,
-          isLoading: false,
-          timestamp: now(),
-        });
-        setStatus('error');
-        return false;
       }
-    },
-    [
-      currentSapiens,
-      setStatus,
-      addChatMessage,
-      updateChatMessage,
-      setChatSessionId,
-      setLastMemoryUnits,
-      setLastDebugInfo,
-      setOverloaded,
-      user?.role,
-    ]
-  );
+      setChatSessionId(response.thread_id);
+      setLastDebugInfo({ ...(response.debug_info ?? { latency: {}, engine_flow: [] }),
+        raw_request: { sapien_id: Number(currentSapiens.id), session_id: sessionId,
+          message: text, async: true, request_id: requestId }, raw_response: response });
+      setLastMemoryUnits(response.memory_units ?? []);
+      if (response.overloaded !== undefined) setOverloaded(response.overloaded);
+      setStatus('idle');
+      return true;
+    } catch (error) {
+      if (!current()) return false;
+      logger.error('Chat acceptance could not be confirmed', error);
+      const code = (error as { status?: number }).status;
+      if (!code || code >= 500) {
+        // Read the acceptance receipt; never repeat the POST after an uncertain response.
+        const accepted = await sapiensService.findAcceptedTurn(currentSapiens.id, requestId).catch(() => null);
+        if (!current()) return false;
+        if (accepted?.message_id && accepted.thread_id) {
+          updateChatMessage(requestId, { id: accepted.message_id, sessionId: accepted.thread_id, turnStatus: 'queued' });
+          setChatSessionId(accepted.thread_id);
+          setStatus('idle');
+          return true;
+        }
+      }
+      updateChatMessage(requestId, { turnStatus: code && code >= 400 && code < 500 ? 'rejected' : 'unknown' });
+      setStatus('error');
+      return false;
+    }
+  }, [currentSapiens, addChatMessage, updateChatMessage, setChatSessionId, setStatus,
+      setLastDebugInfo, setLastMemoryUnits, setOverloaded]);
 
   const loadChat = useCallback(async (threadId: string) => {
     if (!currentSapiens) return;
+    const version = resourceSession.version;
+    const previousThread = useSapiensStore.getState().chatSessionId;
     const detail = await sapiensService.getChatDetail(currentSapiens.id, threadId);
-    const seen = new Set<string>();
-    const messages = [...detail.messages]
-      .sort((a, b) => new Date(a.occurred_at).getTime() - new Date(b.occurred_at).getTime())
-      .filter((message) => !seen.has(message.id) && seen.add(message.id))
-      .map((message) => {
-        const content = typeof message.content === 'string' ? message.content : '';
-        const emptyResponse = message.role === 'assistant' && !content.trim();
-        return {
-          id: message.id,
-          role: message.role,
-          content: emptyResponse ? 'No response text was recorded. Check this conversation before sending your message again.' : content,
-          timestamp: message.occurred_at,
-          sessionId: detail.thread_id,
-          isError: emptyResponse,
-          emptyResponse,
-        };
-      });
-    setChatMessages(messages);
+    if (resourceSession.version !== version || useSapiensStore.getState().chatSessionId !== previousThread) return;
+    setChatMessages(chatMessages(detail));
     setChatSessionId(detail.thread_id);
     setLastMemoryUnits([]);
     setLastDebugInfo(null);

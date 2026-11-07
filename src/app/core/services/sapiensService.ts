@@ -104,12 +104,14 @@ class SapiensService {
    * Turn 2+: session_id = thread_id from previous response → continues thread
    */
   async sendTextInput(
-    request: TextInputRequest & { sessionId?: string | null }
+    request: TextInputRequest & { sessionId?: string | null; requestId: string }
   ): Promise<ChatApiResponse> {
     const body: ChatRequest = {
       sapien_id: parseInt(request.sapiensId, 10),
       session_id: request.sessionId ?? null,
       message: request.text,
+      async: true,
+      request_id: request.requestId,
     };
     const response = await apiClient.post<ChatApiResponse>(API_ENDPOINTS.chat, body);
     const data = response.data;
@@ -130,6 +132,15 @@ class SapiensService {
     }
   }
 
+  async findAcceptedTurn(sapiensId: string, requestId: string): Promise<ChatApiResponse | null> {
+    const response = await apiClient.get<{ sapien_id: number; accepted?: ChatApiResponse | null }>(
+      `${API_ENDPOINTS.sapienChats(sapiensId)}?request_id=${encodeURIComponent(requestId)}`,
+      { signal: AbortSignal.timeout(10000) }
+    );
+    if (String(response.data.sapien_id) !== sapiensId) throw new Error('Unexpected Sapien in acceptance lookup');
+    return response.data.accepted ?? null;
+  }
+
   async getChatHistory(sapiensId: string, limit = 20): Promise<ChatHistoryResponse> {
     const response = await apiClient.get<ChatHistoryResponse>(
       `${API_ENDPOINTS.sapienChats(sapiensId)}?limit=${limit}`
@@ -137,10 +148,13 @@ class SapiensService {
     return response.data;
   }
 
-  async getChatDetail(sapiensId: string, threadId: string): Promise<ChatDetail> {
+  async getChatDetail(sapiensId: string, threadId: string, signal?: AbortSignal): Promise<ChatDetail> {
     const response = await apiClient.get<ChatDetail>(
-      `${API_ENDPOINTS.sapienChats(sapiensId)}/${encodeURIComponent(threadId)}`
+      `${API_ENDPOINTS.sapienChats(sapiensId)}/${encodeURIComponent(threadId)}`, { signal }
     );
+    if (String(response.data.sapien_id) !== sapiensId || response.data.thread_id !== threadId) {
+      throw new Error('The conversation response did not match the requested Sapien and thread.');
+    }
     return response.data;
   }
 

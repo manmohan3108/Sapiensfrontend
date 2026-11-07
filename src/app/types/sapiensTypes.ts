@@ -98,6 +98,8 @@ export interface ChatRequest {
   sapien_id: number;
   session_id: string | null;
   message: string;
+  async?: boolean;
+  request_id?: string;
 }
 
 /**
@@ -105,6 +107,8 @@ export interface ChatRequest {
  * thread_id must be stored and sent back as session_id on the next turn.
  */
 export interface ChatApiResponse {
+  status?: 'accepted';
+  message_id?: string;
   thread_id: string;
   reply: string;
   /** Alias — backend may return "message" instead of "reply" */
@@ -119,7 +123,10 @@ export interface ChatApiResponse {
 /**
  * A single message in the chat window, enriched with observability metadata.
  */
+export type ChatTurnStatus = 'queued' | 'processing' | 'waiting' | 'completed' | 'no_reply' | 'failed';
+
 export interface ChatMessage {
+  turnStatus?: ChatTurnStatus | 'sending' | 'unknown' | 'rejected';
   isError?: boolean;
   /** The request completed, but no assistant message text was returned or recorded. */
   emptyResponse?: boolean;
@@ -332,6 +339,7 @@ export interface StoredChatMessage {
 export interface ChatDetail extends ChatHistoryItem {
   sapien_id: number;
   messages: StoredChatMessage[];
+  turns?: { message_id: string; request_id?: string; status: ChatTurnStatus }[];
 }
 
 export interface UploadAcceptance {

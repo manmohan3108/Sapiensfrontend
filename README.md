@@ -216,3 +216,21 @@ Candidate impressions and the supplied Working Memory catalogue are available
 in a separate disclosure; the catalogue alone does not prove memory use.
 Exact activity-record fallbacks are labelled as saved composite activity text,
 not raw tool responses. Existing API fields and old-run views remain supported.
+
+
+### Workspace chat acceptance and processing
+
+Workspace requests asynchronous `/api/chat` acceptance with a UUID `request_id`.
+A 202 response identifies the saved thread and incoming message; it is not an
+assistant reply. `useChatUpdates` follows the existing chat-detail API while a
+turn is queued, processing or waiting, with one request at a time. It stops
+polling on navigation/hidden tabs and rechecks on focus; account/Sapien/thread
+checks discard stale responses. Reopening history restores saved turn status.
+
+Status is displayed beside the incoming message. Completion without speech,
+rejection, an uncertain network response and a failed turn are distinct states;
+none creates a fabricated assistant message. A lost acknowledgment gets a
+read-only request-ID lookup through the existing chat-list endpoint, never an
+automatic repeated POST. A refresh failure leaves messages visible and offers
+Refresh conversation. The previous synchronous response remains supported during
+backend/frontend rollout; polling does not trigger reasoning or tools.
