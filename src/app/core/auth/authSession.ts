@@ -1,4 +1,5 @@
 import { apiConfig } from '../config/apiConfig';
+import { backendFetch } from '../api/backendAvailability';
 import type { TokenPair } from '../../types/authTypes';
 import type { SapiensDirectoryEntry } from '../../types/sapiensTypes';
 
@@ -126,7 +127,7 @@ function waitWithSignal<T>(promise: Promise<T>, signal?: AbortSignal | null): Pr
 async function refreshAccessToken() {
   const tokens = authSession.tokens;
   if (!tokens?.refresh) throw new HttpError('Your session has expired. Please sign in again.', 401);
-  const response = await fetch(authUrl('refresh/'), {
+  const response = await backendFetch(authUrl('refresh/'), {
     method: 'POST',
     credentials: 'omit',
     signal: AbortSignal.timeout(30_000),
@@ -146,7 +147,7 @@ async function getRefreshedAccessToken() {
     const originalRefresh = authSession.tokens?.refresh;
     refreshPromise = refreshAccessToken()
       .catch(error => {
-        if (authSession.tokens?.refresh === originalRefresh) authSession.clear(true);
+        if (error instanceof HttpError && [401, 403].includes(error.status) && authSession.tokens?.refresh === originalRefresh) authSession.clear(true);
         throw error;
       })
       .finally(() => { refreshPromise = null; });
@@ -189,7 +190,7 @@ export async function authenticatedFetch(input: RequestInfo | URL, init: Request
   const headers = new Headers(init.headers);
   const access = authSession.tokens?.access;
   if (access) headers.set('Authorization', `Bearer ${access}`);
-  const response = await fetch(input, { ...init, credentials: 'omit', headers });
+  const response = await backendFetch(input, { ...init, credentials: 'omit', headers });
   init.signal?.throwIfAborted();
   if (sessionVersion !== version) throw new HttpError('Session changed. Please try again.', 401);
   if (response.status !== 401 || !retry) return finish(response);
@@ -197,7 +198,7 @@ export async function authenticatedFetch(input: RequestInfo | URL, init: Request
   const nextAccess = await waitWithSignal(getRefreshedAccessToken(), init.signal);
   init.signal?.throwIfAborted();
   headers.set('Authorization', `Bearer ${nextAccess}`);
-  const retried = await fetch(input, { ...init, credentials: 'omit', headers });
+  const retried = await backendFetch(input, { ...init, credentials: 'omit', headers });
   if (sessionVersion !== version) throw new HttpError('Session changed. Please try again.', 401);
   if (retried.status === 401) authSession.clear(true);
   return retried.status === 401 ? retried : finish(retried);

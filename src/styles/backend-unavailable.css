@@ -1,0 +1,67 @@
+/* Reuse the science landing palette; keep layout and motion local to the outage screen. */
+.direction-page.direction-world.direction-science.backend-unavailable {
+  position: fixed; inset: 0; margin: 0; width: 100%; max-width: none;
+  height: 100dvh; max-height: none; padding: 0; border: 0;
+  background: var(--paper); color: var(--ink); overflow: auto; overscroll-behavior: contain;
+  font-family: 'Source Sans 3', sans-serif; color-scheme: light;
+}
+.dark .direction-page.direction-world.direction-science.backend-unavailable { color-scheme: dark; }
+.backend-unavailable[open] { display: flex; flex-direction: column; }
+.backend-unavailable::backdrop { background: #112c2c; }
+.backend-unavailable .connection-grid {
+  position: absolute; inset: 0; pointer-events: none; z-index: -1; opacity: .4;
+  background-image: linear-gradient(var(--science-grid-major) 1px, transparent 1px), linear-gradient(90deg, var(--science-grid-major) 1px, transparent 1px), linear-gradient(var(--science-grid-minor) 1px, transparent 1px), linear-gradient(90deg, var(--science-grid-minor) 1px, transparent 1px);
+  background-size: 120px 120px, 120px 120px, 24px 24px, 24px 24px;
+}
+.backend-unavailable .connection-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: max(20px, env(safe-area-inset-top)) max(6%, env(safe-area-inset-right)) 20px max(6%, env(safe-area-inset-left));
+  border-bottom: 1px solid var(--line);
+}
+.backend-unavailable .connection-brand { display: inline-flex; align-items: center; gap: 10px; font-size: 24px; font-weight: 600; }
+.backend-unavailable .connection-brand .sapiens-brand-mark { display: block; width: 36px; height: 36px; }
+.backend-unavailable .sapiens-brand-mark img { width: 100%; height: 100%; object-fit: contain; }
+.backend-unavailable .connection-theme { color: var(--ink); background: var(--paper); border: 1px solid var(--line); min-width: 44px; min-height: 44px; }
+.backend-unavailable .connection-main {
+  flex: 1; width: min(1120px, 88%); margin: auto; display: grid;
+  grid-template-columns: 1.2fr 1fr; align-items: center; gap: clamp(24px, 5vw, 72px); padding-block: 50px;
+}
+.backend-unavailable .connection-copy { min-width: 0; }
+.backend-unavailable .connection-status { display: flex; align-items: center; gap: 10px; margin: 0 0 24px; color: var(--muted); font-size: 16px; }
+.backend-unavailable .connection-status span { width: 8px; height: 8px; border-radius: 50%; background: var(--button); }
+.backend-unavailable h1 { margin: 0; font: 500 clamp(38px, 5.5vw, 68px)/1.08 'Source Serif 4', Georgia, serif; letter-spacing: -.035em; text-wrap: balance; }
+.backend-unavailable .connection-description { margin: 22px 0 30px; color: var(--muted); font-size: 19px; line-height: 1.6; max-width: 38ch; text-wrap: pretty; }
+.backend-unavailable .connection-reload {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  min-height: 48px; padding: 12px 24px; border: 1px solid transparent; border-radius: 3px;
+  background: var(--button); color: var(--on-button); font-size: 17px; font-weight: 600; cursor: pointer;
+}
+.backend-unavailable .connection-reload:hover { background: var(--button-hover); }
+.backend-unavailable .connection-note { color: var(--quiet); font-size: 15px; margin: 14px 0 0; }
+.backend-unavailable .connection-study { min-width: 0; text-align: center; }
+.backend-unavailable .connection-illustration { position: relative; width: 100%; max-width: 420px; aspect-ratio: 1; margin: auto; }
+.backend-unavailable .connection-illustration svg { display: block; width: 100%; height: 100%; stroke: var(--science-line); stroke-width: 1; }
+.backend-unavailable .connection-guide { opacity: .35; stroke-dasharray: 3 6; }
+.backend-unavailable .connection-marker { fill: var(--science-amber); stroke: none; }
+.backend-unavailable .connection-illustration text { stroke: none; fill: var(--quiet); font: 24px 'Source Serif 4', Georgia, serif; }
+.backend-unavailable .connection-orbits { transform-origin: 210px 210px; animation: connection-orbit 24s linear infinite; }
+.backend-unavailable .is-paused .connection-orbits { animation-play-state: paused; }
+.backend-unavailable .connection-core { position: absolute; display: block; width: 38%; height: 38%; top: 31%; left: 31%; }
+.backend-unavailable .connection-equation { position: absolute; bottom: 0; left: 0; width: 100%; color: var(--quiet); font: 15px ui-monospace, monospace; }
+.backend-unavailable .connection-motion { display: inline-flex; align-items: center; gap: 6px; margin-top: 20px; min-height: 44px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 3px; background: var(--paper); color: var(--muted); font-size: 14px; cursor: pointer; }
+.backend-unavailable button { touch-action: manipulation; }
+.backend-unavailable .connection-motion:hover, .backend-unavailable .connection-theme:hover { color: var(--ink); background: var(--panel); }
+.backend-unavailable .connection-theme * { transition-property: transform, opacity; }
+.backend-unavailable button:focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; }
+.backend-unavailable .connection-footer { padding: 20px 6% max(20px, env(safe-area-inset-bottom)); border-top: 1px solid var(--line); color: var(--muted); font-size: 15px; }
+@keyframes connection-orbit { to { transform: rotate(360deg); } }
+@media (max-width: 720px) {
+  .backend-unavailable .connection-main { grid-template-columns: 1fr; padding-block: 36px; gap: 28px; }
+  .backend-unavailable .connection-illustration { max-width: 260px; }
+  .backend-unavailable .connection-description { font-size: 17px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .backend-unavailable .connection-orbits { animation: none; }
+  .backend-unavailable .connection-motion { display: none; }
+  .backend-unavailable .connection-theme * { transition: none; }
+}

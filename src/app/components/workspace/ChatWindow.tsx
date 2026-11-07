@@ -284,7 +284,7 @@ function MessageBubble({
 
         {!msg.isLoading && <div className={`flex items-center gap-2 px-1 ${isUser ? 'flex-row-reverse' : ''}`}>
           <span className="text-[10px] text-sp-muted font-mono opacity-100 transition-opacity">{formatTime(msg.timestamp)}</span>
-          {!isUser && msg.content && !msg.emptyResponse && <CopyBtn text={msg.content} />}
+          {msg.content && !msg.emptyResponse && <CopyBtn text={msg.content} />}
         </div>}
       </div>
     </div>

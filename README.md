@@ -32,6 +32,22 @@ The complete static site is emitted to `dist/`. The frontend is static and needs
 no Node process or systemd service after the build. See [DEPLOYMENT.md](DEPLOYMENT.md)
 for the complete VM, Nginx, TLS, update, verification, and rollback procedure.
 
+## Temporary backend outages
+
+The shared `backendFetch` transport observes backend gateway/network failures.
+A `503` with `code: "runtime_draining"` identifies a restart; generic failures are
+confirmed using a credential-free `GET /accounts/api/me/` (its JSON `401` means
+Django is reachable). An isolated endpoint error does not hide the whole app.
+The probe has an eight-second deadline and repeats every ten seconds while down,
+respecting bounded `Retry-After` values. It never refreshes credentials or retries
+application actions. Normal cancellations and permission errors remain local.
+
+A modal science-themed screen keeps the router mounted, reports recovery and
+provides Reload for the current URL. Reload may discard unsaved edits; interrupted
+actions must be checked before resubmission. Temporary auth failures retain tokens
+but do not grant access without verification. Only confirmed invalid refresh
+credentials clear the session. Public pages with no API requests do not poll.
+
 ## Authentication and roles
 
 The SPA signs in customers and app administrators through the JWT endpoints under

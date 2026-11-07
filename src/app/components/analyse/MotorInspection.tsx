@@ -136,7 +136,7 @@ function MotorView({ sapienId }: { sapienId: string }) {
     </form>
     {choices.loading && <p role="status" className="motor-help">Loading service and tool choices...</p>}
     {choices.error && <div role="alert"><p>Could not load service and tool choices. Your existing filters are preserved.</p><button type="button" className="analyse-button" onClick={choices.refresh}>Retry choices</button></div>}
-    <p className="motor-help">Service and tool choices cover all saved activity in this environment. Search covers saved input/result text, service, tool and caller.</p>
+    <p className="motor-help">Choices include tools discovered in this environment and tools used previously. Some have no recorded activity or may no longer be available. Search covers saved input/result text, service, tool and caller.</p>
     {read.loading && <p role="status">Loading saved activity…</p>}
     {read.error && <div role="alert"><p>{read.error}</p><button className="analyse-button" onClick={read.refresh}>Retry</button></div>}
     {read.data && <section aria-label="Motor activity">

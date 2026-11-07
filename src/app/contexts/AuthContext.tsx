@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { selectionStorage } from '../core/auth/selectionStorage';
 import type { AuthCredentials, AuthUser, RegistrationCredentials, TokenPair } from '../types/authTypes';
 import { useSapiensStore } from '../core/state/sapiensStore';
+import { backendFetch, isTemporaryBackendFailure } from '../core/api/backendAvailability';
 
 type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated';
 
@@ -27,7 +28,7 @@ async function loadMe() {
 async function exchange(path: 'login/' | 'register/', credentials: AuthCredentials | RegistrationCredentials) {
   authSession.clear();
   useSapiensStore.getState().reset();
-  const response = await fetch(authSession.url(path), {
+  const response = await backendFetch(authSession.url(path), {
     method: 'POST',
     credentials: 'omit',
     signal: AbortSignal.timeout(30_000),
@@ -37,7 +38,7 @@ async function exchange(path: 'login/' | 'register/', credentials: AuthCredentia
   const tokens = await parseAuthResponse<TokenPair>(response);
   authSession.save(tokens);
   try { return await loadMe(); }
-  catch (error) { authSession.clear(); throw error; }
+  catch (error) { if (!isTemporaryBackendFailure(error)) authSession.clear(); throw error; }
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -57,7 +58,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (restored.current) return;
     restored.current = true;
     if (!authSession.tokens) { setStatus('unauthenticated'); return; }
-    loadMe().then(value => { selectionStorage.setOwner(value.user_id); setUser(value); setStatus('authenticated'); }).catch(() => {
+    loadMe().then(value => { selectionStorage.setOwner(value.user_id); setUser(value); setStatus('authenticated'); }).catch(error => {
+      if (isTemporaryBackendFailure(error)) {
+        setStatus('unauthenticated');
+        setNotice('The server could not verify your session. Reload to try again.');
+        return;
+      }
       clearSession();
       setNotice('Your session could not be restored. Please sign in again.');
     });
@@ -96,7 +102,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(nextUser);
         setNotice('');
         setStatus('authenticated');
-      } catch {
+      } catch (error) {
+        if (isTemporaryBackendFailure(error)) {
+          useSapiensStore.getState().reset();
+          setUser(null);
+          setStatus('unauthenticated');
+          setNotice('The server could not verify the changed session. Reload to try again.');
+          return;
+        }
         clearSession();
         setNotice('The session changed in another tab. Please sign in again.');
       }
@@ -126,7 +139,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     clearSession();
     setNotice('You have been signed out.');
     try {
-      if (refresh) await fetch(authSession.url('logout/'), { method: 'POST', credentials: 'omit', signal: AbortSignal.timeout(30_000), headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refresh }) });
+      if (refresh) await backendFetch(authSession.url('logout/'), { method: 'POST', credentials: 'omit', signal: AbortSignal.timeout(30_000), headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refresh }) });
     } catch { setNotice('Signed out on this device. The server could not be reached to revoke the session.'); }
   }, [clearSession]);
 
