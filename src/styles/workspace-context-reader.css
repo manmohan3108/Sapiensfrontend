@@ -6,12 +6,6 @@
 .workspace-shell .context-reader-body { flex:1; min-height:0; overflow-y:auto; padding:16px; }
 .workspace-shell .context-record-caption { display:flex; flex-wrap:wrap; gap:4px 10px; color:var(--sp-muted); font-size:12px; margin-bottom:18px; }
 .workspace-shell .context-record-caption>span { font-weight:600; color:var(--sp-ink); }
-.workspace-shell .context-understanding-path { display:flex; flex-direction:column; gap:0; }
-.workspace-shell .context-path-step { display:grid; grid-template-columns:28px minmax(0,1fr); gap:10px; position:relative; padding-bottom:24px; }
-.workspace-shell .context-path-step:not(:last-child)::after { content:''; position:absolute; left:13px; top:30px; bottom:3px; border-left:1px solid var(--sp-line); }
-.workspace-shell .context-step-icon { width:28px; height:28px; display:flex; align-items:center; justify-content:center; border:1px solid var(--sp-line); border-radius:50%; color:var(--sp-muted); }
-.workspace-shell .context-path-step.is-main .context-step-icon { background:var(--sp-action); color:var(--sp-on-action); border-color:var(--sp-action); }
-.workspace-shell .context-path-step h3 { margin:3px 0 8px; font-size:14px; line-height:1.4; font-weight:600; }
 .workspace-shell .context-record-text p { margin:0; white-space:pre-wrap; overflow-wrap:anywhere; font-size:15px; line-height:1.55; color:var(--sp-ink); }
 .workspace-shell .context-record-text .is-excerpt { display:-webkit-box; -webkit-box-orient:vertical; overflow:hidden; }
 .workspace-shell .context-record-text button,.workspace-shell .context-back { color:var(--sp-accent); font-size:13px; padding:6px 0; min-height:32px; text-align:left; }
@@ -55,24 +49,30 @@
 .workspace-shell .context-notice button { margin-left:10px; text-decoration:underline; }
 @media(prefers-reduced-motion:reduce) { .workspace-shell .context-list-row { transition:none; } }
 
-/* Evidence is scoped to the workspace reader; no diagnostic-page styles are shared. */
-.workspace-shell .understanding-source-note { margin-top:8px; padding-left:8px; border-left:2px solid var(--sp-line); font-size:12px; line-height:1.45; color:var(--sp-muted); }
-.workspace-shell .understanding-context-item + .understanding-context-item { padding-top:14px; }
-.workspace-shell .understanding-more { margin-top:10px; color:var(--sp-muted); font-size:13px; }
-.workspace-shell .understanding-more summary,.workspace-shell .understanding-activity-row summary { cursor:pointer; padding:7px 0; }
-.workspace-shell .understanding-more[open]>summary { margin-bottom:8px; }
-.workspace-shell .understanding-activity { list-style:none; margin:0; padding:0; }
-.workspace-shell .understanding-activity-row { padding:10px 0; border-bottom:1px solid var(--sp-line); }
-.workspace-shell .understanding-activity-row:first-child { padding-top:0; }
-.workspace-shell .understanding-activity-row>div:first-child { display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:4px 12px; }
-.workspace-shell .understanding-activity-row strong { font-size:14px; font-weight:600; line-height:1.4; overflow-wrap:anywhere; }
-.workspace-shell .understanding-activity-row span { font-size:12px; color:var(--sp-muted); }
-.workspace-shell .understanding-activity-row details { font-size:13px; color:var(--sp-muted); }
-.workspace-shell .understanding-activity-row>.context-record-text { margin-top:7px; }
-.workspace-shell .understanding-activity-row .context-record-text p { font-size:14px; }
-.workspace-shell .understanding-activity-row time { display:block; margin-top:3px; }
-.workspace-shell .understanding-decision { margin-top:14px; }
-.workspace-shell .understanding-decision>.context-footnote { margin-bottom:6px; }
-.workspace-shell .understanding-trace-note { padding:10px 12px; margin:0 0 18px; border:1px solid var(--sp-line); border-radius:5px; color:var(--sp-muted); font-size:13px; line-height:1.5; }
-.workspace-shell .context-path-step .understanding-trace-note { margin:10px 0; }
-.workspace-shell .understanding-trace-note button { padding:6px 0; text-decoration:underline; color:var(--sp-accent); }
+
+/* Customer readers: meaningful content and source dates, with details on demand. */
+.workspace-shell .context-reader-body { overscroll-behavior:contain; }
+.workspace-shell .workspace-reading-section { margin-bottom:22px; }
+.workspace-shell .workspace-reading-section h3 { font-size:15px; font-weight:600; margin:0 0 8px; }
+.workspace-shell .workspace-reading-section>.context-footnote { margin:0 0 8px; }
+.workspace-shell .workspace-reading-more { margin-top:18px; border-top:1px solid var(--sp-line); }
+.workspace-shell .workspace-reading-more>summary { padding:12px 0; color:var(--sp-muted); cursor:pointer; font-size:14px; }
+.workspace-shell .workspace-record-dates { display:grid; grid-template-columns:auto minmax(0,1fr); gap:8px 14px; font-size:13px; margin-top:20px; color:var(--sp-muted); }
+.workspace-shell .workspace-record-dates dd { margin:0; overflow-wrap:anywhere; }
+.workspace-shell .workspace-context-search { margin-top:0; }
+.workspace-shell .workspace-plan-step { border-bottom:1px solid var(--sp-line); padding:2px 0; }
+.workspace-shell .workspace-plan-step>summary { display:flex; align-items:flex-start; gap:10px; padding:12px 0; cursor:pointer; list-style:none; font-size:15px; }
+.workspace-shell .workspace-plan-step>summary::-webkit-details-marker { display:none; }
+.workspace-shell .workspace-plan-step>summary>span:nth-child(2) { flex:1; min-width:0; overflow-wrap:anywhere; }
+.workspace-shell .workspace-plan-step>summary small { display:block; margin-top:5px; font-size:12px; color:var(--sp-muted); }
+.workspace-shell .workspace-plan-step>summary>svg { margin-top:4px; flex-shrink:0; color:var(--sp-muted); }
+.workspace-shell .workspace-plan-step[open]>summary>svg { transform:rotate(180deg); }
+.workspace-shell .workspace-step-number { display:inline-flex; justify-content:center; align-items:center; flex-shrink:0; width:24px; height:24px; border:1px solid var(--sp-line); border-radius:50%; font-size:12px; color:var(--sp-muted); }
+.workspace-shell .workspace-plan-step>div { padding:0 0 14px 34px; }
+.workspace-shell .workspace-plan-step h4 { font-size:14px; font-weight:600; margin:12px 0 6px; }
+.workspace-shell .workspace-plan-step>div>.context-footnote { margin-bottom:12px; }
+.workspace-shell .context-list-row { content-visibility:auto; contain-intrinsic-size:auto 95px; }
+.workspace-shell .workspace-info-panel :is(h2,h3) { text-wrap:pretty; }
+.workspace-shell .workspace-plan-purpose { margin-top:0; border-top:0; }
+.workspace-shell .workspace-plan-purpose>summary { padding:0; }
+.workspace-shell .workspace-plan-purpose[open]>summary { margin-bottom:14px; }

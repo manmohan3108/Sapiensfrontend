@@ -1,97 +1,98 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ArrowLeft, ArrowRight, MessageSquare, Lightbulb, CircleHelp, RefreshCw } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Lightbulb, RefreshCw } from 'lucide-react';
 import { sapiensService } from '../../core/services/sapiensService';
 import { useSapiensStore } from '../../core/state/sapiensStore';
-import type { ApiError } from '../../types/apiTypes';
 import type { AwarenessHistoryItem, AwarenessResponse } from '../../types/sapiensTypes';
-import { UnderstandingEvidence } from './UnderstandingEvidence';
-import { RecordText, recordDate, sourceName, useReaderNavigation } from './ContextReader';
+import { RecordText, recordDate, sourceName, useListReaderNavigation } from './ContextReader';
+
+const recordKey = (record: AwarenessHistoryItem) => record.id || record.created_at;
 
 export function AwarenessPanel({ active = true }: { active?: boolean }) {
   const activeRef = useRef(active);
   activeRef.current = active;
   const wasActive = useRef(active);
-  const currentSapiens = useSapiensStore((state) => state.currentSapiens);
-  const status = useSapiensStore((state) => state.status);
+  const sapienId = useSapiensStore(state => state.currentSapiens?.id);
+  const status = useSapiensStore(state => state.status);
   const previousStatus = useRef(status);
   const requestId = useRef(0);
   const [data, setData] = useState<AwarenessResponse | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [traceRevision, setTraceRevision] = useState(0);
+  const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<AwarenessHistoryItem | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState(false);
+  const { container, list, remember } = useListReaderNavigation(selected ? recordKey(selected) : null, Number(sapienId));
 
   const refresh = useCallback(async () => {
-    if (!currentSapiens || !activeRef.current) return;
-    const id = ++requestId.current;
+    if (!sapienId || !activeRef.current || document.visibilityState !== 'visible') return;
+    const request = ++requestId.current;
     setLoading(true);
     try {
-      const next = await sapiensService.getAwareness(currentSapiens.id, 10);
-      if (id === requestId.current) {
-        setData(next);
-        setError(null);
-      }
-    } catch (caught) {
-      if (id === requestId.current) setError((caught as ApiError).message || 'Could not refresh awareness.');
+      const next = await sapiensService.getAwareness(sapienId, 10);
+      if (request !== requestId.current) return;
+      if (Number(next.sapien_id) !== Number(sapienId)) throw new Error('Sapien mismatch');
+      setData(next); setError(false);
+      setSelected(previous => {
+        if (!previous) return null;
+        if (next.current && recordKey(next.current) === recordKey(previous)) return next.current;
+        return next.history.find(record => recordKey(record) === recordKey(previous)) ?? previous;
+      });
+    } catch {
+      if (request === requestId.current) setError(true);
     } finally {
-      if (id === requestId.current) setLoading(false);
+      if (request === requestId.current) setLoading(false);
     }
-  }, [currentSapiens]);
+  }, [sapienId]);
 
   useEffect(() => {
-    setData(null);
-    setSelected(null);
-    setError(null);
+    setData(null); setSelected(null); setError(false);
     void refresh();
+    return () => { requestId.current++; };
   }, [refresh]);
-
   useEffect(() => {
     if (previousStatus.current === 'processing' && status !== 'processing') void refresh();
     previousStatus.current = status;
   }, [status, refresh]);
-
   useEffect(() => {
-    const interval = window.setInterval(() => {
-      if (document.visibilityState === 'visible') void refresh();
-    }, 30_000);
+    const interval = window.setInterval(() => void refresh(), 30_000);
     return () => window.clearInterval(interval);
   }, [refresh]);
+  useEffect(() => {
+    if (active && !wasActive.current) void refresh();
+    wasActive.current = active;
+  }, [active, refresh]);
 
-  useEffect(() => { if (active && !wasActive.current) void refresh(); wasActive.current = active; }, [active, refresh]);
-
-  const readerRef = useReaderNavigation(selected);
   const current = data?.current;
-  const record = selected ?? current;
-  const previous = (data?.history ?? []).filter(entry => !current || entry.id !== current.id);
-  const name = currentSapiens?.name ?? 'Sapiens';
-  return <div ref={readerRef} className="workspace-awareness context-reader">
+  const records = current
+    ? [current, ...(data?.history ?? []).filter(item => recordKey(item) !== recordKey(current))]
+    : data?.history ?? [];
+
+  return <div ref={container} className="workspace-awareness context-reader">
     <header className="context-reader-heading">
-      <div><h2 data-reader-heading tabIndex={-1}>What {name} understands</h2><p>The input, supporting context and recorded activity behind this understanding.</p></div>
-      <button className="workspace-icon-button" aria-label="Refresh understanding" disabled={loading} onClick={() => { setTraceRevision(value => value + 1); void refresh(); }}><RefreshCw size={16} className={loading ? 'animate-spin' : ''} /></button>
+      <div><h2 data-reader-heading tabIndex={-1}>Understanding</h2><p>How your Sapien interpreted recent information, and what remains unclear.</p></div>
+      <button type="button" className="workspace-icon-button" aria-label="Refresh understanding" disabled={loading} onClick={() => void refresh()}><RefreshCw size={16} aria-hidden="true" className={loading ? 'animate-spin' : ''} /></button>
     </header>
-    {error && <div role="alert" className="context-notice">{error}{data ? ' The previous view is still shown.' : ''}<button onClick={() => void refresh()}>Retry</button></div>}
-    <div className="context-reader-body">
-      {!data && loading ? <p className="context-empty" role="status">Loading recorded understanding…</p> : !record ? <div className="context-empty"><Lightbulb size={28} /><h3>{error ? 'Understanding unavailable' : 'No understanding recorded yet'}</h3><p>{error ? 'Try refreshing this view.' : 'As your Sapien encounters information, its recorded understanding will appear here.'}</p></div> : <>
-        {selected && <button data-reader-back className="context-back" onClick={() => setSelected(null)}><ArrowLeft size={15} />Latest understanding</button>}
-        <div className="context-record-caption"><span>{selected ? 'Earlier record' : 'Latest record'}</span><time>{recordDate(record.assessed_at || record.created_at)}</time></div>
-        <div className="context-understanding-path" key={record.id ?? record.created_at}>
-          <section className="context-path-step">
-            <span className="context-step-icon"><MessageSquare size={16} /></span>
-            <div>
-              <h3>{record.subject ? 'Original input · ' + sourceName(record.subject.source) : 'Original input'}</h3>
-              {record.subject?.content ? <RecordText text={record.subject.content} lines={3} /> : <p className="context-footnote">The original input was not retained with this record.</p>}
-              {record.subject?.event_at && <p className="context-footnote">{recordDate(record.subject.event_at)}</p>}
-              {record.subject && <p className="understanding-source-note">Sender and conversation link not supplied.</p>}
-            </div>
-          </section>
-          {currentSapiens && record.id && <UnderstandingEvidence key={currentSapiens.id + ':' + record.id} sapienId={currentSapiens.id} thoughtId={record.id} active={active} refreshRevision={traceRevision} />}
-          <section className="context-path-step is-main"><span className="context-step-icon"><Lightbulb size={16} /></span><div><h3>Resulting understanding</h3><RecordText text={record.understanding || record.focus || 'No interpretation supplied.'} /></div></section>
-          {record.remaining && <section className="context-path-step"><span className="context-step-icon"><CircleHelp size={16} /></span><div><h3>What is still unresolved</h3><RecordText text={record.remaining} lines={3} /></div></section>}
-        </div>
-        <details className="context-technical"><summary>About this record</summary><p>Context is a retained snapshot, not proof every item was used. Interpretations and tool reports do not confirm that the overall task is complete.</p><dl><dt>Source</dt><dd>{sourceName(record.source)}</dd><dt>Assessment state</dt><dd>{record.state || 'Not supplied'}</dd><dt>Self-reported confidence</dt><dd>{typeof record.confidence === 'number' ? Math.round(record.confidence * 100) + '%' : 'Not supplied'}</dd></dl>{record.reason && <RecordText text={record.reason} />}</details>
-        {!selected && (current?.also_on_mind?.length ?? 0) > 0 && <details className="context-technical"><summary>Other recorded context ({current?.also_on_mind?.length})</summary>{current?.also_on_mind?.map((item,i) => <div className="context-related" key={i}><RecordText text={item.content} /><p className="context-footnote">{sourceName(item.source)}</p></div>)}</details>}
+    {error && <p role="alert" className="context-notice">Couldn’t refresh understanding.{data ? ' The previous records are still shown.' : ''}<button type="button" onClick={() => void refresh()}>Retry</button></p>}
+    <div ref={list} className="context-reader-body">
+      {selected ? <>
+        <button type="button" data-reader-back className="context-back" onClick={() => setSelected(null)}><ArrowLeft size={16} aria-hidden="true" />Back to updates</button>
+        <div className="context-record-caption"><span>{sourceName(selected.source)}</span><time>{recordDate(selected.assessed_at || selected.created_at)}</time></div>
+        <section className="workspace-reading-section"><h3>Your Sapien’s interpretation</h3><RecordText text={selected.understanding || selected.focus || 'No interpretation was recorded.'} lines={8} /></section>
+        {selected.remaining && <section className="workspace-reading-section"><h3>Still unresolved</h3><RecordText text={selected.remaining} /></section>}
+        <section className="workspace-reading-section">
+          <h3>What prompted this</h3>
+          {selected.subject?.content ? <><p className="context-footnote">{sourceName(selected.subject.source)}{selected.subject.event_at ? ' · ' + recordDate(selected.subject.event_at) : ''}</p><RecordText text={selected.subject.content} /></> : <p className="context-footnote">The original input is not available in this record.</p>}
+        </section>
+        {selected.reason && <details className="workspace-reading-more"><summary>Why it reached this understanding</summary><RecordText text={selected.reason} /></details>}
+        <p className="context-footnote">This is an interpretation, not confirmation that an action was completed.</p>
+        {current && recordKey(selected) === recordKey(current) && !!current.also_on_mind?.length && <details className="workspace-reading-more"><summary>Also on its mind</summary>
+          {current.also_on_mind.map((item, index) => <div className="context-related" key={index}><RecordText text={item.content} /><p className="context-footnote">{sourceName(item.source)}</p></div>)}
+        </details>}
+      </> : loading && !data ? <p className="context-empty" role="status">Loading understanding…</p> : records.length === 0 ? <div className="context-empty"><Lightbulb size={28} aria-hidden="true" /><h3>{error ? 'Understanding unavailable' : 'No updates yet'}</h3><p>{error ? 'Try refreshing this view.' : 'Your Sapien’s understanding will appear here as it encounters information.'}</p></div> : <>
+        <p className="context-footnote">Recent recorded updates. Open one to see its original input.</p>
+        {records.map(record => <button type="button" data-record-id={recordKey(record)} className="context-list-row" key={recordKey(record)}
+          onClick={() => { remember(recordKey(record)); setSelected(record); }}>
+          <div><span className="context-row-excerpt">{record.understanding || record.focus || 'Recorded update'}</span><small>{sourceName(record.source)} · {recordDate(record.assessed_at || record.created_at)}</small></div><ArrowRight size={16} aria-hidden="true" />
+        </button>)}
       </>}
-        {!selected && previous.length > 0 && <section className="context-history"><h3>Earlier updates</h3><p className="context-footnote">Open an update to see its context.</p>{previous.map((entry,i) => <button className="context-list-row" key={entry.id ?? i} onClick={() => setSelected(entry)}><div><span className="context-row-excerpt">{entry.subject?.content || entry.understanding || entry.focus || 'Recorded update'}</span><small>{recordDate(entry.assessed_at || entry.created_at)}</small></div><ArrowRight size={16} /></button>)}</section>}
     </div>
   </div>;
 }

@@ -3,7 +3,7 @@ import '../../styles/workspace-context-reader.css';
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router';
 import { toast } from 'sonner';
-import { BrainCircuit, Eye, Target, Expand, Minimize2, MessageSquare } from 'lucide-react';
+import { BrainCircuit, Eye, Target, ListChecks, Expand, Minimize2, X } from 'lucide-react';
 import { HeaderBar } from '../components/workspace/HeaderBar';
 import { AwarenessPanel } from '../components/workspace/AwarenessPanel';
 import { ChatWindow } from '../components/workspace/ChatWindow';
@@ -14,30 +14,85 @@ import { useOrchestratorStatus } from '../hooks/useOrchestratorStatus';
 import { useAuth } from '../contexts/AuthContext';
 import { useRememberedState } from '../components/navigation/NavigationState';
 
-type RightTab = 'awareness' | 'memory' | 'goals';
+type WorkspaceView = 'goals' | 'plans' | 'awareness' | 'memory';
+const VIEWS = [
+  { id: 'goals', label: 'Goals', icon: Target },
+  { id: 'plans', label: 'Plans', icon: ListChecks },
+  { id: 'awareness', label: 'Understanding', icon: Eye },
+  { id: 'memory', label: 'Current context', icon: BrainCircuit },
+] as const;
 
-const CONTEXT_TABS = [
-  { id: 'awareness' as RightTab, label: 'Understanding', icon: Eye },
-  { id: 'memory' as RightTab, label: 'Context', icon: BrainCircuit },
-  { id: 'goals' as RightTab, label: 'Goals', icon: Target },
-];
+// Keep readers and in-flight requests scoped to one Sapien, including on navigation.
+function WorkspaceViews({ sapienId, name }: { sapienId: string; name: string }) {
+  const viewKey = `workspace:${sapienId}`;
+  const [view, setView] = useRememberedState<WorkspaceView>(`${viewKey}:tab`, 'goals');
+  const [open, setOpen] = useRememberedState(`${viewKey}:context-open`, false);
+  const [wide, setWide] = useRememberedState(`${viewKey}:context-wide`, false);
+  const [visited, setVisited] = useState<WorkspaceView[]>(open ? [view] : []);
+  const lastWorkView = useRef<'goals' | 'plans'>(view === 'plans' ? 'plans' : 'goals');
+  if (view === 'goals' || view === 'plans') lastWorkView.current = view;
+  const buttons = useRef<HTMLElement>(null);
+  const panel = useRef<HTMLElement>(null);
+  const previous = useRef({ open, view });
+  const workView = view === 'goals' || view === 'plans';
 
-// ─── Main ─────────────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (open) setVisited(items => items.includes(view) ? items : [...items, view]);
+    const changed = previous.current.open !== open || previous.current.view !== view;
+    if (changed) {
+      if (open) panel.current?.focus({ preventScroll: true });
+      else buttons.current?.querySelector<HTMLButtonElement>(`[data-view="${view}"]`)?.focus();
+    }
+    previous.current = { open, view };
+  }, [open, view]);
+
+  function closePanel() {
+    setOpen(false);
+    setWide(false);
+  }
+
+  return <main className={`workspace-layout${open ? ' workspace-panel-open' : ''}${open && wide ? ' workspace-context-wide' : ''}`}>
+    <section className="workspace-chat-area" aria-label="Conversation"><ChatWindow /></section>
+    <aside className="workspace-context-area" aria-label={`Explore ${name}`}>
+      <nav ref={buttons} className="workspace-explore-buttons" aria-label="Workspace information">
+        <span className="workspace-explore-label">Explore</span>
+        {VIEWS.map(({ id, label, icon: Icon }) => <button
+          type="button" key={id} data-view={id}
+          aria-expanded={open && view === id} aria-controls="workspace-info-panel"
+          onClick={() => { setView(id); setOpen(true); }}
+        ><Icon size={19} aria-hidden="true" /><span>{label}</span></button>)}
+      </nav>
+      <section ref={panel} id="workspace-info-panel" className="workspace-info-panel"
+        hidden={!open} tabIndex={-1} aria-label={VIEWS.find(item => item.id === view)?.label}
+        onKeyDown={event => { if (event.key === 'Escape' && !event.defaultPrevented) { event.stopPropagation(); closePanel(); } }}>
+        <div className="workspace-context-heading">
+          <span>{name}</span>
+          <div>
+            <button type="button" className="workspace-icon-button workspace-expand"
+              aria-label={wide ? 'Restore panel width' : 'Expand panel'} aria-pressed={wide}
+              onClick={() => setWide(value => !value)}>{wide ? <Minimize2 size={16} aria-hidden="true" /> : <Expand size={16} aria-hidden="true" />}</button>
+            <button type="button" className="workspace-panel-close" onClick={closePanel}><X size={16} aria-hidden="true" />Close</button>
+          </div>
+        </div>
+        <div className="workspace-context-content">
+          {visited.some(item => item === 'goals' || item === 'plans') && <div hidden={!workView} className="workspace-context-view">
+            <GoalsPanel compact active={open && workView} view={lastWorkView.current} sapienId={Number(sapienId)} />
+          </div>}
+          {visited.includes('awareness') && <div hidden={view !== 'awareness'} className="workspace-context-view"><AwarenessPanel active={open && view === 'awareness'} /></div>}
+          {visited.includes('memory') && <div hidden={view !== 'memory'} className="workspace-context-view"><MemoryPanel active={open && view === 'memory'} /></div>}
+        </div>
+      </section>
+    </aside>
+  </main>;
+}
+
 export function WorkspacePage() {
   const navigate = useNavigate();
   const location = useLocation();
   const heading = useRef<HTMLHeadingElement>(null);
   const announced = useRef<string | null>(null);
   const { user } = useAuth();
-  const currentSapiens = useSapiensStore((state) => state.currentSapiens);
-  const viewKey = `workspace:${currentSapiens?.id || 'none'}`;
-  const [rightTab, setRightTab] = useRememberedState<RightTab>(`${viewKey}:tab`, 'awareness');
-  const [visitedTabs, setVisitedTabs] = useState<RightTab[]>(['awareness']);
-  const [contextOpen, setContextOpen] = useRememberedState(`${viewKey}:context-open`, false);
-  const [contextWide, setContextWide] = useRememberedState(`${viewKey}:context-wide`, false);
-  useEffect(() => { setVisitedTabs(tabs => tabs.includes(rightTab) ? tabs : [...tabs, rightTab]); }, [rightTab]);
-
-  // Poll /api/orchestrator/status every 10 s while this tab is visible
+  const currentSapiens = useSapiensStore(state => state.currentSapiens);
   useOrchestratorStatus();
 
   useEffect(() => {
@@ -55,28 +110,8 @@ export function WorkspacePage() {
   }, [currentSapiens?.id, location.state, location.pathname, navigate, user?.role]);
 
   if (!currentSapiens) return null;
-
-  return (
-    <div className={`product-surface workspace-shell${contextWide ? ' workspace-context-wide' : ''}`}>
-      <HeaderBar headingRef={heading} />
-      <nav className="workspace-mobile-nav" aria-label="Workspace views">
-        <button aria-pressed={!contextOpen} onClick={() => setContextOpen(false)}><MessageSquare size={16} />Conversation</button>
-        <button aria-pressed={contextOpen} onClick={() => setContextOpen(true)}><Eye size={16} />Explore {currentSapiens.name}</button>
-      </nav>
-      <main className="workspace-layout" data-mobile-context={contextOpen}>
-        <section className="workspace-chat-area" aria-label="Conversation"><ChatWindow key={currentSapiens.id} /></section>
-        <aside className="workspace-context-area" aria-label={`Explore ${currentSapiens.name}`}>
-          <div className="workspace-context-heading"><span>Explore {currentSapiens.name}</span><button className="workspace-icon-button workspace-expand" aria-label={contextWide ? 'Restore conversation layout' : 'Expand context panel'} aria-pressed={contextWide} onClick={() => setContextWide(value => !value)}>{contextWide ? <Minimize2 size={16} /> : <Expand size={16} />}</button></div>
-          <nav className="workspace-context-tabs" aria-label="Sapiens context">
-            {CONTEXT_TABS.map(({id, label, icon: Icon}) => <button key={id} aria-pressed={rightTab === id} onClick={() => { setRightTab(id); setVisitedTabs(tabs => tabs.includes(id) ? tabs : [...tabs, id]); }}><Icon size={15} />{label}</button>)}
-          </nav>
-          <div className="workspace-context-content" key={currentSapiens.id}>
-            {visitedTabs.includes('awareness') && <div hidden={rightTab !== 'awareness'} className="workspace-context-view"><AwarenessPanel active={rightTab === 'awareness'} /></div>}
-            {visitedTabs.includes('memory') && <div hidden={rightTab !== 'memory'} className="workspace-context-view"><MemoryPanel active={rightTab === 'memory'} /></div>}
-            {visitedTabs.includes('goals') && <div hidden={rightTab !== 'goals'} className="workspace-context-view"><GoalsPanel compact active={rightTab === 'goals'} sapienId={parseInt(currentSapiens.id, 10)} /></div>}
-          </div>
-        </aside>
-      </main>
-    </div>
-  );
+  return <div className="product-surface workspace-shell">
+    <HeaderBar headingRef={heading} />
+    <WorkspaceViews key={currentSapiens.id} sapienId={currentSapiens.id} name={currentSapiens.name} />
+  </div>;
 }

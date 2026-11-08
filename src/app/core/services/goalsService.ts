@@ -178,6 +178,10 @@ export const goalsService = {
     q.set('include_plan', String(params.includePlan ?? true));
     const r = await goalsFetch<Wire>(`${base}/sapien/${sapienId}/goals?${q}`);
     const goals = array(r.goals).map(goal).filter(g => g.id);
+    if (number(r.sapien_id) !== sapienId || goals.some(g => g.sapien_id !== sapienId
+      || (g.current_plan && g.current_plan.sapien_id !== sapienId))) {
+      throw new Error('The goals response did not match the requested Sapien.');
+    }
     // Older servers silently ignore these filters. Never show mismatched records;
     // server-side filtering is still required to apply the bound correctly.
     if (goals.some(g => (params.finished !== undefined && g.finished !== params.finished)
@@ -191,7 +195,12 @@ export const goalsService = {
     const r = await goalsFetch<Wire>(`${base}/sapien/${sapienId}/goals/${encodeURIComponent(goalId)}`);
     if (!string(object(r.goal).id)) throw new Error('Goal not found or no longer available.');
     const currentPlan = plan(r.current_plan);
-    return { goal: goal(r.goal), context: context(r.context), current_plan: currentPlan,
+    const returnedGoal = goal(r.goal);
+    if (returnedGoal.id !== goalId || returnedGoal.sapien_id !== sapienId
+      || (currentPlan && currentPlan.sapien_id !== sapienId)) {
+      throw new Error('The goal response did not match the requested Sapien and goal.');
+    }
+    return { goal: returnedGoal, context: context(r.context), current_plan: currentPlan,
       plan_context: currentPlan ? context(r.plan_context) : null,
       history: Array.isArray(r.history) ? r.history.map(value => {
         const row = object(value);

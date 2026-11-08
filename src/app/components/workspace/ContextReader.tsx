@@ -51,7 +51,7 @@ export function recordDate(value?: string | null) {
   if (!value) return 'Time not supplied';
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? 'Time not supplied' : date.toLocaleString(undefined, {
-    month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit',
+    month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short',
   });
 }
 

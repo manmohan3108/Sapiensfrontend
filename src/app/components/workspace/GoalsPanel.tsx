@@ -304,7 +304,7 @@ function CommentPopover({
   };
 
   return (
-    <div ref={wrapRef} style={{ position: 'relative', display: 'inline-block', maxWidth: '100%' }} onKeyDown={event => { if (event.key === 'Escape') { setOpen(false); wrapRef.current?.querySelector('button')?.focus(); } }}>
+    <div ref={wrapRef} style={{ position: 'relative', display: 'inline-block', maxWidth: '100%' }} onKeyDown={event => { if (event.key === 'Escape' && open) { event.preventDefault(); event.stopPropagation(); setOpen(false); wrapRef.current?.querySelector('button')?.focus(); } }}>
       {guard.dialog}
       {/* Trigger */}
       {triggerVariant === 'icon' ? (
@@ -480,6 +480,16 @@ function ContextBlock({ ctx, label, highlightAfter }: {
 
 // ── Goal Card ─────────────────────────────────────────────────────────────────
 
+function WorkspacePlanRow({ goal, onClick }: { goal: Goal; onClick: () => void }) {
+  const { done, total } = planProgress(goal.current_plan);
+  return <button type="button" data-record-id={goal.id} className="context-list-row" onClick={onClick}>
+    <div><span className="context-eyebrow">For: {goal.description}</span>
+      <span className="context-row-excerpt">{goal.current_plan?.description || 'Recorded plan'}</span>
+      <small>{done} of {total} steps marked finished</small>
+    </div><ChevronRight size={16} aria-hidden="true" />
+  </button>;
+}
+
 function GoalCard({ goal, sapienId, onClick, compact, inspection = false }: { goal: Goal; sapienId: number; onClick: () => void; compact: boolean; inspection?: boolean }) {
   const { done, total } = planProgress(goal.current_plan);
   const isOverloaded = useSapiensStore(s => s.isOverloaded);
@@ -490,7 +500,7 @@ function GoalCard({ goal, sapienId, onClick, compact, inspection = false }: { go
   </article>;
   if (compact) return <button data-record-id={goal.id} className="context-list-row context-goal-row" onClick={onClick}>
     <span className="context-goal-mark" aria-hidden="true">{goal.finished === true ? <CheckCircle2 size={18} /> : <Circle size={18} />}</span>
-    <div><span className="context-row-excerpt">{goal.description}</span><small>{workflowLifecycle(goal)}{goal.current_plan ? ' · ' + done + '/' + total + ' steps finished' : ''}</small></div><ChevronRight size={16} />
+    <div><span className="context-row-excerpt">{goal.description}</span><small>{workflowLifecycle(goal)}{goal.progress !== null ? ' · ' + Math.round(goal.progress * 100) + '% reported progress' : ''}</small></div><ChevronRight size={16} />
   </button>;
   return (
     <div className="rounded-xl transition-all"
@@ -548,9 +558,9 @@ const PLAN_EXAMPLES   = ['This won\'t work. Restart.', 'Step 3 doesn\'t matter f
 const STEP_EXAMPLES   = ['Done.', 'Skip this.', 'Blocked on Alice.'];
 
 function GoalDetailPane({
-  sapienId, goalId, onBack, active = true, compact = false, inspection = false,
+  sapienId, goalId, onBack, active = true, compact = false, inspection = false, backLabel = 'All goals', planView = false,
 }: {
-  sapienId: number; goalId: string; onBack: () => void; active?: boolean; compact?: boolean; inspection?: boolean;
+  sapienId: number; goalId: string; onBack: () => void; active?: boolean; compact?: boolean; inspection?: boolean; backLabel?: string; planView?: boolean;
 }) {
   const isOverloaded = useSapiensStore(s => s.isOverloaded);
   const activeRef = useRef(active);
@@ -642,7 +652,7 @@ function GoalDetailPane({
 
   if (loading && !detail) return (
     <div className="flex flex-col h-full">
-      <BackBtn onClick={onBack} autoFocus={compact || inspection} />
+      <BackBtn onClick={onBack} autoFocus={compact || inspection} label={backLabel} />
       <div role="status" className="flex-1 flex items-center justify-center gap-2 text-sm text-sp-muted">
         <Loader2 className="w-5 h-5 animate-spin text-sp-muted" />Loading goal details…
       </div>
@@ -651,10 +661,10 @@ function GoalDetailPane({
 
   if (error && !detail) return (
     <div className="flex flex-col h-full gap-3">
-      <BackBtn onClick={onBack} autoFocus={compact} />
+      <BackBtn onClick={onBack} autoFocus={compact} label={backLabel} />
       <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-[11px] text-sp-danger"
         style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
-        <AlertCircle className="w-4 h-4 flex-shrink-0" />{error}
+        <AlertCircle className="w-4 h-4 flex-shrink-0" />{compact ? 'Couldn’t load this information. Please try refreshing.' : error}
       </div>
       <button onClick={() => fetchDetail(true)} className="self-start rounded-lg border border-sp-ink/10 px-3 py-2 text-[11px] text-sp-muted">Retry goal details</button>
     </div>
@@ -666,12 +676,21 @@ function GoalDetailPane({
   const assessment = inspectionObject(detail.attention?.outcome?.assessment);
   const remaining = typeof assessment.remaining === 'string' ? assessment.remaining : '';
   const understanding = typeof assessment.understanding === 'string' ? assessment.understanding : '';
+  const customerSummary = <>
+    <p className="context-eyebrow">The intended outcome</p><h3 className="context-goal-title">{goal.description}</h3>
+    <p className="context-footnote">{goal.retired === true ? 'Retired goal' : goal.finished === true ? 'Marked finished' : goal.finished === false ? 'Open goal' : 'Completion not recorded'} · Updated {recordDate(goal.updated_at)}</p>
+    {goal.state && <p className="context-footnote">Recorded status: {goal.state.replaceAll('_', ' ')}</p>}
+    {goal.progress !== null && <p className="context-footnote">{Math.round(goal.progress * 100)}% reported progress</p>}
+    {goal.motivation && <details className="context-technical"><summary>Why this goal exists</summary><RecordText text={goal.motivation} /></details>}
+    {(remaining || understanding) && <section className="context-goal-update"><h4>{remaining ? 'What is still needed' : 'Latest understanding'}</h4><RecordText text={remaining || understanding} /><p className="context-footnote">Your Sapien’s assessment · {recordDate(detail.attention?.resolved_at)}</p></section>}
+  </>;
+
 
   return (
     <div className="flex flex-col h-full gap-3 overflow-hidden">
       {guard.dialog}
       <div className="flex items-center justify-between gap-2">
-        <BackBtn onClick={onBack} autoFocus={compact} />
+        <BackBtn onClick={onBack} autoFocus={compact} label={backLabel} />
         <button onClick={() => fetchDetail(true)} disabled={loading} aria-label="Refresh goal details"
           className="flex items-center gap-1.5 text-[10px] text-sp-muted disabled:opacity-40">
           <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />Refresh
@@ -682,15 +701,10 @@ function GoalDetailPane({
         {/* Header */}
         <div className={`rounded-2xl p-4 flex flex-col gap-3${compact ? ' context-goal-summary' : ''}`}
           style={{ background: 'rgb(var(--sp-ink-rgb, 255 255 255) / 0.03)', border: '1px solid rgb(var(--sp-ink-rgb, 255 255 255) / 0.08)' }}>
-          {compact ? <>
-            <p className="context-eyebrow">The intended outcome</p><h3 className="context-goal-title">{goal.description}</h3>
-            <p className="context-footnote">{goal.retired === true ? 'Retired goal' : goal.finished === true ? 'Marked finished' : goal.finished === false ? 'Open goal' : 'Completion not supplied'} · Updated {recordDate(goal.updated_at)}</p>
-            {goal.motivation && <details className="context-technical"><summary>Why this goal exists</summary><RecordText text={goal.motivation} /></details>}
-            <section className="context-goal-update"><h4>{remaining ? 'What is still needed' : 'Latest understanding'}</h4>{remaining || understanding ? <><RecordText text={remaining || understanding} /><p className="context-footnote">Recorded {recordDate(detail.attention?.resolved_at)} · An assessment, not a confirmed outcome.</p></> : <p className="context-footnote">No assessment has been supplied for this goal yet.</p>}</section>
-          </> : <><div className="flex items-center gap-1.5"><Lifecycle record={goal} /><StatusPill status={goal.state} /></div><p className="text-base text-sp-ink">{goal.description}</p>{goal.motivation && <p className="text-sm text-sp-muted">{goal.motivation}</p>}</>}
-          <CommentPopover sapienId={sapienId} goalId={goalId} scope="goal" examples={GOAL_EXAMPLES} label={compact ? 'Add information' : 'Comment'} overloaded={isOverloaded} triggerVariant="pill" onSuccess={startFastPoll} />
+          {compact ? (planView ? <details className="workspace-reading-more workspace-plan-purpose"><summary><span className="context-row-excerpt">Goal: {goal.description}</span></summary>{customerSummary}</details> : customerSummary) : <><div className="flex items-center gap-1.5"><Lifecycle record={goal} /><StatusPill status={goal.state} /></div><p className="text-base text-sp-ink">{goal.description}</p>{goal.motivation && <p className="text-sm text-sp-muted">{goal.motivation}</p>}</>}
+          <CommentPopover sapienId={sapienId} goalId={goalId} scope="goal" examples={GOAL_EXAMPLES} label={compact ? (planView ? 'Add information to the goal' : 'Add information') : 'Comment'} overloaded={isOverloaded} triggerVariant="pill" onSuccess={startFastPoll} />
           {inspection && <div className="analyse-goal-current"><p>{goal.progress === null ? 'Progress not reported' : 'Reported progress: ' + Math.round(goal.progress * 100) + '%'} · {done}/{total} planned steps finished</p>{(remaining || understanding) && <><h4>{remaining ? 'What is still needed' : 'Latest recorded understanding'}</h4><RecordText text={remaining || understanding} /><p className="context-footnote">Recorded {recordDate(detail.attention?.resolved_at)} · An assessment, not a confirmed outcome.</p></>}</div>}
-          <CollapsibleSection title="Progress, schedule & technical details" defaultOpen={!compact && !inspection}>
+          {!compact && <CollapsibleSection title="Progress, schedule & technical details" defaultOpen={!inspection}>
           <div className="text-[10px] text-sp-muted space-y-1">
             <div className="flex gap-2"><Lifecycle record={goal} /><StatusPill status={goal.state} /></div>
             <p>Stored finished flag: {goal.finished === null ? 'Unknown' : String(goal.finished)} · Revision: {goal.revision ?? 'Unknown'}</p>
@@ -709,10 +723,10 @@ function GoalDetailPane({
               <span className="text-[9px] text-sp-muted w-14">Priority</span>
               <div className="flex-1"><ThinMeter value={goal.priority} color="var(--sp-accent, #c4b5fd)" /></div>
             </div>
-          </div>          </CollapsibleSection>
+          </div>          </CollapsibleSection>}
         </div>
 
-        {error && <p role="alert" className="text-[11px] text-sp-danger">{error}</p>}
+        {error && <p role="alert" className="text-[11px] text-sp-danger">{compact ? 'Couldn’t refresh this goal. The previous details are still shown.' : error}</p>}
         {!compact && !inspection && <><SourceBadge source={goal.source} /><RecordDetails record={goal} /><GoalInspection detail={detail} /></>}
 
         {/* Plan */}
@@ -725,7 +739,7 @@ function GoalDetailPane({
             <div className="flex items-center gap-2">
               <span className="text-[11px] font-medium text-sp-muted">{compact ? 'Planned steps' : 'Plan'}</span>
               {current_plan && (
-                <span className="text-[9px] font-mono text-sp-muted">{done}/{total} tasks finished</span>
+                <span className="text-[9px] text-sp-muted">{compact ? `${done}/${total} steps marked finished` : `${done}/${total} tasks finished`}</span>
               )}
             </div>
             <div className="flex items-center gap-2">
@@ -746,13 +760,24 @@ function GoalDetailPane({
           ) : (
             <div className="px-4 py-3 flex flex-col gap-2">
               <p className="text-[11px] text-sp-ink">{current_plan.description}</p>
-              <CollapsibleSection title="Plan details" defaultOpen={!compact}>
+              {compact && <p className="context-footnote">{current_plan.state ? current_plan.state.replaceAll('_', ' ') + ' · ' : ''}Updated {recordDate(current_plan.updated_at)}</p>}
+              {!compact && <CollapsibleSection title="Plan details" defaultOpen>
                 <div className="flex flex-wrap gap-2"><Lifecycle record={current_plan} /><StatusPill status={current_plan.state} /></div>
                 <p className="text-[10px] text-sp-muted">Plan progress: {current_plan.progress === null ? 'Not reported' : Math.round(current_plan.progress * 100) + '%'}</p>
                 <RecordDetails record={current_plan} /><RulesSummary rules={current_plan.task_rules} label="Task state rules" />
-                {compact && <div className="text-xs text-sp-muted mt-2"><p>Recorded step states are separate from completion:</p>{current_plan.tasks.map((step, i) => <p key={step.id || i}>Step {i + 1}: {step.state || 'Not supplied'}</p>)}</div>}
-              </CollapsibleSection>
-              {current_plan.tasks.map((step: PlanStep, i) => (
+              </CollapsibleSection>}
+              {current_plan.tasks.map((step: PlanStep, i) => compact ? (
+                <details key={step.id || i} className="workspace-plan-step">
+                  <summary><span className="workspace-step-number">{i + 1}</span>
+                    <span>{step.description}<small>{step.finished === true ? 'Marked finished' : step.finished === false ? 'Not finished' : 'Completion not recorded'}</small></span>
+                    <ChevronDown size={16} aria-hidden="true" />
+                  </summary>
+                  <div><p className="context-footnote">{step.state ? 'Recorded status: ' + step.state.replaceAll('_', ' ') : 'No status recorded'}</p>
+                    {step.result ? <><h4>Recorded result</h4><RecordText text={step.result} /></> : <p className="context-footnote">No result has been recorded for this step yet.</p>}
+                    {step.id && <CommentPopover sapienId={sapienId} goalId={goalId} scope="step" stepId={step.id} examples={STEP_EXAMPLES} label="Add information" overloaded={isOverloaded} triggerVariant="pill" onSuccess={startFastPoll} />}
+                  </div>
+                </details>
+              ) : (
                 <div key={step.id || i} className="flex items-start gap-2.5 group">
                   <span className="mt-0.5">{step.finished === true ? <CheckCircle2 className="w-3.5 h-3.5 text-sp-success" /> : <Circle className="w-3.5 h-3.5 text-sp-muted" />}</span>
                   <div className="flex-1 min-w-0 text-[11px] text-sp-ink break-words">
@@ -813,20 +838,20 @@ function GoalDetailPane({
           </div>
         </div>
 
-        {(compact || inspection) && <CollapsibleSection title="Source & audit details"><SourceBadge source={goal.source} /><RecordDetails record={goal} /><GoalInspection detail={detail} compact /></CollapsibleSection>}
+        {inspection && <CollapsibleSection title="Source & audit details"><SourceBadge source={goal.source} /><RecordDetails record={goal} /><GoalInspection detail={detail} compact /></CollapsibleSection>}
         {/* Context sections */}
-        <ContextBlock ctx={context}      label="What Sapien knows about this goal" highlightAfter={lastCommentAt || undefined} />
-        <ContextBlock ctx={plan_context} label="What Sapien knows about this plan" highlightAfter={lastCommentAt || undefined} />
+        {(!compact || context) && <ContextBlock ctx={context} label={compact ? "Information behind this goal" : "What Sapien knows about this goal"} highlightAfter={lastCommentAt || undefined} />}
+        {(!compact || plan_context) && <ContextBlock ctx={plan_context} label={compact ? "Information behind this plan" : "What Sapien knows about this plan"} highlightAfter={lastCommentAt || undefined} />}
       </div>
     </div>
   );
 }
 
-function BackBtn({ onClick, autoFocus = false }: { onClick: () => void; autoFocus?: boolean }) {
+function BackBtn({ onClick, autoFocus = false, label = 'All goals' }: { onClick: () => void; autoFocus?: boolean; label?: string }) {
   return (
     <button data-reader-back autoFocus={autoFocus} onClick={onClick}
       className="flex items-center gap-1.5 text-[11px] text-sp-muted hover:text-sp-ink transition-colors flex-shrink-0">
-      <ChevronLeft className="w-3.5 h-3.5" /> All goals
+      <ChevronLeft className="w-3.5 h-3.5" /> {label}
     </button>
   );
 }
@@ -835,12 +860,11 @@ function BackBtn({ onClick, autoFocus = false }: { onClick: () => void; autoFocu
 
 type StatusFilter = 'unfinished' | 'finished' | 'retired';
 
-export function GoalsPanel({ sapienId, active = true, compact = false, inspection = false }: { sapienId: number; active?: boolean; compact?: boolean; inspection?: boolean }) {
+export function GoalsPanel({ sapienId, active = true, compact = false, inspection = false, view = 'goals' }: { sapienId: number; active?: boolean; compact?: boolean; inspection?: boolean; view?: 'goals' | 'plans' }) {
   const activeRef = useRef(active);
   activeRef.current = active;
   const wasActive = useRef(active);
   const isOverloaded = useSapiensStore(s => s.isOverloaded);
-  const sapienName = useSapiensStore(s => s.currentSapiens?.name || 'Sapiens');
 
   const [goals, setGoals]         = useState<Goal[]>([]);
   const [loading, setLoading]     = useState(true);
@@ -892,7 +916,7 @@ export function GoalsPanel({ sapienId, active = true, compact = false, inspectio
   const toggleSource = (s: GoalSource) =>
     setSourceFilters(prev => { const n = new Set(prev); n.has(s) ? n.delete(s) : n.add(s); return n; });
   const sourceOptions = [...new Set([...goals.map(g => g.source), ...sourceFilters])];
-  const visibleGoals = goals.filter(g => !sourceFilters.size || sourceFilters.has(g.source));
+  const visibleGoals = goals.filter(g => (!sourceFilters.size || sourceFilters.has(g.source)) && (view !== 'plans' || g.current_plan));
 
   if (selectedGoalId) {
     return (
@@ -901,6 +925,7 @@ export function GoalsPanel({ sapienId, active = true, compact = false, inspectio
         <GoalDetailPane
           key={`${sapienId}:${selectedGoalId}`}
           active={active} compact={compact} inspection={inspection} sapienId={sapienId} goalId={selectedGoalId}
+          backLabel={view === 'plans' ? 'All plans' : 'All goals'} planView={view === 'plans'}
           onBack={() => setSelectedGoalId(null)}
         />
       </div>
@@ -914,11 +939,11 @@ export function GoalsPanel({ sapienId, active = true, compact = false, inspectio
       {/* Header */}
       <div className="flex-shrink-0 px-4 py-3" style={{ borderBottom: '1px solid rgb(var(--sp-ink-rgb, 255 255 255) / 0.06)' }}>
         <div className="flex items-center justify-between mb-3">
-          <div>{compact ? <><h2 data-reader-heading tabIndex={-1} className="context-goals-heading">What {sapienName} is working towards</h2><p className="context-footnote">Open a goal to see what is needed next.</p></> : <span data-reader-heading tabIndex={-1} className="text-[12px] font-medium text-sp-ink">Goals</span>}</div>
+          <div>{compact ? <><h2 data-reader-heading tabIndex={-1} className="context-goals-heading">{view === 'plans' ? 'Plans' : 'Goals'}</h2><p className="context-footnote">{view === 'plans' ? 'Steps your Sapien has planned for its goals. Open a plan to explore the steps.' : 'What your Sapien is working towards. Open a goal to see its progress and next steps.'}</p></> : <span data-reader-heading tabIndex={-1} className="text-[12px] font-medium text-sp-ink">Goals</span>}</div>
           <div className="flex items-center gap-2">
             {lastFetch && !compact && <span className="text-[9px] font-mono text-sp-muted">{lastFetch.toLocaleTimeString()}</span>}
-            <button onClick={() => fetchGoals(true)} disabled={loading} aria-label="Refresh goals"
-              className="w-5 h-5 flex items-center justify-center rounded text-sp-muted hover:text-sp-muted disabled:opacity-40 transition-colors">
+            <button onClick={() => fetchGoals(true)} disabled={loading} aria-label={view === 'plans' ? 'Refresh plans' : 'Refresh goals'}
+              className="workspace-icon-button w-5 h-5 flex items-center justify-center rounded text-sp-muted hover:text-sp-muted disabled:opacity-40 transition-colors">
               <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
             </button>
           </div>
@@ -934,7 +959,7 @@ export function GoalsPanel({ sapienId, active = true, compact = false, inspectio
         )}
 
         {/* Status filter */}
-        <div className="flex gap-1 flex-wrap">
+        <div className="flex gap-1 flex-wrap" role="group" aria-label="Goal status">
           {(['unfinished', 'finished', 'retired'] as StatusFilter[]).map(f => (
             <button key={f} onClick={() => {
               if (f === statusFilter) return;
@@ -952,7 +977,7 @@ export function GoalsPanel({ sapienId, active = true, compact = false, inspectio
 
         {inspection && sourceFilters.size > 0 && <div className="analyse-goal-filter-chips">{[...sourceFilters].map(source => <button type="button" key={source} className="analyse-filter-chip" aria-label={'Remove source ' + source} onClick={() => toggleSource(source)}>{source.replaceAll('_', ' ')} ×</button>)}</div>}
         {/* Source chips */}
-        <details className="mt-3"><summary className="text-xs text-sp-muted cursor-pointer">Filter by source{sourceFilters.size ? ` (${sourceFilters.size} selected)` : ''}</summary><p className="text-xs text-sp-muted mt-2">Up to 30 matching goals · Filters apply to this loaded set.</p>
+        {!compact && <details className="mt-3"><summary className="text-xs text-sp-muted cursor-pointer">Filter by source{sourceFilters.size ? ` (${sourceFilters.size} selected)` : ''}</summary><p className="text-xs text-sp-muted mt-2">Up to 30 matching goals · Filters apply to this loaded set.</p>
         <div className="flex gap-1 flex-wrap mt-2">
           {sourceOptions.map(key => {
             const on = sourceFilters.has(key);
@@ -967,7 +992,8 @@ export function GoalsPanel({ sapienId, active = true, compact = false, inspectio
               </button>
             );
           })}
-        </div></details>
+        </div></details>}
+        {compact && <p className="context-footnote">{view === 'plans' ? 'Plans from up to 30 goals' : 'Up to 30 goals'} · {statusFilter === 'unfinished' ? 'Open goals' : statusFilter === 'finished' ? 'Finished goals' : 'Retired goals'}</p>}
       </div>
 
       {/* List */}
@@ -975,26 +1001,28 @@ export function GoalsPanel({ sapienId, active = true, compact = false, inspectio
         {loading && goals.length === 0 ? (
           <div role="status" className="flex items-center justify-center gap-2 h-24 text-sm text-sp-muted">
             <Loader2 className="w-5 h-5 animate-spin text-sp-muted" />
-            Loading goals…
+            {view === 'plans' ? 'Loading plans…' : 'Loading goals…'}
           </div>
         ) : error ? (
           <div role="alert" className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-[11px] text-sp-danger"
             style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
-            <AlertCircle className="w-4 h-4 flex-shrink-0" />{error}
+            <AlertCircle className="w-4 h-4 flex-shrink-0" />{compact ? 'Couldn’t load this information. Please try refreshing.' : error}
           </div>
         ) : visibleGoals.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-40 gap-3 text-center px-4">
             <Circle className="w-8 h-8 text-sp-muted" />
             <div>
-              <p className="text-[12px] text-sp-muted mb-1">{compact ? (sourceFilters.size ? 'No goals match these filters.' : statusFilter === 'unfinished' ? 'No open goals returned.' : statusFilter === 'finished' ? 'No finished goals returned.' : 'No retired goals returned.') : 'No matching goals in this view.'}</p>
+              <p className="text-[12px] text-sp-muted mb-1">{compact ? (view === 'plans' ? 'No plans recorded for these goals.' : 'No goals in this view yet.') : 'No matching goals in this view.'}</p>
               <p className="text-[10px] text-sp-muted leading-relaxed">
-                {compact ? 'Goals appear as your Sapien records something to work towards. You can also discuss a goal in your conversation.' : 'Refresh or choose another filter.'}
+                {compact ? (view === 'plans' ? 'Plans appear when your Sapien records steps for a goal. You can also check Goals.' : 'Goals appear as your Sapien records something to work towards. You can discuss a goal in your conversation.') : 'Refresh or choose another filter.'}
               </p>
             </div>
           </div>
         ) : (
           <div className={compact ? 'context-goals-list' : 'flex flex-col gap-2'}>
-            {visibleGoals.map(g => (
+            {visibleGoals.map(g => view === 'plans' ? (
+              <WorkspacePlanRow key={g.id} goal={g} onClick={() => { remember(g.id); setSelectedGoalId(g.id); }} />
+            ) : (
               <GoalCard compact={compact} inspection={inspection} key={g.id} goal={g} sapienId={sapienId} onClick={() => { remember(g.id); setSelectedGoalId(g.id); }} />
             ))}
           </div>
