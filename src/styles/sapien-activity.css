@@ -21,7 +21,10 @@
 .sapien-activity-help { color:var(--activity-muted); }
 .sapien-activity-error { color:var(--sp-danger,var(--activity-ink)); }
 .workspace-header-actions .sapien-activity-control { max-width:240px; }
-.home-identity-action .sapien-activity-control { align-items:stretch; width:100%; }
+.sapien-activity-compact { flex-direction:row; flex-wrap:wrap; align-items:center; justify-content:flex-start; gap:4px 10px; }
+.sapien-activity-compact .sapien-activity-status { font-size:14px; }
+.sapien-activity-compact .sapien-activity-button { min-height:44px; }
+.sapien-activity-compact .sapien-activity-help,.sapien-activity-compact .sapien-activity-error { flex-basis:100%; font-size:13px; }
 @media (max-width:640px) {
   .workspace-header-actions .sapien-activity-control { flex:1; align-items:flex-start; max-width:none; }
 }

@@ -4,8 +4,8 @@ import { useSapienActivity } from '../../hooks/useSapienActivity';
 import type { SapienActivity, Sapiens } from '../../types/sapiensTypes';
 import '../../../styles/sapien-activity.css';
 
-export function SapienActivityControl({ sapien, refreshOnMount = false, onActivityChange }: {
-  sapien: Sapiens; refreshOnMount?: boolean;
+export function SapienActivityControl({ sapien, refreshOnMount = false, onActivityChange, compact = false }: {
+  sapien: Sapiens; refreshOnMount?: boolean; compact?: boolean;
   onActivityChange?: (sapienId: string, activity: SapienActivity | null) => void;
 }) {
   const { activity, pending, error, notice, refresh, setActive } = useSapienActivity(sapien, refreshOnMount, onActivityChange);
@@ -22,13 +22,13 @@ export function SapienActivityControl({ sapien, refreshOnMount = false, onActivi
     : 'Pause autonomous work without deleting memories or jobs. Current work may finish, and chat remains available.';
   const Icon = !activity ? RefreshCw : activity.active ? Pause : Play;
 
-  return <div className="sapien-activity-control" aria-busy={pending !== null}>
+  return <div className={`sapien-activity-control${compact ? ' sapien-activity-compact' : ''}`} aria-busy={pending !== null}>
     <span className="sapien-activity-status">{status}</span>
-    <button type="button" className="sapien-activity-button" disabled={!!pending || blocked}
+    {!(compact && blocked) && <button type="button" className="sapien-activity-button" disabled={!!pending || blocked}
       aria-label={label + ' ' + sapien.name} aria-describedby={helpId} title={explanation}
       onClick={() => activity ? void setActive(!activity.active) : refresh()}>
       <Icon size={15} aria-hidden="true" /><span>{label}</span>
-    </button>
+    </button>}
     <span id={helpId} className={blocked ? 'sapien-activity-help' : 'sr-only'}>{explanation}</span>
     {error && <p className="sapien-activity-error" role="alert">{error}</p>}
     <span className="sr-only" role="status">{notice}</span>
