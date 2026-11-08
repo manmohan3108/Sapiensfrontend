@@ -73,6 +73,3 @@
 .workspace-shell .workspace-plan-step>div>.context-footnote { margin-bottom:12px; }
 .workspace-shell .context-list-row { content-visibility:auto; contain-intrinsic-size:auto 95px; }
 .workspace-shell .workspace-info-panel :is(h2,h3) { text-wrap:pretty; }
-.workspace-shell .workspace-plan-purpose { margin-top:0; border-top:0; }
-.workspace-shell .workspace-plan-purpose>summary { padding:0; }
-.workspace-shell .workspace-plan-purpose[open]>summary { margin-bottom:14px; }

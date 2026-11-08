@@ -480,16 +480,6 @@ function ContextBlock({ ctx, label, highlightAfter }: {
 
 // ── Goal Card ─────────────────────────────────────────────────────────────────
 
-function WorkspacePlanRow({ goal, onClick }: { goal: Goal; onClick: () => void }) {
-  const { done, total } = planProgress(goal.current_plan);
-  return <button type="button" data-record-id={goal.id} className="context-list-row" onClick={onClick}>
-    <div><span className="context-eyebrow">For: {goal.description}</span>
-      <span className="context-row-excerpt">{goal.current_plan?.description || 'Recorded plan'}</span>
-      <small>{done} of {total} steps marked finished</small>
-    </div><ChevronRight size={16} aria-hidden="true" />
-  </button>;
-}
-
 function GoalCard({ goal, sapienId, onClick, compact, inspection = false }: { goal: Goal; sapienId: number; onClick: () => void; compact: boolean; inspection?: boolean }) {
   const { done, total } = planProgress(goal.current_plan);
   const isOverloaded = useSapiensStore(s => s.isOverloaded);
@@ -558,9 +548,9 @@ const PLAN_EXAMPLES   = ['This won\'t work. Restart.', 'Step 3 doesn\'t matter f
 const STEP_EXAMPLES   = ['Done.', 'Skip this.', 'Blocked on Alice.'];
 
 function GoalDetailPane({
-  sapienId, goalId, onBack, active = true, compact = false, inspection = false, backLabel = 'All goals', planView = false,
+  sapienId, goalId, onBack, active = true, compact = false, inspection = false,
 }: {
-  sapienId: number; goalId: string; onBack: () => void; active?: boolean; compact?: boolean; inspection?: boolean; backLabel?: string; planView?: boolean;
+  sapienId: number; goalId: string; onBack: () => void; active?: boolean; compact?: boolean; inspection?: boolean;
 }) {
   const isOverloaded = useSapiensStore(s => s.isOverloaded);
   const activeRef = useRef(active);
@@ -652,7 +642,7 @@ function GoalDetailPane({
 
   if (loading && !detail) return (
     <div className="flex flex-col h-full">
-      <BackBtn onClick={onBack} autoFocus={compact || inspection} label={backLabel} />
+      <BackBtn onClick={onBack} autoFocus={compact || inspection} label="All goals" />
       <div role="status" className="flex-1 flex items-center justify-center gap-2 text-sm text-sp-muted">
         <Loader2 className="w-5 h-5 animate-spin text-sp-muted" />Loading goal details…
       </div>
@@ -661,7 +651,7 @@ function GoalDetailPane({
 
   if (error && !detail) return (
     <div className="flex flex-col h-full gap-3">
-      <BackBtn onClick={onBack} autoFocus={compact} label={backLabel} />
+      <BackBtn onClick={onBack} autoFocus={compact} label="All goals" />
       <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-[11px] text-sp-danger"
         style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
         <AlertCircle className="w-4 h-4 flex-shrink-0" />{compact ? 'Couldn’t load this information. Please try refreshing.' : error}
@@ -690,7 +680,7 @@ function GoalDetailPane({
     <div className="flex flex-col h-full gap-3 overflow-hidden">
       {guard.dialog}
       <div className="flex items-center justify-between gap-2">
-        <BackBtn onClick={onBack} autoFocus={compact} label={backLabel} />
+        <BackBtn onClick={onBack} autoFocus={compact} label="All goals" />
         <button onClick={() => fetchDetail(true)} disabled={loading} aria-label="Refresh goal details"
           className="flex items-center gap-1.5 text-[10px] text-sp-muted disabled:opacity-40">
           <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />Refresh
@@ -701,8 +691,8 @@ function GoalDetailPane({
         {/* Header */}
         <div className={`rounded-2xl p-4 flex flex-col gap-3${compact ? ' context-goal-summary' : ''}`}
           style={{ background: 'rgb(var(--sp-ink-rgb, 255 255 255) / 0.03)', border: '1px solid rgb(var(--sp-ink-rgb, 255 255 255) / 0.08)' }}>
-          {compact ? (planView ? <details className="workspace-reading-more workspace-plan-purpose"><summary><span className="context-row-excerpt">Goal: {goal.description}</span></summary>{customerSummary}</details> : customerSummary) : <><div className="flex items-center gap-1.5"><Lifecycle record={goal} /><StatusPill status={goal.state} /></div><p className="text-base text-sp-ink">{goal.description}</p>{goal.motivation && <p className="text-sm text-sp-muted">{goal.motivation}</p>}</>}
-          <CommentPopover sapienId={sapienId} goalId={goalId} scope="goal" examples={GOAL_EXAMPLES} label={compact ? (planView ? 'Add information to the goal' : 'Add information') : 'Comment'} overloaded={isOverloaded} triggerVariant="pill" onSuccess={startFastPoll} />
+          {compact ? customerSummary : <><div className="flex items-center gap-1.5"><Lifecycle record={goal} /><StatusPill status={goal.state} /></div><p className="text-base text-sp-ink">{goal.description}</p>{goal.motivation && <p className="text-sm text-sp-muted">{goal.motivation}</p>}</>}
+          <CommentPopover sapienId={sapienId} goalId={goalId} scope="goal" examples={GOAL_EXAMPLES} label={compact ? 'Add information' : 'Comment'} overloaded={isOverloaded} triggerVariant="pill" onSuccess={startFastPoll} />
           {inspection && <div className="analyse-goal-current"><p>{goal.progress === null ? 'Progress not reported' : 'Reported progress: ' + Math.round(goal.progress * 100) + '%'} · {done}/{total} planned steps finished</p>{(remaining || understanding) && <><h4>{remaining ? 'What is still needed' : 'Latest recorded understanding'}</h4><RecordText text={remaining || understanding} /><p className="context-footnote">Recorded {recordDate(detail.attention?.resolved_at)} · An assessment, not a confirmed outcome.</p></>}</div>}
           {!compact && <CollapsibleSection title="Progress, schedule & technical details" defaultOpen={!inspection}>
           <div className="text-[10px] text-sp-muted space-y-1">
@@ -860,7 +850,7 @@ function BackBtn({ onClick, autoFocus = false, label = 'All goals' }: { onClick:
 
 type StatusFilter = 'unfinished' | 'finished' | 'retired';
 
-export function GoalsPanel({ sapienId, active = true, compact = false, inspection = false, view = 'goals' }: { sapienId: number; active?: boolean; compact?: boolean; inspection?: boolean; view?: 'goals' | 'plans' }) {
+export function GoalsPanel({ sapienId, active = true, compact = false, inspection = false }: { sapienId: number; active?: boolean; compact?: boolean; inspection?: boolean }) {
   const activeRef = useRef(active);
   activeRef.current = active;
   const wasActive = useRef(active);
@@ -916,7 +906,7 @@ export function GoalsPanel({ sapienId, active = true, compact = false, inspectio
   const toggleSource = (s: GoalSource) =>
     setSourceFilters(prev => { const n = new Set(prev); n.has(s) ? n.delete(s) : n.add(s); return n; });
   const sourceOptions = [...new Set([...goals.map(g => g.source), ...sourceFilters])];
-  const visibleGoals = goals.filter(g => (!sourceFilters.size || sourceFilters.has(g.source)) && (view !== 'plans' || g.current_plan));
+  const visibleGoals = goals.filter(g => (!sourceFilters.size || sourceFilters.has(g.source)));
 
   if (selectedGoalId) {
     return (
@@ -925,7 +915,6 @@ export function GoalsPanel({ sapienId, active = true, compact = false, inspectio
         <GoalDetailPane
           key={`${sapienId}:${selectedGoalId}`}
           active={active} compact={compact} inspection={inspection} sapienId={sapienId} goalId={selectedGoalId}
-          backLabel={view === 'plans' ? 'All plans' : 'All goals'} planView={view === 'plans'}
           onBack={() => setSelectedGoalId(null)}
         />
       </div>
@@ -939,10 +928,10 @@ export function GoalsPanel({ sapienId, active = true, compact = false, inspectio
       {/* Header */}
       <div className="flex-shrink-0 px-4 py-3" style={{ borderBottom: '1px solid rgb(var(--sp-ink-rgb, 255 255 255) / 0.06)' }}>
         <div className="flex items-center justify-between mb-3">
-          <div>{compact ? <><h2 data-reader-heading tabIndex={-1} className="context-goals-heading">{view === 'plans' ? 'Plans' : 'Goals'}</h2><p className="context-footnote">{view === 'plans' ? 'Steps your Sapien has planned for its goals. Open a plan to explore the steps.' : 'What your Sapien is working towards. Open a goal to see its progress and next steps.'}</p></> : <span data-reader-heading tabIndex={-1} className="text-[12px] font-medium text-sp-ink">Goals</span>}</div>
+          <div>{compact ? <><h2 data-reader-heading tabIndex={-1} className="context-goals-heading">Goals</h2><p className="context-footnote">What your Sapien is working towards. Open a goal to see its progress and planned steps.</p></> : <span data-reader-heading tabIndex={-1} className="text-[12px] font-medium text-sp-ink">Goals</span>}</div>
           <div className="flex items-center gap-2">
             {lastFetch && !compact && <span className="text-[9px] font-mono text-sp-muted">{lastFetch.toLocaleTimeString()}</span>}
-            <button onClick={() => fetchGoals(true)} disabled={loading} aria-label={view === 'plans' ? 'Refresh plans' : 'Refresh goals'}
+            <button onClick={() => fetchGoals(true)} disabled={loading} aria-label="Refresh goals"
               className="workspace-icon-button w-5 h-5 flex items-center justify-center rounded text-sp-muted hover:text-sp-muted disabled:opacity-40 transition-colors">
               <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
             </button>
@@ -993,7 +982,7 @@ export function GoalsPanel({ sapienId, active = true, compact = false, inspectio
             );
           })}
         </div></details>}
-        {compact && <p className="context-footnote">{view === 'plans' ? 'Plans from up to 30 goals' : 'Up to 30 goals'} · {statusFilter === 'unfinished' ? 'Open goals' : statusFilter === 'finished' ? 'Finished goals' : 'Retired goals'}</p>}
+        {compact && <p className="context-footnote">Up to 30 goals · {statusFilter === 'unfinished' ? 'Open goals' : statusFilter === 'finished' ? 'Finished goals' : 'Retired goals'}</p>}
       </div>
 
       {/* List */}
@@ -1001,7 +990,7 @@ export function GoalsPanel({ sapienId, active = true, compact = false, inspectio
         {loading && goals.length === 0 ? (
           <div role="status" className="flex items-center justify-center gap-2 h-24 text-sm text-sp-muted">
             <Loader2 className="w-5 h-5 animate-spin text-sp-muted" />
-            {view === 'plans' ? 'Loading plans…' : 'Loading goals…'}
+            Loading goals…
           </div>
         ) : error ? (
           <div role="alert" className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-[11px] text-sp-danger"
@@ -1012,17 +1001,15 @@ export function GoalsPanel({ sapienId, active = true, compact = false, inspectio
           <div className="flex flex-col items-center justify-center h-40 gap-3 text-center px-4">
             <Circle className="w-8 h-8 text-sp-muted" />
             <div>
-              <p className="text-[12px] text-sp-muted mb-1">{compact ? (view === 'plans' ? 'No plans recorded for these goals.' : 'No goals in this view yet.') : 'No matching goals in this view.'}</p>
+              <p className="text-[12px] text-sp-muted mb-1">{compact ? 'No goals in this view yet.' : 'No matching goals in this view.'}</p>
               <p className="text-[10px] text-sp-muted leading-relaxed">
-                {compact ? (view === 'plans' ? 'Plans appear when your Sapien records steps for a goal. You can also check Goals.' : 'Goals appear as your Sapien records something to work towards. You can discuss a goal in your conversation.') : 'Refresh or choose another filter.'}
+                {compact ? 'Goals appear as your Sapien records something to work towards. You can discuss a goal in your conversation.' : 'Refresh or choose another filter.'}
               </p>
             </div>
           </div>
         ) : (
           <div className={compact ? 'context-goals-list' : 'flex flex-col gap-2'}>
-            {visibleGoals.map(g => view === 'plans' ? (
-              <WorkspacePlanRow key={g.id} goal={g} onClick={() => { remember(g.id); setSelectedGoalId(g.id); }} />
-            ) : (
+            {visibleGoals.map(g => (
               <GoalCard compact={compact} inspection={inspection} key={g.id} goal={g} sapienId={sapienId} onClick={() => { remember(g.id); setSelectedGoalId(g.id); }} />
             ))}
           </div>

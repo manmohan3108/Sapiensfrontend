@@ -3,21 +3,22 @@ import '../../styles/workspace-context-reader.css';
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router';
 import { toast } from 'sonner';
-import { BrainCircuit, Eye, Target, ListChecks, Expand, Minimize2, X } from 'lucide-react';
+import { BrainCircuit, Eye, Target, CircleHelp, Expand, Minimize2, X } from 'lucide-react';
 import { HeaderBar } from '../components/workspace/HeaderBar';
 import { AwarenessPanel } from '../components/workspace/AwarenessPanel';
 import { ChatWindow } from '../components/workspace/ChatWindow';
 import { MemoryPanel } from '../components/workspace/MemoryPanel';
+import { OpenQuestionsPanel } from '../components/workspace/OpenQuestionsPanel';
 import { GoalsPanel } from '../components/workspace/GoalsPanel';
 import { useSapiensStore } from '../core/state/sapiensStore';
 import { useOrchestratorStatus } from '../hooks/useOrchestratorStatus';
 import { useAuth } from '../contexts/AuthContext';
 import { useRememberedState } from '../components/navigation/NavigationState';
 
-type WorkspaceView = 'goals' | 'plans' | 'awareness' | 'memory';
+type WorkspaceView = 'goals' | 'questions' | 'awareness' | 'memory';
 const VIEWS = [
   { id: 'goals', label: 'Goals', icon: Target },
-  { id: 'plans', label: 'Plans', icon: ListChecks },
+  { id: 'questions', label: 'Open questions', icon: CircleHelp },
   { id: 'awareness', label: 'Understanding', icon: Eye },
   { id: 'memory', label: 'Current context', icon: BrainCircuit },
 ] as const;
@@ -25,16 +26,14 @@ const VIEWS = [
 // Keep readers and in-flight requests scoped to one Sapien, including on navigation.
 function WorkspaceViews({ sapienId, name }: { sapienId: string; name: string }) {
   const viewKey = `workspace:${sapienId}`;
-  const [view, setView] = useRememberedState<WorkspaceView>(`${viewKey}:tab`, 'goals');
+  const [savedView, setView] = useRememberedState<WorkspaceView | 'plans'>(`${viewKey}:tab`, 'goals');
+  const view: WorkspaceView = savedView === 'plans' ? 'goals' : savedView;
   const [open, setOpen] = useRememberedState(`${viewKey}:context-open`, false);
   const [wide, setWide] = useRememberedState(`${viewKey}:context-wide`, false);
   const [visited, setVisited] = useState<WorkspaceView[]>(open ? [view] : []);
-  const lastWorkView = useRef<'goals' | 'plans'>(view === 'plans' ? 'plans' : 'goals');
-  if (view === 'goals' || view === 'plans') lastWorkView.current = view;
   const buttons = useRef<HTMLElement>(null);
   const panel = useRef<HTMLElement>(null);
   const previous = useRef({ open, view });
-  const workView = view === 'goals' || view === 'plans';
 
   useEffect(() => {
     if (open) setVisited(items => items.includes(view) ? items : [...items, view]);
@@ -75,9 +74,10 @@ function WorkspaceViews({ sapienId, name }: { sapienId: string; name: string }) 
           </div>
         </div>
         <div className="workspace-context-content">
-          {visited.some(item => item === 'goals' || item === 'plans') && <div hidden={!workView} className="workspace-context-view">
-            <GoalsPanel compact active={open && workView} view={lastWorkView.current} sapienId={Number(sapienId)} />
+          {visited.includes('goals') && <div hidden={view !== 'goals'} className="workspace-context-view">
+            <GoalsPanel compact active={open && view === 'goals'} sapienId={Number(sapienId)} />
           </div>}
+          {visited.includes('questions') && <div hidden={view !== 'questions'} className="workspace-context-view"><OpenQuestionsPanel key={sapienId} sapienId={sapienId} active={open && view === 'questions'} /></div>}
           {visited.includes('awareness') && <div hidden={view !== 'awareness'} className="workspace-context-view"><AwarenessPanel active={open && view === 'awareness'} /></div>}
           {visited.includes('memory') && <div hidden={view !== 'memory'} className="workspace-context-view"><MemoryPanel active={open && view === 'memory'} /></div>}
         </div>
