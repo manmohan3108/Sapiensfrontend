@@ -1,3 +1,4 @@
+import { quotaSummary, quotaReset } from '../../utils/quotaPresentation';
 import { AnalyseControls } from './AnalyseControls';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router';
@@ -134,6 +135,11 @@ function Detail({ sapienId, jobId, onOpen }: { sapienId: string; jobId: string; 
         <p className="mt-2 text-xs leading-5 text-white/50">Normal pending jobs are due or delayed. Simulation pending jobs require the run’s cognitive clock (simulation_clock_required); this read does not infer their due status from real time. Running jobs are leased or lease_expired. Missing scheduling or lease timestamps yield unknown. Terminal jobs are not queued for scheduling.</p>
         {job.eligibility === 'lease_expired' && <p className="mt-3 text-xs text-amber-200">An expired lease does not prove that execution stopped.</p>}
       </section>
+      {job.quota && <section className={`${panel} p-4`} aria-label="Recorded call limit">
+        <h3 className="mb-3 text-sm">Recorded call limit</h3>
+        <p className="text-sm leading-relaxed">{quotaSummary(job.quota)} {quotaReset(job.quota)}</p>
+        <p className="mt-2 text-xs leading-5 text-white/50">This is the recorded block. Current job status and runtime availability determine whether recovery can run.</p>
+      </section>}
       {job.has_error && <section className="analyse-job-error"><h3>Recorded error</h3><pre>{typeof job.error === 'string' ? job.error : JSON.stringify(job.error, null, 2)}</pre></section>}
       {!job.has_error && <Raw label="Recorded error" value={job.error} note="Stored error content, including messages or tracebacks when available. Null means no error value was recorded." />}
       <section className={`${panel} p-4`}><h3 className="mb-3 text-sm text-cyan-100">Timing and lease</h3>
@@ -214,7 +220,7 @@ function JobList({ sapienId, initialEngine, initialJob }: { sapienId: string; in
             <td className="max-w-64 px-3 py-3"><button type="button" onClick={() => setJobTrail([job.id])} className="break-words text-left text-cyan-200 underline underline-offset-2">{job.engine_name}</button><p className="mt-1 text-xs text-white/40" title={job.id}>{job.id.slice(0, 12)}…</p></td>
             <td className="max-w-64 break-words px-3 py-3"><p>{text(job.action)}</p><p className="mt-1 text-white/40">{text(job.origin && typeof job.origin === 'object' ? (job.origin as Record<string, unknown>).source : null)}</p></td>
             <td className="px-3 py-3"><p>{job.status}</p><p className={`mt-1 ${job.eligibility === 'lease_expired' ? 'text-amber-200' : 'text-white/40'}`}>{job.eligibility}</p></td>
-            <td className="px-3 py-3 tabular-nums">{job.retries} / {job.max_retries}</td><td className="max-w-52 px-3 py-3 text-[11px]">{timestamp(job.created_at)}</td><td className="px-3 py-3">{job.has_error ? 'Recorded' : 'None recorded'}</td>
+            <td className="px-3 py-3 tabular-nums">{job.retries} / {job.max_retries}</td><td className="max-w-52 px-3 py-3 text-[11px]">{timestamp(job.created_at)}</td><td className="px-3 py-3">{job.quota ? 'Call limit recorded' : job.has_error ? 'Recorded' : 'None recorded'}</td>
           </tr>)}</tbody>
         </table></div>
         {!data.jobs.length && <p className="p-8 text-center text-xs text-white/50">No jobs on this page. Refresh the window to read current records.</p>}

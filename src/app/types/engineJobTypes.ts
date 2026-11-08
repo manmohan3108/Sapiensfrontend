@@ -1,3 +1,5 @@
+import type { QuotaDetails } from './quotaTypes';
+
 export type EngineJobStatus = 'pending' | 'running' | 'completed' | 'failed';
 
 export interface EngineJobFilters {
@@ -38,6 +40,7 @@ export interface EngineJob {
   age_seconds: number;
   running_seconds: number | null;
   has_error: boolean;
+  quota?: QuotaDetails | null;
   error_flags: Partial<Record<'retryable' | 'will_retry' | 'timed_out', boolean>>;
 }
 

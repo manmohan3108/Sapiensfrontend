@@ -1,3 +1,4 @@
+import { quotaSummary, quotaReset } from '../../utils/quotaPresentation';
 import { useEffect, useId, useRef, useState } from 'react';
 import type { AwarenessRunDetail, AwarenessRunSubject } from '../../types/awarenessRunTypes';
 import { sapiensService } from '../../core/services/sapiensService';
@@ -39,9 +40,18 @@ export function AwarenessSummary({ data, onActivity }: { data: AwarenessRunDetai
   const assessmentTone = run.assessment_state === 'blocked' ? 'danger' : ['waiting', 'unresolved'].includes(run.assessment_state) ? 'warning' : 'neutral';
   return <div className="awareness-summary">
     {view.problem && <section className="awareness-processing-issue" aria-label="Processing issue">
-      <h3>{processingLabel(run.processing_state)}</h3>
-      <p>This review did not finish normally. Actions recorded before it stopped are still shown below.</p>
+      <h3>{run.quota ? 'Stopped at a call limit' : processingLabel(run.processing_state)}</h3>
+      {run.quota ? <>
+        <p>{quotaSummary(run.quota)} {quotaReset(run.quota)}</p>
+        {run.failure_stage && <p className="awareness-caption">Affected stage: {run.failure_stage}</p>}
+        <p>Actions completed before this limit are retained below. This is the saved run’s status, not the current recovery queue.</p>
+      </> : <p>This review did not finish normally. Actions recorded before it stopped are still shown below.</p>}
       {(traceText(final.reason) || view.reason) && <DiagnosticDisclosure title="Recorded review note"><DiagnosticText text={traceText(final.reason) || view.reason} limit={700}/></DiagnosticDisclosure>}
+    </section>}
+    {!!run.quota_events?.length && !run.quota && <section className="awareness-processing-issue" aria-label="Call allowance notes">
+      <h3>Call limits encountered</h3>
+      <p>These calls were blocked. The overall processing status above remains authoritative.</p>
+      {run.quota_events.map((quota, index) => <p key={index}>{quotaSummary(quota)} {quotaReset(quota)} <span className="awareness-caption">Purpose: {quota.purpose}</span></p>)}
     </section>}
     {view.noFocus ? <section className="awareness-no-focus"><h3>No focus was chosen</h3>
       <p>Nothing was selected for further attention during this check.</p>

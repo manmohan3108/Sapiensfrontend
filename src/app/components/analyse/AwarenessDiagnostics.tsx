@@ -127,7 +127,7 @@ function RunBrowser({ sapienId }: { sapienId: string }) {
                 {category && item.trigger.origin_relation !== 'related_subject' && item.trigger.sender?.name && <small>{item.trigger.sender.name}</small>}
               </td>
               <td role="cell" data-label="Processing">{processingProblem(item.processing_state)
-                ? <DiagnosticBadge tone="danger">{processingLabel(item.processing_state)}</DiagnosticBadge>
+                ? <DiagnosticBadge tone={item.quota ? "warning" : "danger"}>{item.quota ? "Call limit reached" : processingLabel(item.processing_state)}</DiagnosticBadge>
                 : <span className="awareness-processing-state">{item.processing_state === 'completed' || noFocus ? 'Finished' : processingLabel(item.processing_state)}</span>}</td>
               <td role="cell" data-label="Work status"><DiagnosticBadge tone={item.assessment_state === 'blocked' ? 'danger' : ['waiting', 'unresolved'].includes(item.assessment_state) ? 'warning' : 'neutral'}>
                 {assessmentLabel(item.assessment_state)}

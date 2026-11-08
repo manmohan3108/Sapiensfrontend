@@ -6,12 +6,16 @@ export interface AiUsageDay {
   by_tier: Record<string, number>;
   by_purpose: Record<string, number>;
   by_sapien: Record<string, number>;
+  by_allowance?: Record<string, number>;
   total: number;
 }
 
 export interface AiUsageResponse<Kind extends AiUsageKind = AiUsageKind> {
   kind: Kind;
   today: string;
+  time_basis?: 'real_utc';
+  allowance_limits?: Record<string, number>;
+  today_by_allowance?: Record<string, number>;
   limits: Record<string, number>;
   global_limits: Record<string, number>;
   sapien_limits: Record<string, number>;

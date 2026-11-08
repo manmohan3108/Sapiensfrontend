@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { selectionStorage } from '../auth/selectionStorage';
 import { resourceSession } from '../auth/authSession';
 import {
-  Sapiens, ChatMessage,
+  Sapiens, SapienActivity, ChatMessage,
   MemoryUnit, DebugInfo,
 } from '../../types/sapiensTypes';
 
@@ -35,6 +35,7 @@ interface SapiensStore {
 
   // ── Core actions ──────────────────────────────────────────────────────────
   setCurrentSapiens: (sapiens: Sapiens | null, accessVerified?: boolean) => void;
+  updateActivity: (sapienId: string, activity: SapienActivity) => void;
   setStatus: (status: 'idle' | 'loading' | 'processing' | 'error') => void;
 
   // ── Chat actions ──────────────────────────────────────────────────────────
@@ -90,6 +91,10 @@ export const useSapiensStore = create<SapiensStore>((set) => ({
       lastMemoryUnits: [], lastDebugInfo: null, pinnedMemoryIds: [], ignoredMemoryIds: [],
       isOverloaded: false, showDebugPanel: false, showMemoryTimeline: false, jumpToMessageId: null });
   },
+
+  // A lifecycle update is not a selection change: preserve the current chat.
+  updateActivity: (sapienId, activity) => set(state => state.currentSapiens?.id === sapienId
+    ? { currentSapiens: { ...state.currentSapiens, ...activity } } : state),
 
   setStatus: (status) => set({ status }),
 

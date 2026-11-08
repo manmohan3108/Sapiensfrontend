@@ -1,0 +1,27 @@
+/* Shared activity control: inherit the directory or workspace palette. */
+.sapien-activity-control {
+  --activity-ink:var(--home-ink,var(--sp-ink));
+  --activity-muted:var(--home-muted,var(--sp-muted));
+  --activity-line:var(--home-line,var(--sp-line));
+  --activity-accent:var(--home-accent,var(--sp-accent));
+  display:flex; flex-direction:column; align-items:flex-end; gap:4px; min-width:0;
+}
+.sapien-activity-status { color:var(--activity-muted); font-size:12px; line-height:1.4; }
+.sapien-activity-button {
+  display:inline-flex; align-items:center; justify-content:center; gap:6px; min-height:40px;
+  padding:8px 10px; border:1px solid var(--activity-line); border-radius:6px;
+  background:transparent; color:var(--activity-ink); font:inherit; font-size:14px;
+  cursor:pointer; touch-action:manipulation;
+}
+.sapien-activity-button:hover:not(:disabled) { border-color:var(--activity-accent); background:var(--home-soft,var(--sp-recessed)); }
+.sapien-activity-button:focus-visible { outline:2px solid var(--activity-accent); outline-offset:3px; }
+.sapien-activity-button svg { flex-shrink:0; }
+.sapien-activity-button:disabled { cursor:not-allowed; opacity:.6; }
+.sapien-activity-help,.sapien-activity-error { margin:0; font-size:12px; line-height:1.5; overflow-wrap:anywhere; }
+.sapien-activity-help { color:var(--activity-muted); }
+.sapien-activity-error { color:var(--sp-danger,var(--activity-ink)); }
+.workspace-header-actions .sapien-activity-control { max-width:240px; }
+.home-identity-action .sapien-activity-control { align-items:stretch; width:100%; }
+@media (max-width:640px) {
+  .workspace-header-actions .sapien-activity-control { flex:1; align-items:flex-start; max-width:none; }
+}

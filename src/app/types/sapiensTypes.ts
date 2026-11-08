@@ -1,3 +1,9 @@
+import type { QuotaDetails, QuotaRecoveryStatus } from './quotaTypes';
+export interface SapienActivity {
+  active: boolean;
+  activityUnavailableReason: string | null;
+}
+
 /** Identity returned by the account-filtered directory. */
 export interface SapiensDirectoryEntry {
   id: number | string;
@@ -6,6 +12,8 @@ export interface SapiensDirectoryEntry {
   created_at: string;
   simulation_enabled?: boolean;
   simulation_available?: boolean;
+  active?: boolean;
+  activity_unavailable_reason?: string | null;
   simulation_unavailable_reason?: 'simulation_disabled' | 'runtime_reserved' | null;
 }
 
@@ -15,6 +23,8 @@ export interface Sapiens {
   role?: string;
   createdAt: string;
   lastModified: string;
+  active?: boolean;
+  activityUnavailableReason?: string | null;
   /** Additive admin-list metadata. Missing values must fail closed in Simulation Lab. */
   simulationEnabled?: boolean;
   simulationAvailable?: boolean;
@@ -126,6 +136,8 @@ export interface ChatApiResponse {
 export type ChatTurnStatus = 'queued' | 'processing' | 'waiting' | 'completed' | 'no_reply' | 'failed';
 
 export interface ChatMessage {
+  quota?: QuotaDetails | null;
+  recoveryStatus?: QuotaRecoveryStatus | null;
   turnStatus?: ChatTurnStatus | 'sending' | 'unknown' | 'rejected';
   isError?: boolean;
   /** The request completed, but no assistant message text was returned or recorded. */
@@ -339,7 +351,8 @@ export interface StoredChatMessage {
 export interface ChatDetail extends ChatHistoryItem {
   sapien_id: number;
   messages: StoredChatMessage[];
-  turns?: { message_id: string; request_id?: string; status: ChatTurnStatus }[];
+  turns?: { message_id: string; request_id?: string; status: ChatTurnStatus;
+    quota?: QuotaDetails | null; recovery_status?: QuotaRecoveryStatus | null }[];
 }
 
 export interface UploadAcceptance {

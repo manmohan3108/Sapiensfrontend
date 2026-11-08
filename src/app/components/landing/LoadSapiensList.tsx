@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ArrowRight, Loader2, AlertCircle, RefreshCw, Search, SearchX } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card, CardContent } from '../ui/card';
 import { SapiensIdentityRow } from '../customer/SapiensIdentityRow';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
-import { Sapiens } from '../../types/sapiensTypes';
+import { SapienActivity, Sapiens } from '../../types/sapiensTypes';
 import { sapiensService } from '../../core/services/sapiensService';
 import { useSapiens } from '../../hooks/useSapiens';
 import { formatDateTime } from '../../utils/formatters';
@@ -40,6 +40,11 @@ export function LoadSapiensList({ onCreate }: { onCreate: () => void }) {
   };
 
   useEffect(() => { fetchList(); }, []);
+
+  const updateActivity = useCallback((sapienId: string, activity: SapienActivity | null) => {
+    const state = activity ?? { active: undefined, activityUnavailableReason: undefined };
+    setSapiensList(items => items.map(item => item.id === sapienId ? { ...item, ...state } : item));
+  }, []);
 
   const handleLoad = async (sapiens: Sapiens) => {
     try {
@@ -101,7 +106,7 @@ export function LoadSapiensList({ onCreate }: { onCreate: () => void }) {
         </div>
         <div className="home-identity-list">
           {filteredSapiens.map((sapiens) => (
-            <SapiensIdentityRow key={sapiens.id} individual={sapiens} created={formatDateTime(sapiens.createdAt)}>
+            <SapiensIdentityRow key={sapiens.id} individual={sapiens} created={formatDateTime(sapiens.createdAt)} onActivityChange={updateActivity}>
               <Button
                 onClick={() => handleLoad(sapiens)}
                 className="home-open-button"

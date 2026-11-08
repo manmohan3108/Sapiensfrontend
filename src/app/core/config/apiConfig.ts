@@ -35,6 +35,7 @@ export const API_ENDPOINTS = {
   sapienAwarenessRuns: (sapienId: string | number) => `/sapien/${sapienId}/awareness/runs`,
   sapienWorkingMemory: (sapienId: string | number) => `${apiConfig.baseUrl}/sapien/${sapienId}/working-memory`,
   listSapiens: '/get-all-sapiens',
+  sapienActivity: (sapienId: string) => '/sapien/' + sapienId + '/activity',
   runEngine: '/run-engines',
   orchestratorStatus: '/orchestrator/status',
   llmUsage: '/llm-usage',

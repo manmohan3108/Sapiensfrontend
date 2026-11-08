@@ -11,6 +11,7 @@ import {
   ChatApiResponse,
   UserSignalPayload,
   Sapiens,
+  SapienActivity,
   ChatHistoryResponse,
   ChatDetail,
   AwarenessResponse,
@@ -36,6 +37,8 @@ function transformSapiens(backendSapiens: BackendSapiens): Sapiens {
     role: backendSapiens.role,
     createdAt: backendSapiens.created_at,
     lastModified: backendSapiens.created_at,
+    active: backendSapiens.active,
+    activityUnavailableReason: backendSapiens.activity_unavailable_reason,
     simulationEnabled: backendSapiens.simulation_enabled,
     simulationAvailable: backendSapiens.simulation_available,
     simulationUnavailableReason: backendSapiens.simulation_unavailable_reason === 'runtime_reserved'
@@ -46,7 +49,33 @@ function transformSapiens(backendSapiens: BackendSapiens): Sapiens {
   };
 }
 
+interface BackendSapienActivity {
+  sapien_id: number;
+  active: boolean;
+  activity_unavailable_reason: string | null;
+}
+
+function transformActivity(sapienId: string, data: BackendSapienActivity): SapienActivity {
+  if (String(data.sapien_id) !== sapienId || typeof data.active !== 'boolean'
+    || (data.activity_unavailable_reason !== null && typeof data.activity_unavailable_reason !== 'string')) {
+    throw new Error('The server did not confirm this Sapien\u2019s activity state.');
+  }
+  return { active: data.active, activityUnavailableReason: data.activity_unavailable_reason };
+}
+
 class SapiensService {
+  async getActivity(sapienId: string, signal: AbortSignal): Promise<SapienActivity> {
+    const response = await apiClient.get<BackendSapienActivity>(API_ENDPOINTS.sapienActivity(sapienId),
+      { signal: AbortSignal.any([signal, AbortSignal.timeout(ACCESS_CHECK_TIMEOUT_MS)]) });
+    return transformActivity(sapienId, response.data);
+  }
+
+  async setActive(sapienId: string, active: boolean, signal: AbortSignal): Promise<SapienActivity> {
+    const response = await apiClient.post<BackendSapienActivity>(API_ENDPOINTS.sapienActivity(sapienId), { active },
+      { signal: AbortSignal.any([signal, AbortSignal.timeout(ACCESS_CHECK_TIMEOUT_MS)]) });
+    return transformActivity(sapienId, response.data);
+  }
+
   async createSapiens(request: CreateSapiensRequest): Promise<CreateSapiensResponse> {
     const response = await apiClient.post<BackendCreateSapiensResponse>(
       API_ENDPOINTS.createSapiens,

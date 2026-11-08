@@ -1,3 +1,4 @@
+import type { QuotaDetails } from './quotaTypes';
 import type { AwarenessBeatEvent, AwarenessFocusDiagnostic } from './sapiensTypes';
 
 export interface AwarenessMemoryReference {
@@ -37,6 +38,9 @@ export interface AwarenessRunSummary {
   record_version?: number;
   focus_selection?: AwarenessFocusSelection;
   processing_state: string;
+  quota?: QuotaDetails | null;
+  quota_events?: QuotaDetails[];
+  failure_stage?: string | null;
   assessment_state: string;
   understanding_preview: string;
   remaining_preview: string;

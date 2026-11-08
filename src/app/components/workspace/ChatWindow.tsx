@@ -1,3 +1,4 @@
+import { quotaSummary, quotaReset, quotaRecovery } from '../../utils/quotaPresentation';
 import { ConversationHistory } from './ConversationHistory';
 import { useRememberedState } from '../navigation/NavigationState';
 import { ScienceDetail } from '../customer/ScienceDetail';
@@ -193,7 +194,7 @@ function SignalControls({ msg, onSignal }: { msg: ChatMessage; onSignal: (s: Use
   );
 }
 
-function TurnStatus({ status }: { status: ChatMessage['turnStatus'] }) {
+function TurnStatus({ status, quota, recoveryStatus }: { status: ChatMessage['turnStatus']; quota: ChatMessage['quota']; recoveryStatus: ChatMessage['recoveryStatus'] }) {
   if (!status || status === 'completed') return null;
   const labels = {
     rejected: 'Message was not accepted. Check your connection and selected Sapien before trying again.',
@@ -204,7 +205,11 @@ function TurnStatus({ status }: { status: ChatMessage['turnStatus'] }) {
     unknown: 'Couldn’t confirm acceptance. Check conversation history before sending again.',
   };
   return <p role="status" aria-live="polite" className="px-1 text-xs leading-relaxed text-sp-muted">
-    {labels[status]}
+    {quota ? <>
+      <span className="block">Message saved · {quotaSummary(quota)}</span>
+      <span className="block">{quotaReset(quota)}</span>
+      <span className="block">{quotaRecovery(recoveryStatus)}</span>
+    </> : labels[status]}
   </p>;
 }
 
@@ -298,7 +303,7 @@ function MessageBubble({
           </>
         )}
 
-        {isUser && <TurnStatus status={msg.turnStatus} />}
+        {isUser && <TurnStatus status={msg.turnStatus} quota={msg.quota} recoveryStatus={msg.recoveryStatus} />}
         {!msg.isLoading && <div className={`flex items-center gap-2 px-1 ${isUser ? 'flex-row-reverse' : ''}`}>
           <span className="text-[10px] text-sp-muted font-mono opacity-100 transition-opacity">{formatTime(msg.timestamp)}</span>
           {msg.content && !msg.emptyResponse && <CopyBtn text={msg.content} />}

@@ -173,7 +173,10 @@ export async function authenticatedFetch(input: RequestInfo | URL, init: Request
     // Read-only job inspection handles missing jobs/Sapiens locally. A missing
     // parent job must not clear the active Sapien and close the inspector.
     const jobInspection = /\/sapien\/[^/]+\/engine-jobs(?:\/[^/]+)?\/?$/.test(path);
-    if (response.status === 404 && selectedId && scoped && !jobInspection) {
+    // A directory action can target a different Sapien from the open workspace.
+    const pathSapienId = path.match(/\/api\/sapien\/([^/]+)(?:\/|$)/)?.[1];
+    const concernsSelection = !pathSapienId || pathSapienId === selectedId;
+    if (response.status === 404 && selectedId && scoped && !jobInspection && concernsSelection) {
       if (resourceSession.customer) {
         // A missing thread or other child does not prove loss of the individual.
         // Hide protected content until the authoritative owner-filtered list answers.

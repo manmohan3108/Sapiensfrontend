@@ -47,8 +47,8 @@
 .home-directory-content input { background:var(--home-panel); border-radius:6px; height:48px; font-size:15px; }
 .home-directory-content>div>div:first-child { max-width:540px; margin-bottom:16px; }
 .home-identity-list { border:1px solid var(--home-line); border-radius:6px; overflow:hidden; background:var(--home-panel); }
-.home-identity-row { display:grid; grid-template-columns:minmax(180px,1.2fr) minmax(140px,1fr) 88px; align-items:center; gap:20px; min-height:76px; padding:12px 18px; }
-.home-identity-row.has-created-date { grid-template-columns:minmax(180px,1.2fr) minmax(140px,1fr) minmax(150px,.85fr) 88px; }
+.home-identity-row { display:grid; grid-template-columns:minmax(180px,1.2fr) minmax(140px,1fr) 112px; align-items:center; gap:20px; min-height:76px; padding:12px 18px; }
+.home-identity-row.has-created-date { grid-template-columns:minmax(180px,1.2fr) minmax(140px,1fr) minmax(150px,.85fr) 112px; }
 .home-identity-row+.home-identity-row { border-top:1px solid var(--home-line); }
 .home-identity-row:hover,.home-identity-row:focus-within { background:var(--home-soft); }
 .home-identity-name { display:flex; align-items:center; gap:12px; min-width:0; }
@@ -58,7 +58,7 @@
 .home-identity-row h3 { font:600 17px/1.35 'Source Sans 3',sans-serif; margin:0; overflow-wrap:anywhere; }
 .home-identity-focus { font-size:14px; line-height:1.45; margin:0; overflow-wrap:anywhere; }
 .home-identity-date { font-size:12px; line-height:1.5; color:var(--home-muted); margin:0; }
-.home-identity-action { min-width:0; }
+.home-identity-action { min-width:0; display:flex; flex-direction:column; align-items:flex-end; gap:8px; }
 .sapiens-home-screen .home-open-button,.sapiens-home-screen .customer-primary {
   display:inline-flex; align-items:center; justify-content:space-between; gap:16px; width:100%; min-height:44px;
   padding:10px 16px; border:1px solid transparent; border-radius:5px; background:var(--home-action); color:var(--home-action-ink); font-size:14px; font-weight:600;
@@ -107,7 +107,7 @@
 .sapiens-home-screen .home-identity-action .home-open-button { width:auto; min-width:80px; padding:8px 12px; background:transparent; border-color:var(--home-line); color:var(--home-ink); }
 .sapiens-home-screen .home-identity-action .home-open-button:hover { border-color:var(--home-accent); background:var(--home-bg); }
 @media(max-width:760px) {
-  .home-identity-row,.home-identity-row.has-created-date { grid-template-columns:minmax(0,1fr) 80px; gap:3px 14px; padding:12px 14px; }
+  .home-identity-row,.home-identity-row.has-created-date { grid-template-columns:minmax(0,1fr) 112px; gap:3px 14px; padding:12px 14px; }
   .home-identity-name { grid-column:1; grid-row:1; }
   .home-identity-focus { grid-column:1; grid-row:2; padding-left:48px; }
   .home-identity-date { grid-column:1; grid-row:3; padding-left:48px; font-size:11px; }

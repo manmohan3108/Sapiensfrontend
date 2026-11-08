@@ -13,7 +13,7 @@ import { sapiensService } from '../core/services/sapiensService';
 import { useAuth } from '../contexts/AuthContext';
 import { canAnalyzeAndSimulate } from '../core/auth/permissions';
 import { useSapiensStore } from '../core/state/sapiensStore';
-import type { Sapiens } from '../types/sapiensTypes';
+import type { SapienActivity, Sapiens } from '../types/sapiensTypes';
 import { validateCreation, creationFailureIsDefinitive } from '../core/customer/creation';
 import '../../styles/customer.css';
 import '../../styles/home-science.css';
@@ -57,6 +57,11 @@ export function CustomerHomePage() {
     finally { if (active.current && version === fetchVersion.current) setLoading(false); }
   }, []);
   useEffect(() => { void refresh(); }, [refresh]);
+
+  const updateActivity = useCallback((sapienId: string, activity: SapienActivity | null) => {
+    const state = activity ?? { active: undefined, activityUnavailableReason: undefined };
+    setList(items => items.map(item => item.id === sapienId ? { ...item, ...state } : item));
+  }, []);
 
   const openIndividual = async (individual: Sapiens, justCreated = false) => {
     if (opening) return;
@@ -109,7 +114,7 @@ export function CustomerHomePage() {
         : <><section className="home-intro" aria-labelledby="customer-home-title"><div><p className="home-eyebrow">YOUR PERSONAL SPACE</p><h1 id="customer-home-title" ref={heading} tabIndex={-1}>Your Sapiens</h1><p>Create an AI individual shaped by experience, or open one to continue.</p></div><div className="home-intro-illustration"><ScienceDetail /><SapiensBrandMark className="home-intro-core" /></div></section>
           <h2 className="sr-only">Your individuals</h2>
           {list.length > 3 && <div className="customer-search"><label className="sr-only" htmlFor="sapiens-search">Search your Sapiens</label><input id="sapiens-search" type="search" placeholder="Search by name, focus or ID" value={query} onChange={e => setQuery(e.target.value)} /></div>}
-          {filtered.length === 0 ? <div className="customer-state" role="status"><h2>No Sapiens match your search</h2><button className="customer-secondary" onClick={() => setQuery('')}>Clear search</button></div> : <div className="home-identity-list">{filtered.map(item => <SapiensIdentityRow individual={item} key={item.id}>
+          {filtered.length === 0 ? <div className="customer-state" role="status"><h2>No Sapiens match your search</h2><button className="customer-secondary" onClick={() => setQuery('')}>Clear search</button></div> : <div className="home-identity-list">{filtered.map(item => <SapiensIdentityRow individual={item} key={item.id} onActivityChange={updateActivity}>
             {openError?.id === item.id && <p role="alert">{openError.message}</p>}
             <button className="customer-primary home-open-button" disabled={opening !== null} onClick={() => void openIndividual(item)}>{opening === item.id ? 'Opening…' : 'Open'}<ArrowUpRight size={17} className="shrink-0" /><span className="sr-only"> {item.name}</span></button></SapiensIdentityRow>)}</div>}
         </>}
