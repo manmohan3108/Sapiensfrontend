@@ -21,8 +21,8 @@ export function SapienActivityControl({ sapien, refreshOnMount = false, onActivi
     : reason === 'deletion_pending' ? 'Deletion is in progress.'
     : blocked ? 'Activity cannot be changed right now.'
     : activity?.active
-      ? 'Pause autonomous work without deleting memories or jobs. Current work may finish, and chat remains available.'
-      : 'Resume autonomous work. Your memories and pending work are preserved.';
+      ? 'Pause this Sapien'
+      : 'Resume this Sapien';
   const Icon = !activity ? RefreshCw : activity.active ? Pause : Play;
 
   return <div className={`sapien-activity-control${compact ? ' sapien-activity-compact' : ''}`} aria-busy={pending !== null}>
