@@ -156,6 +156,7 @@ export function OverviewChecks({ objectives, base }: { objectives: InspectionObj
 }
 
 export function OverviewRunDetail({ run }: { run: SimulationRun }) {
+  if (run.status === 'paused') return null; // The World shell shows the shared pause notice.
   const detail = run.detail?.trim() || run.participant?.failure_type?.trim();
   if (!detail && run.status !== 'failed') return null;
   return <p className="sv-inline-error sv-run-detail"><strong>Run status: {readable(run.status)}.</strong> {detail || 'No failure reason was recorded.'}</p>;

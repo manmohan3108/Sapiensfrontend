@@ -47,6 +47,12 @@ These are review considerations, not instructions to redesign every page at once
 | People / connections / tools | Inspect participants and available services | Context before counts. Distinguish configured connections, authorized access, environment activity and Sapien calls. |
 | Engram | Explore memory and recorded relationships | Support returned memory types, meaningful linked-memory labels, exact provenance and accessible graph/list alternatives. Preserve retrieval/ranking behaviour. |
 
+Paused simulations show a shared notice in Simulation Lab and every World page.
+Only the optional API `pause_reason` identifies an automatic pause; older responses
+fall back to `detail` without inventing a cause. Display `resume_blocked_reason`
+when supplied and follow `allowed_controls` for actions. Link to recorded diagnostics
+and Lab controls; never resume automatically on refresh or after deployment.
+
 ## Data boundaries and implementation references
 
 Use shared `AnalyseShell`, `AnalyseControls`, `DiagnosticPrimitives`, navigation

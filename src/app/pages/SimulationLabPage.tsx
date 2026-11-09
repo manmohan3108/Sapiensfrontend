@@ -1,3 +1,4 @@
+import { SimulationPauseNotice } from '../components/simulation/SimulationPauseNotice';
 import { SimulationPurpose } from '../components/simulation/SimulationPurpose';
 import { useRestoreSapienSelection } from '../components/navigation/useRestoreSapienSelection';
 import { LiveSimulatedTime } from '../components/simulation/LiveSimulatedTime';
@@ -1179,21 +1180,20 @@ export function SimulationLabPage() {
                     </Button>
                   )}
               </div>
-              <p className="text-sm text-muted-foreground" role="status">
+              <SimulationPauseNotice run={run} />
+              {run.status !== "paused" && <p className="text-sm text-muted-foreground" role="status">
                 {run.status === "recovery_required"
                   ? "This run needs recovery review. Saved activity is available in Simulation World; only supported controls are shown."
                   : terminal.has(run.status)
                     ? `${endedRunReason(run)} Saved activity remains available in Simulation World. This run cannot be resumed.`
                   : !hasLiveRuntime(run)
                     ? "Saved activity is available in Simulation World. Live controls are unavailable for this run."
-                    : run.status === "paused"
-                    ? "Simulation paused. Its remaining run time is saved. Resume to continue from where it paused."
                     : run.status === "running" && hasLiveRuntime(run)
                       ? "Pause to review and continue later. Stop ends the run and keeps its recorded history."
                       : run.status === "scheduled"
                           ? "Preparation is complete. Execution starts once its earliest launch time is reached. You can cancel before it starts."
                           : run.status === "starting" ? "Preparing the simulated workplace and Sapiens runtime. Execution starts automatically once ready; you can cancel during preparation." : `Run status: ${statusLabel(run.status)}. Available controls appear here.`}
-              </p>
+              </p>}
               {run.start_blocked_reason && <p className="text-sm text-amber-700 dark:text-amber-300">Preparation unavailable: {run.start_blocked_reason}</p>}
               {run.cleanup_required && <p className="text-sm text-red-700 dark:text-red-300">Cleanup needs review. The Sapiens reservation is still retained.</p>}
             </div>
