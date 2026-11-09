@@ -157,11 +157,20 @@ const statusLabel = (status: SimulationStatus) =>
     completed: "Completed",
     blocked: "Blocked",
     stopped: "Stopped",
-    limit_reached: "Limit reached",
+    limit_reached: "Ended — run limit reached",
     failed: "Failed",
     created: "Created",
     recovery_required: "Recovery needs review",
   })[status];
+function endedRunReason(run: SimulationRun): string {
+  const reasons: Record<string, string> = {
+    "Wall-clock execution limit reached": "This simulation ended because its real-time allowance ran out, not because of an AI usage limit.",
+    "Evidence record limit reached": "This simulation ended after reaching its recorded-event limit.",
+    "Simulation horizon reached with pending work": "This simulation reached its final simulated date with unfinished work.",
+    "Simulation horizon reached with pending replies": "This simulation reached its final simulated date with replies still pending.",
+  };
+  return (run.detail && reasons[run.detail]) || "This simulation has ended.";
+}
 const hasLiveRuntime = (run: SimulationRun) =>
   !terminal.has(run.status) &&
   !run.archived &&
@@ -207,8 +216,8 @@ function merge(current: SimulationEvent[], incoming: SimulationEvent[]) {
   return [...map.values()].sort((a, b) => a.sequence - b.sequence);
 }
 const helpFor = (label: string) =>
-  label.startsWith("Wall-time")
-    ? "The maximum real elapsed execution time this run may use. The standard default is six real hours, but the catalog value shown here is authoritative and may be lower. Preparation and scheduled waiting use no budget. Pauses after execution starts still count, and resuming never resets it."
+  (label.startsWith("Wall-time") || label.startsWith("Real-time limit"))
+    ? "The total server-clock time allowed while this simulation runs. Preparation, scheduled waiting and pauses do not use this allowance. Resume continues with the time left; it does not give the run a new allowance."
     : label.startsWith("Evidence")
       ? "The maximum number of recorded events, including messages, tool activity, and diagnostics. It is not a token limit. Reaching it ends the run with limit_reached."
       : label.includes("speed")
@@ -1113,7 +1122,7 @@ export function SimulationLabPage() {
                   </span>
                 </div>
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-violet-600 dark:text-violet-300">
-                  Current simulation
+                  {terminal.has(run.status) || run.archived ? "Latest simulation" : "Current simulation"}
                 </p>
                 <h2 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
                   {run.case_id}
@@ -1173,10 +1182,12 @@ export function SimulationLabPage() {
               <p className="text-sm text-muted-foreground" role="status">
                 {run.status === "recovery_required"
                   ? "This run needs recovery review. Saved activity is available in Simulation World; only supported controls are shown."
+                  : terminal.has(run.status)
+                    ? `${endedRunReason(run)} Saved activity remains available in Simulation World. This run cannot be resumed.`
                   : !hasLiveRuntime(run)
                     ? "Saved activity is available in Simulation World. Live controls are unavailable for this run."
                     : run.status === "paused"
-                    ? "Simulation paused. Resume to continue. Pausing does not reset or extend the real-time run budget."
+                    ? "Simulation paused. Its remaining run time is saved. Resume to continue from where it paused."
                     : run.status === "running" && hasLiveRuntime(run)
                       ? "Pause to review and continue later. Stop ends the run and keeps its recorded history."
                       : run.status === "scheduled"
@@ -1673,10 +1684,10 @@ export function SimulationLabPage() {
                   </p>
                   <p>
                     <span className="inline-flex items-center gap-1 text-muted-foreground">
-                      Wall budget left{" "}
+                      Run time remaining{" "}
                       <InfoHelp
-                        label="About remaining wall budget"
-                        text="Execution-only real time remaining before limit_reached. Preparation and scheduled waiting use zero budget. Pauses after execution starts still count, and Resume never resets the timer."
+                        label="About remaining run time"
+                        text="Server-clock time left for this run. This allowance is used only while running, and is saved during pauses and server restarts. It is separate from AI usage limits."
                       />
                     </span>
                     <br />
@@ -1684,7 +1695,7 @@ export function SimulationLabPage() {
                       remaining={run.wall_remaining_seconds}
                       counting={
                         !!run.execution_started_at &&
-                        !terminal.has(run.status) &&
+                        run.status === "running" &&
                         hasLiveRuntime(run)
                       }
                     />

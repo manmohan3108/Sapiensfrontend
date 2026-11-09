@@ -13,13 +13,15 @@ export function SapienActivityControl({ sapien, refreshOnMount = false, onActivi
   const reason = activity?.activityUnavailableReason;
   const blocked = !!reason;
   const label = pending === 'reading' ? 'Checking\u2026' : pending === 'saving' ? 'Saving\u2026'
-    : !activity ? 'Check status' : activity.active ? 'Pause' : 'Resume';
+    : !activity ? 'Check status' : activity.active ? 'Pause' : 'Activate';
   const status = reason === 'simulation_owned' ? 'Simulation controlled' : reason === 'deletion_pending' ? 'Deleting'
-    : blocked ? 'Unavailable' : !activity ? 'Status unknown' : activity.active ? 'Active' : 'Paused';
+    : blocked ? 'Unavailable' : !activity ? 'Status unknown' : activity.active ? 'Active' : 'Inactive';
   const explanation = reason === 'simulation_owned' ? 'Use Simulation Lab to pause or resume this simulation.'
     : reason === 'deletion_pending' ? 'Deletion is in progress.'
     : blocked ? 'Activity cannot be changed right now.'
-    : 'Pause autonomous work without deleting memories or jobs. Current work may finish, and chat remains available.';
+    : activity?.active
+      ? 'Pause autonomous work without deleting memories or jobs. Current work may finish, and chat remains available.'
+      : 'Activate normal Sapien activity. This does not resume an ended simulation.';
   const Icon = !activity ? RefreshCw : activity.active ? Pause : Play;
 
   return <div className={`sapien-activity-control${compact ? ' sapien-activity-compact' : ''}`} aria-busy={pending !== null}>
@@ -29,7 +31,7 @@ export function SapienActivityControl({ sapien, refreshOnMount = false, onActivi
       onClick={() => activity ? void setActive(!activity.active) : refresh()}>
       <Icon size={15} aria-hidden="true" /><span>{label}</span>
     </button>}
-    <span id={helpId} className={blocked ? 'sapien-activity-help' : 'sr-only'}>{explanation}</span>
+    <span id={helpId} className={blocked || (activity && !activity.active) ? 'sapien-activity-help' : 'sr-only'}>{explanation}</span>
     {error && <p className="sapien-activity-error" role="alert">{error}</p>}
     <span className="sr-only" role="status">{notice}</span>
   </div>;
