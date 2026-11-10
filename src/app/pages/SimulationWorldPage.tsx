@@ -723,12 +723,12 @@ function ChatPortalContent({ runId, eventCount }: { runId: string; eventCount: n
                 const sender = employees.find(person => person.person_id === senderId);
                 const senderName = sender?.name || (isParticipant ? overview?.participant_name || 'Simulation participant' : senderId);
                 return (
-                  <article key={event.record_id} className={`group flex gap-3 rounded-lg px-2 py-3 hover:bg-slate-50 dark:hover:bg-white/[0.03] ${isParticipant ? '' : 'flex-row-reverse'}`}>
+                  <article key={event.record_id} className={`group flex gap-3 rounded-lg px-2 py-3 hover:bg-slate-50 dark:hover:bg-white/[0.03] ${isParticipant ? 'flex-row-reverse' : ''}`}>
                     <span className="grid size-9 shrink-0 place-items-center rounded-full bg-gradient-to-br from-violet-500 to-blue-500 text-xs font-semibold text-white">{senderName.slice(0, 2).toUpperCase()}</span>
-                    <div className={`min-w-0 max-w-[80%] ${isParticipant ? '' : 'text-right'}`}>
-                      <div className={`flex flex-wrap items-baseline gap-2 ${isParticipant ? '' : 'justify-end'}`}><strong className="text-sm">{senderName}</strong><span className="text-[11px] text-slate-400">{time(event.occurred_at)}</span></div>
-                      <div className={`mt-1 rounded-2xl px-3 py-2 text-left text-sm leading-6 ${isParticipant ? 'rounded-tl-sm bg-[#5b5fc7] text-white' : 'rounded-tr-sm bg-slate-100 dark:bg-white/10'}`}><p className="whitespace-pre-wrap break-words">{value(body.text) || 'Message body was not recorded.'}</p></div>
-                      <details className={`mt-1 ${isParticipant ? '' : 'text-right'}`}><summary className="cursor-pointer text-[11px] text-slate-400">Evidence details</summary><pre className="mt-2 max-h-64 overflow-auto rounded bg-slate-100 p-3 text-left text-xs dark:bg-black/30">{JSON.stringify(body, null, 2)}</pre></details>
+                    <div className={`min-w-0 max-w-[80%] ${isParticipant ? 'text-right' : ''}`}>
+                      <div className={`flex flex-wrap items-baseline gap-2 ${isParticipant ? 'justify-end' : ''}`}><strong className="text-sm">{senderName}</strong><span className="text-[11px] text-slate-400">{time(event.occurred_at)}</span></div>
+                      <div className={`mt-1 rounded-2xl px-3 py-2 text-left text-sm leading-6 ${isParticipant ? 'rounded-tr-sm bg-[#5b5fc7] text-white' : 'rounded-tl-sm bg-slate-100 dark:bg-white/10'}`}><p className="whitespace-pre-wrap break-words">{value(body.text) || 'Message body was not recorded.'}</p></div>
+                      <details className={`mt-1 ${isParticipant ? 'text-right' : ''}`}><summary className="cursor-pointer text-[11px] text-slate-400">Evidence details</summary><pre className="mt-2 max-h-64 overflow-auto rounded bg-slate-100 p-3 text-left text-xs dark:bg-black/30">{JSON.stringify(body, null, 2)}</pre></details>
                     </div>
                   </article>
                 );
