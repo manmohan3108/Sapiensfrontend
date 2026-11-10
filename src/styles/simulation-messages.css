@@ -1,0 +1,20 @@
+@import './science-product-theme.css';
+
+/* Constrain intrinsic text widths before message data arrives or changes. */
+.simulation-messages-sidebar { width:100%; max-width:100%; overflow:hidden; }
+.simulation-messages-heading { border-bottom:1px solid var(--sp-line); }
+.simulation-messages-sidebar .simulation-messages-muted { color:var(--sp-muted); }
+.simulation-messages-mark { background:var(--sp-action); color:var(--sp-on-action); }
+.simulation-messages-search { background:var(--sp-panel); border-color:var(--sp-line); color:var(--sp-ink); }
+.simulation-messages-search::placeholder { color:var(--sp-muted); }
+.simulation-messages-filters { padding:4px; border:1px solid var(--sp-line); border-radius:8px; background:var(--sp-recessed); }
+.simulation-messages-filters button { color:var(--sp-muted); touch-action:manipulation; }
+.simulation-messages-filters button:hover,.simulation-messages-refresh:hover { background:var(--sp-panel); color:var(--sp-ink); }
+.simulation-messages-filters button[aria-pressed=true] { background:var(--sp-action); color:var(--sp-on-action); font-weight:600; }
+.simulation-conversation-row { border:1px solid transparent; color:var(--sp-ink); }
+.simulation-conversation-row:hover { background:var(--sp-panel); }
+.simulation-conversation-row[aria-current=true] { background:var(--sp-panel); border-color:var(--sp-action); box-shadow:inset 3px 0 var(--sp-action); }
+.simulation-conversation-avatar { background:var(--sp-action); color:var(--sp-on-action); }
+.simulation-conversation-avatar.is-channel { background:var(--sp-recessed); color:var(--sp-accent); border:1px solid var(--sp-accent); }
+.simulation-messages-footer { border-top:1px solid var(--sp-line); color:var(--sp-muted); }
+.simulation-messages-sidebar :is(button,input):focus-visible { outline:2px solid var(--sp-action); outline-offset:2px; }

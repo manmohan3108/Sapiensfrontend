@@ -6,6 +6,7 @@ import { SimulationPauseNotice } from '../components/simulation/SimulationPauseN
 import { SimulationVisualOverview } from '../components/simulation/SimulationVisualOverview';
 import { LiveSimulatedTime } from '../components/simulation/LiveSimulatedTime';
 import { SimulationConversationList } from '../components/simulation/SimulationConversationList';
+import '../../styles/simulation-messages.css';
 import { conversationList, indexMessages, type ConversationFilter, type MessageIndex } from '../components/simulation/conversationList';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { NavLink, useLocation, useNavigate, useParams, useSearchParams } from 'react-router';
@@ -669,26 +670,26 @@ function ChatPortalContent({ runId, eventCount }: { runId: string; eventCount: n
   }, [conversationLoading, selected]);
 
   return (
-    <div className="grid h-full min-h-0 w-full flex-1 overflow-hidden bg-[#f5f5f7] text-slate-900 dark:bg-[#090e19] dark:text-slate-100 lg:grid-cols-[320px_minmax(0,1fr)]">
-      <aside className={`${mobileConversationOpen ? 'hidden' : 'flex'} min-h-0 flex-col bg-[#201f1f] text-white lg:flex`}>
-        <div className="border-b border-white/10 px-4 py-3">
+    <div className="simulation-messages grid h-full min-h-0 min-w-0 w-full grid-cols-[minmax(0,1fr)] flex-1 overflow-hidden bg-[#f5f5f7] text-slate-900 dark:bg-[#090e19] dark:text-slate-100 lg:grid-cols-[320px_minmax(0,1fr)]">
+      <aside className={`simulation-messages-sidebar product-surface science-product-theme ${mobileConversationOpen ? 'hidden' : 'flex'} min-h-0 min-w-0 flex-col lg:flex`}>
+        <div className="simulation-messages-heading shrink-0 px-4 py-3">
           <div className="flex items-center gap-3">
-            <span className="grid size-10 place-items-center rounded-lg bg-[#5b5fc7]"><MessageSquare className="size-5" /></span>
-            <div><h2 className="font-semibold">Messages</h2><p className="text-xs text-white/45">Read chats and channel conversations.</p></div>
-            <Button className="ml-auto border-white/15 bg-transparent px-2 text-white hover:bg-white/10" variant="outline" size="sm" onClick={() => setRefresh(current => current + 1)} aria-label="Refresh messages"><RefreshCw className="size-4" /></Button>
+            <span className="simulation-messages-mark grid size-10 shrink-0 place-items-center rounded-lg"><MessageSquare className="size-5" aria-hidden="true" /></span>
+            <div className="min-w-0 flex-1"><h2 className="font-semibold">Messages</h2><p className="simulation-messages-muted text-sm">Chats and channel conversations</p></div>
+            <button type="button" className="simulation-messages-refresh grid size-11 shrink-0 place-items-center rounded-md" onClick={() => setRefresh(current => current + 1)} aria-label="Refresh messages"><RefreshCw className="size-4" aria-hidden="true" /></button>
           </div>
           <div className="relative mt-3">
-            <Search className="absolute left-3 top-2.5 size-4 text-white/35" />
-            <Input className="border-white/10 bg-white/10 pl-9 text-white placeholder:text-white/60" aria-label="Search conversations by name or ID" placeholder="Search chats and channels…" value={search} onChange={event => setSearch(event.target.value)} />
+            <Search className="simulation-messages-muted pointer-events-none absolute left-3 top-3.5 size-4" aria-hidden="true" />
+            <input type="search" className="simulation-messages-search min-h-11 w-full min-w-0 rounded-md border pl-9 pr-3 text-base" aria-label="Search conversations by name or ID" placeholder="Search chats and channels…" value={search} onChange={event => setSearch(event.target.value)} />
           </div>
-          <div className="mt-3 flex gap-1" role="group" aria-label="Conversation type">
-            {(['all', 'direct', 'channels'] as const).map(kind => <button key={kind} type="button" aria-pressed={filter === kind} onClick={() => setFilter(kind)} className={`min-h-11 flex-1 rounded-md px-3 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-white ${filter === kind ? 'bg-white/15 font-semibold text-white' : 'text-white/70 hover:bg-white/10'}`}>{kind === 'all' ? 'All' : kind === 'direct' ? 'Direct' : 'Channels'}</button>)}
+          <div className="simulation-messages-filters mt-3 grid grid-cols-3 gap-1" role="group" aria-label="Conversation type">
+            {(['all', 'direct', 'channels'] as const).map(kind => <button key={kind} type="button" aria-pressed={filter === kind} onClick={() => setFilter(kind)} className="min-h-11 min-w-0 rounded-md px-2 text-sm">{kind === 'all' ? 'All' : kind === 'direct' ? 'Direct' : 'Channels'}</button>)}
           </div>
         </div>
 
         <SimulationConversationList people={employees} channels={channels} index={messageIndex} filter={filter} search={search} selected={selected} loading={directoryLoading} error={directoryError} onSelect={openConversation} />
 
-        <div className="border-t border-white/10 px-4 py-3 text-xs text-white/35">Read-only · evidence through #{overview?.through ?? '—'}</div>
+        <div className="simulation-messages-footer shrink-0 px-4 py-2 text-xs">Read-only · evidence through #{overview?.through ?? '—'}</div>
       </aside>
 
       <main className={`${mobileConversationOpen ? 'flex' : 'hidden'} min-h-0 min-w-0 flex-col lg:flex`}>
@@ -722,12 +723,12 @@ function ChatPortalContent({ runId, eventCount }: { runId: string; eventCount: n
                 const sender = employees.find(person => person.person_id === senderId);
                 const senderName = sender?.name || (isParticipant ? overview?.participant_name || 'Simulation participant' : senderId);
                 return (
-                  <article key={event.record_id} className={`group flex gap-3 rounded-lg px-2 py-3 hover:bg-slate-50 dark:hover:bg-white/[0.03] ${isParticipant && selectedType === 'person' ? 'flex-row-reverse' : ''}`}>
+                  <article key={event.record_id} className={`group flex gap-3 rounded-lg px-2 py-3 hover:bg-slate-50 dark:hover:bg-white/[0.03] ${isParticipant ? '' : 'flex-row-reverse'}`}>
                     <span className="grid size-9 shrink-0 place-items-center rounded-full bg-gradient-to-br from-violet-500 to-blue-500 text-xs font-semibold text-white">{senderName.slice(0, 2).toUpperCase()}</span>
-                    <div className={`min-w-0 max-w-[80%] ${isParticipant && selectedType === 'person' ? 'text-right' : ''}`}>
-                      <div className={`flex flex-wrap items-baseline gap-2 ${isParticipant && selectedType === 'person' ? 'justify-end' : ''}`}><strong className="text-sm">{senderName}</strong><span className="text-[11px] text-slate-400">{time(event.occurred_at)}</span></div>
-                      <div className={`mt-1 rounded-2xl px-3 py-2 text-left text-sm leading-6 ${isParticipant && selectedType === 'person' ? 'rounded-tr-sm bg-[#5b5fc7] text-white' : 'rounded-tl-sm bg-slate-100 dark:bg-white/10'}`}><p className="whitespace-pre-wrap">{value(body.text) || 'Message body was not recorded.'}</p></div>
-                      <details className={`mt-1 ${isParticipant && selectedType === 'person' ? 'text-right' : ''}`}><summary className="cursor-pointer text-[11px] text-slate-400">Evidence details</summary><pre className="mt-2 max-h-64 overflow-auto rounded bg-slate-100 p-3 text-left text-xs dark:bg-black/30">{JSON.stringify(body, null, 2)}</pre></details>
+                    <div className={`min-w-0 max-w-[80%] ${isParticipant ? '' : 'text-right'}`}>
+                      <div className={`flex flex-wrap items-baseline gap-2 ${isParticipant ? '' : 'justify-end'}`}><strong className="text-sm">{senderName}</strong><span className="text-[11px] text-slate-400">{time(event.occurred_at)}</span></div>
+                      <div className={`mt-1 rounded-2xl px-3 py-2 text-left text-sm leading-6 ${isParticipant ? 'rounded-tl-sm bg-[#5b5fc7] text-white' : 'rounded-tr-sm bg-slate-100 dark:bg-white/10'}`}><p className="whitespace-pre-wrap break-words">{value(body.text) || 'Message body was not recorded.'}</p></div>
+                      <details className={`mt-1 ${isParticipant ? '' : 'text-right'}`}><summary className="cursor-pointer text-[11px] text-slate-400">Evidence details</summary><pre className="mt-2 max-h-64 overflow-auto rounded bg-slate-100 p-3 text-left text-xs dark:bg-black/30">{JSON.stringify(body, null, 2)}</pre></details>
                     </div>
                   </article>
                 );
