@@ -5,6 +5,8 @@ import { useSapiensStore } from '../core/state/sapiensStore';
 import { SimulationPauseNotice } from '../components/simulation/SimulationPauseNotice';
 import { SimulationVisualOverview } from '../components/simulation/SimulationVisualOverview';
 import { LiveSimulatedTime } from '../components/simulation/LiveSimulatedTime';
+import { SimulationConversationList } from '../components/simulation/SimulationConversationList';
+import { conversationList, indexMessages, type ConversationFilter, type MessageIndex } from '../components/simulation/conversationList';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { NavLink, useLocation, useNavigate, useParams, useSearchParams } from 'react-router';
 import { Activity, ArrowLeft, Beaker, BookOpen, Bot, CheckCircle2, ChevronDown, CircleDot, Clock3, FolderKanban, Hash, LayoutDashboard, ListFilter, MessageSquare, MoreHorizontal, PanelLeftClose, PanelLeftOpen, Phone, RefreshCw, Search, Star, Target, UserRound, Video } from 'lucide-react';
@@ -29,14 +31,6 @@ const jiraWriteTools = new Set(['jira_add_comment', 'jira_transition_issue', 'ji
 const jiraReadTools = new Set(['jira_get_issue', 'jira_get_comments', 'jira_list_transitions', 'jira_get_metadata', 'jira_search', 'jira_get_agile', 'jira_get_worklogs']);
 const jiraActionKind = (tool: string) => jiraWriteTools.has(tool) ? 'Change' : jiraReadTools.has(tool) ? 'Read' : 'Tool';
 const possessive = (name: string) => `${name}${/[sS]$/.test(name) ? '’' : '’s'}`;
-const recordedAt = (value?: string | null) => value ? Date.parse(value) || 0 : 0;
-const sortChatsByRecentActivity = (people: WorldEmployee[]) => [...people].sort((left, right) => {
-  const leftMessages = (left.direct_sent ?? 0) + (left.direct_received ?? 0);
-  const rightMessages = (right.direct_sent ?? 0) + (right.direct_received ?? 0);
-  if (!!leftMessages !== !!rightMessages) return rightMessages ? 1 : -1;
-  const activityDifference = recordedAt(right.last_activity_at) - recordedAt(left.last_activity_at);
-  return activityDifference || left.name.localeCompare(right.name);
-});
 
 function JiraPortal({ runId, eventCount }: { runId: string; eventCount: number }) {
   const [overview, setOverview] = useState<WorldOverview | null>(null);
@@ -510,6 +504,15 @@ function JiraPortal({ runId, eventCount }: { runId: string; eventCount: number }
 }
 
 function ChatPortal({ runId, eventCount }: { runId: string; eventCount: number }) {
+  return <ChatPortalContent key={runId} runId={runId} eventCount={eventCount} />;
+}
+
+function ChatPortalContent({ runId, eventCount }: { runId: string; eventCount: number }) {
+  const [filter, setFilter] = useState<ConversationFilter>('all');
+  const [messageIndex, setMessageIndex] = useState<MessageIndex>({});
+  const [directoryLoading, setDirectoryLoading] = useState(true);
+  const [directoryError, setDirectoryError] = useState('');
+  const indexCache = useRef<{ through: number; index: MessageIndex }>({ through: 0, index: {} });
   const [overview, setOverview] = useState<WorldOverview | null>(null);
   const [employees, setEmployees] = useState<WorldEmployee[]>([]);
   const [channels, setChannels] = useState<WorldChannel[]>([]);
@@ -544,22 +547,54 @@ function ChatPortal({ runId, eventCount }: { runId: string; eventCount: number }
   useEffect(() => {
     if (!overview) return;
     const controller = new AbortController();
+    setDirectoryLoading(true);
+    setDirectoryError('');
+    const readDirectory = async <T,>(fetchPage: (offset: number) => Promise<WorldCollection<T>>) => {
+      const items: T[] = [];
+      let offset = 0;
+      while (!controller.signal.aborted) {
+        const page = await fetchPage(offset);
+        items.push(...page.items);
+        if (!page.has_more) return items;
+        if (page.next_offset <= offset) throw new Error('Conversation directory could not finish loading. Refresh to retry.');
+        offset = page.next_offset;
+      }
+      return items;
+    };
+    const readIndex = async () => {
+      const cached = indexCache.current;
+      let after = cached.through <= overview.through ? cached.through : 0;
+      let index = after ? cached.index : {};
+      while (after < overview.through && !controller.signal.aborted) {
+        const page = await simulationService.worldActivity(runId, { through: overview.through, kind: 'messages', after, limit: 200 }, controller.signal);
+        index = indexMessages(index, page.items, overview.participant_id);
+        if (!page.has_more) break;
+        if (page.next_after <= after) throw new Error('Latest messages could not finish loading. Refresh to retry.');
+        after = page.next_after;
+      }
+      return index;
+    };
     Promise.all([
-      simulationService.worldEmployees(runId, { through: overview.through, limit: 100 }, controller.signal),
-      simulationService.worldChannels(runId, { through: overview.through, limit: 100 }, controller.signal),
-    ]).then(([peoplePage, channelPage]) => {
-      const people = sortChatsByRecentActivity(peoplePage.items.filter(person => person.person_id !== overview.participant_id));
+      readDirectory(offset => simulationService.worldEmployees(runId, { through: overview.through, limit: 100, offset }, controller.signal)),
+      readDirectory(offset => simulationService.worldChannels(runId, { through: overview.through, limit: 100, offset }, controller.signal)),
+      readIndex(),
+    ]).then(([allPeople, allChannels, index]) => {
+      if (controller.signal.aborted) return;
+      const people = allPeople.filter(person => person.person_id !== overview.participant_id);
       setEmployees(people);
-      setChannels(channelPage.items);
+      setChannels(allChannels);
+      setMessageIndex(index);
+      indexCache.current = { through: overview.through, index };
       setSelected(current => {
         const exists = current.startsWith('person:')
           ? people.some(person => `person:${person.person_id}` === current)
-          : channelPage.items.some(channel => `channel:${channel.channel_id}` === current);
-        return exists ? current : people[0] ? `person:${people[0].person_id}` : channelPage.items[0] ? `channel:${channelPage.items[0].channel_id}` : '';
+          : allChannels.some(channel => `channel:${channel.channel_id}` === current);
+        return exists ? current : conversationList(people, allChannels, index)[0]?.key ?? '';
       });
-    }).catch(problem => { if (!controller.signal.aborted) setError(message(problem)); });
+    }).catch(problem => { if (!controller.signal.aborted) { setDirectoryError(message(problem)); setError(message(problem)); } })
+      .finally(() => { if (!controller.signal.aborted) setDirectoryLoading(false); });
     return () => controller.abort();
-  }, [runId, overview?.through]);
+  }, [runId, overview]);
 
   const selectedType = selected.startsWith('channel:') ? 'channel' : 'person';
   const selectedId = selected.slice(selected.indexOf(':') + 1);
@@ -616,9 +651,6 @@ function ChatPortal({ runId, eventCount }: { runId: string; eventCount: number }
     return () => controller.abort();
   }, [load, overview, selected]);
 
-  const normalizedSearch = search.trim().toLowerCase();
-  const visibleEmployees = sortChatsByRecentActivity(employees.filter(person => !normalizedSearch || person.name.toLowerCase().includes(normalizedSearch) || person.person_id.toLowerCase().includes(normalizedSearch)));
-  const visibleChannels = channels.filter(item => !normalizedSearch || item.title.toLowerCase().includes(normalizedSearch) || item.channel_id.toLowerCase().includes(normalizedSearch));
   const conversationTitle = selectedType === 'channel' ? channel?.title || selectedId : employee?.name || selectedId;
   const directCountsAvailable = employee?.direct_sent != null && employee?.direct_received != null;
   const conversationDetail = selectedType === 'channel'
@@ -647,37 +679,14 @@ function ChatPortal({ runId, eventCount }: { runId: string; eventCount: number }
           </div>
           <div className="relative mt-3">
             <Search className="absolute left-3 top-2.5 size-4 text-white/35" />
-            <Input className="border-white/10 bg-white/10 pl-9 text-white placeholder:text-white/35" placeholder="Search chats and channels" value={search} onChange={event => setSearch(event.target.value)} />
+            <Input className="border-white/10 bg-white/10 pl-9 text-white placeholder:text-white/60" aria-label="Search conversations by name or ID" placeholder="Search chats and channels…" value={search} onChange={event => setSearch(event.target.value)} />
+          </div>
+          <div className="mt-3 flex gap-1" role="group" aria-label="Conversation type">
+            {(['all', 'direct', 'channels'] as const).map(kind => <button key={kind} type="button" aria-pressed={filter === kind} onClick={() => setFilter(kind)} className={`min-h-11 flex-1 rounded-md px-3 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-white ${filter === kind ? 'bg-white/15 font-semibold text-white' : 'text-white/70 hover:bg-white/10'}`}>{kind === 'all' ? 'All' : kind === 'direct' ? 'Direct' : 'Channels'}</button>)}
           </div>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto p-3">
-          <section>
-            <div className="flex items-center justify-between px-2 py-2"><p className="text-[11px] font-semibold uppercase tracking-wider text-white/40">Chats</p><span className="text-[10px] text-white/30">{visibleEmployees.length}</span></div>
-            <div className="space-y-1">
-              {visibleEmployees.map(person => (
-                <button key={person.person_id} onClick={() => openConversation(`person:${person.person_id}`)} className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-left transition ${selected === `person:${person.person_id}` ? 'bg-white/15 text-white' : 'text-white/65 hover:bg-white/7 hover:text-white'}`}>
-                  <span className="grid size-8 shrink-0 place-items-center rounded-full bg-gradient-to-br from-violet-500 to-blue-500 text-xs font-semibold text-white">{person.name.slice(0, 2).toUpperCase()}</span>
-                  <span className="min-w-0 flex-1"><strong className="block truncate text-sm font-medium">{person.name}</strong><span className="block truncate text-xs text-white/35">{person.person_id} · {person.direct_sent != null && person.direct_received != null ? `${person.direct_sent + person.direct_received} direct messages` : 'Direct count unavailable'}</span></span>
-                </button>
-              ))}
-              {!visibleEmployees.length && <p className="px-3 py-2 text-xs text-white/35">No matching personal chats.</p>}
-            </div>
-          </section>
-
-          <section className="mt-5">
-            <div className="flex items-center justify-between px-2 py-2"><p className="text-[11px] font-semibold uppercase tracking-wider text-white/40">Channels</p><span className="text-[10px] text-white/30">{visibleChannels.length}</span></div>
-            <div className="space-y-1">
-              {visibleChannels.map(item => (
-                <button key={item.channel_id} onClick={() => openConversation(`channel:${item.channel_id}`)} className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-left transition ${selected === `channel:${item.channel_id}` ? 'bg-white/15 text-white' : 'text-white/65 hover:bg-white/7 hover:text-white'}`}>
-                  <Hash className="size-4 shrink-0 text-white/40" />
-                  <span className="min-w-0 flex-1"><strong className="block truncate text-sm font-medium">{item.title}</strong><span className="block truncate text-xs text-white/35">{item.posts} posts</span></span>
-                </button>
-              ))}
-              {!visibleChannels.length && <p className="px-3 py-2 text-xs text-white/35">No matching channels.</p>}
-            </div>
-          </section>
-        </div>
+        <SimulationConversationList people={employees} channels={channels} index={messageIndex} filter={filter} search={search} selected={selected} loading={directoryLoading} error={directoryError} onSelect={openConversation} />
 
         <div className="border-t border-white/10 px-4 py-3 text-xs text-white/35">Read-only · evidence through #{overview?.through ?? '—'}</div>
       </aside>
