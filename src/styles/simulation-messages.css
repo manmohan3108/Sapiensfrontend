@@ -1,5 +1,31 @@
 @import './science-product-theme.css';
 
+/* Messages owns its scroll panes; no ancestor should grow with the transcript. */
+.app-shell:has(.simulation-messages) {
+  display:grid;
+  grid-template-rows:var(--app-nav-height) minmax(0,1fr);
+  height:100dvh;
+  min-height:0;
+  overflow:hidden;
+}
+.app-shell:has(.simulation-messages) > .app-page { min-height:0; overflow:hidden; }
+.app-page .simulation-world-shell:has(.simulation-messages) { height:100%; min-height:0; }
+.simulation-world-shell:has(.simulation-messages) > div { min-height:0; overflow:hidden; }
+.simulation-world-shell:has(.simulation-messages) > div > header { flex-shrink:0; }
+.simulation-world-shell:has(.simulation-messages) [data-nav-scroll="simulation-content"] {
+  display:flex;
+  flex-direction:column;
+  min-height:0;
+  overflow:hidden;
+}
+.simulation-world-shell:has(.simulation-messages) [data-nav-scroll="simulation-content"] > :not(.simulation-messages) { flex-shrink:0; }
+.simulation-world-shell:has(.simulation-messages) > aside { min-height:0; overflow:hidden; }
+.simulation-world-shell:has(.simulation-messages) > aside > nav { min-height:0; overflow-y:auto; overscroll-behavior:contain; }
+.simulation-world-shell:has(.simulation-messages) > aside > div { flex-shrink:0; }
+.simulation-messages { height:auto; grid-template-rows:minmax(0,1fr); }
+.simulation-messages > main > :is(header,footer),.simulation-messages > main > p { flex-shrink:0; }
+.simulation-messages > main > div,.simulation-messages-sidebar > .overflow-y-auto { overscroll-behavior:contain; }
+
 /* Constrain intrinsic text widths before message data arrives or changes. */
 .simulation-messages-sidebar { width:100%; max-width:100%; overflow:hidden; }
 .simulation-messages-heading { border-bottom:1px solid var(--sp-line); }
