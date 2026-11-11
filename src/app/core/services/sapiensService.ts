@@ -12,6 +12,7 @@ import {
   UserSignalPayload,
   Sapiens,
   SapienActivity,
+  ActivityState,
   ChatHistoryResponse,
   ChatDetail,
   AwarenessResponse,
@@ -38,6 +39,8 @@ function transformSapiens(backendSapiens: BackendSapiens): Sapiens {
     createdAt: backendSapiens.created_at,
     lastModified: backendSapiens.created_at,
     active: backendSapiens.active,
+    activityState: backendSapiens.activity_state ?? (backendSapiens.active === undefined ? undefined : backendSapiens.active ? 'active' : 'inactive'),
+    draining: backendSapiens.draining ?? false,
     activityUnavailableReason: backendSapiens.activity_unavailable_reason,
     simulationEnabled: backendSapiens.simulation_enabled,
     simulationAvailable: backendSapiens.simulation_available,
@@ -52,6 +55,9 @@ function transformSapiens(backendSapiens: BackendSapiens): Sapiens {
 interface BackendSapienActivity {
   sapien_id: number;
   active: boolean;
+  activity_state?: ActivityState;
+  draining?: boolean;
+  chat_available?: boolean;
   activity_unavailable_reason: string | null;
 }
 
@@ -60,7 +66,15 @@ function transformActivity(sapienId: string, data: BackendSapienActivity): Sapie
     || (data.activity_unavailable_reason !== null && typeof data.activity_unavailable_reason !== 'string')) {
     throw new Error('The server did not confirm this Sapien\u2019s activity state.');
   }
-  return { active: data.active, activityUnavailableReason: data.activity_unavailable_reason };
+  const activityState = data.activity_state ?? (data.active ? 'active' : 'inactive');
+  if (!['active', 'paused', 'inactive'].includes(activityState)
+    || data.active !== (activityState === 'active')
+    || (data.draining !== undefined && typeof data.draining !== 'boolean')
+    || (data.chat_available !== undefined && typeof data.chat_available !== 'boolean')) {
+    throw new Error('The server returned an inconsistent activity state. Refresh to check again.');
+  }
+  return { active: data.active, activityState, draining: data.draining ?? false, chatAvailable: data.chat_available,
+    activityUnavailableReason: data.activity_unavailable_reason };
 }
 
 class SapiensService {
@@ -70,8 +84,8 @@ class SapiensService {
     return transformActivity(sapienId, response.data);
   }
 
-  async setActive(sapienId: string, active: boolean, signal: AbortSignal): Promise<SapienActivity> {
-    const response = await apiClient.post<BackendSapienActivity>(API_ENDPOINTS.sapienActivity(sapienId), { active },
+  async setActivity(sapienId: string, activityState: ActivityState, signal: AbortSignal): Promise<SapienActivity> {
+    const response = await apiClient.post<BackendSapienActivity>(API_ENDPOINTS.sapienActivity(sapienId), { activity_state: activityState },
       { signal: AbortSignal.any([signal, AbortSignal.timeout(ACCESS_CHECK_TIMEOUT_MS)]) });
     return transformActivity(sapienId, response.data);
   }

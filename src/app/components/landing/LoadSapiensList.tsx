@@ -42,7 +42,7 @@ export function LoadSapiensList({ onCreate }: { onCreate: () => void }) {
   useEffect(() => { fetchList(); }, []);
 
   const updateActivity = useCallback((sapienId: string, activity: SapienActivity | null) => {
-    const state = activity ?? { active: undefined, activityUnavailableReason: undefined };
+    const state = activity ?? { active: undefined, activityState: undefined, draining: undefined, chatAvailable: undefined, activityUnavailableReason: undefined };
     setSapiensList(items => items.map(item => item.id === sapienId ? { ...item, ...state } : item));
   }, []);
 

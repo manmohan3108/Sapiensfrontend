@@ -19,4 +19,4 @@ export function chatMessages(detail: ChatDetail, previous: ChatMessage[] = []): 
 }
 
 export const pendingTurn = (status: ChatMessage['turnStatus']) =>
-  status === 'queued' || status === 'processing' || status === 'waiting';
+  status === 'queued' || status === 'processing' || status === 'replying' || status === 'waiting';

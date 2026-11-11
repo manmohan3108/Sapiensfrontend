@@ -9,6 +9,7 @@ import {
   UserSignalPayload,
 } from '../types/sapiensTypes';
 import { logger } from '../utils/logger';
+import type { ApiError } from '../types/apiTypes';
 import { chatMessages } from '../core/services/chatMessages';
 import { resourceSession } from '../core/auth/authSession';
 import { useAuth } from '../contexts/AuthContext';
@@ -142,7 +143,8 @@ export function useSapiens() {
     } catch (error) {
       if (!current()) return false;
       logger.error('Chat acceptance could not be confirmed', error);
-      const code = (error as { status?: number }).status;
+      const failure = error as ApiError;
+      const code = failure?.status;
       if (!code || code >= 500) {
         // Read the acceptance receipt; never repeat the POST after an uncertain response.
         const accepted = await sapiensService.findAcceptedTurn(currentSapiens.id, requestId).catch(() => null);
@@ -154,7 +156,12 @@ export function useSapiens() {
           return true;
         }
       }
-      updateChatMessage(requestId, { turnStatus: code && code >= 400 && code < 500 ? 'rejected' : 'unknown' });
+      const rejected = !!code && code >= 400 && code < 500;
+      updateChatMessage(requestId, {
+        turnStatus: rejected ? 'rejected' : 'unknown',
+        rejectionReason: rejected && typeof failure?.message === 'string'
+          ? failure.message.trim() || undefined : undefined,
+      });
       setStatus('error');
       return false;
     }

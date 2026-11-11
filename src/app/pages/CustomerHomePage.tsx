@@ -59,7 +59,7 @@ export function CustomerHomePage() {
   useEffect(() => { void refresh(); }, [refresh]);
 
   const updateActivity = useCallback((sapienId: string, activity: SapienActivity | null) => {
-    const state = activity ?? { active: undefined, activityUnavailableReason: undefined };
+    const state = activity ?? { active: undefined, activityState: undefined, draining: undefined, chatAvailable: undefined, activityUnavailableReason: undefined };
     setList(items => items.map(item => item.id === sapienId ? { ...item, ...state } : item));
   }, []);
 

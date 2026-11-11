@@ -1,6 +1,11 @@
 import type { QuotaDetails, QuotaRecoveryStatus } from './quotaTypes';
+export type ActivityState = 'active' | 'paused' | 'inactive';
+
 export interface SapienActivity {
   active: boolean;
+  activityState: ActivityState;
+  draining: boolean;
+  chatAvailable?: boolean;
   activityUnavailableReason: string | null;
 }
 
@@ -13,6 +18,8 @@ export interface SapiensDirectoryEntry {
   simulation_enabled?: boolean;
   simulation_available?: boolean;
   active?: boolean;
+  activity_state?: ActivityState;
+  draining?: boolean;
   activity_unavailable_reason?: string | null;
   simulation_unavailable_reason?: 'simulation_disabled' | 'runtime_reserved' | null;
 }
@@ -24,6 +31,9 @@ export interface Sapiens {
   createdAt: string;
   lastModified: string;
   active?: boolean;
+  activityState?: ActivityState;
+  draining?: boolean;
+  chatAvailable?: boolean;
   activityUnavailableReason?: string | null;
   /** Additive admin-list metadata. Missing values must fail closed in Simulation Lab. */
   simulationEnabled?: boolean;
@@ -133,12 +143,13 @@ export interface ChatApiResponse {
 /**
  * A single message in the chat window, enriched with observability metadata.
  */
-export type ChatTurnStatus = 'queued' | 'processing' | 'waiting' | 'completed' | 'no_reply' | 'failed';
+export type ChatTurnStatus = 'queued' | 'processing' | 'replying' | 'waiting' | 'completed' | 'no_reply' | 'failed';
 
 export interface ChatMessage {
   quota?: QuotaDetails | null;
   recoveryStatus?: QuotaRecoveryStatus | null;
   turnStatus?: ChatTurnStatus | 'sending' | 'unknown' | 'rejected';
+  rejectionReason?: string;
   isError?: boolean;
   /** The request completed, but no assistant message text was returned or recorded. */
   emptyResponse?: boolean;

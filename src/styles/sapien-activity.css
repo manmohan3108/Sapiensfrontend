@@ -28,3 +28,4 @@
 @media (max-width:640px) {
   .workspace-header-actions .sapien-activity-control { flex:1; align-items:flex-start; max-width:none; }
 }
+.sapien-activity-actions { display:flex; flex-wrap:wrap; gap:6px; }

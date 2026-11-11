@@ -194,17 +194,24 @@ function SignalControls({ msg, onSignal }: { msg: ChatMessage; onSignal: (s: Use
   );
 }
 
-function TurnStatus({ status, quota, recoveryStatus }: { status: ChatMessage['turnStatus']; quota: ChatMessage['quota']; recoveryStatus: ChatMessage['recoveryStatus'] }) {
-  if (!status || status === 'completed') return null;
+function TurnStatus({ status, quota, recoveryStatus, rejectionReason }: {
+  status: ChatMessage['turnStatus'];
+  quota: ChatMessage['quota'];
+  recoveryStatus: ChatMessage['recoveryStatus'];
+  rejectionReason: ChatMessage['rejectionReason'];
+}) {
+  if (!status || status === 'completed' || (!quota && (status === 'processing' || status === 'replying'))) return null;
   const labels = {
-    rejected: 'Message was not accepted. Check your connection and selected Sapien before trying again.',
-    sending: 'Sending…', queued: 'Message saved · Queued…',
-    processing: 'Processing…', waiting: 'Message saved · Waiting for completion…',
-    no_reply: 'Processed without a written reply.',
+    rejected: rejectionReason
+      ? `Message was not accepted. ${rejectionReason}`
+      : 'Message was not accepted. Please try again.',
+    sending: 'Sending…', queued: 'Sent',
+    processing: '', replying: '', waiting: 'Saved · Waiting to continue',
+    no_reply: 'Noted',
     failed: 'Could not complete this turn. Check the conversation before sending again.',
     unknown: 'Couldn’t confirm acceptance. Check conversation history before sending again.',
   };
-  return <p role="status" aria-live="polite" className="px-1 text-xs leading-relaxed text-sp-muted">
+  return <p role="status" aria-live="polite" className="px-1 text-xs leading-relaxed text-sp-muted break-words">
     {quota ? <>
       <span className="block">Message saved · {quotaSummary(quota)}</span>
       <span className="block">{quotaReset(quota)}</span>
@@ -303,7 +310,7 @@ function MessageBubble({
           </>
         )}
 
-        {isUser && <TurnStatus status={msg.turnStatus} quota={msg.quota} recoveryStatus={msg.recoveryStatus} />}
+        {isUser && <TurnStatus status={msg.turnStatus} quota={msg.quota} recoveryStatus={msg.recoveryStatus} rejectionReason={msg.rejectionReason} />}
         {!msg.isLoading && <div className={`flex items-center gap-2 px-1 ${isUser ? 'flex-row-reverse' : ''}`}>
           <span className="text-[10px] text-sp-muted font-mono opacity-100 transition-opacity">{formatTime(msg.timestamp)}</span>
           {msg.content && !msg.emptyResponse && <CopyBtn text={msg.content} />}
@@ -382,6 +389,9 @@ export function ChatWindow() {
   const atBottomRef = useRef(true);
 
   const isProcessing = status === 'processing';
+  const inactive = currentSapiens?.chatAvailable === false;
+  const replying = !chatUpdates.error && msgs.some(message => message.turnStatus === 'replying');
+  const working = !chatUpdates.error && msgs.some(message => message.turnStatus === 'processing' && !message.quota);
 
   const refreshHistory = useCallback(async () => {
     if (!currentSapiens) return;
@@ -461,7 +471,7 @@ export function ChatWindow() {
 
   const send = async () => {
     const t = input.trim();
-    if (!t || isProcessing || sending.current) return;
+    if (!t || isProcessing || inactive || sending.current) return;
     sending.current = true;
     const version = resourceSession.version;
     setInput('');
@@ -524,7 +534,7 @@ export function ChatWindow() {
       <div className="workspace-chat-heading">
         <div><h2>Conversation</h2><p>With {currentSapiens?.name ?? 'Sapiens'}</p></div>
         <div className="flex items-center gap-2">
-          {isProcessing && <span className="text-sm text-sp-muted"><Loader2 size={14} className="inline animate-spin" /> Processing…</span>}
+          {isProcessing && <span role="status" className="text-sm text-sp-muted">Sending…</span>}
           <button onClick={() => setHistoryOpen(open => !open)} aria-expanded={historyOpen} className="workspace-history-toggle"><History size={16} />History</button>
         </div>
         {historyOpen && <div className="workspace-history-popover" onKeyDown={e => { if (e.key === 'Escape') { setHistoryOpen(false); e.currentTarget.parentElement?.querySelector<HTMLButtonElement>('.workspace-history-toggle')?.focus(); } }}>
@@ -555,7 +565,10 @@ export function ChatWindow() {
                     isHighlighted={highlightedId === m.id}
                   />
                 ))}
-                <div className="h-2" />
+                <div role="status" aria-live="polite" aria-atomic="true" className="min-h-6 pl-1 text-sm text-sp-muted">
+                  {replying ? <span className="italic">{currentSapiens?.name ?? 'Sapiens'} is typing…</span>
+                    : working ? <span>Considering your messages… You can add more.</span> : null}
+                </div>
               </>
             )
           }
@@ -570,6 +583,11 @@ export function ChatWindow() {
       </div>
 
       {/* ── Input area ── */}
+      {inactive && <p role="status" className="px-4 py-2 text-sm text-sp-muted">
+        {currentSapiens?.activityUnavailableReason === 'deletion_pending'
+          ? 'This Sapien is being deleted. New messages are unavailable.'
+          : 'This Sapien is inactive. Choose “Chat only” above to talk without autonomous work, or “Activate” to resume all work.'}
+      </p>}
       <div className="flex-shrink-0 relative p-3" style={{ background: 'var(--sp-recessed, rgba(0,0,0,0.25))', borderTop: '1px solid rgb(var(--sp-ink-rgb, 255 255 255) / 0.05)' }}>
         {attachmentsOpen && (
           <div
@@ -595,7 +613,7 @@ export function ChatWindow() {
           }}>
           <button
             onClick={() => setAttachmentsOpen((open) => !open)}
-            disabled={isProcessing}
+            disabled={isProcessing || currentSapiens?.active === false}
             title="Attach files or a folder"
             aria-label="Attach files or a folder"
             aria-expanded={attachmentsOpen}
@@ -611,9 +629,9 @@ export function ChatWindow() {
 
           <textarea ref={textareaRef} value={input} onChange={onInputChange} onKeyDown={onKey}
             onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
-            placeholder={isProcessing ? 'Waiting for response…' : `Message ${currentSapiens?.name ?? 'Sapiens'}…`}
+            placeholder={inactive ? 'Enable chat or activate this Sapien…' : isProcessing ? 'Sending…' : `Message ${currentSapiens?.name ?? 'Sapiens'}…`}
             aria-label={`Message ${currentSapiens?.name ?? 'Sapiens'}`}
-            disabled={isProcessing} rows={1}
+            disabled={isProcessing || inactive} rows={1}
             className="flex-1 resize-none overflow-y-auto bg-transparent border-none outline-none
               min-h-[36px] max-h-[140px] px-2 py-2 text-sm text-sp-ink placeholder:text-sp-muted
               leading-relaxed disabled:opacity-40"
@@ -623,13 +641,13 @@ export function ChatWindow() {
           {/* Chat button — /api/chat */}
           <button
             onClick={() => send()}
-            disabled={!input.trim() || isProcessing}
+            disabled={!input.trim() || isProcessing || inactive}
             title="Send message (Enter)" aria-label="Send message"
             className="flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200 active:scale-95 disabled:cursor-not-allowed"
             style={{
-              background: input.trim() && !isProcessing ? 'var(--sp-action, #7434ce)' : 'rgb(var(--sp-ink-rgb, 255 255 255) / 0.05)',
-              boxShadow: input.trim() && !isProcessing ? '0 0 20px rgb(var(--sp-accent-rgb, 124 58 237) / 0.35)' : 'none',
-              opacity: !input.trim() || isProcessing ? 0.3 : 1,
+              background: input.trim() && !isProcessing && !inactive ? 'var(--sp-action, #7434ce)' : 'rgb(var(--sp-ink-rgb, 255 255 255) / 0.05)',
+              boxShadow: input.trim() && !isProcessing && !inactive ? '0 0 20px rgb(var(--sp-accent-rgb, 124 58 237) / 0.35)' : 'none',
+              opacity: !input.trim() || isProcessing || inactive ? 0.3 : 1,
             }}
           >
             {isProcessing ? <Loader2 className="w-4 h-4 text-sp-muted animate-spin" /> : <Send className={input.trim() ? 'w-4 h-4 text-sp-on-action' : 'w-4 h-4 text-sp-muted'} />}

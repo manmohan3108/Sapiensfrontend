@@ -8,6 +8,7 @@ type RunState = 'idle' | 'running' | 'success' | 'error';
 export function RunEngineButton() {
   const { runEngine } = useSapiens();
   const status = useSapiensStore((state) => state.status);
+  const active = useSapiensStore((state) => state.currentSapiens?.active);
 
   const [runState, setRunState] = useState<RunState>('idle');
   const [runCount, setRunCount] = useState(1);
@@ -18,7 +19,7 @@ export function RunEngineButton() {
   const isRunning = runState === 'running';
   const isSuccess = runState === 'success';
   const isError = runState === 'error';
-  const isDisabled = isRunning || status === 'loading' || status === 'processing';
+  const isDisabled = active === false || isRunning || status === 'loading' || status === 'processing';
 
   const clampCount = (v: number) => Math.max(1, Math.min(20, v));
 
@@ -34,7 +35,7 @@ export function RunEngineButton() {
   };
 
   const handleClick = async () => {
-    if (isRunning) return;
+    if (isDisabled) return;
 
     abortRef.current = false;
     const total = runCount;
@@ -191,7 +192,7 @@ export function RunEngineButton() {
         onClick={handleClick}
         disabled={isDisabled}
         title={
-          runCount > 1
+          active === false ? 'Activate this Sapien before running background work' : runCount > 1
             ? `Run Engine ${runCount} times sequentially`
             : 'Run Engine — Trigger cognitive rethink'
         }
