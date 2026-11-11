@@ -200,17 +200,15 @@ function TurnStatus({ status, quota, recoveryStatus, rejectionReason }: {
   recoveryStatus: ChatMessage['recoveryStatus'];
   rejectionReason: ChatMessage['rejectionReason'];
 }) {
-  if (!status || status === 'completed' || (!quota && (status === 'processing' || status === 'replying'))) return null;
-  const labels = {
+  if (!status || status === 'completed') return null;
+  const labels: Partial<Record<NonNullable<ChatMessage['turnStatus']>, string>> = {
     rejected: rejectionReason
       ? `Message was not accepted. ${rejectionReason}`
       : 'Message was not accepted. Please try again.',
-    sending: 'Sending…', queued: 'Sent',
-    processing: '', replying: '', waiting: 'Saved · Waiting to continue',
-    no_reply: 'Noted',
     failed: 'Could not complete this turn. Check the conversation before sending again.',
     unknown: 'Couldn’t confirm acceptance. Check conversation history before sending again.',
   };
+  if (!quota && !labels[status]) return null;
   return <p role="status" aria-live="polite" className="px-1 text-xs leading-relaxed text-sp-muted break-words">
     {quota ? <>
       <span className="block">Message saved · {quotaSummary(quota)}</span>
