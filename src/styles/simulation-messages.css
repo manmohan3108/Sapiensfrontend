@@ -1,5 +1,18 @@
 @import './science-product-theme.css';
 
+/* Fixed regions have no scroll pane of their own, so wheel/touch gestures there
+   reach the document. Lock the document too, only while Messages is mounted. */
+html:has(.simulation-messages),
+body:has(.simulation-messages) {
+  height:100%;
+  overflow:hidden;
+  overscroll-behavior-y:none;
+}
+#root:has(.simulation-messages) {
+  height:100dvh;
+  overflow:hidden;
+}
+
 /* Messages owns its scroll panes; no ancestor should grow with the transcript. */
 .app-shell:has(.simulation-messages) {
   display:grid;
