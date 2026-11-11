@@ -391,7 +391,6 @@ export function ChatWindow() {
   const isProcessing = status === 'processing';
   const inactive = currentSapiens?.chatAvailable === false;
   const replying = !chatUpdates.error && msgs.some(message => message.turnStatus === 'replying');
-  const working = !chatUpdates.error && msgs.some(message => message.turnStatus === 'processing' && !message.quota);
 
   const refreshHistory = useCallback(async () => {
     if (!currentSapiens) return;
@@ -566,8 +565,7 @@ export function ChatWindow() {
                   />
                 ))}
                 <div role="status" aria-live="polite" aria-atomic="true" className="min-h-6 pl-1 text-sm text-sp-muted">
-                  {replying ? <span className="italic">{currentSapiens?.name ?? 'Sapiens'} is typing…</span>
-                    : working ? <span>Considering your messages… You can add more.</span> : null}
+                  {replying ? <span className="italic">{currentSapiens?.name ?? 'Sapiens'} is typing…</span> : null}
                 </div>
               </>
             )
