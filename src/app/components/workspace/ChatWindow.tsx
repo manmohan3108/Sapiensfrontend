@@ -2,7 +2,7 @@ import { quotaSummary, quotaReset, quotaRecovery } from '../../utils/quotaPresen
 import { ConversationHistory } from './ConversationHistory';
 import { useRememberedState } from '../navigation/NavigationState';
 import { ScienceDetail } from '../customer/ScienceDetail';
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { Fragment, useState, useRef, useEffect, useCallback } from 'react';
 import {
   Send, Brain, User, AlertCircle,
   Loader2, ChevronDown, Sparkles, Copy, Check,
@@ -18,6 +18,9 @@ import { useChatUpdates } from '../../hooks/useChatUpdates';
 import { useSapiensStore } from '../../core/state/sapiensStore';
 import { sapiensService } from '../../core/services/sapiensService';
 import { formatTime } from '../../utils/formatters';
+import { datedMessages } from '../../utils/chatDates';
+import { useWorkspaceChatClock } from '../../hooks/useWorkspaceChatClock';
+import { canAnalyzeAndSimulate } from '../../core/auth/permissions';
 import { ChatHistoryItem, ChatMessage, UserSignalType } from '../../types/sapiensTypes';
 import { ApiError } from '../../types/apiTypes';
 import { CombinedInputPanel } from './CombinedInputPanel';
@@ -220,12 +223,13 @@ function TurnStatus({ status, quota, recoveryStatus, rejectionReason }: {
 
 // ─── Message Bubble ───────────────────────────────────────────────────────────
 function MessageBubble({
-  msg, sapienName, onSignal, isHighlighted,
+  msg, sapienName, onSignal, isHighlighted, showTime,
 }: {
   msg: ChatMessage;
   sapienName: string;
   onSignal: (id: string, s: UserSignalType) => void;
   isHighlighted: boolean;
+  showTime: boolean;
 }) {
   const { user } = useAuth();
   const isUser = msg.role === 'user';
@@ -310,7 +314,7 @@ function MessageBubble({
 
         {isUser && <TurnStatus status={msg.turnStatus} quota={msg.quota} recoveryStatus={msg.recoveryStatus} rejectionReason={msg.rejectionReason} />}
         {!msg.isLoading && <div className={`flex items-center gap-2 px-1 ${isUser ? 'flex-row-reverse' : ''}`}>
-          <span className="text-[10px] text-sp-muted font-mono opacity-100 transition-opacity">{formatTime(msg.timestamp)}</span>
+          {showTime && <time dateTime={msg.timestamp} title={new Date(msg.timestamp).toLocaleString()} className="text-[10px] text-sp-muted font-mono opacity-100 transition-opacity">{formatTime(msg.timestamp)}</time>}
           {msg.content && !msg.emptyResponse && <CopyBtn text={msg.content} />}
         </div>}
       </div>
@@ -377,6 +381,8 @@ export function ChatWindow() {
   const { sendTextInput, sendUserSignal, loadChat, startNewChat } = useSapiens();
   const msgs = useSapiensStore((s) => s.chatMessages);
   const currentSapiens = useSapiensStore((s) => s.currentSapiens);
+  const chatClock = useWorkspaceChatClock(currentSapiens, canAnalyzeAndSimulate(user));
+  const dateRows = datedMessages(msgs, chatClock.now, chatClock.simulation);
   const chatSessionId = useSapiensStore((s) => s.chatSessionId);
   const status = useSapiensStore((s) => s.status);
   const jumpToMessageId = useSapiensStore((s) => s.jumpToMessageId);
@@ -553,14 +559,21 @@ export function ChatWindow() {
             ? <EmptyState name={currentSapiens?.name ?? 'Sapiens'} recent={latestChat} onResume={() => latestChat && void selectChat(latestChat.thread_id)} loading={detailLoading || isProcessing} onHint={(h) => { setInput(h); textareaRef.current?.focus(); }} />
             : (
               <>
-                {msgs.map((m) => (
+                {dateRows.map(({ message: m, separator, showTime }) => (
+                  <Fragment key={m.id}>
+                  {separator && <div className="flex items-center gap-3 py-1" role="separator" aria-label={separator.exact}>
+                    <span className="h-px flex-1 bg-sp-line" aria-hidden="true" />
+                    <span className="shrink-0 text-sm font-medium text-sp-muted" title={separator.exact}>{separator.label}</span>
+                    <span className="h-px flex-1 bg-sp-line" aria-hidden="true" />
+                  </div>}
                   <MessageBubble
-                    key={m.id}
                     msg={m}
+                    showTime={showTime}
                     sapienName={currentSapiens?.name ?? 'Sapiens'}
                     onSignal={handleSignal}
                     isHighlighted={highlightedId === m.id}
                   />
+                  </Fragment>
                 ))}
                 <div role="status" aria-live="polite" aria-atomic="true" className="min-h-6 pl-1 text-sm text-sp-muted">
                   {replying ? <span className="italic">{currentSapiens?.name ?? 'Sapiens'} is typing…</span> : null}

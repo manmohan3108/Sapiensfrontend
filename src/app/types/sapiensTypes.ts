@@ -157,6 +157,8 @@ export interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
   timestamp: string;
+  /** Timestamp came from persisted chat evidence, not the browser's optimistic send. */
+  recordedTimestamp?: boolean;
   isLoading?: boolean;
   /** Memory units referenced in this response */
   memoryUnits?: MemoryUnit[];

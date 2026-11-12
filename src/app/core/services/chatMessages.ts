@@ -9,7 +9,7 @@ export function chatMessages(detail: ChatDetail, previous: ChatMessage[] = []): 
     const content = typeof message.content === 'string' ? message.content : '';
     return {
       ...prior.get(message.id), id: message.id, role: message.role, content,
-      timestamp: message.occurred_at, sessionId: detail.thread_id,
+      timestamp: message.occurred_at, recordedTimestamp: true, sessionId: detail.thread_id,
       turnStatus: turns.get(message.id)?.status, isLoading: false,
       quota: turns.get(message.id)?.quota, recoveryStatus: turns.get(message.id)?.recovery_status,
       isError: message.role === 'assistant' && !content.trim(),
