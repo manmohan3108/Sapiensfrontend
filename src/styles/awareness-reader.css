@@ -4,7 +4,7 @@
 .awareness-intro h2 { font:500 25px/1.25 'Source Serif 4',Georgia,serif; margin:0 0 8px; }
 .awareness-intro p { max-width:75ch; font-size:15px; line-height:1.5; color:var(--an-muted); }
 .awareness-intro .analyse-button { flex-shrink:0; }
-.awareness-search { display:flex; align-items:center; gap:7px; background:var(--an-bg); border:1px solid var(--an-line); padding:0 0 0 9px; border-radius:5px; margin-bottom:8px; color:var(--an-muted); }
+.awareness-search { display:flex; align-items:center; gap:7px; background:var(--an-bg); border:1px solid var(--an-control-line); padding:0 0 0 9px; border-radius:5px; margin-bottom:8px; color:var(--an-muted); }
 .awareness-search input { width:100%; min-width:0; min-height:44px; border:0; font-size:14px; background:transparent; color:var(--an-ink); }
 .awareness-filter { display:block; font-size:14px; color:var(--an-muted); margin-bottom:8px; }
 .awareness-filter select { display:block; width:100%; min-height:44px; padding:8px; margin-top:5px; background:var(--an-bg); color:var(--an-ink); border:1px solid var(--an-line); border-radius:5px; }
@@ -61,7 +61,7 @@
 .awareness-table tbody tr { position:relative; border-bottom:1px solid var(--an-line); }
 .awareness-table tbody tr:last-child { border-bottom:0; }
 .awareness-table tbody tr:hover,.awareness-table tbody tr:focus-within { background:var(--an-raised); }
-.awareness-table tbody tr[data-selected=true] { background:var(--an-soft); }
+.awareness-table tbody tr[data-selected=true] { background:var(--an-selected); box-shadow:inset 3px 0 var(--an-accent); }
 .awareness-table-link { display:flex; align-items:flex-start; gap:8px; color:var(--an-ink); text-decoration:none; min-height:24px; }
 .awareness-table-link>svg { flex-shrink:0; margin-top:2px; color:var(--an-accent); }
 /* Extend the actual link over the row, preserving keyboard and modified clicks. */

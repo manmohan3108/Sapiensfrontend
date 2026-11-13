@@ -1,29 +1,41 @@
 /* Admin Analyse only. Portalled diagnostics inherit the same tokens while this
    shell is mounted; no palette changes escape to the customer workspace. */
 body:has(.analyse-shell) {
-  --an-bg:#1e1916; --an-panel:#30251f; --an-raised:#3c2f26; --an-ink:#ebe2d5;
-  --an-muted:#bdb0a3; --an-line:#655247; --an-accent:#deb580; --an-soft:#deb58012;
-  --an-success:#a9d0b3; --an-warning:#edca86; --an-danger:#ffaaa0; --an-grid:#ddba8d06;
-  --sp-bg:var(--an-bg); --sp-panel:var(--an-panel); --sp-ink:var(--an-ink); --sp-muted:var(--an-muted);
-  --sp-line:var(--an-line); --sp-accent:var(--an-accent); --sp-accent-rgb:222 181 128;
-  --sp-success:var(--an-success); --sp-warning:var(--an-warning); --sp-danger:var(--an-danger);
-  --sp-action:var(--an-accent); --sp-on-action:var(--an-bg);
-  --sp-ink-rgb:235 226 213; --sp-panel-rgb:48 37 31; --sp-recessed:var(--an-raised);
-  --background:var(--an-bg); --foreground:var(--an-ink); --card:var(--an-panel); --card-foreground:var(--an-ink);
-  --muted:var(--an-raised); --muted-foreground:var(--an-muted); --border:var(--an-line); --input:var(--an-line);
-  --accent:var(--an-raised); --accent-foreground:var(--an-ink); --primary:var(--an-accent); --primary-foreground:var(--an-bg);
-  --popover:var(--an-panel); --popover-foreground:var(--an-ink); --ring:var(--an-accent);
-  --an-figure:#af8a65; --an-edge:#151311; --an-grid-major:#ddba8d0b;
+  --an-bg:#191918; --an-panel:#242321; --an-raised:#2e2b27; --an-ink:#eee9e0;
+  --an-muted:#bab3a8; --an-line:#403c36; --an-accent:#d4a16d; --an-soft:#d4a16d12;
+  --an-control-line:#827a6e; --an-selected:#3a3026; --an-table-head:#2b2925;
+  --an-success:#a9d0b3; --an-warning:#edca86; --an-danger:#ffaaa0; --an-grid:#d4a16d05;
+  --an-figure:#a88d70; --an-edge:#151514; --an-grid-major:#d4a16d09;
+  --an-accent-rgb:212 161 109; --an-ink-rgb:238 233 224; --an-panel-rgb:36 35 33;
   color-scheme:dark;
 }
 html.light body:has(.analyse-shell) {
-  --an-bg:#efede7; --an-panel:#faf8f2; --an-raised:#e6dfd5; --an-ink:#352e29;
-  --an-muted:#6d5d50; --an-line:#b9a99a; --an-accent:#874a2b; --an-soft:#874a2b0c;
-  --an-success:#28633e; --an-warning:#795a13; --an-danger:#a1342a; --an-grid:#785d4307;
-  --sp-accent-rgb:135 74 43;
-  --sp-ink-rgb:53 46 41; --sp-panel-rgb:250 248 242;
-  --an-figure:#92704f; --an-edge:#e3dfd6; --an-grid-major:#785d430d;
+  --an-bg:#eeece6; --an-panel:#faf9f5; --an-raised:#e7e1d7; --an-ink:#302b25;
+  --an-muted:#655c52; --an-line:#d5cfc5; --an-accent:#8c4f2c; --an-soft:#8c4f2c0c;
+  --an-control-line:#827568; --an-selected:#eadbca; --an-table-head:#efeae1;
+  --an-success:#28633e; --an-warning:#795a13; --an-danger:#a1342a; --an-grid:#8c4f2c05;
+  --an-figure:#92704f; --an-edge:#e8e5de; --an-grid-major:#8c4f2c0a;
+  --an-accent-rgb:140 79 44; --an-ink-rgb:48 43 37; --an-panel-rgb:250 249 245;
   color-scheme:light;
+}
+/* Bridge existing shared controls and app navigation to the same palette only
+   while Analyse is mounted. Other application areas keep their green theme. */
+body:has(.analyse-shell),
+body:has(.analyse-shell) .product-surface.science-product-theme {
+  --sp-bg:var(--an-bg); --sp-panel:var(--an-panel); --sp-ink:var(--an-ink); --sp-muted:var(--an-muted);
+  --sp-line:var(--an-line); --sp-accent:var(--an-accent); --sp-accent-rgb:var(--an-accent-rgb);
+  --sp-success:var(--an-success); --sp-warning:var(--an-warning); --sp-danger:var(--an-danger);
+  --sp-action:var(--an-accent); --sp-on-action:var(--an-bg);
+  --sp-ink-rgb:var(--an-ink-rgb); --sp-panel-rgb:var(--an-panel-rgb); --sp-recessed:var(--an-raised);
+  --background:var(--an-bg); --foreground:var(--an-ink); --card:var(--an-panel); --card-foreground:var(--an-ink);
+  --muted:var(--an-raised); --muted-foreground:var(--an-muted); --border:var(--an-line); --input:var(--an-control-line);
+  --accent:var(--an-raised); --accent-foreground:var(--an-ink); --primary:var(--an-accent); --primary-foreground:var(--an-bg);
+  --popover:var(--an-panel); --popover-foreground:var(--an-ink); --ring:var(--an-accent);
+}
+body:has(.analyse-shell) .app-navigation { background-color:var(--an-edge); }
+body:has(.analyse-shell) .app-sapien-picker { border-color:var(--an-control-line); }
+body:has(.analyse-shell) .app-destinations a[aria-current=page] {
+  background:var(--an-selected); color:var(--an-ink);
 }
 .analyse-shell, .analyse-mobile-nav { font-family:'Source Sans 3',sans-serif; color:var(--an-ink); background:var(--an-bg); font-size:15px; line-height:1.5; }
 .analyse-shell { display:flex; height:100dvh; overflow:hidden; }
@@ -43,23 +55,24 @@ body:has(.analyse-shell) [role=dialog] :is(button,a,input,select,summary):focus-
 .analyse-brand span:not(.sapiens-brand-mark) { display:block; font-size:12px; color:var(--an-muted); }
 .analyse-navigation { overflow:auto; min-height:0; flex:1; padding:2px 4px 10px 0; scrollbar-width:thin; scrollbar-color:var(--an-line) transparent; }
 .analyse-nav-group { margin-top:18px; }
-.analyse-nav-group>p { margin:0 0 5px 12px; font-size:11px; font-weight:600; letter-spacing:.07em; text-transform:uppercase; color:var(--an-muted); }
-.analyse-nav-link { display:flex; align-items:center; gap:10px; width:100%; min-height:36px; padding:7px 12px; border-radius:5px; text-align:left; color:var(--an-muted); border:1px solid transparent; font-size:14px; transition:background 120ms,color 120ms; }
+.analyse-nav-group>p { margin:0 0 5px 12px; font-size:12px; font-weight:600; color:var(--an-muted); }
+.analyse-nav-link { display:flex; align-items:center; gap:10px; width:100%; min-height:36px; padding:7px 12px; border-radius:6px; text-align:left; color:var(--an-muted); border:1px solid transparent; font-size:14px; transition:background-color 120ms,color 120ms; }
 .analyse-nav-link>span { flex:1; }
 .analyse-nav-link:hover, .analyse-directory:hover { background:var(--an-raised); color:var(--an-ink); }
-.analyse-nav-link[aria-current=page] { color:var(--an-accent); background:var(--an-soft); border-color:var(--an-line); box-shadow:inset 3px 0 var(--an-accent); font-weight:600; }
+.analyse-nav-link[aria-current=page] { color:var(--an-ink); background:var(--an-selected); box-shadow:inset 3px 0 var(--an-accent); font-weight:600; }
+.analyse-nav-link[aria-current=page]>svg { color:var(--an-accent); }
 .analyse-directory { display:flex; align-items:center; gap:10px; padding:12px; border-top:1px solid var(--an-line); color:var(--an-ink); font-size:14px; }
 .analyse-header .analyse-directory-mobile { display:none; }
 .analyse-main { flex:1; display:flex; flex-direction:column; min-width:0; }
 .analyse-header { display:flex; align-items:center; gap:12px; flex-shrink:0; min-height:84px; padding:14px 28px; border-bottom:1px solid var(--an-line); background:var(--an-panel); }
 .analyse-heading { min-width:0; }
-.analyse-heading p { margin:0; color:var(--an-accent); font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.analyse-heading p { margin:0 0 2px; color:var(--an-muted); font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .analyse-heading p span { color:var(--an-muted); }
-.analyse-heading h1 { margin:0; font-size:23px; font-weight:550; line-height:1.2; }
+.analyse-heading h1 { margin:0; font:500 25px/1.2 'Source Serif 4',Georgia,serif; letter-spacing:-.02em; text-wrap:balance; }
 .analyse-header-actions { margin-left:auto; display:flex; align-items:center; gap:10px; }
-.analyse-button { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:9px 12px; min-height:40px; border:1px solid var(--an-line); border-radius:5px; background:var(--an-panel); color:var(--an-ink); font:inherit; font-size:14px; white-space:nowrap; }
-.analyse-button:hover, .analyse-theme-toggle:hover { background:var(--an-raised); }
-.analyse-theme-toggle { border:1px solid var(--an-line); color:var(--an-ink); border-radius:5px; width:40px; height:40px; }
+.analyse-button { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:9px 12px; min-height:40px; border:1px solid var(--an-control-line); border-radius:6px; background:var(--an-panel); color:var(--an-ink); font:inherit; font-size:14px; white-space:nowrap; }
+.analyse-button:hover:not(:disabled), .analyse-theme-toggle:hover { background:var(--an-raised); border-color:var(--an-accent); }
+.analyse-theme-toggle { border:1px solid var(--an-control-line); color:var(--an-ink); border-radius:6px; width:40px; height:40px; }
 .analyse-content { min-height:0; flex:1; overflow:auto; padding:26px 28px 40px; scrollbar-color:var(--an-line) transparent; }
 .analyse-content-embedded { padding:0; overflow:hidden; }
 .analyse-menu { display:none; }
@@ -77,7 +90,7 @@ body:has(.analyse-shell) [role=dialog] :is(button,a,input,select,summary):focus-
 }
 @media (max-width:600px) {
   .analyse-header { padding:10px; gap:6px; }
-  .analyse-heading h1 { font-size:19px; }
+  .analyse-heading h1 { font-size:22px; }
   .analyse-heading p { font-size:12px; max-width:125px; }
   .analyse-header-actions { gap:6px; }
   .analyse-header-actions .analyse-button { padding:8px; font-size:12px; }
@@ -103,10 +116,11 @@ body:has(.analyse-shell) :is(.analyse-content,[role=dialog]) :is([class*="bg-whi
 body:has(.analyse-shell) :is(.analyse-content,[role=dialog]) :is([class*="bg-violet-"],[class*="bg-indigo-"],[class*="bg-purple-"],[class*="bg-cyan-"],[class*="bg-blue-"]) { background-color:var(--an-soft); }
 body:has(.analyse-shell) :is(.analyse-content,[role=dialog]) :is([class~="bg-cyan-400"],[class~="bg-violet-400"],[class~="bg-indigo-400"]) { background-color:var(--an-accent); }
 body:has(.analyse-shell) :is(.analyse-content,[role=dialog]) :is(input,textarea,select,option,pre) { background-color:var(--an-bg); color:var(--an-ink); border-color:var(--an-line); }
+body:has(.analyse-shell) :is(.analyse-content,[role=dialog]) :is(input,textarea,select) { border-color:var(--an-control-line); accent-color:var(--an-accent); }
 body:has(.analyse-shell) :is(.analyse-content,[role=dialog]) ::placeholder { color:var(--an-muted); opacity:1; }
 body:has(.analyse-shell) :is(.analyse-content,[role=dialog]) :is([class*="text-[8px]"],[class*="text-[9px]"],[class*="text-[10px]"],[class*="text-[11px]"]) { font-size:12px; line-height:1.5; }
-body:has(.analyse-shell) :is(.analyse-content,[role=dialog]) :is(th,td) { font-size:13px; line-height:1.5; }
-body:has(.analyse-shell) .analyse-content :is(th,thead) { background:var(--an-panel); }
+body:has(.analyse-shell) :is(.analyse-content,[role=dialog]) :is(th,td) { font-size:14px; line-height:1.5; }
+body:has(.analyse-shell) .analyse-content :is(th,thead) { background:var(--an-table-head); }
 body:has(.analyse-shell) .analyse-content :is(button,tr)[class*="hover:bg-"]:hover { background-color:var(--an-raised); }
 body:has(.analyse-shell) .analyse-content :is(button,input,select)[class*="h-8"] { height:auto; min-height:36px; }
 body:has(.analyse-shell) .analyse-content .recharts-text { fill:var(--an-muted); font-size:12px; }
