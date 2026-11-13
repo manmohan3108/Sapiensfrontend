@@ -1,19 +1,20 @@
 /* Awareness layout uses the shared Analyse palette; no page-local colours. */
 .awareness-reader { max-width:1500px; margin:auto; color:var(--an-ink); }
-.awareness-intro { display:flex; align-items:flex-start; justify-content:space-between; gap:20px; margin-bottom:22px; }
-.awareness-intro h2 { font:500 25px/1.25 'Source Serif 4',Georgia,serif; margin:0 0 8px; }
+.awareness-intro { display:flex; align-items:center; justify-content:space-between; gap:20px; margin-bottom:20px; }
+.awareness-intro>div { min-width:0; }
+.awareness-intro h2 { font:500 26px/1.25 'Source Serif 4',Georgia,serif; margin:0 0 6px; text-wrap:balance; }
 .awareness-intro p { max-width:75ch; font-size:15px; line-height:1.5; color:var(--an-muted); }
 .awareness-intro .analyse-button { flex-shrink:0; }
-.awareness-search { display:flex; align-items:center; gap:7px; background:var(--an-bg); border:1px solid var(--an-control-line); padding:0 0 0 9px; border-radius:5px; margin-bottom:8px; color:var(--an-muted); }
-.awareness-search input { width:100%; min-width:0; min-height:44px; border:0; font-size:14px; background:transparent; color:var(--an-ink); }
+.awareness-search { display:flex; align-items:center; gap:7px; background:var(--an-bg); border:1px solid var(--an-control-line); padding:0 0 0 12px; border-radius:6px; margin-bottom:8px; color:var(--an-muted); }
+.awareness-search input { width:100%; min-width:0; min-height:44px; border:0; font-size:15px; background:transparent; color:var(--an-ink); }
 .awareness-filter { display:block; font-size:14px; color:var(--an-muted); margin-bottom:8px; }
-.awareness-filter select { display:block; width:100%; min-height:44px; padding:8px; margin-top:5px; background:var(--an-bg); color:var(--an-ink); border:1px solid var(--an-line); border-radius:5px; }
-.awareness-search button { display:grid; place-items:center; min-width:44px; min-height:44px; color:var(--an-accent); cursor:pointer; }
+.awareness-filter select { display:block; width:100%; min-height:44px; padding:8px 10px; margin-top:5px; background:var(--an-bg); color:var(--an-ink); border:1px solid var(--an-control-line); border-radius:6px; font-size:15px; }
+.awareness-search button { display:grid; place-items:center; min-width:44px; min-height:44px; border-left:1px solid var(--an-line); border-radius:0 5px 5px 0; background:var(--an-raised); color:var(--an-ink); cursor:pointer; }
 .awareness-search button:hover { background:var(--an-soft); }
 .awareness-search button:disabled { opacity:.5; cursor:wait; }
 .awareness-search:focus-within { border-color:var(--an-accent); }
 .awareness-filter select:focus-visible,.awareness-search button:focus-visible,.awareness-search input:focus-visible { outline:2px solid var(--an-accent); outline-offset:2px; }
-.awareness-run-excerpt { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; font-size:14px; font-weight:600; line-height:1.45; overflow-wrap:anywhere; }
+.awareness-run-excerpt { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; font-size:15px; font-weight:600; line-height:1.55; overflow-wrap:anywhere; }
 
 .awareness-caption { font-size:14px; color:var(--an-muted); line-height:1.5; margin:6px 0; overflow-wrap:anywhere; }
 .awareness-source { display:flex; flex-wrap:wrap; gap:6px 18px; margin:8px 0; font-size:14px; color:var(--an-muted); }
@@ -21,8 +22,8 @@
 .awareness-step-heading { display:flex; align-items:center; flex-wrap:wrap; gap:8px; }
 .awareness-context-list { list-style:none; padding:0; }
 .awareness-context-list li { padding:12px 0; border-bottom:1px solid var(--an-line); }
-.awareness-error,.awareness-caution { margin:12px 0; font-size:14px; line-height:1.5; color:var(--an-danger); }
-.awareness-caution { color:var(--an-warning); }
+.awareness-error { margin:12px 0; padding:12px 16px; border:1px solid var(--an-line); border-left:3px solid var(--an-danger); border-radius:6px; background:var(--an-panel); font-size:15px; line-height:1.5; color:var(--an-danger); }
+.awareness-caution { margin:12px 0; font-size:14px; line-height:1.5; color:var(--an-warning); }
 .awareness-empty { padding:20px; border:1px solid var(--an-line); border-radius:6px; background:var(--an-panel); font-size:15px; }
 .awareness-record-details { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin-bottom:18px; font-size:14px; }
 .awareness-record-details dt { color:var(--an-muted); }
@@ -40,23 +41,31 @@
 .diagnostic-disclosure pre { padding:12px; max-height:320px; overflow:auto; white-space:pre-wrap; overflow-wrap:anywhere; border:1px solid var(--an-line); border-radius:5px; font-size:12px; }
 /* Full-width run index; details load only when a row's URL is selected. */
 .awareness-runs { container:awareness-runs / inline-size; min-width:0; }
-.awareness-table-toolbar { display:flex; flex-wrap:wrap; align-items:flex-end; gap:12px 20px; margin-bottom:18px; }
+.awareness-list-panel { border:1px solid var(--an-line); border-radius:10px; background:var(--an-panel); }
+.awareness-table-toolbar { display:flex; flex-wrap:wrap; align-items:flex-end; gap:12px 20px; padding:14px 20px; border-bottom:1px solid var(--an-line); }
 .awareness-table-toolbar form { flex:1 1 280px; max-width:560px; }
 .awareness-table-toolbar>.awareness-filter { flex:0 1 230px; }
 .awareness-table-toolbar .awareness-filter,.awareness-table-toolbar .awareness-search { margin-bottom:0; }
 .awareness-table-toolbar form>.awareness-filter { margin-bottom:5px; }
 .awareness-table-toolbar>.diagnostic-link { min-height:44px; }
-.awareness-table-heading { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:baseline; gap:8px; }
-.awareness-table-heading h3 { font-size:17px; font-weight:600; }
-.awareness-table-heading h3>span { margin-left:10px; color:var(--an-muted); font-size:13px; font-weight:400; }
-.awareness-table-wrap { border:1px solid var(--an-line); border-radius:8px; background:var(--an-panel); }
+.awareness-table-heading { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:baseline; gap:6px 16px; padding:12px 20px 0; }
+.awareness-table-heading h3 { display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; margin:0; font:500 21px/1.4 'Source Serif 4',Georgia,serif; }
+.awareness-table-heading h3>span { padding:3px 8px; border-radius:5px; background:var(--an-raised); color:var(--an-muted); font:400 14px/1.4 'Source Sans 3',sans-serif; font-variant-numeric:tabular-nums; }
+.awareness-table-heading h3>span:empty { display:none; }
+.awareness-list-note { padding-inline:20px; margin:6px 0 16px; max-width:100ch; }
+.awareness-list-empty { padding:22px 20px; margin:0; color:var(--an-ink); font-size:15px; }
+.awareness-list-count { margin:0; padding:0 20px 16px; font-variant-numeric:tabular-nums; }
+.awareness-list-count:empty { padding-block:0; }
+.awareness-table-wrap { border-block:1px solid var(--an-line); background:var(--an-panel); }
 .awareness-table { width:100%; table-layout:fixed; border-collapse:collapse; font-size:14px; line-height:1.45; }
 .awareness-situation-col { width:36%; }
 .awareness-trigger-col { width:14%; }
 .awareness-actions-col { width:10%; }
 .awareness-time-col { width:14%; }
-.awareness-table th { text-align:left; padding:12px; color:var(--an-muted); font-size:13px; font-weight:600; border-bottom:1px solid var(--an-line); }
-.awareness-table td { padding:16px 12px; vertical-align:top; overflow-wrap:anywhere; }
+.awareness-table th { text-align:left; padding:12px; color:var(--an-muted); font-size:14px; font-weight:600; border-bottom:1px solid var(--an-line); }
+.awareness-table td { padding:18px 12px; vertical-align:top; overflow-wrap:anywhere; }
+.awareness-table :is(th,td):first-child { padding-left:20px; }
+.awareness-table :is(th,td):last-child { padding-right:20px; }
 .analyse-shell[data-analyse-section=awareness] .awareness-table td { font-size:14px; }
 .awareness-table tbody tr { position:relative; border-bottom:1px solid var(--an-line); }
 .awareness-table tbody tr:last-child { border-bottom:0; }
@@ -68,18 +77,21 @@
 .awareness-table-link::after { content:''; position:absolute; inset:0; }
 .awareness-table-link:focus-visible::after { outline:2px solid var(--an-accent); outline-offset:-2px; }
 .awareness-table td small { display:block; margin-top:4px; color:var(--an-muted); font-size:13px; }
-.awareness-table time { font-size:13px; font-variant-numeric:tabular-nums; color:var(--an-muted); }
+.awareness-table time { font-size:14px; line-height:1.55; font-variant-numeric:tabular-nums; color:var(--an-muted); }
+.awareness-action-count { color:var(--an-muted); font-size:14px; }
+.awareness-action-count strong { color:var(--an-ink); font-size:17px; font-weight:600; font-variant-numeric:tabular-nums; }
 .awareness-table .awareness-run-preview { margin:5px 0 0; }
-.awareness-reader.awareness-detail-dialog { display:flex; flex-direction:column; gap:0; width:calc(100% - 32px); max-width:1220px; height:90dvh; max-height:90dvh; margin:0; padding:0; overflow:hidden; overscroll-behavior:contain; border-color:var(--an-line); background:var(--an-panel); color:var(--an-ink); font-family:'Source Sans 3',sans-serif; }
+.awareness-reader.awareness-detail-dialog { display:flex; flex-direction:column; gap:0; width:calc(100% - 32px); max-width:1220px; height:90dvh; max-height:90dvh; margin:0; padding:0; overflow:hidden; overscroll-behavior:contain; border-color:var(--an-control-line); border-radius:12px; background:var(--an-panel); color:var(--an-ink); font-family:'Source Sans 3',sans-serif; }
+.awareness-detail-dialog>.awareness-error,.awareness-detail-dialog>.awareness-empty { margin:20px 24px; }
 .awareness-detail-dialog>button { width:44px; height:44px; display:grid; place-items:center; right:8px; top:8px; color:var(--an-ink); }
 @container awareness-runs (max-width:900px) {
  .awareness-table colgroup { display:none; }
  .awareness-table thead { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
  .awareness-table,.awareness-table tbody { display:block; }
  .awareness-table tbody tr { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px 20px; padding:16px; }
- .awareness-table td { display:block; padding:0; min-width:0; }
+ .awareness-table td,.awareness-table :is(td:first-child,td:last-child) { display:block; padding:0; min-width:0; }
  .awareness-table .awareness-situation-cell { grid-column:1 / -1; }
- .awareness-table td[data-label]::before { content:attr(data-label); display:block; margin-bottom:4px; font-size:12px; color:var(--an-muted); }
+ .awareness-table td[data-label]::before { content:attr(data-label); display:block; margin-bottom:6px; font-size:13px; color:var(--an-muted); }
  .awareness-table-link { justify-content:space-between; }
 }
 @media(max-width:540px) {
@@ -89,38 +101,49 @@
 @media(prefers-reduced-motion:reduce) { .awareness-detail-dialog { animation:none!important; transition:none!important; } }
 
 /* A persistent header, a short summary and an independent activity reader. */
-.awareness-view-cue { display:flex; align-items:center; gap:3px; margin-top:5px; color:var(--an-accent); font-size:13px; font-weight:500; }
-.awareness-processing-state { color:var(--an-muted); }
-.awareness-dialog-top { flex-shrink:0; padding:16px 24px 10px; border-bottom:1px solid var(--an-line); }
-.awareness-selected-heading { display:flex; flex-wrap:wrap; align-items:baseline; gap:10px; margin:0; padding-right:32px; font-size:19px; line-height:1.4; }
-.awareness-selected-heading>span { font-size:14px; color:var(--an-muted); font-weight:400; }
+.awareness-view-cue { display:flex; align-items:center; gap:3px; width:fit-content; margin-top:8px; color:var(--an-accent); font-size:14px; font-weight:500; }
+.awareness-table tbody tr:is(:hover,:focus-within) .awareness-view-cue { text-decoration:underline; text-underline-offset:3px; }
+.awareness-processing-state { display:inline-block; padding:4px 8px; border:1px solid var(--an-line); border-radius:5px; background:var(--an-bg); color:var(--an-muted); font-size:13px; line-height:1.4; }
+.awareness-dialog-top { flex-shrink:0; padding:16px 24px 10px; border-bottom:1px solid var(--an-line); background:var(--an-edge); }
+.awareness-selected-heading { display:flex; flex-wrap:wrap; align-items:baseline; gap:10px; margin:0; padding-right:32px; font:500 23px/1.35 'Source Serif 4',Georgia,serif; }
+.awareness-selected-heading>span { font:400 14px/1.4 'Source Sans 3',sans-serif; color:var(--an-muted); }
 .awareness-review-navigation,.awareness-review-navigation>div { display:flex; align-items:center; flex-wrap:wrap; gap:8px; }
-.awareness-review-navigation { justify-content:space-between; margin-top:6px; }
+.awareness-review-navigation { justify-content:space-between; margin-top:10px; }
 .awareness-review-navigation .analyse-button { min-height:36px; }
 .awareness-run-reader { display:flex; flex-direction:column; min-height:0; flex:1; }
-.awareness-review-header { padding:12px 24px 0; flex-shrink:0; border-bottom:1px solid var(--an-line); }
+.awareness-review-header { padding:12px 24px 10px; flex-shrink:0; border-bottom:1px solid var(--an-line); background:var(--an-panel); }
 .awareness-review-meta { display:flex; align-items:baseline; flex-wrap:wrap; gap:6px 18px; font-size:15px; }
 .awareness-review-meta time { color:var(--an-muted); font-size:14px; font-variant-numeric:tabular-nums; }
-.awareness-reader-views { display:flex; gap:20px; margin-top:8px; }
-.awareness-reader-views button { min-height:44px; padding:8px 0; border-bottom:3px solid transparent; font-size:15px; color:var(--an-muted); cursor:pointer; }
-.awareness-reader-views button:hover { color:var(--an-ink); }
-.awareness-reader-views button[aria-pressed=true] { border-color:var(--an-accent); color:var(--an-ink); font-weight:600; }
-.awareness-review-body { flex:1; min-height:0; overflow:auto; overscroll-behavior:contain; padding:20px 24px 24px; scrollbar-gutter:stable; }
+.awareness-reader-views { display:flex; flex-wrap:wrap; gap:4px; width:fit-content; max-width:100%; margin-top:8px; padding:3px; border:1px solid var(--an-line); border-radius:8px; background:var(--an-bg); }
+.awareness-reader-views button { min-height:40px; padding:8px 14px; border-radius:5px; font-size:15px; color:var(--an-muted); cursor:pointer; }
+.awareness-reader-views button:hover { color:var(--an-ink); background:var(--an-raised); }
+.awareness-reader-views button[aria-pressed=true] { background:var(--an-selected); box-shadow:inset 0 -2px var(--an-accent); color:var(--an-ink); font-weight:600; }
+.awareness-review-body { flex:1; min-height:0; overflow:auto; overscroll-behavior:contain; padding:24px; scrollbar-gutter:stable; background:var(--an-bg); }
 .awareness-summary-pair { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px; align-items:start; }
 .awareness-summary-followup { margin-top:20px; }
-.awareness-summary-block { min-width:0; border:1px solid var(--an-line); border-radius:6px; padding:18px; background:var(--an-bg); }
+.awareness-summary-block { min-width:0; border:1px solid var(--an-line); border-radius:9px; padding:20px; background:var(--an-panel); }
 .awareness-understanding { border-top:2px solid var(--an-accent); }
+.awareness-assessment { border-left:3px solid var(--an-accent); }
 .awareness-summary-block h3,.awareness-no-focus h3,.awareness-processing-issue h3,.awareness-evidence>h3,.awareness-activity-intro h3 { margin:0 0 12px; font-size:18px; line-height:1.35; font-weight:600; }
 .awareness-summary-block h4,.awareness-evidence h4 { font-size:15px; font-weight:600; margin:12px 0 6px; }
 .awareness-summary-block>.awareness-step-heading h3 { margin-bottom:0; }
+.awareness-summary-block h3 { display:flex; align-items:center; gap:10px; padding-bottom:14px; border-bottom:1px solid var(--an-line); margin-bottom:16px; }
+.awareness-summary-block h3>svg { box-sizing:content-box; flex-shrink:0; padding:7px; border-radius:7px; background:var(--an-raised); color:var(--an-muted); }
+.awareness-understanding h3>svg,.awareness-assessment h3>svg { color:var(--an-accent); }
+.awareness-assessment>.awareness-step-heading { padding-bottom:14px; margin-bottom:16px; border-bottom:1px solid var(--an-line); }
+.awareness-assessment>.awareness-step-heading h3 { border:0; padding:0; }
+.awareness-assessment>.awareness-step-heading .diagnostic-badge { margin-left:auto; }
 .awareness-summary-block .diagnostic-text { max-width:78ch; }
+.awareness-summary-block .diagnostic-text p { font-size:16px; line-height:1.6; }
+.awareness-source-block .awareness-source-name { color:var(--an-ink); }
+.awareness-response-block .awareness-prepared-reply { border-left:2px solid var(--an-line); padding-left:14px; }
 .awareness-prepared-reply>h4 { margin-top:0; }
 .awareness-remaining { margin-top:16px; padding-left:12px; border-left:2px solid var(--an-accent); }
 .awareness-assessment-reason { margin-top:12px; }
 .awareness-delivery-audit { margin:16px 0; padding-top:4px; border-top:1px solid var(--an-line); font-size:14px; line-height:1.5; }
 .awareness-action-highlights { list-style:none; padding:0; margin:8px 0; }
-.awareness-action-highlights li { padding:3px 0; }
-.awareness-action-highlights .diagnostic-link { text-align:left; }
+.awareness-action-highlights li+li { border-top:1px solid var(--an-line); }
+.awareness-action-highlights .diagnostic-link { width:100%; padding:8px 0; text-align:left; }
 .awareness-processing-issue { padding:14px 18px; border-left:3px solid var(--an-danger); background:var(--an-bg); margin-bottom:20px; font-size:15px; line-height:1.5; }
 .awareness-processing-issue h3 { color:var(--an-danger); margin-bottom:6px; }
 .awareness-no-focus { max-width:70ch; padding:8px 0; font-size:16px; line-height:1.6; }
@@ -133,25 +156,27 @@
 .awareness-step-index li:last-child::before { display:none; }
 .awareness-step-index button { position:relative; display:grid; grid-template-columns:28px minmax(0,1fr); gap:10px; width:100%; padding:10px 8px; text-align:left; border:1px solid transparent; border-radius:5px; cursor:pointer; }
 .awareness-step-index button:hover { background:var(--an-raised); }
-.awareness-step-index button[aria-current=step] { background:var(--an-soft); border-color:var(--an-accent); }
+.awareness-reader .awareness-step-index button:focus-visible { outline-offset:-2px; }
+.awareness-step-index button[aria-current=step] { background:var(--an-selected); border-color:var(--an-line); box-shadow:inset 3px 0 var(--an-accent); }
 .awareness-step-index strong { display:block; margin-bottom:6px; font-size:15px; line-height:1.4; font-weight:600; overflow-wrap:anywhere; }
-.awareness-step-number { display:grid; place-items:center; width:28px; height:28px; background:var(--an-panel); border:1px solid var(--an-line); border-radius:50%; color:var(--an-accent); font-size:13px; font-variant-numeric:tabular-nums; }
-.awareness-active-step { min-width:0; border:1px solid var(--an-line); border-radius:6px; padding:16px 18px; background:var(--an-bg); }
-.awareness-step-navigation { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:18px; }
+.awareness-step-number { display:grid; place-items:center; width:28px; height:28px; background:var(--an-panel); border:1px solid var(--an-line); border-radius:50%; color:var(--an-muted); font-size:13px; font-variant-numeric:tabular-nums; }
+.awareness-step-index button[aria-current=step] .awareness-step-number { background:var(--an-accent); border-color:var(--an-accent); color:var(--an-bg); font-weight:600; }
+.awareness-active-step { min-width:0; border:1px solid var(--an-line); border-radius:9px; padding:18px 20px; background:var(--an-panel); }
+.awareness-step-navigation { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; padding-bottom:14px; margin-bottom:18px; border-bottom:1px solid var(--an-line); }
 .awareness-step-navigation .analyse-button { font-size:14px; padding:6px 10px; min-height:40px; }
-.awareness-step-head { margin-bottom:16px; }
-.awareness-step-head h4 { font-size:19px; font-weight:600; line-height:1.4; overflow-wrap:anywhere; margin:6px 0 10px; }
+.awareness-step-head { padding-bottom:16px; margin-bottom:16px; border-bottom:1px solid var(--an-line); }
+.awareness-step-head h4 { font:500 23px/1.35 'Source Serif 4',Georgia,serif; overflow-wrap:anywhere; margin:6px 0 10px; }
 .awareness-active-step h5 { font-size:15px; font-weight:600; margin:16px 0 8px; }
 .awareness-active-step .diagnostic-text { max-width:78ch; }
 .awareness-proposals { padding-left:20px; font-size:15px; overflow-wrap:anywhere; }
 .awareness-activity-mobile { display:none; }
 .awareness-evidence { max-width:94ch; }
 .awareness-evidence-list { list-style:none; padding:0; margin:16px 0 24px; }
-.awareness-evidence-list>li { padding:16px 18px; margin-bottom:12px; border:1px solid var(--an-line); border-radius:6px; background:var(--an-bg); }
-.awareness-source-roles { font-size:14px; font-weight:600; color:var(--an-accent); }
+.awareness-evidence-list>li { padding:18px 20px; margin-bottom:14px; border:1px solid var(--an-line); border-radius:9px; background:var(--an-panel); }
+.awareness-source-roles { font-size:14px; font-weight:600; color:var(--an-muted); }
 .awareness-reader .awareness-saved-value { max-height:320px; overflow:auto; overscroll-behavior:contain; padding:12px; border:1px solid var(--an-line); border-radius:5px; font:13px/1.55 ui-monospace,monospace; white-space:pre-wrap; overflow-wrap:anywhere; background:var(--an-bg); color:var(--an-ink); }
 .awareness-run-preview { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:anywhere; }
-.awareness-pagination { display:flex; justify-content:space-between; gap:10px; margin-top:12px; }
+.awareness-pagination { display:flex; justify-content:space-between; gap:10px; padding:14px 20px; }
 .awareness-pagination button { min-height:44px; }
 .awareness-reader :is(a,button,summary) { touch-action:manipulation; }
 .awareness-reader button { cursor:pointer; }
@@ -159,8 +184,12 @@
 .awareness-reader :is(a,button,summary,pre,[tabindex]):focus-visible { outline:2px solid var(--an-accent); outline-offset:3px; }
 .awareness-reader .awareness-review-body:focus-visible { outline-offset:-3px; }
 .awareness-reader .diagnostic-link { font-size:14px; }
-.awareness-reader .diagnostic-badge { font-size:13px; }
+.awareness-reader .diagnostic-badge { padding:4px 8px; border-radius:5px; background:var(--an-bg); font-size:13px; }
+.awareness-reader .diagnostic-badge[data-tone=success] { border-color:color-mix(in srgb,var(--an-success) 35%,var(--an-line)); }
+.awareness-reader .diagnostic-badge[data-tone=warning] { border-color:color-mix(in srgb,var(--an-warning) 35%,var(--an-line)); }
+.awareness-reader .diagnostic-badge[data-tone=danger] { border-color:color-mix(in srgb,var(--an-danger) 35%,var(--an-line)); }
 .awareness-reader .diagnostic-disclosure>summary { min-height:40px; }
+.awareness-runs>.diagnostic-disclosure,.awareness-review-body>.diagnostic-disclosure { border-top:1px solid var(--an-line); padding-top:4px; }
 @media(max-width:760px) {
  .awareness-summary-pair,.awareness-activity-columns { grid-template-columns:1fr; gap:16px; }
  .awareness-step-index { display:none; }
@@ -169,20 +198,25 @@
  .awareness-activity-mobile select:focus-visible { outline:2px solid var(--an-accent); outline-offset:2px; }
 }
 @media(max-width:540px) {
- .awareness-intro { gap:12px; margin-bottom:16px; }
+ .awareness-intro { flex-wrap:wrap; gap:12px; margin-bottom:16px; }
  .awareness-intro h2 { font-size:21px; }
  .awareness-intro p { font-size:14px; }
  .awareness-intro .analyse-button { padding:6px 10px; }
  .awareness-dialog-top { padding:12px 16px 8px; }
- .awareness-review-header { padding:10px 16px 0; }
+ .awareness-review-header { padding:10px 16px; }
  .awareness-review-meta { gap:4px; }
  .awareness-review-meta time { flex-basis:100%; }
  .awareness-review-navigation>div { gap:6px; }
  .awareness-review-navigation>div>.awareness-caption { flex-basis:100%; margin:0; }
  .awareness-review-navigation .analyse-button { min-height:40px; }
  .awareness-review-body { padding:16px; }
- .awareness-reader-views { gap:14px; }
- .awareness-reader-views button { font-size:14px; }
+ .awareness-reader-views { gap:2px; }
+ .awareness-reader-views button { padding:8px 10px; font-size:14px; }
  .awareness-summary-block,.awareness-active-step { padding:14px; }
+ .awareness-table-toolbar { padding:14px; }
+ .awareness-table-heading { padding:14px 14px 0; }
+ .awareness-list-note { padding-inline:14px; }
+ .awareness-pagination { padding:12px 14px; }
+ .awareness-list-count { padding:0 14px 14px; }
  .awareness-record-details { grid-template-columns:1fr; }
 }

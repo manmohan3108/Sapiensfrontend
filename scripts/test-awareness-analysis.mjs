@@ -20,7 +20,8 @@ const realHooks = 'const {useState,useRef,useId,useEffect}=React;';
 const bindings = name => `const {${Object.keys(test[name]).join(',')}}=globalThis.awarenessTest.${name};`;
 async function load(file, prelude = '', extra = '') {
   const source = await readFile(new URL('../src/app/' + file, import.meta.url), 'utf8');
-  const { code } = await transformWithEsbuild(`const React=globalThis.awarenessTest.React;\n${prelude}\n${source.replace(/^import[\s\S]*?;\r?\n/gm, '')}\n${extra}`, file,
+  const icons = [...source.matchAll(/import \{([^}]+)\} from 'lucide-react'/g)].map(match => `const {${match[1]}}=globalThis.awarenessTest.Icons;`).join('\n');
+  const { code } = await transformWithEsbuild(`const React=globalThis.awarenessTest.React;\n${icons}\n${prelude}\n${source.replace(/^import[\s\S]*?;\r?\n/gm, '')}\n${extra}`, file,
     { loader: 'tsx', jsx: 'transform', jsxFactory: 'React.createElement', jsxFragment: 'React.Fragment' });
   return import('data:text/javascript;base64,' + Buffer.from(code).toString('base64'));
 }
@@ -130,7 +131,6 @@ for (const text of ['Started this review', 'Primary source for the focus', 'Help
 const router = `const useSearchParams=()=>[globalThis.awarenessTest.h.params,value=>{globalThis.awarenessTest.h.params=value;}];
 const Link=({to,children,...props})=>React.createElement('a',{href:to.search,...props},children);
 const Dialog=({open,children})=>open?children:null,DialogContent=({children})=>children,DialogTitle=React.forwardRef(({children,...props},ref)=>React.createElement('h2',{...props,ref},children)),DialogDescription=({children})=>children;
-const {ChevronRight,Loader2,RefreshCw,Search}=globalThis.awarenessTest.Icons;
 const AwarenessRunReader=()=>null;`;
 const browser = await load('components/analyse/AwarenessDiagnostics.tsx', hooks + dependencies + router, 'export {RunBrowser};');
 const page = { sapien_id: 71, offset: 0, total: 189, items: [run, { ...run, id: 'c337406f-6763-4341-84fa-f53a9ea04424' }], filters: { search: '', trigger: '' }, trigger_categories: [{ value: 'teams', label: 'Teams' }, { value: 'jira', label: 'Jira' }], has_more: true, next_offset: 20 };

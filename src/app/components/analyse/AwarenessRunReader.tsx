@@ -1,5 +1,6 @@
 import { quotaSummary, quotaReset } from '../../utils/quotaPresentation';
 import { useEffect, useId, useRef, useState } from 'react';
+import { BrainCircuit, ClipboardList, FileText, Workflow } from 'lucide-react';
 import type { AwarenessRunDetail, AwarenessRunSubject } from '../../types/awarenessRunTypes';
 import { sapiensService } from '../../core/services/sapiensService';
 import { traceObject, traceText } from '../workspace/awarenessTrace';
@@ -58,19 +59,19 @@ export function AwarenessSummary({ data, onActivity }: { data: AwarenessRunDetai
       <DiagnosticText text={data.focus_selection?.reason || 'The reason was not recorded.'}/>
       <p className="awareness-caption">This does not mean that pending work is complete.</p>
     </section> : <div className="awareness-summary-pair">
-      <section className="awareness-summary-block"><h3>{triggerAvailable ? 'What started this' : focusAvailable ? 'Selected information' : 'What started this'}</h3>
+      <section className="awareness-summary-block awareness-source-block"><h3><FileText size={19} aria-hidden="true"/>{triggerAvailable ? 'What started this' : focusAvailable ? 'Selected information' : 'What started this'}</h3>
         {!triggerAvailable && <p className="awareness-caption">{data.trigger.availability === 'not_applicable' ? 'Sapiens started this review without an incoming trigger.' : 'The initiating event was not retained. Any selected information is shown below.'}</p>}
         {source && <SourceExcerpt subject={source}/>}
         {separateFocus && <DiagnosticDisclosure title="Source selected for the focus"><SourceExcerpt subject={data.focus}/></DiagnosticDisclosure>}
       </section>
-      <section className="awareness-summary-block awareness-understanding"><h3>What Sapiens understood</h3>
+      <section className="awareness-summary-block awareness-understanding"><h3><BrainCircuit size={19} aria-hidden="true"/>What Sapiens understood</h3>
         <DiagnosticText text={view.understanding || 'Its interpretation was not retained.'} limit={560}/>
         <p className="awareness-caption">Sapiens’ saved interpretation of the situation.</p>
       </section>
     </div>}
     {view.incomplete && <p className="awareness-caution">Only part of this review was retained. The available activity and counts may be incomplete.</p>}
     {(!view.noFocus || view.actions.length > 0 || reply) && <div className="awareness-summary-pair awareness-summary-followup">
-      <section className="awareness-summary-block"><h3>Response & actions</h3>
+      <section className="awareness-summary-block awareness-response-block"><h3><Workflow size={19} aria-hidden="true"/>Response & actions</h3>
         {reply && <div className="awareness-prepared-reply"><h4>{view.replyCount > 1 ? 'Latest prepared reply' : 'Prepared reply'}</h4>
           <DiagnosticText text={reply.response} limit={500}/><p className="awareness-caption">{deliverySummary(data)}</p>
           {view.replyCount > 1 && <button type="button" className="diagnostic-link" onClick={() => onActivity(String(view.reply!.event_index))}>{view.replyCount} reply drafts in Activity</button>}
@@ -87,7 +88,7 @@ export function AwarenessSummary({ data, onActivity }: { data: AwarenessRunDetai
         {!!data.activity.steps.length && <button type="button" className="diagnostic-link" onClick={() => onActivity()}>View all {data.activity.steps.length} steps</button>}
         {!reply && run.delivery.response_present === true && <p className="awareness-caption">A prepared reply is recorded, but its text was not retained in these steps.</p>}
       </section>
-      <section className="awareness-summary-block awareness-assessment"><div className="awareness-step-heading"><h3>Sapiens’ assessment</h3><DiagnosticBadge tone={assessmentTone}>{assessmentLabel(run.assessment_state)}</DiagnosticBadge></div>
+      <section className="awareness-summary-block awareness-assessment"><div className="awareness-step-heading"><h3><ClipboardList size={19} aria-hidden="true"/>Sapiens’ assessment</h3><DiagnosticBadge tone={assessmentTone}>{assessmentLabel(run.assessment_state)}</DiagnosticBadge></div>
         {view.remaining && <div className="awareness-remaining"><h4>Still needed</h4><DiagnosticText text={view.remaining} limit={650}/></div>}
         {!view.problem && view.reason && view.reason !== view.understanding && <div className="awareness-assessment-reason"><h4>Recorded reason</h4><DiagnosticText text={view.reason} limit={380}/></div>}
         {!view.remaining && !view.reason && <p className="awareness-caption">No further assessment detail was retained.</p>}

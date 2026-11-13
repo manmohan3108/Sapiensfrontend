@@ -76,6 +76,7 @@ function RunBrowser({ sapienId }: { sapienId: string }) {
     {!scoped && params.has('awarenessFor') && <p role="status" className="awareness-caption">The linked selection belongs to another Sapien. Showing records for the currently selected Sapien.</p>}
     {error && <div role="alert" className="awareness-error">{data ? 'Refresh failed; showing the last loaded page. ' : ''}{error} <button type="button" className="diagnostic-link" disabled={loading} onClick={() => setRevision(value => value + 1)}>Retry list</button></div>}
     <section className="awareness-runs" aria-label="Saved runs">
+      <div className="awareness-list-panel">
       <div className="awareness-table-toolbar">
           <form role="search" onSubmit={event => { event.preventDefault(); setParams(query({ awarenessSearch: draftSearch.trim() || null, awarenessOffset: '0', awarenessRun: null })); }}>
             <label className="awareness-filter" htmlFor={listId + '-search'}>Search saved run text</label>
@@ -96,11 +97,11 @@ function RunBrowser({ sapienId }: { sapienId: string }) {
             setDraftSearch(''); setParams(query({ awarenessSearch: null, awarenessTrigger: null, awarenessOffset: '0', awarenessRun: null }));
           }}>Clear filters</button>}
       </div>
-      {loaded && !categories.length && <p className="awareness-caption">Trigger filters require the backend filtering update.</p>}
+      {loaded && !categories.length && <p className="awareness-caption awareness-list-note">Trigger filters require the backend filtering update.</p>}
       <div className="awareness-table-heading"><h3>Saved reviews <span>{data ? data.total.toLocaleString() + (search || trigger ? ' matches' : ' total') : ''}</span></h3>
         <p className="awareness-caption" role="status">{loading ? 'Loading runs…' : 'Newest first · Select a row to inspect'}</p>
       </div>
-      <p className="awareness-caption">Processing shows whether the review finished. Work status is Sapiens’ assessment of the situation.</p>
+      <p className="awareness-caption awareness-list-note">Processing shows whether the review finished. Work status is Sapiens’ assessment of the situation.</p>
       <div className="awareness-table-wrap" aria-busy={loading}>
         <table className="awareness-table" role="table">
           <caption className="sr-only">Saved Awareness runs, newest first. Open a situation to inspect its source, decisions and actions.</caption>
@@ -132,7 +133,7 @@ function RunBrowser({ sapienId }: { sapienId: string }) {
               <td role="cell" data-label="Work status"><DiagnosticBadge tone={item.assessment_state === 'blocked' ? 'danger' : ['waiting', 'unresolved'].includes(item.assessment_state) ? 'warning' : 'neutral'}>
                 {assessmentLabel(item.assessment_state)}
               </DiagnosticBadge></td>
-              <td role="cell" data-label="Tool actions"><span>{item.actions.recorded.toLocaleString()} recorded</span>
+              <td role="cell" data-label="Tool actions"><span className="awareness-action-count"><strong>{item.actions.recorded.toLocaleString()}</strong> recorded</span>
                 {!!item.actions.uncertain && <small>{item.actions.uncertain.toLocaleString()} uncertain</small>}
                 {item.actions.trace_truncated && <small>Partial trace</small>}
               </td>
@@ -141,14 +142,15 @@ function RunBrowser({ sapienId }: { sapienId: string }) {
           })}</tbody>
         </table>
       </div>
-      {!loading && data && !rows.length && <p role="status" className="awareness-caption">{offset ? 'No records remain on this page. Return to the latest runs.'
+      {!loading && data && !rows.length && <p role="status" className="awareness-caption awareness-list-empty">{offset ? 'No records remain on this page. Return to the latest runs.'
         : search || trigger ? 'No saved runs match these filters. Try another search or clear the filters.'
         : 'No runs have been saved yet. Refresh after Sapien processes information.'}</p>}
       <div className="awareness-pagination">
         <button type="button" className="analyse-button" disabled={loading || offset === 0} onClick={() => page(Math.max(0, offset - 20))}>Newer</button>
         <button type="button" className="analyse-button" disabled={loading || !data?.has_more || data.next_offset == null} onClick={() => data?.next_offset != null && page(data.next_offset)}>Older</button>
       </div>
-      <p className="awareness-caption" aria-live="polite">{data && rows.length ? 'Showing ' + (offset + 1) + '–' + (offset + rows.length) + ' of ' + data.total.toLocaleString() + (search || trigger ? ' matching runs.' : ' saved runs.') : ''}</p>
+      <p className="awareness-caption awareness-list-count" aria-live="polite">{data && rows.length ? 'Showing ' + (offset + 1) + '–' + (offset + rows.length) + ' of ' + data.total.toLocaleString() + (search || trigger ? ' matching runs.' : ' saved runs.') : ''}</p>
+      </div>
       <DiagnosticDisclosure title="Search and filter scope"><p>Filters cover all saved runs for this Sapien. Search matches literal text in retained sources, focus, decisions and assessments—not full prompts, linked memories or complete tool responses. Older or shortened records may contain less searchable text.</p>
         <p>Triggered by uses the initiating source, not the focus selected later. A self-directed check can therefore select a message as its focus. No focus chosen is a separate result, not a source.</p></DiagnosticDisclosure>
       <DiagnosticDisclosure title="About these records"><p>Saved runs, not a live queue. Times use your timezone; simulation dates can be ahead of today. Refresh returns to the latest page with your filters. New runs can shift page boundaries.</p></DiagnosticDisclosure>
