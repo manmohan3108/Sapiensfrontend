@@ -42,11 +42,20 @@ The probe has an eight-second deadline and repeats every ten seconds while down,
 respecting bounded `Retry-After` values. It never refreshes credentials or retries
 application actions. Normal cancellations and permission errors remain local.
 
-A modal science-themed screen keeps the router mounted, reports recovery and
-provides Reload for the current URL. Reload may discard unsaved edits; interrupted
-actions must be checked before resubmission. Temporary auth failures retain tokens
-but do not grant access without verification. Only confirmed invalid refresh
-credentials clear the session. Public pages with no API requests do not poll.
+A modal science-themed screen keeps the router mounted while disconnected. On
+recovery, the monitor automatically reloads the current URL once. A per-tab
+session-storage guard survives that reload; another automatic reload is allowed
+only after a successful application API response and thirty seconds without a
+detected failure. When storage is unavailable or recovery fails again, Reload
+remains the manual fallback. Submitted actions are never automatically resubmitted; the fresh page uses its normal loading requests.
+A refresh can discard unsaved edits; interrupted actions must be checked before
+resubmission.
+
+Temporary session-verification failures retain tokens and stay pending instead of
+redirecting to login. A fresh page performs the existing authentication and Sapien
+access checks; recovery itself never grants access. Login/register submissions are
+not retried. Only confirmed invalid refresh credentials clear the session. Public
+pages with no API requests do not poll.
 
 ## Authentication and roles
 

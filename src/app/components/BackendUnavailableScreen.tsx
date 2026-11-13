@@ -10,7 +10,8 @@ const messages = {
   restarting: { title: 'The server is restarting.', description: 'Sapiens will be available again shortly. We are checking the connection automatically.' },
   unavailable: { title: 'Temporarily out of reach.', description: 'We cannot reach the Sapiens server right now. We are checking the connection automatically.' },
   offline: { title: 'You are offline.', description: 'Check your internet connection. We will keep checking for the server to become reachable.' },
-  recovered: { title: 'Connection restored.', description: 'The server is responding again. Reload to refresh this page and continue.' },
+  recovered: { title: 'Connection restored.', description: 'The server is responding again. Automatic recovery could not finish; reload this page to continue.' },
+  restoring: { title: 'Restoring your page…', description: 'The connection is back. We are refreshing this page automatically.' },
 };
 
 function ConnectionIllustration({ paused }: { paused: boolean }) {
@@ -29,7 +30,7 @@ function ConnectionIllustration({ paused }: { paused: boolean }) {
   </div>;
 }
 
-/** Keep the router mounted underneath; recovery never replays a user action. */
+/** Keep the router mounted during outages; the monitor owns the guarded refresh. */
 export function BackendUnavailableScreen() {
   const availability = useSyncExternalStore(backendAvailability.subscribe, backendAvailability.getSnapshot);
   const dialog = useRef<HTMLDialogElement>(null);
@@ -44,7 +45,7 @@ export function BackendUnavailableScreen() {
 
   if (availability === 'available') return null;
   const message = messages[availability];
-  const recovered = availability === 'recovered';
+  const recovered = availability === 'recovered' || availability === 'restoring';
   return <dialog ref={dialog} className="direction-page direction-world direction-science backend-unavailable"
     aria-labelledby={titleId} aria-describedby={descriptionId} onCancel={event => event.preventDefault()}>
     <div className="connection-grid" aria-hidden="true"/>
@@ -60,7 +61,7 @@ export function BackendUnavailableScreen() {
         <button type="button" className="connection-reload" onClick={() => window.location.reload()} autoFocus>
           <RefreshCw size={19} aria-hidden="true"/>Reload page
         </button>
-        <p className="connection-note">Reloading may discard unsaved edits.</p>
+        <p className="connection-note">{availability === 'recovered' ? 'Reloading may discard unsaved edits.' : 'This page refreshes automatically when the connection returns. Unsaved edits may be lost.'}</p>
       </div>
       <div className="connection-study">
         <ConnectionIllustration paused={paused || recovered}/>

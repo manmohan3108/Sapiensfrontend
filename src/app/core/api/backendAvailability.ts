@@ -1,17 +1,22 @@
 import { apiConfig } from '../config/apiConfig';
 
-type Availability = 'available' | 'restarting' | 'unavailable' | 'offline' | 'recovered';
+type Availability = 'available' | 'restarting' | 'unavailable' | 'offline' | 'recovered' | 'restoring';
 const GATEWAY_STATUSES = new Set([502, 503, 504]);
 const CHECK_INTERVAL_MS = 10_000;
 const CHECK_TIMEOUT_MS = 8_000;
+const RECOVERY_RELOAD_KEY = 'sapiens.backend.recovery-reload';
+const STABLE_CONNECTION_MS = 30_000;
 let availability: Availability = 'available';
 let checking: Promise<void> | null = null;
 let timer: ReturnType<typeof setTimeout> | undefined;
 let restartRevision = 0;
+let recoveryRequested = false;
+let stableTimer: ReturnType<typeof setTimeout> | undefined;
 const listeners = new Set<() => void>();
 
 function publish(value: Availability) {
   if (availability === value) return;
+  if (value !== 'available') cancelStableConnection();
   availability = value;
   listeners.forEach(listener => listener());
 }
@@ -23,6 +28,46 @@ export const backendAvailability = {
     return () => { listeners.delete(listener); };
   },
 };
+
+function cancelStableConnection() {
+  if (stableTimer !== undefined) clearTimeout(stableTimer);
+  stableTimer = undefined;
+}
+
+function noteHealthyResponse() {
+  if (availability !== 'available' || stableTimer !== undefined) return;
+  try { if (!sessionStorage.getItem(RECOVERY_RELOAD_KEY)) return; }
+  catch { return; }
+  // Rearm only after the new page has received a successful API response and
+  // stayed healthy. A brief successful probe must not cause a reload loop.
+  stableTimer = setTimeout(() => {
+    stableTimer = undefined;
+    if (availability === 'available') {
+      try { sessionStorage.removeItem(RECOVERY_RELOAD_KEY); } catch { /* Keep the manual fallback. */ }
+    }
+  }, STABLE_CONNECTION_MS);
+}
+
+function recoverPage() {
+  recoveryRequested = false;
+  if (availability === 'restoring') return;
+  try {
+    if (!sessionStorage.getItem(RECOVERY_RELOAD_KEY)) {
+      sessionStorage.setItem(RECOVERY_RELOAD_KEY, '1');
+      publish('restoring');
+      window.location.reload();
+      return;
+    }
+  } catch { /* Without a durable guard, automatic reload could loop. */ }
+  publish('recovered');
+}
+
+/** A failed startup read needs a fresh page even if the probe never saw the outage. */
+export function recoverPageWhenAvailable() {
+  recoveryRequested = true;
+  cancelStableConnection();
+  void checkAvailability();
+}
 
 function retryDelay(response?: Response) {
   const value = response?.headers.get('Retry-After');
@@ -59,8 +104,8 @@ async function probeAvailability() {
     const body = await response.json().catch(() => null) as { error?: unknown; code?: string } | null;
     // A newer restart signal takes precedence over an already-running probe.
     if (revision !== restartRevision) return;
-    if (response.status === 401 && typeof body?.error === 'string') {
-      if (availability !== 'available') publish('recovered');
+    if (response.status === 401 && body?.error === 'Authentication required') {
+      if (availability !== 'available' || recoveryRequested) recoverPage();
       return;
     }
     if (response.status === 503 && body?.code === 'runtime_draining') reason = 'restarting';
@@ -76,13 +121,17 @@ function checkAvailability() {
   checking = probeAvailability().finally(() => {
     checking = null;
     // Keep checking if a newer restart arrived during this probe.
-    if (availability !== 'available' && availability !== 'recovered') scheduleCheck();
+    if (recoveryRequested || !['available', 'recovered', 'restoring'].includes(availability)) scheduleCheck();
   });
   return checking;
 }
 
 async function observeResponse(response: Response) {
-  if (!GATEWAY_STATUSES.has(response.status)) return;
+  if (!GATEWAY_STATUSES.has(response.status)) {
+    if (response.ok) noteHealthyResponse();
+    return;
+  }
+  cancelStableConnection();
   const body = await response.clone().json().catch(() => null) as { code?: string } | null;
   if (response.status === 503 && body?.code === 'runtime_draining') {
     restartRevision += 1;
@@ -103,7 +152,10 @@ export async function backendFetch(input: RequestInfo | URL, init: RequestInit =
   } catch (error) {
     const signal = init.signal ?? (input instanceof Request ? input.signal : undefined);
     const timedOut = signal?.reason?.name === 'TimeoutError';
-    if ((!signal?.aborted && error instanceof TypeError) || timedOut) void checkAvailability();
+    if ((!signal?.aborted && error instanceof TypeError) || timedOut) {
+      cancelStableConnection();
+      void checkAvailability();
+    }
     throw error;
   }
 }

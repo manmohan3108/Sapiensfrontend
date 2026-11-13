@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { selectionStorage } from '../core/auth/selectionStorage';
 import type { AuthCredentials, AuthUser, RegistrationCredentials, TokenPair } from '../types/authTypes';
 import { useSapiensStore } from '../core/state/sapiensStore';
-import { backendFetch, isTemporaryBackendFailure } from '../core/api/backendAvailability';
+import { backendFetch, isTemporaryBackendFailure, recoverPageWhenAvailable } from '../core/api/backendAvailability';
 
 type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated';
 
@@ -59,9 +59,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     restored.current = true;
     if (!authSession.tokens) { setStatus('unauthenticated'); return; }
     loadMe().then(value => { selectionStorage.setOwner(value.user_id); setUser(value); setStatus('authenticated'); }).catch(error => {
-      if (isTemporaryBackendFailure(error)) {
-        setStatus('unauthenticated');
-        setNotice('The server could not verify your session. Reload to try again.');
+      if (isTemporaryBackendFailure(error) && authSession.tokens) {
+        setStatus('loading');
+        setNotice('Waiting to verify your session when the connection returns.');
+        recoverPageWhenAvailable();
         return;
       }
       clearSession();
@@ -103,11 +104,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setNotice('');
         setStatus('authenticated');
       } catch (error) {
-        if (isTemporaryBackendFailure(error)) {
+        if (isTemporaryBackendFailure(error) && authSession.tokens) {
           useSapiensStore.getState().reset();
           setUser(null);
-          setStatus('unauthenticated');
-          setNotice('The server could not verify the changed session. Reload to try again.');
+          setStatus('loading');
+          setNotice('Waiting to verify the changed session when the connection returns.');
+          recoverPageWhenAvailable();
           return;
         }
         clearSession();
@@ -126,7 +128,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(value); setStatus('authenticated');
       return value;
     } catch (error) {
-      setStatus('unauthenticated');
+      if (isTemporaryBackendFailure(error) && authSession.tokens) {
+        setUser(null);
+        setStatus('loading');
+        setNotice('Waiting to verify your session when the connection returns.');
+        recoverPageWhenAvailable();
+      } else {
+        setStatus('unauthenticated');
+      }
       if (error instanceof TypeError) throw new Error('Unable to reach the server. Check your connection and try again.');
       throw error;
     }
