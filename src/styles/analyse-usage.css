@@ -1,0 +1,53 @@
+body:has(.analyse-shell) .analyse-usage-dialog { width:calc(100% - 32px); max-width:1100px; padding:0; max-height:90dvh; overflow-y:auto; }
+.usage-dashboard { padding:0 24px 24px; color:var(--an-ink); font-size:15px; }
+.usage-dashboard h3 { font:500 25px/1.3 'Source Serif 4',serif; }
+.usage-dashboard h4 { font-size:17px; font-weight:600; margin-bottom:16px; }
+.usage-dashboard h5 { font-size:14px; font-weight:600; }
+.usage-dashboard .usage-muted,.usage-note,.usage-column-label { color:var(--an-muted); }
+.usage-owner,.usage-section-title { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:18px; }
+.usage-owner>span { font-size:16px; font-weight:600; }
+.usage-owner button { display:flex; align-items:center; gap:8px; min-height:44px; padding:8px 14px; border:1px solid var(--an-line); border-radius:6px; }
+.usage-owner button:disabled { opacity:.6; }
+.usage-owner button:hover:not(:disabled) { background:var(--an-raised); }
+.usage-kinds { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin-bottom:24px; }
+.usage-kinds button { text-align:left; border:1px solid var(--an-line); border-radius:8px; padding:16px 20px; background:var(--an-bg); }
+.usage-kinds button[aria-pressed=true] { border-color:var(--an-accent); box-shadow:inset 0 -3px var(--an-accent); background:var(--an-soft); }
+.usage-kinds button:hover { background:var(--an-raised); }
+.usage-kinds strong { display:block; font-size:30px; line-height:1.3; font-variant-numeric:tabular-nums; margin-top:8px; }
+.usage-kinds small { font-size:14px; font-weight:400; color:var(--an-muted); }
+.usage-main-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:28px; }
+.usage-main-grid>section { min-width:0; }
+.usage-column-label { display:flex; justify-content:space-between; gap:12px; font-size:13px; padding-bottom:8px; }
+.usage-tiers>div { display:flex; align-items:baseline; justify-content:space-between; gap:16px; padding:12px 0; border-top:1px solid var(--an-line); }
+.usage-tiers dt { overflow-wrap:anywhere; }
+.usage-tiers dd { text-align:right; font-variant-numeric:tabular-nums; }
+.usage-tiers dd span { color:var(--an-muted); }
+.usage-allowances { margin-top:20px; }
+.usage-allowances p,.usage-note { font-size:13px; line-height:1.5; margin-top:12px; }
+.usage-bars { display:grid; gap:14px; }
+.usage-bars>div { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:5px 12px; }
+.usage-bars dt { overflow-wrap:anywhere; }
+.usage-bars dd { font-variant-numeric:tabular-nums; font-weight:600; }
+.usage-track { display:block; height:8px; border-radius:3px; background:var(--an-raised); overflow:hidden; }
+.usage-bars .usage-track { grid-column:1 / -1; }
+.usage-track>span { display:block; height:100%; background:var(--an-accent); border-radius:3px; }
+.usage-history { border-top:1px solid var(--an-line); margin-top:24px; padding-top:20px; }
+.usage-history h4 { margin:0; }
+.usage-history-bars>div { display:grid; grid-template-columns:110px minmax(0,1fr); gap:16px; align-items:center; margin-top:10px; }
+.usage-history-bars dd { display:grid; grid-template-columns:minmax(0,1fr) 70px; align-items:center; gap:16px; }
+.usage-history-bars strong { text-align:right; font-variant-numeric:tabular-nums; }
+.usage-global { border-top:1px solid var(--an-line); margin-top:24px; padding-top:16px; }
+.usage-global summary { cursor:pointer; padding-block:8px; font-weight:600; }
+.usage-global summary span { display:inline-block; margin-left:12px; font-weight:400; color:var(--an-muted); }
+.usage-global>p { margin:12px 0 20px; }
+.usage-error { padding:12px; margin-bottom:16px; border:1px solid var(--an-danger); border-radius:6px; }
+.usage-error p { overflow-wrap:anywhere; }
+@media(max-width:700px) {
+  .usage-dashboard { padding:0 16px 20px; }
+  .usage-main-grid { grid-template-columns:minmax(0,1fr); gap:24px; }
+  .usage-kinds button { padding:12px; }
+  .usage-kinds strong { font-size:24px; }
+  .usage-kinds small { display:block; }
+  .usage-history-bars>div { grid-template-columns:95px minmax(0,1fr); gap:10px; }
+  .usage-history-bars dd { grid-template-columns:minmax(0,1fr) 55px; gap:8px; }
+}

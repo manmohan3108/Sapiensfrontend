@@ -1,5 +1,5 @@
-import { AnalyseIntroduction } from '../analyse/AnalyseIntroduction';
-import { useCallback, useEffect, useState } from 'react';
+import { UsageDashboard } from '../analyse/UsageDashboard';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { AlertCircle, BarChart3, Loader2, RefreshCw } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog';
 import { aiUsageService } from '../../core/services/llmUsageService';
@@ -132,14 +132,18 @@ function UsageKindSection({ kind, state, sapienId, sapienName, onRetry, compactD
 export function LlmUsageDialog({ open, onOpenChange, sapienId, sapienName, compactDetails = false }: LlmUsageDialogProps) {
   const { user } = useAuth();
   const showGlobal = user?.role === 'admin';
+  const requests = useRef({ llm: 0, embedding: 0 });
+  const [stateOwner, setStateOwner] = useState(sapienId);
   const [states, setStates] = useState<Record<AiUsageKind, KindState>>({ llm: emptyState(), embedding: emptyState() });
   const loadKind = useCallback(async (kind: AiUsageKind) => {
+    const request = ++requests.current[kind];
     setStates((current) => ({ ...current, [kind]: { ...current[kind], errors: [], loading: true } }));
     const [globalResult, sapienResult] = await Promise.allSettled([
       showGlobal ? aiUsageService.getUsage(kind) : Promise.resolve(null),
       aiUsageService.getUsage(kind, sapienId),
     ]);
     const errors: KindState['errors'] = [];
+    if (requests.current[kind] !== request) return;
     if (globalResult.status === 'rejected') errors.push({ scope: 'Global', message: errorMessage(globalResult.reason) });
     if (sapienResult.status === 'rejected') errors.push({ scope: sapienName, message: errorMessage(sapienResult.reason) });
     setStates((current) => ({ ...current, [kind]: { global: globalResult.status === 'fulfilled' ? globalResult.value : null, sapien: sapienResult.status === 'fulfilled' ? sapienResult.value : null, errors, loading: false } }));
@@ -147,15 +151,23 @@ export function LlmUsageDialog({ open, onOpenChange, sapienId, sapienName, compa
 
   useEffect(() => {
     if (!open) return;
+    setStates({ llm: emptyState(), embedding: emptyState() });
+    setStateOwner(sapienId);
     void loadKind('llm');
     void loadKind('embedding');
+    return () => { requests.current.llm++; requests.current.embedding++; };
   }, [open, loadKind]);
+
+  const visibleStates = stateOwner === sapienId ? {
+    llm: { ...states.llm, global: showGlobal ? states.llm.global : null },
+    embedding: { ...states.embedding, global: showGlobal ? states.embedding.global : null },
+  } : { llm: { ...emptyState(), loading: true }, embedding: { ...emptyState(), loading: true } };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90dvh] w-[calc(100%-1rem)] max-w-3xl overflow-y-auto border-white/10 bg-[#090e1c] p-0 text-white shadow-2xl sm:w-full">
-        <DialogHeader className="border-b border-white/[.07] px-5 py-4 pr-12 text-left sm:px-6"><DialogTitle className="flex items-center gap-2 text-base"><BarChart3 className="h-4 w-4 text-cyan-300" />AI usage & limits</DialogTitle><DialogDescription className="text-xs text-white/35">History uses real UTC dates and covers the latest 7 recorded days. Simulation personal allowances follow the simulation clock.</DialogDescription></DialogHeader>
-        <div className="space-y-6 px-5 pb-6 sm:px-6" aria-live="polite">{compactDetails && <AnalyseIntroduction section="usage" />}<UsageKindSection compactDetails={compactDetails} kind="llm" state={states.llm} sapienId={sapienId} sapienName={sapienName} onRetry={() => void loadKind('llm')} /><div className="border-t border-white/10" /><UsageKindSection compactDetails={compactDetails} kind="embedding" state={states.embedding} sapienId={sapienId} sapienName={sapienName} onRetry={() => void loadKind('embedding')} /></div>
+      <DialogContent className={`${compactDetails ? 'analyse-usage-dialog' : ''} max-h-[90dvh] w-[calc(100%-1rem)] max-w-3xl overflow-y-auto border-white/10 bg-[#090e1c] p-0 text-white shadow-2xl sm:w-full`}>
+        <DialogHeader className="border-b border-white/[.07] px-5 py-4 pr-12 text-left sm:px-6"><DialogTitle className="flex items-center gap-2 text-base"><BarChart3 className="h-4 w-4 text-cyan-300" />AI usage & limits</DialogTitle><DialogDescription className="text-sm text-white/35">{compactDetails ? 'Model calls, daily limits and what used them.' : 'History uses real UTC dates and covers the latest 7 recorded days. Simulation personal allowances follow the simulation clock.'}</DialogDescription></DialogHeader>
+        {compactDetails ? <UsageDashboard key={sapienId} states={visibleStates} sapienId={sapienId} sapienName={sapienName} onRefresh={kind => void loadKind(kind)} /> : <div className="space-y-6 px-5 pb-6 sm:px-6" aria-live="polite"><UsageKindSection kind="llm" state={visibleStates.llm} sapienId={sapienId} sapienName={sapienName} onRetry={() => void loadKind('llm')} /><div className="border-t border-white/10" /><UsageKindSection kind="embedding" state={visibleStates.embedding} sapienId={sapienId} sapienName={sapienName} onRetry={() => void loadKind('embedding')} /></div>}
       </DialogContent>
     </Dialog>
   );
