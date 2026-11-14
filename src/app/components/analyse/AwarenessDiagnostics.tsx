@@ -120,7 +120,7 @@ function RunBrowser({ sapienId }: { sapienId: string }) {
               <td role="cell" className="awareness-situation-cell">
                 <Link className="awareness-table-link" to={{ search: '?' + query({ awarenessRun: item.id }) }}
                   aria-haspopup="dialog" aria-current={selectedId === item.id ? 'true' : undefined} onClick={choose}>
-                  <span><span className="awareness-run-excerpt">{title}</span><span className="awareness-view-cue">View details <ChevronRight size={14} aria-hidden="true"/></span></span>
+                  <span className="awareness-run-excerpt">{title}</span><span className="awareness-view-cue">View details <ChevronRight size={14} aria-hidden="true"/></span>
                 </Link>
                 {preview && preview !== title && <p className="awareness-caption awareness-run-preview">{preview}</p>}
               </td>
@@ -145,11 +145,13 @@ function RunBrowser({ sapienId }: { sapienId: string }) {
       {!loading && data && !rows.length && <p role="status" className="awareness-caption awareness-list-empty">{offset ? 'No records remain on this page. Return to the latest runs.'
         : search || trigger ? 'No saved runs match these filters. Try another search or clear the filters.'
         : 'No runs have been saved yet. Refresh after Sapien processes information.'}</p>}
-      <div className="awareness-pagination">
-        <button type="button" className="analyse-button" disabled={loading || offset === 0} onClick={() => page(Math.max(0, offset - 20))}>Newer</button>
-        <button type="button" className="analyse-button" disabled={loading || !data?.has_more || data.next_offset == null} onClick={() => data?.next_offset != null && page(data.next_offset)}>Older</button>
+      <div className="awareness-list-footer">
+        <p className="awareness-caption awareness-list-count" aria-live="polite">{data && rows.length ? 'Showing ' + (offset + 1) + '–' + (offset + rows.length) + ' of ' + data.total.toLocaleString() + (search || trigger ? ' matching runs.' : ' saved runs.') : ''}</p>
+        <div className="awareness-pagination">
+          <button type="button" className="analyse-button" disabled={loading || offset === 0} onClick={() => page(Math.max(0, offset - 20))}>Newer</button>
+          <button type="button" className="analyse-button" disabled={loading || !data?.has_more || data.next_offset == null} onClick={() => data?.next_offset != null && page(data.next_offset)}>Older</button>
+        </div>
       </div>
-      <p className="awareness-caption awareness-list-count" aria-live="polite">{data && rows.length ? 'Showing ' + (offset + 1) + '–' + (offset + rows.length) + ' of ' + data.total.toLocaleString() + (search || trigger ? ' matching runs.' : ' saved runs.') : ''}</p>
       </div>
       <DiagnosticDisclosure title="Search and filter scope"><p>Filters cover all saved runs for this Sapien. Search matches literal text in retained sources, focus, decisions and assessments—not full prompts, linked memories or complete tool responses. Older or shortened records may contain less searchable text.</p>
         <p>Triggered by uses the initiating source, not the focus selected later. A self-directed check can therefore select a message as its focus. No focus chosen is a separate result, not a source.</p></DiagnosticDisclosure>

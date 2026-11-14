@@ -54,6 +54,13 @@ export const connectionsService = {
     return connectionFetch(`${collectionPath(sapienId)}/${connectionId}`, { method: 'DELETE' });
   },
 
+  fulfillRequest(sapienId: number, requestId: number, connectionId: number): Promise<RequestResponse & ConnectionResponse> {
+    return connectionFetch(`/sapien/${sapienId}/connection-requests/${requestId}`, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'fulfill', connection_id: connectionId }),
+    });
+  },
+
   updateRequest(sapienId: number, requestId: number, action: 'reject' | 'reopen'): Promise<RequestResponse> {
     return connectionFetch<RequestResponse>(`/sapien/${sapienId}/connection-requests/${requestId}`, {
       method: 'POST',

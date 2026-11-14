@@ -6,6 +6,7 @@ export interface ProviderField {
   label: string;
   type: 'url' | 'email' | 'password' | 'boolean' | 'text' | string;
   required: boolean;
+  source?: 'workspace' | 'account_identifier' | 'metadata' | 'credential';
 }
 
 export interface ConnectionProvider {
@@ -29,13 +30,25 @@ export interface SapiensConnection {
   updated_at: string;
 }
 
+export interface AccessNeed {
+  target: string;
+  account: string;
+  operations: string[];
+  connection_id: number | null;
+}
+
 export interface SapiensConnectionRequest {
   id: number;
   sapien_id: number;
   provider: string;
   reason: string;
   status: ConnectionRequestStatus;
-  metadata: Record<string, unknown>;
+  metadata: {
+    access?: AccessNeed;
+    work_refs?: string[];
+    additional_reasons?: string[];
+    connection_id?: number;
+  };
   created_at: string;
   updated_at: string;
   resolved_at: string | null;
@@ -49,11 +62,5 @@ export interface ConnectionsResponse {
 }
 
 export type ConnectionFormValue = string | boolean;
-export type CreateConnectionPayload = Record<string, ConnectionFormValue> & { provider: string };
-export interface UpdateConnectionPayload {
-  base_url?: string;
-  account_label?: string;
-  email?: string;
-  api_token?: string;
-  read_only?: boolean;
-}
+export type CreateConnectionPayload = Record<string, ConnectionFormValue | number> & { provider: string };
+export type UpdateConnectionPayload = Record<string, ConnectionFormValue | number>;

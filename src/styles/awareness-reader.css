@@ -1,9 +1,9 @@
 /* Awareness layout uses the shared Analyse palette; no page-local colours. */
 .awareness-reader { max-width:1500px; margin:auto; color:var(--an-ink); }
-.awareness-intro { display:flex; align-items:center; justify-content:space-between; gap:20px; margin-bottom:20px; }
-.awareness-intro>div { min-width:0; }
-.awareness-intro h2 { font:500 26px/1.25 'Source Serif 4',Georgia,serif; margin:0 0 6px; text-wrap:balance; }
-.awareness-intro p { max-width:75ch; font-size:15px; line-height:1.5; color:var(--an-muted); }
+.awareness-intro { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:12px; }
+.awareness-intro>div { display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 16px; min-width:0; }
+.awareness-intro h2 { font:500 26px/1.25 'Source Serif 4',Georgia,serif; margin:0; text-wrap:balance; }
+.awareness-intro p { max-width:75ch; margin:0; font-size:15px; line-height:1.5; color:var(--an-muted); }
 .awareness-intro .analyse-button { flex-shrink:0; }
 .awareness-search { display:flex; align-items:center; gap:7px; background:var(--an-bg); border:1px solid var(--an-control-line); padding:0 0 0 12px; border-radius:6px; margin-bottom:8px; color:var(--an-muted); }
 .awareness-search input { width:100%; min-width:0; min-height:44px; border:0; font-size:15px; background:transparent; color:var(--an-ink); }
@@ -42,37 +42,37 @@
 /* Full-width run index; details load only when a row's URL is selected. */
 .awareness-runs { container:awareness-runs / inline-size; min-width:0; }
 .awareness-list-panel { border:1px solid var(--an-line); border-radius:10px; background:var(--an-panel); }
-.awareness-table-toolbar { display:flex; flex-wrap:wrap; align-items:flex-end; gap:12px 20px; padding:14px 20px; border-bottom:1px solid var(--an-line); }
+.awareness-table-toolbar { display:flex; flex-wrap:wrap; align-items:flex-end; gap:10px 16px; padding:10px 16px; border-bottom:1px solid var(--an-line); }
 .awareness-table-toolbar form { flex:1 1 280px; max-width:560px; }
 .awareness-table-toolbar>.awareness-filter { flex:0 1 230px; }
 .awareness-table-toolbar .awareness-filter,.awareness-table-toolbar .awareness-search { margin-bottom:0; }
 .awareness-table-toolbar form>.awareness-filter { margin-bottom:5px; }
 .awareness-table-toolbar>.diagnostic-link { min-height:44px; }
-.awareness-table-heading { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:baseline; gap:6px 16px; padding:12px 20px 0; }
+.awareness-table-heading { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:baseline; gap:4px 16px; padding:8px 16px 0; }
+.awareness-table-heading>.awareness-caption { margin:0; }
 .awareness-table-heading h3 { display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; margin:0; font:500 21px/1.4 'Source Serif 4',Georgia,serif; }
 .awareness-table-heading h3>span { padding:3px 8px; border-radius:5px; background:var(--an-raised); color:var(--an-muted); font:400 14px/1.4 'Source Sans 3',sans-serif; font-variant-numeric:tabular-nums; }
 .awareness-table-heading h3>span:empty { display:none; }
-.awareness-list-note { padding-inline:20px; margin:6px 0 16px; max-width:100ch; }
+.awareness-list-note { padding-inline:16px; margin:4px 0 10px; max-width:100ch; }
 .awareness-list-empty { padding:22px 20px; margin:0; color:var(--an-ink); font-size:15px; }
-.awareness-list-count { margin:0; padding:0 20px 16px; font-variant-numeric:tabular-nums; }
-.awareness-list-count:empty { padding-block:0; }
+.awareness-list-footer { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px 16px; padding:10px 16px; }
+.awareness-list-count { margin:0; font-variant-numeric:tabular-nums; }
 .awareness-table-wrap { border-block:1px solid var(--an-line); background:var(--an-panel); }
 .awareness-table { width:100%; table-layout:fixed; border-collapse:collapse; font-size:14px; line-height:1.45; }
 .awareness-situation-col { width:36%; }
 .awareness-trigger-col { width:14%; }
 .awareness-actions-col { width:10%; }
 .awareness-time-col { width:14%; }
-.awareness-table th { text-align:left; padding:12px; color:var(--an-muted); font-size:14px; font-weight:600; border-bottom:1px solid var(--an-line); }
-.awareness-table td { padding:18px 12px; vertical-align:top; overflow-wrap:anywhere; }
-.awareness-table :is(th,td):first-child { padding-left:20px; }
-.awareness-table :is(th,td):last-child { padding-right:20px; }
+.awareness-table th { text-align:left; padding:10px 12px; color:var(--an-muted); font-size:14px; font-weight:600; border-bottom:1px solid var(--an-line); }
+.awareness-table td { padding:12px; vertical-align:top; overflow-wrap:anywhere; }
+.awareness-table :is(th,td):first-child { padding-left:16px; }
+.awareness-table :is(th,td):last-child { padding-right:16px; }
 .analyse-shell[data-analyse-section=awareness] .awareness-table td { font-size:14px; }
 .awareness-table tbody tr { position:relative; border-bottom:1px solid var(--an-line); }
 .awareness-table tbody tr:last-child { border-bottom:0; }
 .awareness-table tbody tr:hover,.awareness-table tbody tr:focus-within { background:var(--an-raised); }
 .awareness-table tbody tr[data-selected=true] { background:var(--an-selected); box-shadow:inset 3px 0 var(--an-accent); }
-.awareness-table-link { display:flex; align-items:flex-start; gap:8px; color:var(--an-ink); text-decoration:none; min-height:24px; }
-.awareness-table-link>svg { flex-shrink:0; margin-top:2px; color:var(--an-accent); }
+.awareness-table-link { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:start; gap:12px; color:var(--an-ink); text-decoration:none; min-height:24px; }
 /* Extend the actual link over the row, preserving keyboard and modified clicks. */
 .awareness-table-link::after { content:''; position:absolute; inset:0; }
 .awareness-table-link:focus-visible::after { outline:2px solid var(--an-accent); outline-offset:-2px; }
@@ -88,11 +88,10 @@
  .awareness-table colgroup { display:none; }
  .awareness-table thead { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
  .awareness-table,.awareness-table tbody { display:block; }
- .awareness-table tbody tr { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px 20px; padding:16px; }
+ .awareness-table tbody tr { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px 20px; padding:14px 16px; }
  .awareness-table td,.awareness-table :is(td:first-child,td:last-child) { display:block; padding:0; min-width:0; }
  .awareness-table .awareness-situation-cell { grid-column:1 / -1; }
  .awareness-table td[data-label]::before { content:attr(data-label); display:block; margin-bottom:6px; font-size:13px; color:var(--an-muted); }
- .awareness-table-link { justify-content:space-between; }
 }
 @media(max-width:540px) {
  .awareness-reader.awareness-detail-dialog { width:calc(100% - 16px); height:94dvh; max-height:94dvh; }
@@ -101,7 +100,7 @@
 @media(prefers-reduced-motion:reduce) { .awareness-detail-dialog { animation:none!important; transition:none!important; } }
 
 /* A persistent header, a short summary and an independent activity reader. */
-.awareness-view-cue { display:flex; align-items:center; gap:3px; width:fit-content; margin-top:8px; color:var(--an-accent); font-size:14px; font-weight:500; }
+.awareness-view-cue { display:flex; align-items:center; gap:3px; white-space:nowrap; color:var(--an-accent); font-size:14px; font-weight:500; line-height:1.65; }
 .awareness-table tbody tr:is(:hover,:focus-within) .awareness-view-cue { text-decoration:underline; text-underline-offset:3px; }
 .awareness-processing-state { display:inline-block; padding:4px 8px; border:1px solid var(--an-line); border-radius:5px; background:var(--an-bg); color:var(--an-muted); font-size:13px; line-height:1.4; }
 .awareness-dialog-top { flex-shrink:0; padding:16px 24px 10px; border-bottom:1px solid var(--an-line); background:var(--an-edge); }
@@ -176,7 +175,7 @@
 .awareness-source-roles { font-size:14px; font-weight:600; color:var(--an-muted); }
 .awareness-reader .awareness-saved-value { max-height:320px; overflow:auto; overscroll-behavior:contain; padding:12px; border:1px solid var(--an-line); border-radius:5px; font:13px/1.55 ui-monospace,monospace; white-space:pre-wrap; overflow-wrap:anywhere; background:var(--an-bg); color:var(--an-ink); }
 .awareness-run-preview { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:anywhere; }
-.awareness-pagination { display:flex; justify-content:space-between; gap:10px; padding:14px 20px; }
+.awareness-pagination { display:flex; gap:8px; margin-left:auto; }
 .awareness-pagination button { min-height:44px; }
 .awareness-reader :is(a,button,summary) { touch-action:manipulation; }
 .awareness-reader button { cursor:pointer; }
@@ -198,7 +197,7 @@
  .awareness-activity-mobile select:focus-visible { outline:2px solid var(--an-accent); outline-offset:2px; }
 }
 @media(max-width:540px) {
- .awareness-intro { flex-wrap:wrap; gap:12px; margin-bottom:16px; }
+ .awareness-intro { flex-wrap:wrap; gap:8px; }
  .awareness-intro h2 { font-size:21px; }
  .awareness-intro p { font-size:14px; }
  .awareness-intro .analyse-button { padding:6px 10px; }
@@ -213,10 +212,9 @@
  .awareness-reader-views { gap:2px; }
  .awareness-reader-views button { padding:8px 10px; font-size:14px; }
  .awareness-summary-block,.awareness-active-step { padding:14px; }
- .awareness-table-toolbar { padding:14px; }
- .awareness-table-heading { padding:14px 14px 0; }
+ .awareness-table-toolbar { padding:10px 14px; }
+ .awareness-table-heading { padding:8px 14px 0; }
  .awareness-list-note { padding-inline:14px; }
- .awareness-pagination { padding:12px 14px; }
- .awareness-list-count { padding:0 14px 14px; }
+ .awareness-list-footer { padding:10px 14px; }
  .awareness-record-details { grid-template-columns:1fr; }
 }
