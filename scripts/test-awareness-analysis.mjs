@@ -58,8 +58,8 @@ about.props.onClick(); h.begin();
 assert.equal(find(AnalyseIntroduction({ section: 'awareness' }), node => node.type === 'button').props['aria-expanded'], false);
 h.begin();
 introduction = AnalyseIntroduction({ section: 'goals' });
-assert.equal(introduction.props.className, 'analyse-explanation', 'Other pages retain their existing introduction');
-assert.equal(find(introduction, node => node.type === 'button').props.children, 'Show more');
+assert.equal(introduction.props.className, 'analyse-explanation analyse-explanation--compact', 'Other Analyse pages share the compact introduction');
+assert.equal(find(introduction, node => node.type === 'button').props.children, 'About this page');
 const source = { availability: 'recorded', kind: 'message', source: 'user', provider: 'teams', sender: { name: 'Julia Morgan' }, recipient: { name: 'Rashi' }, origin_relation: 'event', event_at: '2026-11-10T09:07:47Z',
   content: 'I recorded the proposed SD-32 review slot. I will confirm it after allocation and delegation are recorded.', source_reference: { id: 'message-71', memory_source: 'conversation', container_id: 'chat-71' } };
 const decision = { event_index: 0, kind: 'decision', decision: 'speak', title: 'Prepared a reply', round: 1, summary: 'A reply was prepared.', evidence: { kind: 'decision', status: 'speak', detail: { response: 'Understood. I will keep the slot unconfirmed.', reason: 'Allocation has not been recorded.' } } };

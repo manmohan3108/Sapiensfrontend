@@ -116,17 +116,15 @@ function FeedbackView({ sapienId }: { sapienId: string }) {
   const retry = () => { if (error?.status === 400) update({ states: [], offset: 0, selectedId: null }); refresh(); };
 
   return <div className="feedback-page">
-    <div className="feedback-intro"><p>Open a finding to see its evidence and what Sapiens concluded.</p><p className="feedback-help">{loading ? 'Loading saved feedback…' : feedbackMode(data?.mode)}</p></div>
-    <AnalyseControls label="Page options" primary={<fieldset className="feedback-state-filter"><legend>Finding state <span>(all when none selected)</span></legend>
+    <AnalyseControls label="Page options" primary={<><div className="analyse-controls-heading"><h2 ref={tableHeading} tabIndex={-1}>Findings</h2>{data && <p role="status">{data.findings.length} on this page{data.total !== undefined ? ' · ' + data.total + ' matching' : ''} · Sapien {data.sapien_id}</p>}</div><fieldset className="feedback-state-filter"><legend>Finding state <span>(all when none selected)</span></legend>
       <div>{FEEDBACK_STATES.map((state, index) => <label key={state}><input ref={index === 0 ? firstFilter : undefined} type="checkbox" name="feedbackState" value={state} checked={states.includes(state)} onChange={event => update({ states: event.target.checked ? [...states, state] : states.filter(item => item !== state), offset: 0, selectedId: null })} />{feedbackLabels[state]}</label>)}</div>
-    </fieldset>} summary={(states.length ? states.map(state => feedbackLabels[state]).join(', ') : 'All finding states') + ' · ' + limit + ' per page'} onRefresh={refresh} busy={loading}>
+    </fieldset></>} summary={<><span className="feedback-controls-purpose">Open a finding to see its evidence and what Sapiens concluded.</span><span className="feedback-controls-mode">{loading ? 'Loading saved feedback…' : feedbackMode(data?.mode)}</span><span>{(states.length ? states.map(state => feedbackLabels[state]).join(', ') : 'All finding states') + ' · ' + limit + ' per page'}</span></>} onRefresh={refresh} busy={loading}>
       <label className="feedback-page-size">Findings per page<select name="feedbackLimit" value={limit} onChange={event => update({ limit: Number(event.target.value), offset: 0, selectedId: null })}>{[10, 25, 50, 100].map(value => <option key={value} value={value}>{value}</option>)}</select></label>
     </AnalyseControls>
 
     {loading && <p role="status" className="feedback-loading">Loading feedback findings…</p>}
     {error && <FeedbackError error={error} retry={retry} />}
     {data && <section aria-label="Returned feedback findings">
-      <div className="feedback-table-heading"><h2 ref={tableHeading} tabIndex={-1}>Findings</h2><p role="status">{data.findings.length} on this page{data.total !== undefined ? ' · ' + data.total + ' matching' : ''} · Sapien {data.sapien_id}</p><span>Open an interpretation to see its evidence.</span></div>
       {data.findings.length ? <>
         <p className="feedback-scroll-hint">Scroll across the table for sources, state and time.</p>
         <FeedbackTable findings={data.findings} selectedId={selectedId} onSelect={(id, button) => { opener.current = button; update({ selectedId: id }); }} />

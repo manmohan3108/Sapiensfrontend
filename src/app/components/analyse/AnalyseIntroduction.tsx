@@ -129,15 +129,15 @@ export function AnalyseIntroduction({ section }: { section: Exclude<AnalyseSecti
   const detailsId = useId();
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
   const expanded = expandedSection === section;
-  return <section className={'analyse-explanation' + (content.compactPreview ? ' analyse-explanation--compact' : '')} aria-label="About this capability">
-    <p className="analyse-explanation-preview">{content.compactPreview || <><strong>{content.lead}</strong>{' '}{content.summary}</>}</p>
+  return <section className="analyse-explanation analyse-explanation--compact" aria-label="About this capability">
+    <p className="analyse-explanation-preview">{content.compactPreview || <strong>{content.lead}</strong>}</p>
     <div id={detailsId} className="analyse-explanation-continuation" hidden={!expanded}>
-      {content.compactPreview && <p><strong>{content.lead}</strong>{' '}{content.summary}</p>}
+      <p>{content.compactPreview && <><strong>{content.lead}</strong>{' '}</>}{content.summary}</p>
       {content.details.map(detail => <p key={detail}>{detail}</p>)}
     </div>
     <button type="button" className="analyse-explanation-toggle" aria-expanded={expanded} aria-controls={detailsId}
       onClick={() => setExpandedSection(expanded ? null : section)}>
-      {expanded ? 'Show less' : content.aboutLabel || 'Show more'}
+      {expanded ? 'Show less' : content.aboutLabel || 'About this page'}
     </button>
   </section>;
 }

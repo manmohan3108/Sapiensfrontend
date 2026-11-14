@@ -4,6 +4,9 @@
 .analyse-shell .analyse-controls { border:1px solid var(--an-line); border-radius:7px; background:var(--an-panel); }
 .analyse-shell .analyse-controls-primary { display:flex; align-items:end; flex-wrap:wrap; gap:8px; padding:10px 12px; }
 .analyse-shell .analyse-controls-primary>div:first-child { flex:1; min-width:0; }
+.analyse-shell .analyse-controls-primary>.analyse-controls-heading { flex:1 1 160px; align-self:center; }
+.analyse-shell .analyse-controls-heading h2 { margin:0; font:600 18px/1.4 'Source Sans 3',sans-serif; }
+.analyse-shell .analyse-controls-heading p { margin:4px 0 0; font-size:14px; line-height:1.5; color:var(--an-muted); }
 .analyse-shell .analyse-controls-primary label { display:flex; flex-direction:column; gap:4px; min-width:0; font-size:14px; color:var(--an-muted); }
 .analyse-shell .analyse-controls-primary :is(input,select) { min-height:36px; font-size:14px; }
 .analyse-shell .analyse-controls-primary input:not([type=checkbox]):not([type=number]) { width:100%; min-width:140px; }
@@ -13,6 +16,7 @@
 .analyse-shell .analyse-controls-primary input[type=checkbox] { min-height:0; }
 .analyse-shell .analyse-controls-more,.analyse-shell .analyse-controls-refresh { display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; gap:6px; min-height:36px; padding:6px 10px; border:1px solid var(--an-control-line); border-radius:6px; background:var(--an-panel); color:var(--an-ink); font-size:14px; }
 .analyse-shell .analyse-controls-scope { display:flex; align-items:center; flex-wrap:wrap; gap:6px 10px; padding:0 12px 9px; font-size:13px; color:var(--an-muted); overflow-wrap:anywhere; }
+.analyse-shell .analyse-controls-scope>span { display:flex; align-items:baseline; flex-wrap:wrap; gap:4px 16px; min-width:0; }
 .analyse-shell .analyse-filter-chip { display:inline-flex; align-items:center; gap:8px; padding:3px 8px; border:1px solid var(--an-control-line); border-radius:4px; background:var(--an-selected); color:var(--an-ink); text-align:left; }
 .analyse-shell .analyse-controls-body { border-top:1px solid var(--an-line); padding:12px; }
 .analyse-shell .analyse-controls-body[hidden] { display:none; }
@@ -28,7 +32,7 @@
 .analyse-shell .analyse-purpose-meta { display:flex; flex-wrap:wrap; gap:6px 16px; font-size:13px; color:var(--an-muted); }
 .analyse-shell .analyse-purpose-meta a { text-decoration:underline; }
 .analyse-shell .analyse-list-caption { padding:10px 12px; text-align:left; font-size:13px; color:var(--an-muted); }
-.analyse-shell .analyse-secondary-reports { display:flex; flex-direction:column; gap:12px; margin-top:16px; }
+.analyse-shell .analyse-secondary-reports { display:flex; flex-direction:column; gap:8px; margin-top:12px; }
 .analyse-shell .analyse-goal-row { display:flex; align-items:center; gap:12px; padding:12px; border-bottom:1px solid var(--an-line); }
 .analyse-shell .analyse-goal-open { flex:1; min-width:0; text-align:left; }
 .analyse-shell .analyse-goal-open strong { display:block; font-size:15px; font-weight:500; line-height:1.5; }
@@ -55,9 +59,10 @@ body:has(.analyse-shell) .analyse-job-error pre { max-height:240px; overflow:aut
 .analyse-shell .analyse-debug-page { min-height:340px; height:calc(100dvh - var(--app-nav-height,0px) - 110px); overflow:hidden; }
 .analyse-shell .analyse-debug-page>div { height:100%!important; }
 .analyse-shell .engram-main-heading { margin-bottom:10px; padding-bottom:8px; }
+.analyse-shell[data-analyse-section=engram] .engram-results-scroll { padding:12px; }
 .analyse-shell .engram-memory-toggle { margin-left:auto; white-space:nowrap; min-height:36px; padding:6px 10px; font-size:13px; border:1px solid var(--an-line); border-radius:5px; }
 .analyse-shell .engram-memory-panel { width:240px; flex-shrink:0; min-height:0; }
-.analyse-shell .engine-bus-layout { display:grid; grid-template-columns:minmax(0,1fr); gap:14px; margin-top:14px; }
+.analyse-shell .engine-bus-layout { display:grid; grid-template-columns:minmax(0,1fr); gap:12px; margin-top:10px; }
 .analyse-shell .engine-bus-layout.has-detail { grid-template-columns:minmax(0,1fr) minmax(0,1.15fr); }
 .analyse-shell .engine-bus-layout>aside { position:sticky; top:0; height:auto; max-height:calc(100dvh - var(--app-nav-height,0px) - 160px); overflow:auto; }
 .analyse-shell .analyse-detail-back { display:block; width:100%; padding:10px 14px; text-align:left; border-bottom:1px solid var(--an-line); color:var(--an-accent); font-size:14px; }

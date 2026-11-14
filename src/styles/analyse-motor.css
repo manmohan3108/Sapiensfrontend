@@ -1,4 +1,6 @@
-.motor-page { display:grid; gap:16px; color:var(--an-ink); }
+.motor-page { display:grid; gap:12px; color:var(--an-ink); }
+.motor-table-heading { display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 16px; margin-bottom:8px; }
+.motor-table-heading :is(h2,p) { margin:0; }
 .motor-page p, .motor-record p { line-height:1.5; max-width:85ch; }
 .motor-help, .motor-page small { color:var(--an-muted); font-size:14px; }
 .motor-page label { display:flex; flex-direction:column; gap:6px; font-size:14px; }

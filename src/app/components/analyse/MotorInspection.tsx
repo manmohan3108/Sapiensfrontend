@@ -121,7 +121,7 @@ function MotorView({ sapienId }: { sapienId: string }) {
       <AnalyseControls filters={(['server', 'tool', 'q', 'status', 'since', 'until'] as const).filter(field => query.has(field)).map(field => ({
         label: ({ server: 'Service', tool: 'Tool', q: 'Search', status: 'Result', since: 'From', until: 'Until' })[field] + ': ' + (field === 'status' ? labels[query.get(field) as MotorStatus] || query.get(field) : query.get(field)),
         onRemove: () => update({ [`motor_${field}`]: null, motor_offset: null, motorRecord: null }),
-      }))} summary={`${scope === null ? 'All saved scopes' : scopeLabel(scope)} · Newest event first · 25 per page`} busy={read.loading || choices.loading} onRefresh={refresh} primary={<>
+      }))} summary={<><span>{`${scope === null ? 'All saved scopes' : scopeLabel(scope)} · Newest event first · 25 per page`}</span><span className="motor-help">Choices include tools discovered in this environment and tools used previously. Some have no recorded activity or may no longer be available. Search covers saved input/result text, service, tool and caller.</span></>} busy={read.loading || choices.loading} onRefresh={refresh} primary={<>
         <label>Search saved activity<input name="q" maxLength={160} defaultValue={query.get('q') || ''} placeholder="Tool, caller or recorded text…" /></label>
         <label>Result<select name="status" defaultValue={query.get('status') || ''}><option value="">All results</option>{Object.entries(labels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
         <MotorToolFilters choices={choices.data || []} server={query.get('server') || ''} tool={query.get('tool') || ''} loading={choices.loading} />
@@ -136,11 +136,10 @@ function MotorView({ sapienId }: { sapienId: string }) {
     </form>
     {choices.loading && <p role="status" className="motor-help">Loading service and tool choices...</p>}
     {choices.error && <div role="alert"><p>Could not load service and tool choices. Your existing filters are preserved.</p><button type="button" className="analyse-button" onClick={choices.refresh}>Retry choices</button></div>}
-    <p className="motor-help">Choices include tools discovered in this environment and tools used previously. Some have no recorded activity or may no longer be available. Search covers saved input/result text, service, tool and caller.</p>
     {read.loading && <p role="status">Loading saved activity…</p>}
     {read.error && <div role="alert"><p>{read.error}</p><button className="analyse-button" onClick={read.refresh}>Retry</button></div>}
     {read.data && <section aria-label="Motor activity">
-      <h2 ref={heading} tabIndex={-1}>Tool attempts</h2><p role="status">{read.data.items.length} on this page · {read.data.total} matching saved records</p>
+      <div className="motor-table-heading"><h2 ref={heading} tabIndex={-1}>Tool attempts</h2><p role="status">{read.data.items.length} on this page · {read.data.total} matching saved records</p></div>
       <div className="motor-table-wrap" tabIndex={0} role="region" aria-label="Tool attempts; scroll horizontally on small screens"><table><thead><tr>{['Time', 'Service / action', 'Result', 'Origin'].map(label => <th scope="col" key={label}>{label}</th>)}</tr></thead><tbody>
         {read.data.items.map(item => <tr key={item.id} data-selected={item.id === selected} onClick={openRecordFromRow}>
           <td>{time(item.occurred_at)}</td><td><button type="button" data-record-open className="motor-open" onClick={event => { opener.current = event.currentTarget; update({ motorRecord: item.id }); }}>{item.tool || 'Unknown tool'}<small>{item.server || 'Unknown service'}</small></button>

@@ -1,8 +1,9 @@
 /* Feedback only; dialogs use the Analyse tokens inherited through the portal. */
-.feedback-page { display:grid; gap:18px; min-width:0; }
-.feedback-intro>p { margin:0; max-width:85ch; font-size:16px; line-height:1.5; }
+.feedback-page { display:grid; gap:12px; min-width:0; }
+.feedback-page .feedback-controls-purpose { font-size:16px; line-height:1.5; }
+.feedback-page .feedback-controls-mode { font-size:14px; line-height:1.5; }
 .feedback-page .feedback-help, .feedback-dialog .feedback-help { color:var(--an-muted); font-size:14px; line-height:1.5; margin:6px 0 0; }
-.feedback-state-filter { border:0; min-width:0; }
+.feedback-state-filter { border:0; min-width:0; flex:2 1 400px; }
 .feedback-state-filter legend { font-size:14px; margin-bottom:6px; }
 .feedback-state-filter legend span { color:var(--an-muted); font-weight:400; }
 .feedback-state-filter>div { display:flex; flex-wrap:wrap; gap:6px 16px; }
@@ -10,10 +11,6 @@
 .feedback-state-filter input { accent-color:var(--an-accent); width:16px; height:16px; }
 .feedback-page-size { display:flex; align-items:center; gap:12px; font-size:14px; }
 .feedback-page-size select { padding:8px 12px; border:1px solid var(--an-line); border-radius:5px; }
-.feedback-table-heading { display:flex; align-items:baseline; flex-wrap:wrap; gap:6px 12px; margin-bottom:12px; }
-.feedback-table-heading h2 { margin:0; font:600 18px/1.4 'Source Sans 3',sans-serif; }
-.feedback-table-heading p, .feedback-table-heading>span { font-size:14px; color:var(--an-muted); margin:0; }
-.feedback-table-heading>span { margin-left:auto; }
 .feedback-table-wrap { overflow-x:auto; border:1px solid var(--an-line); border-radius:6px; background:var(--an-panel); }
 .feedback-table-wrap:focus-visible { outline:2px solid var(--an-accent); outline-offset:3px; }
 .feedback-table { width:100%; min-width:870px; table-layout:fixed; border-collapse:collapse; }
@@ -144,7 +141,6 @@ body:has(.analyse-shell) .feedback-dialog { display:flex; flex-direction:column;
 }
 @media(max-width:700px) {
   .feedback-graph-conclusion, .feedback-node-details { padding:16px; }
-  .feedback-table-heading>span { margin-left:0; }
   body:has(.analyse-shell) .feedback-dialog { width:calc(100% - 16px); height:calc(100dvh - 16px); max-height:none; }
   .feedback-dialog-header { padding:16px 42px 12px 16px; }
   .feedback-dialog-body { padding:18px 16px; }

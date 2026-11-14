@@ -197,13 +197,12 @@ function InquiryList({ sapienId, kind }: { sapienId: string; kind: InquiryKind }
   }, [requestKey]);
   function refresh() { resetContent(); setRevision(value => value + 1); }
   const selectedIndex = data?.items.findIndex(item => item.id === selected?.id) ?? -1;
-  return <div className={`space-y-4${isQuestioning ? ' questioning-page' : ''}`} ref={listRoot} tabIndex={-1}>
-    <p className="analyse-page-purpose"><span className="analyse-inline-note">Read-only inspection of saved records.</span></p>
+  return <div className={`space-y-3${isQuestioning ? ' questioning-page' : ''}`} ref={listRoot} tabIndex={-1}>
     <AnalyseControls primary={<label className="text-xs text-white/50">State<select className={input} value={filters.state} onChange={event => change({ state: event.target.value as InquiryFilters['state'] })}><option value="">All states</option><option value="open">Open</option><option value="answered">{isQuestioning ? 'Answer recorded' : 'Assessed answered'}</option><option value="stale">{isQuestioning ? 'Closed without an answer' : 'Stale'}</option></select></label>} filters={[
       ...(filters.source ? [{ label: 'Source: ' + filters.source, onRemove: () => change({ source: '' }) }] : []),
       ...(kind === 'curiosity' && filters.channel ? [{ label: 'Channel: ' + filters.channel, onRemove: () => change({ channel: '' }) }] : []),
       ...(kind === 'curiosity' && filters.delivery_state ? [{ label: 'Review: ' + filters.delivery_state, onRemove: () => change({ delivery_state: '' }) }] : [])
-    ]} summary={`Normal and simulation records · ${filters.limit} per page`} onRefresh={refresh} busy={!valid || (!data && !error)}><div className="flex flex-wrap items-end gap-3">
+    ]} summary={`Read-only inspection of saved records. Normal and simulation records · ${filters.limit} per page`} onRefresh={refresh} busy={!valid || (!data && !error)}><div className="flex flex-wrap items-end gap-3">
 
       <label className="text-xs text-white/50">Source (exact match)<input className={input} maxLength={256} value={filters.source} onChange={event => change({ source: event.target.value })} placeholder="All sources" /></label>
       {kind === 'curiosity' && <>

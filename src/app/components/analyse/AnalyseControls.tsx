@@ -6,7 +6,7 @@ import { RefreshCw, SlidersHorizontal } from 'lucide-react';
  * Hidden advanced controls stay mounted, including unapplied form edits. */
 export function AnalyseControls({ children, primary, filters = [], summary, onRefresh, busy = false, label = 'More filters' }: {
   children?: ReactNode; primary?: ReactNode; filters?: { label: string; onRemove: () => void }[];
-  summary: string; onRefresh?: () => void; busy?: boolean; label?: string;
+  summary: ReactNode; onRefresh?: () => void; busy?: boolean; label?: string;
 }) {
   const [expanded, setExpanded] = useState(false);
   const controlsId = useId();

@@ -191,8 +191,7 @@ function JobList({ sapienId, initialEngine, initialJob }: { sapienId: string; in
   }, [sapienId, request]);
   function restart() { setRequest(current => ({ ...current, cursors: [null], revision: current.revision + 1 })); }
 
-  return <div className="space-y-4">
-    <p className="analyse-page-purpose"><span className="analyse-inline-note">Read-only · counts cover the filtered creation window.</span></p>
+  return <div className="space-y-3">
 <form onSubmit={event => {
       event.preventDefault();
       if (!Number.isInteger(draft.days) || draft.days < 1 || draft.days > 90 || !Number.isInteger(draft.limit) || draft.limit < 1 || draft.limit > 200) return;
@@ -202,7 +201,7 @@ function JobList({ sapienId, initialEngine, initialJob }: { sapienId: string; in
         <label className="min-w-48 flex-1 text-xs text-white/50">Engine name (exact match)<input maxLength={100} value={draft.engine_name} onChange={event => setDraft(current => ({ ...current, engine_name: event.target.value }))} placeholder="All engines" className={input} /></label>
         <label className="text-xs text-white/50">Status<select value={draft.status} onChange={event => setDraft(current => ({ ...current, status: event.target.value as EngineJobFilters['status'] }))} className={input}><option value="">All statuses</option>{statuses.map(status => <option key={status}>{status}</option>)}</select></label>
         <button type="submit" className={button}>Apply filters</button>
-        <button type="button" onClick={() => { setDraft(defaults); setRequest(current => ({ filters: defaults, cursors: [null], revision: current.revision + 1 })); }} className={button}>Reset</button></>} summary={[`${request.filters.days} days`, request.filters.engine_name || 'All engines', request.filters.status || 'All statuses', `${request.filters.limit} per page`, JSON.stringify(draft) !== JSON.stringify(request.filters) && 'Unapplied edits'].filter(Boolean).join(' · ')} onRefresh={restart} busy={loading}>
+        <button type="button" onClick={() => { setDraft(defaults); setRequest(current => ({ filters: defaults, cursors: [null], revision: current.revision + 1 })); }} className={button}>Reset</button></>} summary={['Read-only · counts cover the filtered creation window.', `${request.filters.days} days`, request.filters.engine_name || 'All engines', request.filters.status || 'All statuses', `${request.filters.limit} per page`, JSON.stringify(draft) !== JSON.stringify(request.filters) && 'Unapplied edits'].filter(Boolean).join(' · ')} onRefresh={restart} busy={loading}>
       <div className="flex flex-wrap items-end gap-3">
         <label className="text-xs text-white/50">Page limit<input type="number" required min={1} max={200} step={1} value={draft.limit || ''} onChange={event => setDraft(current => ({ ...current, limit: Number(event.target.value) }))} className={input} /></label>
 

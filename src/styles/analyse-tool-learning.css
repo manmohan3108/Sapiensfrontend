@@ -1,7 +1,8 @@
 /* Tool Learning layout. All colours come from the shared Analyse theme. */
 .analyse-tool-learning { max-width:1440px; margin-inline:auto; }
-.analyse-shell .analyse-learning-intro { display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:8px 24px; }
-.analyse-shell .analyse-learning-intro>a { color:var(--an-accent); font-size:13px; text-decoration:underline; text-underline-offset:3px; }
+.analyse-shell .analyse-learning-intro { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px 16px; }
+.analyse-shell .analyse-learning-intro>.analyse-service-selector { flex:1 1 360px; min-width:0; }
+.analyse-shell .analyse-learning-intro>a { display:inline-flex; align-items:center; min-height:40px; color:var(--an-accent); font-size:13px; text-decoration:underline; text-underline-offset:3px; }
 .analyse-shell .analyse-tool-layout { display:grid; grid-template-columns:minmax(0,1fr); align-items:start; gap:28px; }
 .analyse-shell .analyse-tool-layout.has-detail { grid-template-columns:minmax(280px,2fr) minmax(0,3fr); }
 .analyse-shell .analyse-learning-reader { min-width:0; padding:20px 24px; background:var(--an-panel); border:1px solid var(--an-line); border-radius:6px; }
@@ -20,7 +21,7 @@
 .analyse-shell .analyse-service-options small { display:block; font-size:12px; font-weight:400; }
 .analyse-shell .analyse-service-selector>p { color:var(--an-muted); font-size:13px; margin:8px 0 0; }
 .analyse-shell .analyse-service-selector>p button { min-height:36px; color:var(--an-accent); text-decoration:underline; padding-inline:6px; }
-.analyse-shell .analyse-learning-service { margin-bottom:24px; }
+.analyse-shell .analyse-learning-service { margin-bottom:16px; }
 .analyse-shell .analyse-learning-snapshot { color:var(--an-muted); font-size:13px; line-height:1.6; }
 .analyse-shell .analyse-learning-snapshot summary { cursor:pointer; width:fit-content; }
 .analyse-shell .analyse-learning-snapshot p { max-width:80ch; margin-top:8px; }

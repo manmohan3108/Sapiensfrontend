@@ -40,18 +40,37 @@ const find = (tree, predicate) => { const node = all(tree).find(predicate); asse
 const html = tree => renderToStaticMarkup(tree);
 const primaryNames = toolbar => all(toolbar.props.primary).filter(n=>n.type==='input'||n.type==='select').map(n=>n.props.name||n.props['aria-label']||n.props.placeholder);
 
-const {ANALYSE_GROUPS}=await load('components/analyse/AnalyseShell.tsx',hooks);
+const {ANALYSE_GROUPS, ANALYSE_DEVELOPMENT_DESCRIPTIONS}=await load('components/analyse/AnalyseShell.tsx',hooks);
 globalThis.analyseTest.groups=ANALYSE_GROUPS;
-const {AnalyseOverview}=await load('components/analyse/AnalyseOverview.tsx',hooks+'const ANALYSE_GROUPS=globalThis.analyseTest.groups;');
+globalThis.analyseTest.developmentDescriptions=ANALYSE_DEVELOPMENT_DESCRIPTIONS;
+const {AnalyseOverview}=await load('components/analyse/AnalyseOverview.tsx',hooks+'const ANALYSE_GROUPS=globalThis.analyseTest.groups; const ANALYSE_DEVELOPMENT_DESCRIPTIONS=globalThis.analyseTest.developmentDescriptions;');
 let overviewAction='';
 const overview=AnalyseOverview({go:id=>overviewAction=id,hrefFor:id=>id==='simulation'?'/admin/simulations?sapienId=58&returnTo=%2Fadmin%2Fanalyse':'/admin/analyse/'+id});
 const overviewHtml=html(overview);
-assert.equal((overviewHtml.match(/<a /g)||[]).length,13,'Overview destinations are native links');
+assert.equal((overviewHtml.match(/<a /g)||[]).length,ANALYSE_GROUPS.flatMap(group=>group.items).filter(item=>item.id!=='usage').length,'Every overview destination except the usage dialog is a native link');
 assert.equal((overviewHtml.match(/<button /g)||[]).length,1,'Only the usage dialog is a button');
-assert.equal(all(overview).filter(n=>n.type==='h2').length,4);
+assert.equal(all(overview).filter(n=>n.type==='h2').length,ANALYSE_GROUPS.length);
 for(const group of ANALYSE_GROUPS)for(const item of group.items)assert(overviewHtml.includes(item.label.replaceAll('&','&amp;')));
 find(overview,n=>n.type==='button').props.onClick();assert.equal(overviewAction,'usage');
 assert(overviewHtml.includes('sapienId=58'));assert(!overviewHtml.includes('notebook-figure'));
+
+const {AnalyseIntroduction, introductions}=await load('components/analyse/AnalyseIntroduction.tsx',hooks+'const useId=()=>"introduction";', 'export { introductions };');
+for(const [section, content] of Object.entries(introductions)) {
+  h.reset();
+  let introduction=AnalyseIntroduction({section});
+  const preview=find(introduction,node=>node.props.className==='analyse-explanation-preview');
+  assert(html(preview).includes((content.compactPreview||content.lead).replaceAll('&','&amp;')));
+  let toggle=find(introduction,node=>node.type==='button');
+  assert.equal(toggle.props['aria-expanded'],false);
+  assert.equal(find(introduction,node=>node.props.id==='introduction').props.hidden,true);
+  toggle.props.onClick();h.begin();introduction=AnalyseIntroduction({section});
+  const expanded=find(introduction,node=>node.props.id==='introduction');
+  assert.equal(expanded.props.hidden,false);
+  assert(html(expanded).includes(content.summary.replaceAll('&','&amp;')),`Full explanation preserved for ${section}`);
+  for(const detail of content.details) assert(html(expanded).includes(detail.replaceAll('&','&amp;')),`Detail preserved for ${section}`);
+  find(introduction,node=>node.type==='button').props.onClick();h.begin();
+  assert.equal(find(AnalyseIntroduction({section}),node=>node.props.id==='introduction').props.hidden,true);
+}
 
 h.reset(); let refreshes=0, removed=0;
 const props={summary:'All sources',primary:React.createElement('input',{'aria-label':'Search',defaultValue:'query'}),children:React.createElement('input',{name:'source',defaultValue:'teams'}),onRefresh:()=>refreshes++,filters:[{label:'Source: Teams',onRemove:()=>removed++}]};
@@ -392,7 +411,8 @@ console.log('Questioning checks passed: Sapien 66 evidence shapes, source/answer
 let resolveDetail;
 globalThis.analyseTest.service={detail:()=>new Promise(resolve=>{resolveDetail=resolve;})};
 globalThis.document={activeElement:null};globalThis.requestAnimationFrame=fn=>{fn();return 0;};
-const bus=await load('pages/EngineBusPage.tsx',hooks+'const engineBusService=globalThis.analyseTest.service;');
+globalThis.analyseTest.Introduction=(await load('components/analyse/AnalyseIntroduction.tsx','const {useState,useId}=React;')).AnalyseIntroduction;
+const bus=await load('pages/EngineBusPage.tsx',hooks+'const engineBusService=globalThis.analyseTest.service; const AnalyseIntroduction=globalThis.analyseTest.Introduction;');
 h.reset([[{id:'signal-1',name:'Signal',producer:'awareness',status:'completed',occurred_at:new Date().toISOString()}],null,false,false,'',null,false,'',null,false,'',JSON.stringify(['58','']),'']);
 const renderBus=()=>{h.begin();return bus.EngineBusPage({embedded:true});};
 tree=renderBus();
@@ -469,6 +489,8 @@ const {absoluteTime}=globalThis.analyseTest.questionClock;
 const {hasSelectedRecordText}=globalThis.analyseTest.recordRows;
 const useListReaderNavigation=()=>({container:{current:null},list:{current:null},remember:()=>{}});
 const useRememberedState=(_key,initial)=>h.useState(initial);
+// Goal request tests isolate presentation and submission after the availability check.
+const useGoalChangeGuard=()=>({dialog:null,checking:false,openIfAllowed:async open=>open(),handleError:()=>false});
 const goalsService=globalThis.analyseTest.goalService;
 `;
 const goalsUI=await load('components/analyse/AnalyseGoals.tsx',goalPrelude,'export {GoalRecord, GoalRequest, GoalReader, GoalActions, planSummary, completion, useGoalRead};');
