@@ -6,3 +6,12 @@
 .analyse-explanation-toggle { display:block; width:fit-content; min-height:36px; margin-top:2px; padding:6px 2px; color:var(--an-accent); font-size:14px; cursor:pointer; }
 .analyse-explanation-toggle:hover { text-decoration:underline; text-underline-offset:3px; }
 .analyse-explanation-toggle:focus-visible { outline:2px solid var(--an-accent); outline-offset:3px; border-radius:3px; }
+.analyse-explanation--compact { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; column-gap:16px; max-width:1500px; margin:0 auto 12px; }
+.analyse-explanation--compact .analyse-explanation-preview { grid-column:1; grid-row:1; max-width:85ch; }
+.analyse-explanation--compact .analyse-explanation-toggle { grid-column:2; grid-row:1; margin:0; min-height:44px; }
+.analyse-explanation--compact .analyse-explanation-continuation { grid-column:1 / -1; grid-row:2; max-width:85ch; }
+@media(max-width:600px) {
+  .analyse-explanation--compact { grid-template-columns:minmax(0,1fr); }
+  .analyse-explanation--compact .analyse-explanation-toggle { grid-column:1; grid-row:2; }
+  .analyse-explanation--compact .analyse-explanation-continuation { grid-row:3; }
+}

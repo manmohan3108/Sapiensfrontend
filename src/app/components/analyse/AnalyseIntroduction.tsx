@@ -2,7 +2,7 @@ import { useId, useState } from 'react';
 import type { AnalyseSection } from './AnalyseShell';
 import '../../../styles/analyse-introduction.css';
 
-type Introduction = { lead: string; summary: string; details: string[] };
+type Introduction = { lead: string; summary: string; details: string[]; compactPreview?: string; aboutLabel?: string };
 
 const introductions: Record<Exclude<AnalyseSection, 'simulation'>, Introduction> = {
   overview: {
@@ -11,6 +11,8 @@ const introductions: Record<Exclude<AnalyseSection, 'simulation'>, Introduction>
     details: ['These capabilities belong to one persistent Sapien. Recorded observations, generated interpretations and proposed actions have different meanings; open a record to inspect its evidence and origin. Under-development sections describe unfinished capabilities, not demonstrated results.'],
   },
   awareness: {
+    compactPreview: 'Awareness chooses what needs attention. Open a run to inspect its decisions, actions and recorded outcome.',
+    aboutLabel: 'About Awareness',
     lead: "What should the Sapien focus on next?",
     summary: "A message, a memory, an unanswered question, an unfinished goal or its own thoughts may need attention. Awareness brings these together, chooses a focus, considers what to do and reviews the outcome.",
     details: ["This is inspired by how we focus on something while other thoughts stay in the background. In an AI agent, a similar loop gathers information, chooses actions and checks the results. This inspiration does not establish that the Sapien has conscious experiences.", "An incoming request gives the run a starting point; periodic runs consider what is available. A run can make several decisions, use tools or decide that nothing needs attention now. What it records as its own understanding is separate from a message actually sent to someone."],
@@ -127,14 +129,15 @@ export function AnalyseIntroduction({ section }: { section: Exclude<AnalyseSecti
   const detailsId = useId();
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
   const expanded = expandedSection === section;
-  return <section className="analyse-explanation" aria-label="About this capability">
-    <p className="analyse-explanation-preview"><strong>{content.lead}</strong>{' '}{content.summary}</p>
+  return <section className={'analyse-explanation' + (content.compactPreview ? ' analyse-explanation--compact' : '')} aria-label="About this capability">
+    <p className="analyse-explanation-preview">{content.compactPreview || <><strong>{content.lead}</strong>{' '}{content.summary}</>}</p>
     <div id={detailsId} className="analyse-explanation-continuation" hidden={!expanded}>
+      {content.compactPreview && <p><strong>{content.lead}</strong>{' '}{content.summary}</p>}
       {content.details.map(detail => <p key={detail}>{detail}</p>)}
     </div>
     <button type="button" className="analyse-explanation-toggle" aria-expanded={expanded} aria-controls={detailsId}
       onClick={() => setExpandedSection(expanded ? null : section)}>
-      {expanded ? 'Show less' : 'Show more'}
+      {expanded ? 'Show less' : content.aboutLabel || 'Show more'}
     </button>
   </section>;
 }

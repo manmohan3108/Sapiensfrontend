@@ -70,14 +70,14 @@ function RunBrowser({ sapienId }: { sapienId: string }) {
     if (rows[index]) setParams(query({ awarenessRun: rows[index].id }), { replace: true });
   };
   return <div className="awareness-reader">
-    <header className="awareness-intro"><div><h2>Saved runs</h2><p>Open a run to inspect its trigger, decisions, actions and outcome.</p></div>
-      <button type="button" className="analyse-button" onClick={refresh} disabled={loading}>{loading ? <Loader2 size={16} className="animate-spin" aria-hidden="true"/> : <RefreshCw size={16} aria-hidden="true"/>}Refresh</button>
-    </header>
     {!scoped && params.has('awarenessFor') && <p role="status" className="awareness-caption">The linked selection belongs to another Sapien. Showing records for the currently selected Sapien.</p>}
     {error && <div role="alert" className="awareness-error">{data ? 'Refresh failed; showing the last loaded page. ' : ''}{error} <button type="button" className="diagnostic-link" disabled={loading} onClick={() => setRevision(value => value + 1)}>Retry list</button></div>}
     <section className="awareness-runs" aria-label="Saved runs">
       <div className="awareness-list-panel">
       <div className="awareness-table-toolbar">
+          <div className="awareness-list-title"><h2>Saved runs</h2>
+            <p className="awareness-caption" role="status">{loading ? 'Loading runs…' : data ? data.total.toLocaleString() + (search || trigger ? ' matches' : ' total') + ' · Newest first' : 'Newest first'}</p>
+          </div>
           <form role="search" onSubmit={event => { event.preventDefault(); setParams(query({ awarenessSearch: draftSearch.trim() || null, awarenessOffset: '0', awarenessRun: null })); }}>
             <label className="awareness-filter" htmlFor={listId + '-search'}>Search saved run text</label>
             <div className="awareness-search"><input ref={searchInput} id={listId + '-search'} name="awarenessSearch" type="search" autoComplete="off"
@@ -96,12 +96,10 @@ function RunBrowser({ sapienId }: { sapienId: string }) {
           {(search || trigger) && <button type="button" className="diagnostic-link" onClick={() => {
             setDraftSearch(''); setParams(query({ awarenessSearch: null, awarenessTrigger: null, awarenessOffset: '0', awarenessRun: null }));
           }}>Clear filters</button>}
+          <button type="button" className="analyse-button awareness-list-refresh" onClick={refresh} disabled={loading}>{loading ? <Loader2 size={16} className="animate-spin" aria-hidden="true"/> : <RefreshCw size={16} aria-hidden="true"/>}Refresh</button>
       </div>
       {loaded && !categories.length && <p className="awareness-caption awareness-list-note">Trigger filters require the backend filtering update.</p>}
-      <div className="awareness-table-heading"><h3>Saved reviews <span>{data ? data.total.toLocaleString() + (search || trigger ? ' matches' : ' total') : ''}</span></h3>
-        <p className="awareness-caption" role="status">{loading ? 'Loading runs…' : 'Newest first · Select a row to inspect'}</p>
-      </div>
-      <p className="awareness-caption awareness-list-note">Processing shows whether the review finished. Work status is Sapiens’ assessment of the situation.</p>
+      <p className="awareness-caption awareness-table-guide">Processing shows whether the review finished. Work status is Sapiens’ assessment of the situation.</p>
       <div className="awareness-table-wrap" aria-busy={loading}>
         <table className="awareness-table" role="table">
           <caption className="sr-only">Saved Awareness runs, newest first. Open a situation to inspect its source, decisions and actions.</caption>
