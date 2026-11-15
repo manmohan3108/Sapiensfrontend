@@ -62,6 +62,8 @@ Use Source Sans 3 for controls, descriptions and data, and Source Serif 4 for se
 
 Prefer rows for directories and repeated records. Use cards when grouping information genuinely helps. Avoid large introductions, repeated headings, oversized buttons and unnecessary scrolling. Keep related illustrations and descriptions clearly paired. Preserve useful descriptions rather than shortening them solely to fit a decorative layout.
 
+Optimize space by reducing unnecessary padding and gaps, not by squeezing everything into one line. Preserve natural line breaks, comfortable line lengths and clear grouping so readers know where to start, pause and continue. Two short lines can be easier to follow than one long line. Keep labels, explanations and actions visually distinct where that helps understanding; adapt wrapping to the screen size rather than forcing a fixed line count.
+
 ## 7. Clear, brief wording
 
 Explain what the user can do next. Introduce Sapiens briefly when useful, especially in empty states: a persistent AI individual shaped by experience. Avoid vague slogans, unexplained concepts and claims beyond the product's actual behaviour. Distinguish concepts in development from available functionality when relevant.

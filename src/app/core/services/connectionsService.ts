@@ -12,6 +12,13 @@ interface ConnectionResponse { connection: SapiensConnection }
 interface VerifyResponse extends ConnectionResponse { verified: boolean }
 interface RequestResponse { request: SapiensConnectionRequest }
 
+export class ConnectionRequestError extends Error {
+  constructor(message: string, public readonly connection?: SapiensConnection) {
+    super(message);
+    this.name = 'ConnectionRequestError';
+  }
+}
+
 async function connectionFetch<T>(path: string, options?: RequestInit): Promise<T> {
   const response = await authenticatedFetch(`${apiConfig.baseUrl}${path}`, {
     ...options,
@@ -20,7 +27,7 @@ async function connectionFetch<T>(path: string, options?: RequestInit): Promise<
   const contentType = response.headers.get('content-type') ?? '';
   const body = contentType.includes('application/json') ? await response.json() : null;
   if (!response.ok) {
-    throw new Error((body as { error?: string } | null)?.error ?? `Request failed (HTTP ${response.status})`);
+    throw new ConnectionRequestError(body?.error ?? `Request failed (HTTP ${response.status})`, body?.connection);
   }
   return body as T;
 }
@@ -39,6 +46,12 @@ export const connectionsService = {
     });
   },
 
+  configureSubscriptions(sapienId: number, connectionId: number, resources: string[]): Promise<{ subscription_setup: string }> {
+    return connectionFetch(`${collectionPath(sapienId)}/${connectionId}`, {
+      method: 'POST', body: JSON.stringify({ action: 'subscriptions', resources }),
+    });
+  },
+
   verify(sapienId: number, connectionId: number): Promise<VerifyResponse> {
     return connectionFetch<VerifyResponse>(`${collectionPath(sapienId)}/${connectionId}`, { method: 'POST' });
   },
@@ -50,7 +63,7 @@ export const connectionsService = {
     });
   },
 
-  disconnect(sapienId: number, connectionId: number): Promise<{ deleted: true; connection_id: number }> {
+  disconnect(sapienId: number, connectionId: number): Promise<{ deleted: true; connection_id: number; remote_cleanup_confirmed?: boolean }> {
     return connectionFetch(`${collectionPath(sapienId)}/${connectionId}`, { method: 'DELETE' });
   },
 

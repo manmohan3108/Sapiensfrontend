@@ -6,13 +6,17 @@ export interface ProviderField {
   label: string;
   type: 'url' | 'email' | 'password' | 'boolean' | 'text' | string;
   required: boolean;
+  default?: string | number | boolean;
+  choices?: string[];
   source?: 'workspace' | 'account_identifier' | 'metadata' | 'credential';
 }
 
 export interface ConnectionProvider {
   id: string;
   label: string;
+  description?: string;
   fields: ProviderField[];
+  capabilities?: { tools: boolean; notifications: boolean; subscriptions: boolean; messaging: boolean; key_generation?: boolean };
 }
 
 export interface SapiensConnection {

@@ -3,6 +3,38 @@
 
 This is a code bundle for Sapiens. The original project is available at https://www.figma.com/design/O5Q4HuU26a2H8wr74xniqJ/Sapiens.
 
+## SSH connections
+
+On a Sapien's Connections page, choose SSH and enter the VM host and dedicated
+Linux username. **Generate SSH key** asks the backend to generate and encrypt a key;
+the browser receives only the public key. Copy it to the VM's authorized keys using
+the VM's administration process. Then edit the connection, enter its independently
+trusted SSH host fingerprint and save to verify. The fingerprint identifies the VM;
+it is not the generated public key. Reloading the page preserves the saved public key.
+
+The account remains unavailable to tools, and a selected access request stays pending,
+until verification succeeds. Failed verification retains the same key for repair.
+Each host/account is a separate connection. Linux and database permissions enforce
+access; the access description is only an owner note. Use a restricted account that
+cannot read application secrets or elevate privileges. To rotate, create and verify
+a replacement connection first; disconnecting deletes local credentials but the
+administrator must also remove the old public key on the VM. Running commands may
+continue after disconnect. The frontend never generates, receives or stores private keys.
+
+## Fulfilling access requests
+
+Review the request's target, account requirement and intended operations before
+choosing an account. Account choices include IDs, host/site, identity and configured
+policy; the selected account shows additional restrictions and its last verified
+identity. Authentication does not prove permission for every requested operation.
+Microsoft 365 includes Teams; preset fields use choices supplied by the backend.
+
+Generated SSH accounts show their saved setup request beside verification actions,
+including after a page reload. A pending link makes verification fulfill that
+specific request; denied requests must be reopened, and completed requests are not
+reassigned. Ordinary account editing restores the pending request context. Denial
+confirmation identifies the request number, target and requirements.
+
 ## Local development
 
 ```sh

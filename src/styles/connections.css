@@ -23,7 +23,7 @@
 .connections-page :is(.text-xs,[class*='text-[11px]']) { font-size:14px; line-height:1.5; }
 .connections-page [class*='text-[10px]'] { font-size:12px; line-height:1.5; }
 .connections-page .rounded-2xl { border-radius:10px; }
-.connections-page :is(button,a,input,select,summary):focus-visible,.connections-dialog :is(button,a,input):focus-visible { outline:2px solid var(--sp-accent); outline-offset:3px; }
+.connections-page :is(button,a,input,textarea,select,summary):focus-visible,.connections-dialog :is(button,a,input):focus-visible { outline:2px solid var(--sp-accent); outline-offset:3px; }
 .connections-page button { cursor:pointer; min-height:40px; }
 .connections-page button:disabled { cursor:not-allowed; }
 .connections-page input { accent-color:var(--sp-action); }
