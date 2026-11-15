@@ -1059,32 +1059,20 @@ export function SimulationLabPage() {
       </header>
       <main className="mx-auto max-w-7xl px-4 py-3">
         <div className="min-w-0 space-y-3">
-        <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="simulation-lab-intro">
         <div className="space-y-2">
           <SimulationPurpose sapienName={purposeSapienName} />
           {shortcutId && (
-            <div className="min-w-0 text-sm">
+            <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 text-sm">
               <strong>{verifiedShortcutName || `Sapiens ${shortcutId}`} simulations</strong>
-              <p className="mt-1 text-sm text-muted-foreground">
+              <p className="text-sm text-muted-foreground">
                 Showing runs for Sapiens ID {shortcutId}. New simulations use this Sapiens.
               </p>
             </div>
           )}
 
         </div>
-          <aside aria-label="About simulation memory" className="self-start rounded-xl border bg-card p-3">
-            <h2 className="flex items-center gap-2 text-sm font-medium">
-              <CircleHelp className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-              What your Sapien remembers
-            </h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Teams and Jira activity stays inside the simulation. Your Sapien keeps what it learns,
-              even after the run ends. When the simulation stops, the Sapien becomes inactive.
-            </p>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Use a separate test Sapien if you don’t want simulation experiences added to an existing Sapien’s memory.
-            </p>
-          </aside>
+
         </div>
         {selectionRestore.restoring && (
           <p role="status" className="text-sm text-muted-foreground">Verifying the selected Sapiens before loading simulation data…</p>
@@ -1124,7 +1112,7 @@ export function SimulationLabPage() {
             </span>
           </div>
         )}
-        <section className="rounded-xl border bg-card p-3" aria-label="Retained simulations">
+        <section aria-label="Retained simulations">
           <div className="flex flex-wrap items-center gap-3">
             <label htmlFor="simulation-run-picker" className="text-sm font-semibold">Retained runs</label>
             <select id="simulation-run-picker" className="min-h-11 min-w-0 flex-1 rounded-md border bg-background px-3 text-sm text-foreground" value={selectedId} disabled={!!busy || !visibleRuns.length} onChange={event => chooseRun(event.target.value)}>
@@ -1135,18 +1123,7 @@ export function SimulationLabPage() {
             </select>
             <span className="text-sm text-muted-foreground">{visibleRuns.length} returned{shortcutId ? ' for this Sapien' : ''}</span>
           </div>
-          <div className="mt-2"><details className="text-xs text-muted-foreground">
-                <summary>Storage and worker diagnostics</summary>
-                <p>
-                  Worker {catalog?.worker_id ?? "—"} ·{" "}
-                  {catalog?.storage ?? "unknown"} · up to{" "}
-                  {catalog?.limits.max_active ?? "—"} live active runs plus the
-                  latest {historyLimit ?? "—"} saved-history entries returned by
-                  the API. Persisted history does not expire automatically. Live
-                  controls and recovery follow the capabilities returned for
-                  each run.
-                </p>
-              </details></div>
+
         </section>
         {run && (
           <section className="overflow-hidden rounded-2xl border border-violet-500/25 bg-gradient-to-br from-violet-500/15 via-card to-card shadow-sm">
@@ -1295,6 +1272,20 @@ export function SimulationLabPage() {
             </div>
           </section>
         )}
+          <aside aria-label="About simulation memory" className="simulation-lab-memory border-y py-3">
+            <h2 className="flex items-center gap-2 text-sm font-medium">
+              <CircleHelp className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+              What your Sapien remembers
+            </h2>
+            <div className="space-y-1"><p className="text-sm leading-6 text-muted-foreground">
+              Teams and Jira activity stays inside the simulation. Your Sapien keeps what it learns,
+              even after the run ends. When the simulation stops, the Sapien becomes inactive.
+            </p>
+            <p className="text-sm leading-6 text-muted-foreground">
+              Use a separate test Sapien if you don’t want simulation experiences added to an existing Sapien’s memory.
+            </p>
+            </div>
+          </aside>
         <details open={!run} className="group rounded-xl border bg-card">
           <summary className="cursor-pointer list-none px-4 py-3 font-semibold [&::-webkit-details-marker]:hidden">
             <span className="flex items-center justify-between gap-3">
@@ -1507,6 +1498,18 @@ export function SimulationLabPage() {
 
           </div>
         </details>
+          <div className="mt-2"><details className="text-sm text-muted-foreground">
+                <summary>Storage and worker diagnostics</summary>
+                <p>
+                  Worker {catalog?.worker_id ?? "—"} ·{" "}
+                  {catalog?.storage ?? "unknown"} · up to{" "}
+                  {catalog?.limits.max_active ?? "—"} live active runs plus the
+                  latest {historyLimit ?? "—"} saved-history entries returned by
+                  the API. Persisted history does not expire automatically. Live
+                  controls and recovery follow the capabilities returned for
+                  each run.
+                </p>
+              </details></div>
         {run && (
           <>
             <details className="group overflow-hidden rounded-xl border bg-card">

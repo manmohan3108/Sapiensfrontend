@@ -5,3 +5,8 @@
 .simulation-lab [data-slot="card-content"]:last-child { padding-bottom:16px; }
 .simulation-lab #simulation-run-picker { flex-basis:420px; max-width:100%; }
 .simulation-lab #simulation-run-picker:focus-visible { outline:2px solid var(--ring); outline-offset:3px; }
+.simulation-lab-intro > div > p { max-width:none; }
+.simulation-lab-memory { display:grid; grid-template-columns:200px minmax(0,1fr); gap:8px 16px; align-items:start; }
+@media(max-width:720px) {
+  .simulation-lab-memory { grid-template-columns:minmax(0,1fr); }
+}
