@@ -329,17 +329,20 @@ function EmptyState({ name, onHint, recent, onResume, loading }: { name: string;
     'Help me think through a question.',
   ];
   return (
-    <div className="flex flex-col items-center justify-center h-full px-5 py-5 text-center">
-      <div className="workspace-welcome-art"><ScienceDetail variant="surround" /><SapiensPresence tone="orange" size={70} animated /></div>
-
-      <p className="workspace-welcome-title">{recent ? 'Continue with' : 'Talk with'}{' '}
-        <span style={{ background: 'linear-gradient(90deg, var(--sp-accent, #c4b5fd), var(--sp-accent, #a5b4fc))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-          {name}
-        </span>
-      </p>
-      <p className="text-sm text-sp-muted mb-5 max-w-[340px] leading-relaxed">
-        {recent ? "Pick up a conversation, or start with something new." : "Share an idea, ask a question, or tell your Sapien what matters to you."}
-      </p>
+    <div className="workspace-welcome">
+      <div className="workspace-welcome-heading">
+        <div className="workspace-welcome-art"><ScienceDetail variant="surround" /><SapiensPresence tone="orange" size={70} animated /></div>
+        <div className="workspace-welcome-copy">
+          <p className="workspace-welcome-title">{recent ? 'Continue with' : 'Talk with'}{' '}
+            <span style={{ background: 'linear-gradient(90deg, var(--sp-accent, #c4b5fd), var(--sp-accent, #a5b4fc))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+              {name}
+            </span>
+          </p>
+          <p className="workspace-welcome-description text-sm text-sp-muted leading-relaxed">
+            {recent ? "Pick up a conversation, or start with something new." : "Share an idea, ask a question, or tell your Sapien what matters to you."}
+          </p>
+        </div>
+      </div>
 
       {recent && <button className="workspace-resume" onClick={onResume} disabled={loading}><span>Continue your last conversation <span aria-hidden="true">→</span></span><small>{recent.title || 'Untitled conversation'}</small></button>}
       <div className="grid grid-cols-2 gap-2 w-full max-w-sm">
@@ -535,7 +538,7 @@ export function ChatWindow() {
       </aside>
       <div className="min-w-0 flex-1 flex flex-col relative">
       <div className="workspace-chat-heading">
-        <div><h2>Conversation</h2><p>With {currentSapiens?.name ?? 'Sapiens'}</p></div>
+        <div className="workspace-chat-title"><h2>Conversation</h2><p>With {currentSapiens?.name ?? 'Sapiens'}</p></div>
         <div className="flex items-center gap-2">
           {isProcessing && <span role="status" className="text-sm text-sp-muted">Sending…</span>}
           <button onClick={() => setHistoryOpen(open => !open)} aria-expanded={historyOpen} className="workspace-history-toggle"><History size={16} />History</button>
@@ -554,7 +557,7 @@ export function ChatWindow() {
         <div className="absolute top-0 left-0 right-0 h-8 z-10 pointer-events-none"
           style={{ background: 'linear-gradient(to bottom, rgb(var(--sp-panel-rgb, 8 12 22) / 0.6), transparent)' }} />
         <div ref={scrollRef} onScroll={handleScroll}
-          className="workspace-scrollbar h-full overflow-y-auto px-5 py-5 space-y-5">
+          className="workspace-scrollbar h-full overflow-y-auto px-4 py-3 space-y-4">
           {msgs.length === 0
             ? <EmptyState name={currentSapiens?.name ?? 'Sapiens'} recent={latestChat} onResume={() => latestChat && void selectChat(latestChat.thread_id)} loading={detailLoading || isProcessing} onHint={(h) => { setInput(h); textareaRef.current?.focus(); }} />
             : (
@@ -597,7 +600,7 @@ export function ChatWindow() {
           ? 'This Sapien is being deleted. New messages are unavailable.'
           : 'This Sapien is inactive. Choose “Chat only” above to talk without autonomous work, or “Activate” to resume all work.'}
       </p>}
-      <div className="flex-shrink-0 relative p-3" style={{ background: 'var(--sp-recessed, rgba(0,0,0,0.25))', borderTop: '1px solid rgb(var(--sp-ink-rgb, 255 255 255) / 0.05)' }}>
+      <div className="flex-shrink-0 relative p-2" style={{ background: 'var(--sp-recessed, rgba(0,0,0,0.25))', borderTop: '1px solid rgb(var(--sp-ink-rgb, 255 255 255) / 0.05)' }}>
         {attachmentsOpen && (
           <div
             className="absolute z-30 bottom-[calc(100%-4px)] left-3 right-3 sm:right-auto sm:w-[390px] h-[min(30rem,70vh)] rounded-2xl"
