@@ -1,0 +1,7 @@
+/* Lab-only density; world pages and shared card defaults stay unchanged. */
+.simulation-lab [data-slot="card"] { gap:12px; }
+.simulation-lab [data-slot="card-header"] { padding:12px 16px 0; }
+.simulation-lab [data-slot="card-content"] { padding-inline:16px; }
+.simulation-lab [data-slot="card-content"]:last-child { padding-bottom:16px; }
+.simulation-lab #simulation-run-picker { flex-basis:420px; max-width:100%; }
+.simulation-lab #simulation-run-picker:focus-visible { outline:2px solid var(--ring); outline-offset:3px; }
