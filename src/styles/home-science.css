@@ -36,8 +36,9 @@
 .home-nav-actions :is(a,button):hover { background:var(--home-soft); }
 .home-nav-actions .home-create-button { border:1px solid var(--home-line); }
 .home-nav-actions .home-signout { width:44px; padding:10px; }
-.home-intro { display:flex; align-items:center; justify-content:space-between; gap:32px; padding:24px 0 20px; margin-bottom:0; }
-.home-eyebrow { font:11px/1.5 ui-monospace,Consolas,monospace; letter-spacing:.14em; color:var(--home-accent); margin:0 0 12px; }
+.home-intro { display:flex; align-items:center; justify-content:space-between; gap:20px; padding:16px 0; margin-bottom:0; }
+.home-intro-actions { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px 16px; }
+.home-eyebrow { font:11px/1.5 ui-monospace,Consolas,monospace; letter-spacing:.14em; color:var(--home-accent); margin:0 0 8px; }
 .sapiens-home-screen .home-intro h1 { font-family:'Source Serif 4',Georgia,serif; font-size:clamp(28px,3vw,36px); font-weight:450; line-height:1.15; letter-spacing:-1px; margin:0; }
 .home-intro h1+p { margin-top:8px; font-size:15px; line-height:1.6; color:var(--home-muted); }
 .sapiens-home-screen .home-intro-core { width:64px; height:64px; margin-right:0; }
@@ -47,8 +48,8 @@
 .home-directory-content input { background:var(--home-panel); border-radius:6px; height:48px; font-size:15px; }
 .home-directory-content>div>div:first-child { max-width:540px; margin-bottom:16px; }
 .home-identity-list { border:1px solid var(--home-line); border-radius:6px; overflow:hidden; background:var(--home-panel); }
-.home-identity-row { display:grid; grid-template-columns:minmax(150px,1.2fr) minmax(120px,1fr) minmax(180px,230px) auto; align-items:center; gap:16px; min-height:88px; padding:12px 18px; }
-.home-identity-row.has-created-date { grid-template-columns:minmax(150px,1.2fr) minmax(120px,1fr) minmax(140px,.85fr) minmax(180px,230px) auto; }
+.home-identity-row { display:grid; grid-template-columns:minmax(150px,1.2fr) minmax(120px,1fr) minmax(180px,300px) auto; align-items:center; gap:16px; min-height:76px; padding:10px 16px; }
+.home-identity-row.has-created-date { grid-template-columns:minmax(150px,1.2fr) minmax(120px,1fr) minmax(140px,.85fr) minmax(180px,300px) auto; }
 .home-intro-create { flex-shrink:0; }
 .home-identity-row+.home-identity-row { border-top:1px solid var(--home-line); }
 .home-identity-row:hover,.home-identity-row:focus-within { background:var(--home-soft); }
@@ -94,7 +95,8 @@
   .home-nav { flex-direction:column; gap:12px; }
   .home-nav-actions { max-width:none; width:100%; justify-content:flex-start; gap:4px; }
   .home-nav-actions>a,.home-nav-actions>button { font-size:13px; padding:8px; }
-  .home-intro { padding:18px 0; gap:12px; }
+  .home-intro { padding:14px 0; gap:12px; }
+  .home-intro-actions { width:100%; }
   .sapiens-home-screen .home-intro-core { width:72px; height:72px; margin-right:0; }
   .home-intro h1+p { font-size:15px; }
   .home-eyebrow { font-size:9px; }
@@ -108,7 +110,7 @@
 .sapiens-home-screen .home-identity-action .home-open-button { width:auto; min-width:80px; padding:8px 12px; background:transparent; border-color:var(--home-line); color:var(--home-ink); }
 .sapiens-home-screen .home-identity-action .home-open-button:hover { border-color:var(--home-accent); background:var(--home-bg); }
 @media(max-width:1000px) {
-  .home-identity-row,.home-identity-row.has-created-date { grid-template-columns:minmax(0,1fr) minmax(180px,230px) auto; gap:4px 16px; padding:14px; }
+  .home-identity-row,.home-identity-row.has-created-date { grid-template-columns:minmax(0,1fr) minmax(180px,230px) auto; gap:4px 16px; padding:10px 12px; }
   .home-identity-name { grid-column:1; grid-row:1; }
   .home-identity-focus { grid-column:1; grid-row:2; padding-left:48px; }
   .home-identity-date { grid-column:1; grid-row:3; padding-left:48px; }
