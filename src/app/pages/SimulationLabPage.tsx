@@ -1,6 +1,5 @@
 import { SimulationPauseNotice } from '../components/simulation/SimulationPauseNotice';
 import { SimulationPurpose } from '../components/simulation/SimulationPurpose';
-import '../../styles/simulation-lab.css';
 import { useRestoreSapienSelection } from '../components/navigation/useRestoreSapienSelection';
 import { LiveSimulatedTime } from '../components/simulation/LiveSimulatedTime';
 import { useAuth } from '../contexts/AuthContext';
@@ -972,13 +971,13 @@ export function SimulationLabPage() {
     item.sapien_id == null
       ? null
       : allSapiens.find((sapien) => Number(sapien.id) === item.sapien_id);
-  const worldOverviewPath = (item: SimulationRun, section: "overview" | "messages" | "jira" | "results" = "overview") => {
+  const worldOverviewPath = (item: SimulationRun) => {
     const name = sapienForRun(item)?.name ||
       (String(item.sapien_id) === shortcutId ? verifiedShortcutName : null);
     const query = name && item.sapien_id != null
       ? `?${new URLSearchParams({ sapienId: String(item.sapien_id), sapienName: name })}`
       : '';
-    return `/admin/simulations/${encodeURIComponent(item.run_id)}/world/${section}${query}`;
+    return `/admin/simulations/${encodeURIComponent(item.run_id)}/world/overview${query}`;
   };
   const participantPhase = run?.participant?.phase
     ? ({
@@ -1013,9 +1012,9 @@ export function SimulationLabPage() {
     return { issue_key: issueKey };
   };
   return (
-    <div className="simulation-lab min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground">
       <header className="border-b">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-2">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-4">
           <div className="flex min-w-0 flex-wrap items-center gap-3">
             {shortcutId && <button
               type="button"
@@ -1057,21 +1056,18 @@ export function SimulationLabPage() {
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-7xl px-4 py-3">
-        <div className="min-w-0 space-y-3">
-        <div className="simulation-lab-intro">
-        <div className="space-y-2">
+      <main className="mx-auto grid max-w-7xl items-start gap-5 px-4 py-6 lg:grid-cols-[minmax(0,1fr)_280px]">
+        <div className="min-w-0 space-y-5">
+        <div className="space-y-3">
           <SimulationPurpose sapienName={purposeSapienName} />
           {shortcutId && (
-            <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 text-sm">
+            <div className="min-w-0 text-sm">
               <strong>{verifiedShortcutName || `Sapiens ${shortcutId}`} simulations</strong>
-              <p className="text-sm text-muted-foreground">
+              <p className="mt-1 text-sm text-muted-foreground">
                 Showing runs for Sapiens ID {shortcutId}. New simulations use this Sapiens.
               </p>
             </div>
           )}
-
-        </div>
 
         </div>
         {selectionRestore.restoring && (
@@ -1112,24 +1108,11 @@ export function SimulationLabPage() {
             </span>
           </div>
         )}
-        <section aria-label="Retained simulations">
-          <div className="flex flex-wrap items-center gap-3">
-            <label htmlFor="simulation-run-picker" className="text-sm font-semibold">Retained runs</label>
-            <select id="simulation-run-picker" className="min-h-11 min-w-0 flex-1 rounded-md border bg-background px-3 text-sm text-foreground" value={selectedId} disabled={!!busy || !visibleRuns.length} onChange={event => chooseRun(event.target.value)}>
-              <option value="" disabled>{visibleRuns.length ? 'Choose a simulation' : 'No retained runs'}</option>
-              {visibleRuns.map(item => <option key={item.run_id} value={item.run_id}>
-                {item.case_id} · {item.participant_mode === 'sapien' ? (sapienForRun(item)?.name ?? 'Sapiens') + ' #' + item.sapien_id : item.participant_id || 'Environment only'} · {statusLabel(item.status)}{item.archived ? ' · Saved history' : ''} · {item.run_id}
-              </option>)}
-            </select>
-            <span className="text-sm text-muted-foreground">{visibleRuns.length} returned{shortcutId ? ' for this Sapien' : ''}</span>
-          </div>
-
-        </section>
         {run && (
           <section className="overflow-hidden rounded-2xl border border-violet-500/25 bg-gradient-to-br from-violet-500/15 via-card to-card shadow-sm">
-            <div className="grid gap-3 p-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
+            <div className="grid gap-6 p-5 sm:p-7 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
               <div className="min-w-0">
-                <div className="mb-2 flex flex-wrap items-center gap-2">
+                <div className="mb-4 flex flex-wrap items-center gap-2">
                   <Badge className="gap-1.5 rounded-full px-3 py-1">
                     <span className="size-1.5 rounded-full bg-current" />
                     {statusLabel(run.status)}
@@ -1140,7 +1123,7 @@ export function SimulationLabPage() {
                   </span>
                 </div>
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-violet-600 dark:text-violet-300">
-                  Selected simulation
+                  {terminal.has(run.status) || run.archived ? "Latest simulation" : "Current simulation"}
                 </p>
                 <h2 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">
                   {run.case_id}
@@ -1154,8 +1137,7 @@ export function SimulationLabPage() {
                       : "Environment-only simulation"}
                 </p>
               </div>
-              <nav className="flex flex-wrap items-center gap-2" aria-label="Explore selected simulation">
-              <Button asChild className="min-h-11">
+              <Button asChild size="lg" className="h-12 w-full px-6 lg:w-auto">
                 <Link
                   to={worldOverviewPath(run)}
                 >
@@ -1163,14 +1145,8 @@ export function SimulationLabPage() {
                   <ArrowRight className="size-4" />
                 </Link>
               </Button>
-                {([['messages', 'Teams messages'], ['jira', 'Jira'], ['results', 'Results']] as const).map(([section, label]) => (
-                  <Button key={section} asChild variant="outline" className="min-h-11">
-                    <Link to={worldOverviewPath(run, section)}>{label}</Link>
-                  </Button>
-                ))}
-              </nav>
             </div>
-            <div className="space-y-2 border-t px-4 py-3">
+            <div className="space-y-3 border-t px-5 py-4 sm:px-7">
               <div className="flex flex-wrap items-center gap-3" aria-label="Current simulation controls" aria-busy={!!busy}>
                   {allowed("resume") && (
                     <Button
@@ -1272,30 +1248,76 @@ export function SimulationLabPage() {
             </div>
           </section>
         )}
-          <aside aria-label="About simulation memory" className="simulation-lab-memory border-y py-3">
-            <h2 className="flex items-center gap-2 text-sm font-medium">
-              <CircleHelp className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-              What your Sapien remembers
-            </h2>
-            <div className="space-y-1"><p className="text-sm leading-6 text-muted-foreground">
-              Teams and Jira activity stays inside the simulation. Your Sapien keeps what it learns,
-              even after the run ends. When the simulation stops, the Sapien becomes inactive.
-            </p>
-            <p className="text-sm leading-6 text-muted-foreground">
-              Use a separate test Sapien if you don’t want simulation experiences added to an existing Sapien’s memory.
-            </p>
+        {run && visibleRuns.length > 1 && (
+          <section>
+            <div className="mb-3 flex items-end justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-semibold">Recent simulations</h2>
+                <p className="text-sm text-muted-foreground">
+                  Open a run to explore its workplace and saved activity.
+                </p>
+              </div>
             </div>
-          </aside>
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {visibleRuns
+                .filter((item) => item.run_id !== run.run_id)
+                .slice(0, 6)
+                .map((item) => {
+                  const bound = sapienForRun(item);
+                  return (
+                    <article
+                      key={item.run_id}
+                      className="group rounded-xl border bg-card p-4 transition-colors hover:border-violet-500/40"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate font-medium">{item.case_id}</p>
+                          <p className="mt-1 truncate text-xs text-muted-foreground">
+                            {item.participant_mode === "sapien"
+                              ? `${bound?.name ?? "Sapiens"} · ID ${item.sapien_id}`
+                              : item.participant_id}
+                          </p>
+                        </div>
+                        <Badge variant="secondary">
+                          {statusLabel(item.status)}
+                        </Badge>
+                      </div>
+                      <div className="mt-4 flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={!!busy}
+                          onClick={() => {
+                            chooseRun(item.run_id);
+                            window.scrollTo({ top: 0, behavior: "instant" });
+                          }}
+                        >
+                          View controls
+                        </Button>
+                        <Button asChild variant="outline" size="sm">
+                          <Link
+                            to={worldOverviewPath(item)}
+                          >
+                            Open world <ArrowRight className="size-3.5" />
+                          </Link>
+                        </Button>
+                      </div>
+                    </article>
+                  );
+                })}
+            </div>
+          </section>
+        )}
         <details open={!run} className="group rounded-xl border bg-card">
-          <summary className="cursor-pointer list-none px-4 py-3 font-semibold [&::-webkit-details-marker]:hidden">
+          <summary className="cursor-pointer list-none px-5 py-4 font-semibold [&::-webkit-details-marker]:hidden">
             <span className="flex items-center justify-between gap-3">
               <span>{run ? "Schedule another simulation" : "Set up a simulation"}</span>
               <span className="text-xs font-normal text-muted-foreground group-open:hidden">Show setup</span>
               <span className="hidden text-xs font-normal text-muted-foreground group-open:inline">Hide setup</span>
             </span>
           </summary>
-          <div className="grid gap-3 border-t p-3">
-          <Card>
+          <div className="grid gap-5 border-t p-4 lg:grid-cols-[minmax(0,1fr)_300px]">
+          <Card className={run ? "hidden" : undefined}>
             <CardHeader>
               <CardTitle>
                 {shortcutId ? "1. Selected Sapiens" : "1. Select a Sapiens"}
@@ -1495,10 +1517,62 @@ export function SimulationLabPage() {
               )}
             </CardContent>
           </Card>
-
-          </div>
-        </details>
-          <div className="mt-2"><details className="text-sm text-muted-foreground">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">
+                Retained runs
+                {shortcutId
+                  ? ` for ${verifiedShortcutName || `Sapiens ${shortcutId}`}`
+                  : ""}
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">Running and past simulations stay here for review.</p>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {!visibleRuns.length && (
+                <p className="text-sm text-muted-foreground">
+                  {shortcutId
+                    ? "No live runs or saved history for this Sapiens."
+                    : "No live runs or saved history."}
+                </p>
+              )}
+              {visibleRuns.map((item) => {
+                const bound = sapienForRun(item);
+                const identity =
+                  item.participant_mode === "sapien"
+                    ? `${bound?.name ?? "Sapiens"} (ID ${item.sapien_id})`
+                    : item.participant_mode === "manual"
+                      ? `Manual participant: ${item.participant_id}`
+                      : "Environment-only run";
+                return (
+                  <button
+                    key={item.run_id}
+                    aria-pressed={selectedId === item.run_id}
+                    onClick={() => chooseRun(item.run_id)}
+                    className={`w-full rounded-lg border p-3 text-left text-sm ${selectedId === item.run_id ? "border-violet-500 bg-violet-500/5" : ""}`}
+                  >
+                    <span className="block truncate font-medium">
+                      {identity}
+                    </span>
+                    <span className="block truncate text-xs text-muted-foreground">
+                      {item.case_id}
+                    </span>
+                    <span className="mt-1 flex items-center justify-between">
+                      <span className="flex gap-1">
+                        <Badge variant="secondary">
+                          {statusLabel(item.status)}
+                        </Badge>
+                        {item.archived && (
+                          <Badge variant="outline">Saved history</Badge>
+                        )}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {item.run_id.slice(0, 12)}…
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
+              <details className="text-xs text-muted-foreground">
                 <summary>Storage and worker diagnostics</summary>
                 <p>
                   Worker {catalog?.worker_id ?? "—"} ·{" "}
@@ -1509,11 +1583,15 @@ export function SimulationLabPage() {
                   controls and recovery follow the capabilities returned for
                   each run.
                 </p>
-              </details></div>
+              </details>
+            </CardContent>
+          </Card>
+          </div>
+        </details>
         {run && (
           <>
             <details className="group overflow-hidden rounded-xl border bg-card">
-              <summary className="flex cursor-pointer list-none items-center gap-3 px-4 py-3 [&::-webkit-details-marker]:hidden">
+              <summary className="flex cursor-pointer list-none items-center gap-3 px-5 py-4 [&::-webkit-details-marker]:hidden">
                 <span className="grid size-9 place-items-center rounded-lg bg-muted text-muted-foreground">
                   <Activity className="size-4" />
                 </span>
@@ -2202,7 +2280,19 @@ export function SimulationLabPage() {
           </>
         )}
         </div>
-
+          <aside aria-label="About simulation memory" className="self-start rounded-xl border bg-card p-4 lg:sticky lg:top-6">
+            <h2 className="flex items-center gap-2 text-sm font-medium">
+              <CircleHelp className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+              What your Sapien remembers
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              Teams and Jira activity stays inside the simulation. Your Sapien keeps what it learns,
+              even after the run ends. When the simulation stops, the Sapien becomes inactive.
+            </p>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              Use a separate test Sapien if you don’t want simulation experiences added to an existing Sapien’s memory.
+            </p>
+          </aside>
       </main>
     </div>
   );
