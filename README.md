@@ -6,7 +6,7 @@ This is a code bundle for Sapiens. The original project is available at https://
 ## SSH connections
 
 On a Sapien's Connections page, choose SSH and enter the VM host and dedicated
-Linux username. **Generate SSH key** asks the backend to generate and encrypt a key;
+Linux username. **Generate access key** asks the backend to generate and encrypt a key;
 the browser receives only the public key. Copy it to the VM's authorized keys using
 the VM's administration process. Then edit the connection, enter its independently
 trusted SSH host fingerprint and save to verify. The fingerprint identifies the VM;
@@ -28,6 +28,20 @@ choosing an account. Account choices include IDs, host/site, identity and config
 policy; the selected account shows additional restrictions and its last verified
 identity. Authentication does not prove permission for every requested operation.
 Microsoft 365 includes Teams; preset fields use choices supplied by the backend.
+
+The backend supplies setup steps, field explanations and current-state guidance.
+The shared `ConnectionFields` component keeps required fields visible and groups
+optional advanced settings; `ConnectionGuidance` presents instructions and public
+values without knowing which service produced them. Failed verification shows
+recovery guidance; descriptions distinguish authentication from task permissions.
+Saved accounts show identity and access limits once. Technical IDs and filters stay
+under Advanced details; verified accounts collapse supplementary setup instructions,
+while incomplete setup keeps its steps visible. Provider `choice_details` supplies
+readable labels and selected-option explanations without changing submitted values.
+Administrators remain responsible for external setup where the provider says it is
+needed. Guidance does not add an automatic sign-in or provisioning flow. Deploy the
+backend's additive guidance responses before this frontend, including for public-key
+display; no new API endpoint is required.
 
 Generated SSH accounts show their saved setup request beside verification actions,
 including after a page reload. A pending link makes verification fulfill that

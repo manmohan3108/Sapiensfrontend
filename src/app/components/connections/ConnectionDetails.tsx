@@ -1,5 +1,9 @@
-import { useId, useState } from 'react';
-import type { SapiensConnection, SapiensConnectionRequest } from '../../types/connectionTypes';
+import { useState } from 'react';
+import type { ConnectionProvider, SapiensConnection, SapiensConnectionRequest } from '../../types/connectionTypes';
+
+const verifiedIdentityLabels: Record<string, string> = {
+  mail: 'Email', userPrincipalName: 'Sign-in name', displayName: 'Name',
+};
 
 function dateLabel(value: string | null) {
   if (!value) return 'Time not recorded';
@@ -16,50 +20,38 @@ export function connectionAccountLabel(connection: SapiensConnection): string {
     connection.workspace || 'No workspace', connection.account_identifier || 'No identity',
     typeof metadata.port === 'number' ? `port ${metadata.port}` : '',
     metadata.read_only === true ? 'Read-only' : metadata.read_only === false ? 'Writes enabled where permitted' : '',
-    typeof metadata.preset === 'string' ? `preset: ${metadata.preset}` : '',
     connection.status.replaceAll('_', ' '),
   ].filter(Boolean).join(' · ');
 }
 
-export function ConnectionAccountDetails({ connection }: { connection: SapiensConnection }) {
+export function ConnectionAccountDetails({ connection, provider }: { connection: SapiensConnection; provider?: ConnectionProvider }) {
   const metadata = connection.metadata;
   const identity = metadata.provider_identity;
   const verified = identity && typeof identity === 'object' ? Object.entries(identity)
-    .filter(([key, value]) => ['mail', 'userPrincipalName', 'displayName', 'id'].includes(key) && typeof value === 'string')
-    .map(([key, value]) => `${key}: ${value}`).join('; ') : '';
+    .filter(([key, value]) => Object.keys(verifiedIdentityLabels).includes(key) && typeof value === 'string' && value)
+    .map(([key, value]) => ({ label: verifiedIdentityLabels[key], value: String(value) })) : [];
+  const choices = provider?.fields.filter(field => field.choices?.length && typeof metadata[field.name] === 'string') ?? [];
+  const technical = Object.entries({ enabled_tools: 'Tool name filter', allowed_scopes: 'Permission filter', command_timeout: 'Command time limit (seconds)', preset: 'Tool collection code' })
+    .map(([key, label]) => ({ label, value: metadata[key] }))
+    .filter(item => (typeof item.value === 'string' || typeof item.value === 'number') && item.value !== '');
+  if (identity && typeof identity === 'object' && 'id' in identity && typeof identity.id === 'string' && identity.id) {
+    technical.push({ label: 'Verified account ID', value: identity.id });
+  }
   return <div className="my-3 space-y-2 text-sm break-words">
-    <p>{connectionAccountLabel(connection)}</p>
-    {verified && <p className="text-sp-muted">Last verified identity: {verified}</p>}
-    {Object.entries({ access_note: 'Owner access description', enabled_tools: 'Tool filter', allowed_scopes: 'Configured scopes', command_timeout: 'Command timeout (seconds)' }).map(([key, label]) => {
-      const value = metadata[key];
-      if ((typeof value !== 'string' && typeof value !== 'number') || value === '') return null;
-      return <p key={key} className="text-sp-muted">{label}: {value}</p>;
-    })}
+    <dl className="grid gap-3 sm:grid-cols-2">
+      <div><dt className="text-sp-muted">{provider?.fields.find(field => field.source === 'workspace')?.label ?? 'Workspace'}</dt><dd>{connection.workspace || 'Not provided'}</dd></div>
+      <div><dt className="text-sp-muted">{provider?.fields.find(field => field.source === 'account_identifier')?.label ?? 'Account'}</dt><dd>{connection.account_identifier || 'Not provided'}</dd></div>
+      <div><dt className="text-sp-muted">Connection</dt><dd>#{connection.id}</dd></div>
+      {typeof metadata.port === 'number' && <div><dt className="text-sp-muted">Port</dt><dd>{metadata.port}</dd></div>}
+      {choices.map(field => <div key={field.name}><dt className="text-sp-muted">{field.label}</dt><dd>{field.choice_details?.[String(metadata[field.name])]?.label ?? String(metadata[field.name])}</dd></div>)}
+    </dl>
+    <p className="text-sp-muted">{metadata.read_only === true ? 'Reading only. Change operations are disabled.' : 'Actions are limited by the account’s permissions and any configured restrictions.'}</p>
+    {typeof metadata.access_note === 'string' && metadata.access_note && <p>Owner’s access description: {metadata.access_note}</p>}
+    {verified.length > 0 && <div><p className="font-medium">Last verified account</p><dl className="mt-1 grid gap-2 sm:grid-cols-2">{verified.map(item => <div key={item.label}><dt className="text-sp-muted">{item.label}</dt><dd>{item.value}</dd></div>)}</dl></div>}
+    {technical.length > 0 && <details><summary className="cursor-pointer text-sp-muted">Advanced details</summary><dl className="mt-2 space-y-2">{technical.map(item => <div key={item.label}><dt className="text-sp-muted">{item.label}</dt><dd>{String(item.value)}</dd></div>)}</dl></details>}
   </div>;
 }
 
-export function ConnectionPublicKey({ connection }: { connection: SapiensConnection }) {
-  const publicKeyId = useId();
-  const [copyStatus, setCopyStatus] = useState('');
-  const publicKey = connection.metadata.public_key;
-  if (typeof publicKey !== 'string' || !publicKey) return null;
-  const copy = async () => {
-    try { await navigator.clipboard.writeText(publicKey); setCopyStatus('Public key copied'); }
-    catch { setCopyStatus('Select the public key below and copy it manually.'); }
-  };
-  return <section className="mt-4 space-y-3 rounded-lg border border-sp-line p-4" aria-label="SSH public key installation">
-    <h3 className="text-sm font-medium">{connection.status === 'connected' ? 'SSH public key' : 'Install and verify SSH access'}</h3>
-    <p className="text-sm text-sp-muted">Install this public key for {connection.account_identifier} on {connection.workspace}. The private key is encrypted on the server and is never displayed.</p>
-    <label className="block text-sm" htmlFor={publicKeyId}>Public key</label>
-    <textarea id={publicKeyId} readOnly value={publicKey} rows={3} spellCheck={false}
-      className="w-full rounded border border-sp-line bg-sp-panel p-2 font-mono text-sm text-sp-ink focus-visible:ring-2 focus-visible:ring-sp-accent" />
-    <button type="button" onClick={() => void copy()} className="rounded border border-sp-line px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-sp-accent">Copy public key</button>
-    <p role="status" className="text-sm text-sp-muted">{copyStatus}</p>
-    {connection.status !== 'connected' && <p className="text-sm text-sp-muted">After installation, edit this connection to enter the VM’s trusted host fingerprint, then save and verify. The host fingerprint identifies the VM; it is different from this public key. SSH tools remain unavailable until verification succeeds.</p>}
-    <p className="text-sm text-sp-muted">Use a dedicated non-root account. VM file permissions and database roles control access; the access description does not enforce it. Keep application secrets and administrator privileges out of this account’s reach.</p>
-    <p className="text-sm text-sp-muted">To replace the key, create and verify a separate connection first. Disconnect removes local credentials; remove this public key from the VM to revoke it there. An already-running command may continue.</p>
-  </section>;
-}
 
 export function FulfilledRequests({ requests, connections }: {
   requests: SapiensConnectionRequest[]; connections: SapiensConnection[];
