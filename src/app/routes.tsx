@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate } from 'react-router';
 import { LandingPage } from './pages/LandingPage';
 import { WorkspacePage } from './pages/WorkspacePage';
 import { ConnectionsPage } from './pages/ConnectionsPage';
+import { ConnectionAuthorizationReturn } from './pages/ConnectionAuthorizationReturn';
 import { AnalysePage } from './pages/AnalysePage';
 import { SimulationLabPage } from './pages/SimulationLabPage';
 import { SimulationWorldPage } from './pages/SimulationWorldPage';
@@ -20,6 +21,7 @@ function RoleHome() {
 }
 
 export const router = createBrowserRouter([
+  { path: '/connection-callback', Component: ConnectionAuthorizationReturn, ErrorBoundary },
   { path: '/', Component: ScienceLandingPage, ErrorBoundary },
   { path: '/research', Component: ResearchPage, ErrorBoundary },
   { path: '/research/:slug', Component: ResearchPage, ErrorBoundary },

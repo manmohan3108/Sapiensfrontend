@@ -22,7 +22,7 @@ export interface ConnectionProvider {
   setup?: ConnectionGuidance | null;
   disconnect_notice?: string;
   fields: ProviderField[];
-  capabilities?: { tools: boolean; notifications: boolean; subscriptions: boolean; messaging: boolean; key_generation?: boolean };
+  capabilities?: { tools: boolean; notifications: boolean; subscriptions: boolean; messaging: boolean; key_generation?: boolean; browser_authorization?: boolean };
 }
 
 export interface ConnectionGuidance {

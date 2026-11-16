@@ -23,6 +23,23 @@ continue after disconnect. The frontend never generates, receives or stores priv
 
 ## Fulfilling access requests
 
+Providers with `browser_authorization` use the shared sign-in flow. GitLab opens
+its own consent page; `/connection-callback` returns a one-time code to the original
+Connections window, which submits it through the authenticated backend. No provider
+access/refresh token enters frontend responses or storage. The original request
+stays visible and pending until the owner reviews the returned username/site and
+confirms the account. Closing the sign-in window cancels that attempt; reopening a
+saved account allows a new attempt. Popups and a same-origin HTTPS callback are
+required. Follow the backend Connections README for administrator registration and
+configuration; the frontend must not ask owners to paste application secrets.
+
+`browserAuthorization` owns the browser handoff, `ConnectionAuthorizationReturn`
+only relays the return to the initiating window, and backend capabilities/guidance
+control the shared form. Unconfirmed accounts show a review action and cannot fulfill
+a request through ordinary verification. Backend ownership checks, expiring state,
+PKCE and explicit confirmation remain authoritative. New access requests require
+a reason; historical requests may still have none.
+
 Review the request's target, account requirement and intended operations before
 choosing an account. Account choices include IDs, host/site, identity and configured
 policy; the selected account shows additional restrictions and its last verified
@@ -39,9 +56,9 @@ under Advanced details; verified accounts collapse supplementary setup instructi
 while incomplete setup keeps its steps visible. Provider `choice_details` supplies
 readable labels and selected-option explanations without changing submitted values.
 Administrators remain responsible for external setup where the provider says it is
-needed. Guidance does not add an automatic sign-in or provisioning flow. Deploy the
-backend's additive guidance responses before this frontend, including for public-key
-display; no new API endpoint is required.
+needed. Guidance alone does not add sign-in or provisioning; browser authorization
+is an explicit provider capability. Deploy the matching backend authorization
+endpoint and guidance responses with this frontend, including public-key display.
 
 Generated SSH accounts show their saved setup request beside verification actions,
 including after a page reload. A pending link makes verification fulfill that

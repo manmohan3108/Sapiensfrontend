@@ -23,10 +23,10 @@ function ConnectionField({ field, value, error, editing, busy, onChange }: Field
     {field.type === 'boolean'
       ? <input id={id} name={field.name} type="checkbox" checked={Boolean(value)} disabled={busy}
           onChange={event => onChange(field.name, event.target.checked)} aria-describedby={describedBy} className="h-5 w-5" />
-      : field.choices?.length
-        ? <select id={id} name={field.name} value={String(value ?? '')} disabled={busy} aria-invalid={Boolean(error)} aria-describedby={describedBy}
+      : field.choices !== undefined
+        ? <select id={id} name={field.name} value={String(value ?? '')} disabled={busy || field.choices.length === 0} aria-invalid={Boolean(error)} aria-describedby={describedBy}
             onChange={event => onChange(field.name, event.target.value)} className={style}>
-            <option value="">Choose {field.label.toLowerCase()}…</option>
+            <option value="">{field.choices.length ? `Choose ${field.label.toLowerCase()}…` : 'No options available'}</option>
             {value && !field.choices.includes(String(value)) && <option value={String(value)} disabled>{String(value)} (unsupported value)</option>}
             {field.choices.map(choice => <option key={choice} value={choice}>{field.choice_details?.[choice]?.label ?? choice}</option>)}
           </select>

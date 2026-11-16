@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { useSapiensStore } from '../core/state/sapiensStore';
 import { ConnectionRequestError, connectionsService } from '../core/services/connectionsService';
+import { authorizeConnection } from '../core/services/browserAuthorization';
 import { SapiensBrandMark } from '../components/customer/SapiensBrandMark';
 import '../../styles/connections.css';
 import type {
@@ -52,7 +53,7 @@ function RequestDetails({ request }: { request: SapiensConnectionRequest }) {
   return <div className="my-3 space-y-2 text-sm">
     <p className="font-medium">Request #{request.id}</p>
     <ConnectionGuidance guidance={request.guidance} />
-    <p className="break-words text-sp-muted">{request.reason || 'Access is needed to continue work.'}</p>
+    <p className="break-words text-sp-muted">{request.reason || 'No reason was recorded for this older request.'}</p>
     {access && <dl className="grid gap-2 sm:grid-cols-2">
       <div><dt className="text-sp-muted">Target or workspace</dt><dd className="break-words">{access.target || 'Owner to specify'}</dd></div>
       <div><dt className="text-sp-muted">Account requirement</dt><dd className="break-words">{access.account || 'Owner to choose'}</dd></div>
@@ -73,12 +74,13 @@ function savedSetupRequest(connection: SapiensConnection, requests: SapiensConne
   return requests.find(item => item.id === connection.metadata.setup_request_id && item.provider === connection.provider);
 }
 
-function ProviderForm({ provider, request, connection, connections, busy, onCancel, onSubmit, onFulfill, onEditConnection }: {
+function ProviderForm({ provider, request, connection, connections, busy, onCancel, onSubmit, onFulfill, onEditConnection, onConfirm }: {
   provider: ConnectionProvider;
   request?: SapiensConnectionRequest;
   connection?: SapiensConnection;
   connections: SapiensConnection[];
   onFulfill: (connectionId: number) => Promise<void>;
+  onConfirm: (connectionId: number) => Promise<void>;
   onEditConnection: (connectionId: number) => void;
   busy: boolean;
   onCancel: () => void;
@@ -93,7 +95,7 @@ function ProviderForm({ provider, request, connection, connections, busy, onCanc
     return [field.name, String(connection.metadata?.[field.name] ?? '')];
   })), [provider, connection]);
   const headingRef = useRef<HTMLHeadingElement>(null);
-  useEffect(() => { headingRef.current?.focus(); }, []);
+  useEffect(() => { headingRef.current?.focus(); }, [connection?.metadata.setup_stage]);
   const [values, setValues] = useState<Record<string, ConnectionFormValue>>(initial);
   const [accountLabel, setAccountLabel] = useState(connection?.account_label ?? '');
   const [selectedConnection, setSelectedConnection] = useState('');
@@ -101,6 +103,8 @@ function ProviderForm({ provider, request, connection, connections, busy, onCanc
   const requestBlocked = Boolean(request && request.status !== 'pending');
   const [generationId] = useState(() => crypto.randomUUID());
   const generatesKey = Boolean(provider.capabilities?.key_generation);
+  const browserAuthorization = Boolean(provider.capabilities?.browser_authorization);
+  const awaitingConfirmation = browserAuthorization && connection?.metadata.setup_stage === 'awaiting_confirmation';
   const [validation, setValidation] = useState<Record<string, string>>({});
 
   const submit = async (event: React.FormEvent) => {
@@ -142,7 +146,7 @@ function ProviderForm({ provider, request, connection, connections, busy, onCanc
 
   return <form onSubmit={submit} className="connections-form rounded-2xl p-5" style={{ background: 'rgb(var(--sp-panel-rgb, 10 17 31) / .96)', border: `1px solid color-mix(in srgb, ${accent} 20.78%, transparent)`, boxShadow: '0 24px 70px rgb(var(--sp-shadow-rgb, 0 0 0) / var(--sp-shadow-opacity, .42))' }}>
     <div className="mb-5 flex items-start justify-between gap-4">
-      <div><div className="flex items-center gap-2"><KeyRound className="h-4 w-4" style={{ color: accent }} /><h2 ref={headingRef} tabIndex={-1} className="text-sm font-semibold text-sp-ink">{connection ? `Edit ${connection.account_label}` : `Connect ${provider.label}`}</h2></div><p className="mt-1 text-xs text-sp-muted">{connection ? 'Leave credential fields blank to keep their saved values. Stored credentials are never displayed.' : 'Enter the account details this service requires. Saved credentials are never displayed.'}</p></div>
+      <div><div className="flex items-center gap-2"><KeyRound className="h-4 w-4" style={{ color: accent }} /><h2 ref={headingRef} tabIndex={-1} className="text-sm font-semibold text-sp-ink">{connection ? `Review ${connection.account_label}` : `Connect ${provider.label}`}</h2></div><p className="mt-1 text-xs text-sp-muted">{browserAuthorization ? 'Sign in through the service in a separate window. Return here to confirm the account; do not paste passwords or tokens.' : connection ? 'Leave credential fields blank to keep their saved values. Stored credentials are never displayed.' : 'Enter the account details this service requires. Saved credentials are never displayed.'}</p></div>
       {request && <StatusBadge status={request.status} />}
     </div>
     {provider.description && <p className="mb-4 text-sm text-sp-muted">{provider.description}</p>}
@@ -159,23 +163,31 @@ function ProviderForm({ provider, request, connection, connections, busy, onCanc
         {selectedAccount && <><ConnectionAccountDetails connection={selectedAccount} provider={provider} /><ConnectionGuidance guidance={selectedAccount.guidance} compact={selectedAccount.status === 'connected'} /></>}
         <p className="text-sm text-sp-muted">Confirm that the chosen account meets the target and access requirements above. Authentication will be checked before this request is fulfilled.</p>
         <div className="flex flex-wrap gap-2">
-          <button type="button" disabled={!selectedConnection || busy || requestBlocked} onClick={() => void onFulfill(Number(selectedConnection))} className="rounded-lg bg-sp-action px-3 py-2 text-sm text-sp-on-action disabled:opacity-40">Verify and fulfill request #{request.id}</button>
+          <button type="button" disabled={!selectedConnection || busy || requestBlocked} onClick={() => {
+            if (browserAuthorization && !selectedAccount?.metadata.authorization_confirmed) onEditConnection(Number(selectedConnection));
+            else void onFulfill(Number(selectedConnection));
+          }} className="rounded-lg bg-sp-action px-3 py-2 text-sm text-sp-on-action disabled:opacity-40">{browserAuthorization && selectedAccount && !selectedAccount.metadata.authorization_confirmed ? 'Finish this account’s setup' : `Verify and fulfill request #${request.id}`}</button>
           <button type="button" disabled={!selectedConnection || busy} onClick={() => onEditConnection(Number(selectedConnection))} className="rounded-lg border border-sp-line px-3 py-2 text-sm disabled:opacity-40">Edit this account</button>
         </div>
       </fieldset>}
-      <p className="mb-3 text-sm text-sp-muted">{requestBlocked ? 'Review the request status before continuing.' : connection ? `Save and verify this account to fulfill request #${request.id}.` : generatesKey ? 'Or prepare a new account below. This request stays pending until setup and verification are complete.' : 'Or enter a new account below to fulfill this request.'}</p>
+      <p className="mb-3 text-sm text-sp-muted">{requestBlocked ? 'Review the request status before continuing.' : browserAuthorization ? `Request #${request.id} stays pending until you confirm the signed-in account.` : connection ? `Save and verify this account to fulfill request #${request.id}.` : generatesKey ? 'Or prepare a new account below. This request stays pending until setup and verification are complete.' : 'Or enter a new account below to fulfill this request.'}</p>
     </>}
     {connection && <ConnectionAccountDetails connection={connection} provider={provider} />}
     <ConnectionGuidance guidance={connection?.guidance ?? provider.setup} />
+    {awaitingConfirmation && connection && <div className="my-4 space-y-3 rounded-lg border border-sp-line p-4">
+      <p className="text-sm">Confirm that this username and site are the intended account. Sapien can read the projects this account may access.</p>
+      <button type="button" disabled={busy || requestBlocked} onClick={() => void onConfirm(connection.id)} className="rounded-lg bg-sp-action px-4 py-2 text-sp-on-action disabled:opacity-40">{request ? `Confirm account and fulfill request #${request.id}` : 'Confirm account and enable access'}</button>
+      <p className="text-sm text-sp-muted">Wrong account? Use sign-in again below, switching accounts on the service’s sign-in page.</p>
+    </div>}
     <div className="grid gap-4 sm:grid-cols-2">
       <label className="sm:col-span-2"><span className="mb-1.5 block text-xs text-sp-muted">Account label <span className="text-sp-muted">(optional)</span></span><input name="account_label" autoComplete="off" value={accountLabel} onChange={e => setAccountLabel(e.target.value)} disabled={busy} placeholder={`e.g. Product team ${provider.label}`} className="w-full rounded-lg px-3 py-2.5 text-sm text-sp-ink outline-none placeholder:text-sp-muted focus:ring-1" style={{ background: 'rgb(var(--sp-ink-rgb, 255 255 255) / .045)', border: '1px solid rgb(var(--sp-ink-rgb, 255 255 255) / .1)' }} /></label>
       <div className="sm:col-span-2"><ConnectionFields fields={provider.fields} values={values} errors={validation}
-        editing={Boolean(connection)} busy={busy} onChange={(name, value) => {
+        editing={Boolean(connection)} busy={busy || (browserAuthorization && Boolean(connection))} onChange={(name, value) => {
           setValues(current => ({ ...current, [name]: value }));
           setValidation(current => ({ ...current, [name]: '' }));
         }} /></div>
     </div>
-    <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><button type="button" onClick={onCancel} disabled={busy} className="rounded-lg px-4 py-2 text-xs text-sp-muted hover:bg-sp-ink/5 hover:text-sp-ink disabled:opacity-40">Cancel</button><button type="submit" disabled={busy || requestBlocked} className="flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-xs font-medium text-sp-on-action disabled:cursor-not-allowed disabled:opacity-50" style={{ background: 'var(--sp-action)' }}>{busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <LockKeyhole className="h-3.5 w-3.5" />}{busy ? (connection ? 'Saving…' : generatesKey ? 'Preparing access…' : 'Connecting…') : connection ? (request ? `Save, verify & fulfill #${request.id}` : 'Save and verify') : provider.setup?.action_label ?? (generatesKey ? 'Generate access key' : request ? 'Approve and connect' : `Connect ${provider.label}`)}</button></div>
+    <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><button type="button" onClick={onCancel} disabled={busy} className="rounded-lg px-4 py-2 text-xs text-sp-muted hover:bg-sp-ink/5 hover:text-sp-ink disabled:opacity-40">Cancel</button><button type="submit" disabled={busy || requestBlocked} className="flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-xs font-medium text-sp-on-action disabled:cursor-not-allowed disabled:opacity-50" style={{ background: 'var(--sp-action)' }}>{busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <LockKeyhole className="h-3.5 w-3.5" />}{busy ? 'Connecting…' : browserAuthorization ? (connection ? 'Sign in again' : provider.setup?.action_label ?? `Connect with ${provider.label}`) : connection ? (request ? `Save, verify & fulfill #${request.id}` : 'Save and verify') : provider.setup?.action_label ?? (generatesKey ? 'Generate access key' : request ? 'Approve and connect' : `Connect ${provider.label}`)}</button></div>
   </form>;
 }
 
@@ -190,6 +202,10 @@ export function ConnectionsPage() {
   const [activeRequest, setActiveRequest] = useState<number | undefined>();
   const [activeConnection, setActiveConnection] = useState<number | undefined>();
   const [busyKey, setBusyKey] = useState('');
+  const [authorizationStage, setAuthorizationStage] = useState('');
+  const [authorizationError, setAuthorizationError] = useState('');
+  const authorizationAbort = useRef<AbortController | null>(null);
+  useEffect(() => () => authorizationAbort.current?.abort(), [sapienId]);
   const formTrigger = useRef<HTMLElement | null>(null);
   const confirmationTrigger = useRef<HTMLButtonElement | null>(null);
   const [confirm, setConfirm] = useState<{ kind: 'disconnect' | 'deny'; id: number; label: string } | null>(null);
@@ -225,6 +241,7 @@ export function ConnectionsPage() {
   };
   const create = async (payload: CreateConnectionPayload) => {
     if (busyKey) return;
+    if (provider?.capabilities?.browser_authorization) return beginAuthorization(payload);
     setBusyKey('create');
     try { await connectionsService.create(sapienId, { ...payload, ...(activeRequest !== undefined ? { request_id: activeRequest } : {}) }); toast.success(payload.action === 'generate_key' ? 'Access key saved — complete setup, then verify' : `${provider?.label ?? 'Provider'} connected`); setActiveProvider(null); setActiveRequest(undefined); await load(); }
     catch (err) {
@@ -243,6 +260,7 @@ export function ConnectionsPage() {
   };
   const updateConnection = async (payload: UpdateConnectionPayload) => {
     if (busyKey || !connectionToEdit) return;
+    if (provider?.capabilities?.browser_authorization) return beginAuthorization({ ...payload, connection_id: connectionToEdit.id });
     setBusyKey('update');
     try {
       await connectionsService.update(sapienId, connectionToEdit.id, { ...payload, ...(activeRequest !== undefined ? { request_id: activeRequest } : {}) });
@@ -264,6 +282,44 @@ export function ConnectionsPage() {
       await load();
     } catch (err) {
       toast.error('Could not fulfill request', { description: errorMessage(err) });
+      await load();
+    } finally { setBusyKey(''); }
+  };
+  const beginAuthorization = async (payload: UpdateConnectionPayload) => {
+    setBusyKey('authorization'); setAuthorizationError('');
+    const controller = new AbortController();
+    authorizationAbort.current = controller;
+    try {
+      const saved = await authorizeConnection(sapienId,
+        { ...payload, ...(activeRequest !== undefined ? { request_id: activeRequest } : {}) },
+        controller.signal, setAuthorizationStage);
+      setActiveConnection(saved.id);
+      await load();
+      toast.success('Account checked — review and confirm access');
+    } catch (err) {
+      if (!controller.signal.aborted) {
+        setAuthorizationError(errorMessage(err));
+        if (err instanceof ConnectionRequestError && err.connection) setActiveConnection(err.connection.id);
+        await load();
+      }
+      throw err;
+    } finally {
+      if (authorizationAbort.current === controller) {
+        authorizationAbort.current = null;
+        setBusyKey('');
+      }
+    }
+  };
+  const confirmAuthorization = async (connectionId: number) => {
+    if (busyKey) return;
+    setBusyKey('confirm-authorization'); setAuthorizationError('');
+    try {
+      await connectionsService.confirmAuthorization(sapienId, connectionId, activeRequest);
+      toast.success(activeRequest ? 'Account connected and access request fulfilled' : 'Account connected');
+      setActiveProvider(null); setActiveConnection(undefined); setActiveRequest(undefined);
+      await load();
+    } catch (err) {
+      setAuthorizationError(errorMessage(err));
       await load();
     } finally { setBusyKey(''); }
   };
@@ -303,11 +359,13 @@ export function ConnectionsPage() {
     <header className="connections-header"><div className="connections-header-inner"><div className="connections-identity"><SapiensBrandMark /><div><h1>Connections</h1><p>{currentSapiens.name} · Sapien ID {currentSapiens.id}</p></div></div></div></header>
     <main className="relative mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6 sm:py-8">
       <div className="connections-intro"><h2>Connect the services {currentSapiens.name} can use.</h2><p>Link an account so your Sapiens can work with that service. Review access requests and manage connected accounts here.</p></div>
+      {authorizationStage && <p role="status" aria-live="polite" className="rounded-lg border border-sp-line p-4">{authorizationStage}</p>}
+      {authorizationError && <p role="alert" className="rounded-lg border border-sp-line p-4 text-sp-danger">{authorizationError}</p>}
       {error && data && <div role="alert" className="connections-refresh-error"><span>Couldn’t refresh connections. The information below may be out of date.</span><button onClick={() => void load()} disabled={loading}>Try again</button></div>}
       {loading && !data ? <div role="status" className="flex min-h-[50vh] items-center justify-center gap-3 text-sm text-sp-muted"><Loader2 className="h-5 w-5 animate-spin" style={{ color: accent }} />Loading connections…</div>
       : error && !data ? <div role="alert" className="mx-auto mt-16 max-w-lg rounded-2xl p-6 text-center" style={{ background: 'rgba(248,113,113,.06)', border: '1px solid rgba(248,113,113,.2)' }}><AlertCircle className="mx-auto h-7 w-7 text-sp-danger" /><h2 className="mt-3 text-sm font-medium">Couldn’t load connections</h2><p className="mt-1 text-xs text-sp-muted">{error}</p><button onClick={() => void load()} className="mt-4 rounded-lg border border-sp-line px-4 py-2 text-xs hover:bg-sp-ink/5"><RefreshCw className="mr-2 inline h-3.5 w-3.5" />Try again</button></div>
       : data && <>
-        {provider && <ProviderForm key={`${provider.id}-${activeRequest ?? 'none'}-${activeConnection ?? 'new'}`} provider={provider} request={request} connection={connectionToEdit} connections={data.connections.filter(item => item.provider === provider.id)} onFulfill={fulfillRequest} onEditConnection={id => openForm(provider.id, activeRequest, id)} busy={Boolean(busyKey)} onCancel={() => { setActiveProvider(null); setActiveRequest(undefined); setActiveConnection(undefined); requestAnimationFrame(() => formTrigger.current?.focus()); }} onSubmit={payload => connectionToEdit ? updateConnection(payload as UpdateConnectionPayload) : create(payload as CreateConnectionPayload)} />}
+        {provider && <ProviderForm key={`${provider.id}-${activeRequest ?? 'none'}-${activeConnection ?? 'new'}`} provider={provider} request={request} connection={connectionToEdit} connections={data.connections.filter(item => item.provider === provider.id)} onConfirm={confirmAuthorization} onFulfill={fulfillRequest} onEditConnection={id => openForm(provider.id, activeRequest, id)} busy={Boolean(busyKey)} onCancel={() => { setActiveProvider(null); setActiveRequest(undefined); setActiveConnection(undefined); setAuthorizationError(''); requestAnimationFrame(() => formTrigger.current?.focus()); }} onSubmit={payload => connectionToEdit ? updateConnection(payload as UpdateConnectionPayload) : create(payload as CreateConnectionPayload)} />}
 
         {pending.length > 0 && <section><div className="mb-3 flex items-center gap-2"><Clock3 className="h-4 w-4 text-sp-warning" /><h2 className="text-sm font-semibold">Access requested by {currentSapiens.name}</h2><span className="rounded-full bg-amber-400/10 px-2 py-0.5 text-[10px] text-sp-warning">{pending.length} awaiting you</span></div><div className="grid gap-3">{pending.map(item => { const catalog = data.providers.find(p => p.id === item.provider); return <article key={item.id} className="rounded-2xl p-4 sm:p-5" style={{ background: 'linear-gradient(135deg,rgba(251,191,36,.09),rgb(var(--sp-panel-rgb, 12 18 32) / .92))', border: '1px solid rgba(251,191,36,.26)' }}><div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center"><div><div className="flex items-center gap-2"><span className="text-sm font-medium">{catalog?.label ?? item.provider}</span><StatusBadge status={item.status} /></div><RequestDetails request={item} /><p className="mt-1 text-[10px] text-sp-muted">Requested {formatDate(item.created_at)}</p></div><div className="flex shrink-0 gap-2"><button onClick={event => { confirmationTrigger.current = event.currentTarget; setConfirm({ kind: 'deny', id: item.id, label: catalog?.label ?? item.provider }); }} disabled={Boolean(busyKey)} className="rounded-lg border border-red-400/20 px-3 py-2 text-xs text-sp-danger hover:bg-red-400/10 disabled:opacity-40">Deny</button><button onClick={() => openForm(item.provider, item.id)} disabled={!catalog || Boolean(busyKey)} className="rounded-lg px-4 py-2 text-xs font-medium text-sp-on-action disabled:opacity-40" style={{ background: 'var(--sp-action)' }}>{item.guidance?.action_label ?? 'Review & connect'}</button></div></div></article>; })}</div></section>}
 

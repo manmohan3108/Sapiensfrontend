@@ -11,6 +11,7 @@ import { authenticatedFetch } from '../auth/authSession';
 interface ConnectionResponse { connection: SapiensConnection }
 interface VerifyResponse extends ConnectionResponse { verified: boolean }
 interface RequestResponse { request: SapiensConnectionRequest }
+export interface AuthorizationStart extends ConnectionResponse { authorization_url: string; state: string }
 
 export class ConnectionRequestError extends Error {
   constructor(message: string, public readonly connection?: SapiensConnection) {
@@ -35,6 +36,24 @@ async function connectionFetch<T>(path: string, options?: RequestInit): Promise<
 const collectionPath = (sapienId: number) => `/sapien/${sapienId}/connections`;
 
 export const connectionsService = {
+  startAuthorization(sapienId: number, payload: UpdateConnectionPayload): Promise<AuthorizationStart> {
+    return connectionFetch(`${collectionPath(sapienId)}/authorization`, {
+      method: 'POST', body: JSON.stringify({ ...payload, action: 'start' }),
+    });
+  },
+
+  completeAuthorization(sapienId: number, connectionId: number, state: string, code: string, cancelled: boolean): Promise<ConnectionResponse> {
+    return connectionFetch(`${collectionPath(sapienId)}/authorization`, {
+      method: 'POST', body: JSON.stringify({ action: 'complete', connection_id: connectionId, state, code, cancelled }),
+    });
+  },
+
+  confirmAuthorization(sapienId: number, connectionId: number, requestId?: number): Promise<ConnectionResponse> {
+    return connectionFetch(`${collectionPath(sapienId)}/authorization`, {
+      method: 'POST', body: JSON.stringify({ action: 'confirm', connection_id: connectionId, request_id: requestId }),
+    });
+  },
+
   list(sapienId: number): Promise<ConnectionsResponse> {
     return connectionFetch<ConnectionsResponse>(collectionPath(sapienId));
   },

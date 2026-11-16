@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { ConnectionProvider, SapiensConnection, SapiensConnectionRequest } from '../../types/connectionTypes';
 
 const verifiedIdentityLabels: Record<string, string> = {
-  mail: 'Email', userPrincipalName: 'Sign-in name', displayName: 'Name',
+  mail: 'Email', userPrincipalName: 'Sign-in name', displayName: 'Name', username: 'Username',
 };
 
 function dateLabel(value: string | null) {
