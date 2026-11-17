@@ -1,5 +1,7 @@
 import { useId, useState } from 'react';
-import { Button } from '../ui/button';
+import * as Popover from '@radix-ui/react-popover';
+import { Clock3, ChevronDown, X } from 'lucide-react';
+import '../../../styles/pause-schedule.css';
 
 const pauseTime = (value: string) => new Intl.DateTimeFormat(undefined, {
   day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', timeZoneName: 'short',
@@ -13,24 +15,46 @@ export function PauseScheduleControl({ label, scheduledAt, disabled, onSchedule 
   const id = useId();
   const [minutes, setMinutes] = useState(60);
   const validTime = scheduledAt && Number.isFinite(Date.parse(scheduledAt)) ? scheduledAt : null;
-  return <details className="w-full min-w-0 text-sm">
-    <summary className="w-fit cursor-pointer rounded-sm py-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
-      {validTime ? <>Pause scheduled: <time dateTime={validTime}>{pauseTime(validTime)}</time></> : 'Pause later…'}
-    </summary>
-    <div className="flex flex-wrap items-center gap-2 pt-2">
-      <label htmlFor={id}>Pause after</label>
-      <select id={id} name="pause_after_minutes" value={minutes} disabled={disabled}
-        aria-label={`Pause ${label} after`} aria-describedby={`${id}-help`}
-        onChange={event => setMinutes(Number(event.target.value))}
-        className="min-h-10 rounded-md border border-input bg-background px-2 text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:opacity-50">
-        {[1, 2, 4, 8].map(hours => <option key={hours} value={hours * 60}>{hours} {hours === 1 ? 'hour' : 'hours'}</option>)}
-      </select>
-      <Button type="button" variant="outline" size="sm" disabled={disabled} className="min-h-10 transition-colors"
-        onClick={() => onSchedule(minutes)}>{validTime ? 'Replace timer' : 'Schedule pause'}</Button>
-      {validTime && <Button type="button" variant="ghost" size="sm" disabled={disabled} className="min-h-10 transition-colors"
-        onClick={() => onSchedule(null)}>Cancel timer</Button>}
-    </div>
-    <p id={`${id}-help`} className="pt-2 text-muted-foreground">Real time, even when this page is closed.</p>
+  return <div className="pause-schedule">
+    <Popover.Root>
+      <Popover.Trigger asChild>
+        <button type="button" className="pause-schedule-trigger" data-scheduled={Boolean(validTime)} disabled={disabled}>
+          <Clock3 size={17} aria-hidden="true" />
+          <span className="pause-schedule-trigger-copy">
+            <span>{validTime ? 'Pause scheduled' : 'Schedule pause'}</span>
+            {validTime && <time dateTime={validTime}>{pauseTime(validTime)}</time>}
+          </span>
+          <ChevronDown size={14} aria-hidden="true" />
+        </button>
+      </Popover.Trigger>
+      {/* Inline Radix content inherits this screen's theme; its fixed positioning avoids header reflow. */}
+      <Popover.Content className="pause-schedule-panel" align="end" sideOffset={8} collisionPadding={12}
+        aria-labelledby={`${id}-title`} aria-describedby={`${id}-help`}>
+        <div className="pause-schedule-heading">
+          <h2 id={`${id}-title`}>{validTime ? 'Manage pause timer' : 'Schedule a pause'}</h2>
+          <Popover.Close className="pause-schedule-close" aria-label="Close pause timer"><X size={18} aria-hidden="true" /></Popover.Close>
+        </div>
+        <p id={`${id}-help`}>Pause {label} automatically. The timer uses real time and works even when this page is closed.</p>
+        {validTime && <p className="pause-schedule-current">Scheduled for <time dateTime={validTime}>{pauseTime(validTime)}</time></p>}
+        <fieldset className="pause-schedule-options" disabled={disabled}>
+          <legend>{validTime ? 'Replace with a new timer' : 'Pause after'}</legend>
+          <div className="pause-schedule-durations">
+            {[1, 2, 4, 8].map(hours => <label key={hours}>
+              <input type="radio" name={id} value={hours * 60} checked={minutes === hours * 60}
+                onChange={() => setMinutes(hours * 60)} />
+              <span>{hours} {hours === 1 ? 'hour' : 'hours'}</span>
+            </label>)}
+          </div>
+        </fieldset>
+        <p className="pause-schedule-caption">Starts when you save the timer.</p>
+        <div className="pause-schedule-actions">
+          <button type="button" className="pause-schedule-save" disabled={disabled} onClick={() => onSchedule(minutes)}>
+            {validTime ? 'Update timer' : 'Schedule pause'}
+          </button>
+          {validTime && <button type="button" className="pause-schedule-cancel" disabled={disabled} onClick={() => onSchedule(null)}>Cancel timer</button>}
+        </div>
+      </Popover.Content>
+    </Popover.Root>
     <span className="sr-only" role="status" aria-live="polite">{validTime && <>Scheduled pause: <time dateTime={validTime}>{pauseTime(validTime)}</time></>}</span>
-  </details>;
+  </div>;
 }

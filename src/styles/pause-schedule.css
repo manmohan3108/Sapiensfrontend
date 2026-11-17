@@ -1,0 +1,41 @@
+/* Inherit directory, workspace or simulation tokens without a separate palette. */
+.pause-schedule {
+  --pause-panel:var(--home-panel,var(--sp-panel,var(--card)));
+  --pause-ink:var(--home-ink,var(--sp-ink,var(--foreground)));
+  --pause-muted:var(--home-muted,var(--sp-muted,var(--muted-foreground)));
+  --pause-line:var(--home-line,var(--sp-line,var(--border)));
+  --pause-soft:var(--home-soft,var(--sp-recessed,var(--muted)));
+  --pause-accent:var(--home-accent,var(--sp-accent,var(--ring)));
+  --pause-action:var(--home-action,var(--sp-action,var(--primary)));
+  --pause-on-action:var(--home-action-ink,var(--sp-on-action,var(--primary-foreground)));
+  display:inline-flex; min-width:0; max-width:100%; color:var(--pause-ink);
+}
+.pause-schedule-trigger { display:inline-flex; align-items:center; gap:8px; min-height:40px; max-width:100%; padding:7px 10px; border:1px solid var(--pause-line); border-radius:6px; background:var(--pause-panel); color:var(--pause-ink); font:inherit; font-size:14px; text-align:left; cursor:pointer; }
+.pause-schedule-trigger svg { flex-shrink:0; }
+.pause-schedule-trigger-copy { display:flex; flex-direction:column; min-width:0; line-height:1.3; }
+.pause-schedule-trigger-copy time { margin-top:2px; font-size:12px; color:var(--pause-muted); overflow-wrap:anywhere; }
+.pause-schedule-trigger[data-scheduled=true] { border-color:var(--pause-accent); }
+.pause-schedule-trigger:hover:not(:disabled),.pause-schedule-trigger[data-state=open] { border-color:var(--pause-accent); background:var(--pause-soft); }
+.pause-schedule-panel { z-index:80; width:min(340px,calc(100vw - 24px)); max-height:var(--radix-popover-content-available-height,75dvh); overflow:auto; overscroll-behavior:contain; padding:16px; border:1px solid var(--pause-line); border-radius:10px; background:var(--pause-panel); color:var(--pause-ink); box-shadow:0 8px 24px #0003; font-family:'Source Sans 3',sans-serif; font-size:14px; line-height:1.5; }
+.pause-schedule-heading { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+.pause-schedule-heading h2 { margin:0; font-size:17px; font-weight:600; }
+.pause-schedule-close { display:grid; place-items:center; min-width:36px; min-height:36px; border-radius:5px; color:var(--pause-muted); cursor:pointer; }
+.pause-schedule-close:hover { background:var(--pause-soft); }
+.pause-schedule-panel p { margin:8px 0 0; color:var(--pause-muted); overflow-wrap:anywhere; }
+.pause-schedule-panel .pause-schedule-current { padding:10px; border-left:2px solid var(--pause-accent); background:var(--pause-soft); color:var(--pause-ink); }
+.pause-schedule-current time { display:block; font-weight:600; }
+.pause-schedule-options { min-width:0; margin:16px 0 0; padding:0; border:0; }
+.pause-schedule-options legend { margin-bottom:8px; font-weight:600; }
+.pause-schedule-durations { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; }
+.pause-schedule-durations label { position:relative; cursor:pointer; }
+.pause-schedule-durations input { position:absolute; width:1px; height:1px; opacity:0; }
+.pause-schedule-durations span { display:flex; align-items:center; justify-content:center; min-height:44px; border:1px solid var(--pause-line); border-radius:5px; }
+.pause-schedule-durations input:checked+span { background:var(--pause-action); color:var(--pause-on-action); border-color:var(--pause-action); font-weight:600; }
+.pause-schedule-durations label:hover span { border-color:var(--pause-accent); }
+.pause-schedule-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:16px; }
+.pause-schedule-actions button { min-height:44px; padding:8px 12px; border-radius:6px; font:inherit; cursor:pointer; }
+.pause-schedule-actions .pause-schedule-save { background:var(--pause-action); color:var(--pause-on-action); font-weight:600; }
+.pause-schedule-cancel { border:1px solid var(--pause-line); background:transparent; color:var(--pause-ink); }
+.pause-schedule-actions button:hover:not(:disabled) { filter:brightness(.94); }
+.pause-schedule button:disabled,.pause-schedule-options:disabled { opacity:.6; cursor:not-allowed; }
+.pause-schedule :is(button,input):focus-visible,.pause-schedule-durations input:focus-visible+span { outline:2px solid var(--pause-accent); outline-offset:3px; }
