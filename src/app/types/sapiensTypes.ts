@@ -6,6 +6,7 @@ export interface SapienActivity {
   activityState: ActivityState;
   draining: boolean;
   chatAvailable?: boolean;
+  scheduledPauseAt?: string | null;
   activityUnavailableReason: string | null;
 }
 
@@ -19,6 +20,7 @@ export interface SapiensDirectoryEntry {
   simulation_available?: boolean;
   active?: boolean;
   activity_state?: ActivityState;
+  scheduled_pause_at?: string | null;
   draining?: boolean;
   activity_unavailable_reason?: string | null;
   simulation_unavailable_reason?: 'simulation_disabled' | 'runtime_reserved' | null;
@@ -34,6 +36,7 @@ export interface Sapiens {
   activityState?: ActivityState;
   draining?: boolean;
   chatAvailable?: boolean;
+  scheduledPauseAt?: string | null;
   activityUnavailableReason?: string | null;
   /** Additive admin-list metadata. Missing values must fail closed in Simulation Lab. */
   simulationEnabled?: boolean;

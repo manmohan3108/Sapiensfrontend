@@ -3,6 +3,20 @@
 
 This is a code bundle for Sapiens. The original project is available at https://www.figma.com/design/O5Q4HuU26a2H8wr74xniqJ/Sapiens.
 
+## Scheduled pauses
+
+Workspace and Your Sapiens offer 1, 2, 4 or 8 real-hour pause timers for active
+Sapiens; Simulation Lab offers the same control for running simulations. The
+shared `PauseScheduleControl` displays and edits a server-owned deadline; it does
+not pause anything from a browser timer. The current timer can be replaced or
+cancelled. Existing authentication, selection checks and mutation handling apply.
+
+The activity API and simulation pause API accept `pause_after_minutes` (null to
+cancel) and return `scheduled_pause_at`. The backend persists and applies it,
+including after a restart; the UI refreshes the resulting state. Pausing preserves
+existing progress and allows in-flight operations to finish safely. Deploy the
+backend with its VM-generated scheduled-pause field migration before this UI.
+
 ## SSH connections
 
 On a Sapien's Connections page, choose SSH and enter the VM host and dedicated

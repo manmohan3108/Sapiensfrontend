@@ -1,3 +1,4 @@
+import { PauseScheduleControl } from '../components/shared/PauseScheduleControl';
 import { SimulationPauseNotice } from '../components/simulation/SimulationPauseNotice';
 import { SimulationPurpose } from '../components/simulation/SimulationPurpose';
 import { useRestoreSapienSelection } from '../components/navigation/useRestoreSapienSelection';
@@ -1180,6 +1181,9 @@ export function SimulationLabPage() {
                     </Button>
                   )}
               </div>
+              {allowed("pause") && <PauseScheduleControl key={run.run_id} label="this simulation"
+                scheduledAt={run.scheduled_pause_at} disabled={!!busy}
+                onSchedule={minutes => void mutate("pause timer", () => simulationService.schedulePause(run.run_id, minutes))} />}
               <SimulationPauseNotice run={run} />
               {run.status !== "paused" && <p className="text-sm text-muted-foreground" role="status">
                 {run.status === "recovery_required"

@@ -41,6 +41,7 @@ function transformSapiens(backendSapiens: BackendSapiens): Sapiens {
     active: backendSapiens.active,
     activityState: backendSapiens.activity_state ?? (backendSapiens.active === undefined ? undefined : backendSapiens.active ? 'active' : 'inactive'),
     draining: backendSapiens.draining ?? false,
+    scheduledPauseAt: backendSapiens.scheduled_pause_at ?? null,
     activityUnavailableReason: backendSapiens.activity_unavailable_reason,
     simulationEnabled: backendSapiens.simulation_enabled,
     simulationAvailable: backendSapiens.simulation_available,
@@ -58,6 +59,7 @@ interface BackendSapienActivity {
   activity_state?: ActivityState;
   draining?: boolean;
   chat_available?: boolean;
+  scheduled_pause_at?: string | null;
   activity_unavailable_reason: string | null;
 }
 
@@ -70,11 +72,13 @@ function transformActivity(sapienId: string, data: BackendSapienActivity): Sapie
   if (!['active', 'paused', 'inactive'].includes(activityState)
     || data.active !== (activityState === 'active')
     || (data.draining !== undefined && typeof data.draining !== 'boolean')
-    || (data.chat_available !== undefined && typeof data.chat_available !== 'boolean')) {
+    || (data.chat_available !== undefined && typeof data.chat_available !== 'boolean')
+    || (data.scheduled_pause_at != null && (typeof data.scheduled_pause_at !== 'string'
+      || !Number.isFinite(Date.parse(data.scheduled_pause_at))))) {
     throw new Error('The server returned an inconsistent activity state. Refresh to check again.');
   }
   return { active: data.active, activityState, draining: data.draining ?? false, chatAvailable: data.chat_available,
-    activityUnavailableReason: data.activity_unavailable_reason };
+    scheduledPauseAt: data.scheduled_pause_at ?? null, activityUnavailableReason: data.activity_unavailable_reason };
 }
 
 class SapiensService {
@@ -86,6 +90,12 @@ class SapiensService {
 
   async setActivity(sapienId: string, activityState: ActivityState, signal: AbortSignal): Promise<SapienActivity> {
     const response = await apiClient.post<BackendSapienActivity>(API_ENDPOINTS.sapienActivity(sapienId), { activity_state: activityState },
+      { signal: AbortSignal.any([signal, AbortSignal.timeout(ACCESS_CHECK_TIMEOUT_MS)]) });
+    return transformActivity(sapienId, response.data);
+  }
+
+  async schedulePause(sapienId: string, minutes: number | null, signal: AbortSignal): Promise<SapienActivity> {
+    const response = await apiClient.post<BackendSapienActivity>(API_ENDPOINTS.sapienActivity(sapienId), { pause_after_minutes: minutes },
       { signal: AbortSignal.any([signal, AbortSignal.timeout(ACCESS_CHECK_TIMEOUT_MS)]) });
     return transformActivity(sapienId, response.data);
   }

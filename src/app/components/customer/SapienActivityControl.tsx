@@ -1,5 +1,6 @@
 import { useId } from 'react';
 import { Pause, Play, RefreshCw, MessageSquare, Power } from 'lucide-react';
+import { PauseScheduleControl } from '../shared/PauseScheduleControl';
 import { useSapienActivity } from '../../hooks/useSapienActivity';
 import type { SapienActivity, Sapiens } from '../../types/sapiensTypes';
 import '../../../styles/sapien-activity.css';
@@ -8,7 +9,7 @@ export function SapienActivityControl({ sapien, refreshOnMount = false, onActivi
   sapien: Sapiens; refreshOnMount?: boolean; compact?: boolean;
   onActivityChange?: (sapienId: string, activity: SapienActivity | null) => void;
 }) {
-  const { activity, pending, error, notice, refresh, setActivity } = useSapienActivity(sapien, refreshOnMount, onActivityChange);
+  const { activity, pending, error, notice, refresh, setActivity, schedulePause } = useSapienActivity(sapien, refreshOnMount, onActivityChange);
   const helpId = useId();
   const reason = activity?.activityUnavailableReason;
   const blocked = !!reason;
@@ -43,6 +44,9 @@ export function SapienActivityControl({ sapien, refreshOnMount = false, onActivi
         <span>{state === 'inactive' ? 'Chat only' : 'Deactivate'}</span>
       </button>}
     </div>}
+    {activity && state === 'active' && !blocked && <PauseScheduleControl
+      label={sapien.name} scheduledAt={activity.scheduledPauseAt} disabled={!!pending}
+      onSchedule={minutes => void schedulePause(minutes)} />}
     <span id={helpId} className={blocked || (activity && state !== 'active') ? 'sapien-activity-help' : 'sr-only'}>{explanation}</span>
     {error && <p className="sapien-activity-error" role="alert">{error}</p>}
     <span className="sr-only" role="status">{notice}</span>

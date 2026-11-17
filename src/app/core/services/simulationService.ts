@@ -24,6 +24,7 @@ export const simulationService = {
   get: (id: string, signal?: AbortSignal) => request<SimulationRun>(runPath(id), { signal }),
   create: (body: CaseCreateRequest) => request<SimulationRun>('runs/', { method: 'POST', body: JSON.stringify(body) }),
   control: (id: string, action: 'start' | 'pause' | 'resume' | 'stop') => request<SimulationRun>(`${runPath(id)}${action}/`, { method: 'POST', body: '{}' }),
+  schedulePause: (id: string, minutes: number | null) => request<SimulationRun>(`${runPath(id)}pause/`, { method: 'POST', body: JSON.stringify({ pause_after_minutes: minutes }) }),
   setSpeed: (id: string, speed: number) => request<SimulationRun>(`${runPath(id)}speed/`, { method: 'PATCH', body: JSON.stringify({ speed }) }),
   remove: (id: string) => request<SimulationRun | void>(runPath(id), { method: 'DELETE' }),
   events: (id: string, after: number, kind?: 'diagnostics', signal?: AbortSignal) => request<EventPage>(`${runPath(id)}events/?after=${after}&limit=200${kind ? `&kind=${kind}` : ''}`, { signal }),
