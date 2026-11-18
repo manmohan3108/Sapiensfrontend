@@ -18,7 +18,7 @@ export function HeaderBar({ headingRef }: { headingRef?: Ref<HTMLHeadingElement>
         ? currentSapiens.activityState === 'paused' ? 'Paused' : 'Inactive' : isOverloaded ? 'Catching up' : statusLabel}</span>
     </div>
     <nav className="workspace-header-actions" aria-label="Workspace controls">
-      <SapienActivityControl key={currentSapiens.id} sapien={currentSapiens} refreshOnMount />
+      <SapienActivityControl key={currentSapiens.id} sapien={currentSapiens} refreshOnMount hidePausedHelp />
       <details className="workspace-tools" onKeyDown={event => { if (event.key === 'Escape') { event.currentTarget.open = false; event.currentTarget.querySelector('summary')?.focus(); } }}>
         <summary>Actions <ChevronDown size={14} /></summary>
         <div className="workspace-tools-menu">

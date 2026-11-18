@@ -5,8 +5,8 @@ import { useSapienActivity } from '../../hooks/useSapienActivity';
 import type { SapienActivity, Sapiens } from '../../types/sapiensTypes';
 import '../../../styles/sapien-activity.css';
 
-export function SapienActivityControl({ sapien, refreshOnMount = false, onActivityChange, compact = false }: {
-  sapien: Sapiens; refreshOnMount?: boolean; compact?: boolean;
+export function SapienActivityControl({ sapien, refreshOnMount = false, onActivityChange, compact = false, hidePausedHelp = false }: {
+  sapien: Sapiens; refreshOnMount?: boolean; compact?: boolean; hidePausedHelp?: boolean;
   onActivityChange?: (sapienId: string, activity: SapienActivity | null) => void;
 }) {
   const { activity, pending, error, notice, refresh, setActivity, schedulePause } = useSapienActivity(sapien, refreshOnMount, onActivityChange);
@@ -27,6 +27,8 @@ export function SapienActivityControl({ sapien, refreshOnMount = false, onActivi
     : state === 'paused' ? 'Chat uses stored information. Tools and background learning wait until resume.'
     : 'Activate for autonomous work, or enable chat only. History is preserved.';
   const Icon = !activity ? RefreshCw : state === 'active' ? Pause : Play;
+  const showHelp = blocked || (activity && state !== 'active'
+    && (!hidePausedHelp || state !== 'paused' || activity.draining));
 
   return <div className={`sapien-activity-control${compact ? ' sapien-activity-compact' : ''}`} aria-busy={pending !== null}>
     <span className="sapien-activity-status" role="status" aria-live="polite">{status}{activity?.draining ? ' · Finishing work…' : ''}</span>
@@ -47,7 +49,7 @@ export function SapienActivityControl({ sapien, refreshOnMount = false, onActivi
     {activity && state === 'active' && !blocked && <PauseScheduleControl
       label={sapien.name} scheduledAt={activity.scheduledPauseAt} disabled={!!pending}
       onSchedule={minutes => void schedulePause(minutes)} />}
-    <span id={helpId} className={blocked || (activity && state !== 'active') ? 'sapien-activity-help' : 'sr-only'}>{explanation}</span>
+    <span id={helpId} className={showHelp ? 'sapien-activity-help' : 'sr-only'}>{explanation}</span>
     {error && <p className="sapien-activity-error" role="alert">{error}</p>}
     <span className="sr-only" role="status">{notice}</span>
   </div>;

@@ -615,6 +615,12 @@ export function ChatWindow() {
         <span>{chatUpdates.error}</span>
         <button type="button" onClick={chatUpdates.refresh} className="rounded px-2 py-1 text-sp-accent hover:bg-sp-accent/10 focus-visible:outline focus-visible:outline-2">Refresh conversation</button>
       </div>}
+      {paused && <p id={pausedNoticeId} role="status"
+        className="mx-3 my-2 max-w-xl self-center rounded-lg border border-sp-warning/20 bg-sp-warning/5 px-3 py-2 text-center text-sm leading-snug text-sp-warning break-words">
+        <AlertCircle className="mr-1.5 inline-block h-4 w-4 align-text-bottom" aria-hidden="true" />
+        <span className="font-medium">{currentSapiens?.name ?? 'This Sapien'} is paused.</span>{' '}
+        Chat uses stored knowledge; external tools are unavailable.
+      </p>}
       {/* ── Messages ── */}
       <div className="flex-1 min-h-0 relative">
         <div className="absolute top-0 left-0 right-0 h-8 z-10 pointer-events-none"
@@ -666,9 +672,6 @@ export function ChatWindow() {
           : 'This Sapien is inactive. Choose “Chat only” above to talk without autonomous work, or “Activate” to resume all work.'}
       </p>}
       <div className="flex-shrink-0 relative p-2" style={{ background: 'var(--sp-recessed, rgba(0,0,0,0.25))', borderTop: '1px solid rgb(var(--sp-ink-rgb, 255 255 255) / 0.05)' }}>
-        {paused && <p id={pausedNoticeId} role="status" className="px-2 pb-1 text-sm leading-snug text-sp-muted">
-          <span className="font-medium text-sp-ink">Paused</span> · Stored knowledge only; external tools and autonomous work are off.
-        </p>}
         {attachmentsOpen && (
           <div
             className="absolute z-30 bottom-[calc(100%-4px)] left-3 right-3 sm:right-auto sm:w-[390px] h-[min(30rem,70vh)] rounded-2xl"

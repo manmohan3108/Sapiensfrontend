@@ -310,7 +310,8 @@ not raw tool responses. Existing API fields and old-run views remain supported.
 
 ### Workspace chat acceptance and processing
 
-Paused chat shows a compact reminder beside the composer: replies use stored
+Paused chat shows one subtle, centered amber notice inside the conversation window,
+without repeating it beneath Resume or beside the composer. Replies use stored
 knowledge, with external tools and autonomous work disabled. The first new-message
 send for each signed-in user and Sapien in a browser-tab session shows a warning.
 Continue sends the draft; Cancel or Escape preserves it without sending. The
