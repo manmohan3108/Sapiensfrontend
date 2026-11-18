@@ -310,6 +310,14 @@ not raw tool responses. Existing API fields and old-run views remain supported.
 
 ### Workspace chat acceptance and processing
 
+Paused chat shows a compact reminder beside the composer: replies use stored
+knowledge, with external tools and autonomous work disabled. The first new-message
+send for each signed-in user and Sapien in a browser-tab session shows a warning.
+Continue sends the draft; Cancel or Escape preserves it without sending. The
+warning does not repeat for new conversations or reloads in that tab; if session
+storage is unavailable, it is remembered until the page reloads. No activity state
+is changed. Simulation-controlled chat keeps its existing behavior.
+
 Workspace requests asynchronous `/api/chat` acceptance with a UUID `request_id`.
 A 202 response identifies the saved thread and incoming message; it is not an
 assistant reply. `useChatUpdates` follows the existing chat-detail API while a

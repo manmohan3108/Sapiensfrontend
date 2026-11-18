@@ -3,7 +3,11 @@ import { quotaSummary, quotaReset, quotaRecovery } from '../../utils/quotaPresen
 import { ConversationHistory } from './ConversationHistory';
 import { useRememberedState } from '../navigation/NavigationState';
 import { ScienceDetail } from '../customer/ScienceDetail';
-import { Fragment, useState, useRef, useEffect, useCallback } from 'react';
+import { Fragment, useState, useRef, useEffect, useCallback, useId } from 'react';
+import {
+  AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction,
+} from '../ui/alert-dialog';
 import {
   Send, Brain, User, AlertCircle,
   Loader2, ChevronDown, Sparkles, Copy, Check,
@@ -26,6 +30,21 @@ import { ChatHistoryItem, ChatMessage, UserSignalType } from '../../types/sapien
 import { ApiError } from '../../types/apiTypes';
 import { CombinedInputPanel } from './CombinedInputPanel';
 import { SapiensPresence } from '../customer/SapiensPresence';
+
+// Tab-local fallback also avoids repeat warnings when browser storage is blocked.
+const seenPausedChatWarnings = new Set<string>();
+
+function hasSeenPausedChatWarning(key: string): boolean {
+  if (seenPausedChatWarnings.has(key)) return true;
+  try { return sessionStorage.getItem(key) === 'seen'; }
+  catch { return false; }
+}
+
+function rememberPausedChatWarning(key: string): void {
+  seenPausedChatWarnings.add(key);
+  try { sessionStorage.setItem(key, 'seen'); }
+  catch { /* The current page still remembers that the warning was shown. */ }
+}
 
 // ─── Typing dots ──────────────────────────────────────────────────────────────
 function TypingDots({ name }: { name: string }) {
@@ -384,6 +403,10 @@ export function ChatWindow() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [historyError, setHistoryError] = useState<string | null>(null);
   const [attachmentsOpen, setAttachmentsOpen] = useState(false);
+  const [pausedWarning, setPausedWarning] = useState<{
+    key: string; sessionId: string | null; version: number;
+  } | null>(null);
+  const pausedNoticeId = useId();
 
   const { sendTextInput, editMessage, sendUserSignal, loadChat, startNewChat } = useSapiens();
   const msgs = useSapiensStore((s) => s.chatMessages);
@@ -401,7 +424,16 @@ export function ChatWindow() {
 
   const isProcessing = status === 'processing';
   const inactive = currentSapiens?.chatAvailable === false;
+  const paused = currentSapiens?.activityState === 'paused' && !inactive
+    && currentSapiens.activityUnavailableReason !== 'simulation_owned';
+  const pausedWarningKey = `sapiens.paused-chat-warning.v1:${user?.user_id}:${currentSapiens?.id}`;
+  const pausedWarningOpen = paused && pausedWarning?.key === pausedWarningKey
+    && pausedWarning.sessionId === chatSessionId && pausedWarning.version === resourceSession.version;
   const replying = !chatUpdates.error && msgs.some(message => message.turnStatus === 'replying');
+
+  useEffect(() => {
+    setPausedWarning(null);
+  }, [paused, pausedWarningKey, chatSessionId]);
 
   const refreshHistory = useCallback(async () => {
     if (!currentSapiens) return;
@@ -479,9 +511,15 @@ export function ChatWindow() {
     setJumpToMessageId(null);
   }, [jumpToMessageId, setJumpToMessageId]);
 
-  const send = async () => {
+  const send = async (confirmedPaused = false) => {
     const t = input.trim();
     if (!t || isProcessing || inactive || sending.current) return;
+    if (pausedWarningOpen && !confirmedPaused) return;
+    if (paused && !confirmedPaused && !hasSeenPausedChatWarning(pausedWarningKey)) {
+      rememberPausedChatWarning(pausedWarningKey);
+      setPausedWarning({ key: pausedWarningKey, sessionId: chatSessionId, version: resourceSession.version });
+      return;
+    }
     sending.current = true;
     const version = resourceSession.version;
     setInput('');
@@ -526,6 +564,27 @@ export function ChatWindow() {
         backdropFilter: 'blur(24px)',
       }}
     >
+      <AlertDialog open={pausedWarningOpen} onOpenChange={open => { if (!open) setPausedWarning(null); }}>
+        <AlertDialogContent className="product-surface science-product-theme product-dialog gap-4 border-sp-line p-5 text-sp-ink sm:max-w-md max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain motion-reduce:animate-none"
+          onCloseAutoFocus={event => { event.preventDefault(); textareaRef.current?.focus(); }}>
+          <AlertDialogHeader className="text-left">
+            <AlertDialogTitle className="break-words leading-snug">{currentSapiens?.name ?? 'This Sapien'} is paused</AlertDialogTitle>
+            <AlertDialogDescription className="text-sp-muted leading-relaxed">
+              Replies use stored knowledge. External tools and autonomous work are disabled.
+              To use tools, resume the Sapien from the activity controls; this also enables autonomous work.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="border-sp-line bg-sp-panel text-sp-ink hover:bg-[var(--sp-recessed)] hover:text-sp-ink dark:border-sp-line dark:bg-sp-panel dark:hover:bg-[var(--sp-recessed)]">Cancel</AlertDialogCancel>
+            <AlertDialogAction className="bg-sp-action text-sp-on-action hover:bg-sp-action/90"
+              onClick={() => {
+                if (!pausedWarningOpen) return;
+                setPausedWarning(null);
+                void send(true);
+              }}>Continue with limited chat</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <aside className={`workspace-history ${historyCollapsed ? 'is-collapsed' : ''}`}>
         {historyCollapsed ? (
           <div className="flex h-full flex-col items-center gap-2 py-3">
@@ -607,6 +666,9 @@ export function ChatWindow() {
           : 'This Sapien is inactive. Choose “Chat only” above to talk without autonomous work, or “Activate” to resume all work.'}
       </p>}
       <div className="flex-shrink-0 relative p-2" style={{ background: 'var(--sp-recessed, rgba(0,0,0,0.25))', borderTop: '1px solid rgb(var(--sp-ink-rgb, 255 255 255) / 0.05)' }}>
+        {paused && <p id={pausedNoticeId} role="status" className="px-2 pb-1 text-sm leading-snug text-sp-muted">
+          <span className="font-medium text-sp-ink">Paused</span> · Stored knowledge only; external tools and autonomous work are off.
+        </p>}
         {attachmentsOpen && (
           <div
             className="absolute z-30 bottom-[calc(100%-4px)] left-3 right-3 sm:right-auto sm:w-[390px] h-[min(30rem,70vh)] rounded-2xl"
@@ -649,6 +711,7 @@ export function ChatWindow() {
             onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
             placeholder={inactive ? 'Enable chat or activate this Sapien…' : isProcessing ? 'Sending…' : `Message ${currentSapiens?.name ?? 'Sapiens'}…`}
             aria-label={`Message ${currentSapiens?.name ?? 'Sapiens'}`}
+            aria-describedby={paused ? pausedNoticeId : undefined}
             disabled={isProcessing || inactive} rows={1}
             className="flex-1 resize-none overflow-y-auto bg-transparent border-none outline-none
               min-h-[36px] max-h-[140px] px-2 py-2 text-sm text-sp-ink placeholder:text-sp-muted
