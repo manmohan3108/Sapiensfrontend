@@ -38,17 +38,21 @@ continue after disconnect. The frontend never generates, receives or stores priv
 ## Fulfilling access requests
 
 Providers with `browser_authorization` use the shared sign-in flow. GitLab opens
-its own consent page; `/connection-callback` returns a one-time code to the original
-Connections window, which submits it through the authenticated backend. No provider
-access/refresh token enters frontend responses or storage. The original request
+its own consent page and returns directly to the backend OAuth callback. The backend
+exchanges the code and redirects to `/connection-return` with only a safe result.
+No authorization code or provider access/refresh token enters frontend responses
+or storage. The original request
 stays visible and pending until the owner reviews the returned username/site and
-confirms the account. Closing the sign-in window cancels that attempt; reopening a
-saved account allows a new attempt. Popups and a same-origin HTTPS callback are
-required. Follow the backend Connections README for administrator registration and
+confirms the account. **Cancel sign-in** cancels the matching pending attempt;
+closing the popup alone does not cancel it. Reopening a saved account allows a new
+attempt. Popups, cookies and HTTPS backend/frontend addresses are required.
+Follow the backend Connections README for administrator registration and
 configuration; the frontend must not ask owners to paste application secrets.
 
-`browserAuthorization` owns the browser handoff, `ConnectionAuthorizationReturn`
-only relays the return to the initiating window, and backend capabilities/guidance
+`browserAuthorization` establishes a backend browser binding, starts sign-in through
+the owner API and checks authenticated account status for up to ten minutes. This
+also works when GitLab detaches the popup's opener. `ConnectionAuthorizationReturn`
+only directs the owner back to Connections; backend capabilities/guidance
 control the shared form. Unconfirmed accounts show a review action and cannot fulfill
 a request through ordinary verification. Backend ownership checks, expiring state,
 PKCE and explicit confirmation remain authoritative. New access requests require

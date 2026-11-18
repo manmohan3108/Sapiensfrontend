@@ -297,7 +297,7 @@ export function ConnectionsPage() {
       await load();
       toast.success('Account checked — review and confirm access');
     } catch (err) {
-      if (!controller.signal.aborted) {
+      if (!controller.signal.aborted || controller.signal.reason === 'owner_cancelled') {
         setAuthorizationError(errorMessage(err));
         if (err instanceof ConnectionRequestError && err.connection) setActiveConnection(err.connection.id);
         await load();
@@ -359,7 +359,10 @@ export function ConnectionsPage() {
     <header className="connections-header"><div className="connections-header-inner"><div className="connections-identity"><SapiensBrandMark /><div><h1>Connections</h1><p>{currentSapiens.name} · Sapien ID {currentSapiens.id}</p></div></div></div></header>
     <main className="relative mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6 sm:py-8">
       <div className="connections-intro"><h2>Connect the services {currentSapiens.name} can use.</h2><p>Link an account so your Sapiens can work with that service. Review access requests and manage connected accounts here.</p></div>
-      {authorizationStage && <p role="status" aria-live="polite" className="rounded-lg border border-sp-line p-4">{authorizationStage}</p>}
+      {authorizationStage && <div className="rounded-lg border border-sp-line p-4">
+        <p role="status" aria-live="polite">{authorizationStage}</p>
+        <button type="button" className="mt-3 rounded-lg border border-sp-line px-3 py-2" onClick={() => authorizationAbort.current?.abort('owner_cancelled')}>Cancel sign-in</button>
+      </div>}
       {authorizationError && <p role="alert" className="rounded-lg border border-sp-line p-4 text-sp-danger">{authorizationError}</p>}
       {error && data && <div role="alert" className="connections-refresh-error"><span>Couldn’t refresh connections. The information below may be out of date.</span><button onClick={() => void load()} disabled={loading}>Try again</button></div>}
       {loading && !data ? <div role="status" className="flex min-h-[50vh] items-center justify-center gap-3 text-sm text-sp-muted"><Loader2 className="h-5 w-5 animate-spin" style={{ color: accent }} />Loading connections…</div>

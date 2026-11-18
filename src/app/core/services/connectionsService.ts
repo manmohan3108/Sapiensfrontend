@@ -42,10 +42,14 @@ export const connectionsService = {
     });
   },
 
-  completeAuthorization(sapienId: number, connectionId: number, state: string, code: string, cancelled: boolean): Promise<ConnectionResponse> {
+  cancelAuthorization(sapienId: number, connectionId: number, state: string): Promise<ConnectionResponse> {
     return connectionFetch(`${collectionPath(sapienId)}/authorization`, {
-      method: 'POST', body: JSON.stringify({ action: 'complete', connection_id: connectionId, state, code, cancelled }),
+      method: 'POST', body: JSON.stringify({ action: 'cancel', connection_id: connectionId, state }),
     });
+  },
+
+  get(sapienId: number, connectionId: number, signal?: AbortSignal): Promise<ConnectionResponse> {
+    return connectionFetch(`${collectionPath(sapienId)}/${connectionId}`, { signal });
   },
 
   confirmAuthorization(sapienId: number, connectionId: number, requestId?: number): Promise<ConnectionResponse> {

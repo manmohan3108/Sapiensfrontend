@@ -21,7 +21,7 @@ function RoleHome() {
 }
 
 export const router = createBrowserRouter([
-  { path: '/connection-callback', Component: ConnectionAuthorizationReturn, ErrorBoundary },
+  { path: '/connection-return', Component: ConnectionAuthorizationReturn, ErrorBoundary },
   { path: '/', Component: ScienceLandingPage, ErrorBoundary },
   { path: '/research', Component: ResearchPage, ErrorBoundary },
   { path: '/research/:slug', Component: ResearchPage, ErrorBoundary },
