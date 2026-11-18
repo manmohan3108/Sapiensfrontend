@@ -6,7 +6,15 @@ export interface MotorActivity {
   scope: string | null; server: string | null; tool: string | null;
   status: MotorStatus; caller: string | null; execution_id: string | null;
 }
+export interface MotorResultPreview {
+  kind: 'structured' | 'text' | 'unparsed' | 'missing';
+  value: unknown;
+  shortened: boolean;
+  entry_count: number | null;
+  link_urls?: string[];
+}
 export interface MotorDetail extends MotorActivity {
+  result?: MotorResultPreview;
   evidence: { content?: string; truncated?: boolean };
   arguments: unknown; context: unknown; communication: unknown;
   correlation_id: string | null; source_ref: string | null;

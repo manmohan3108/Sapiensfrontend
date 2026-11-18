@@ -47,3 +47,9 @@ body:has(.analyse-shell) .motor-dialog { width:calc(100% - 32px); max-width:1000
 @media(max-width:800px) { .motor-evidence-flow { grid-template-columns:minmax(0,1fr); } .motor-evidence-arrow { transform:rotate(90deg); padding:0; } }
 @media(max-width:480px) { .motor-record .stored-value-fields>div { grid-template-columns:minmax(0,1fr); gap:4px; } }
 .analyse-shell .motor-page .motor-action-filter { flex:1 1 230px; max-width:360px; }
+.motor-result-notice { border-left:2px solid var(--an-accent); padding-left:10px; color:var(--an-ink); font-size:14px; }
+.motor-result-links { list-style:decimal; padding-left:24px; margin:12px 0; }
+.motor-result-links li { padding:10px 0; overflow-wrap:anywhere; }
+.motor-result-links a { color:var(--an-accent); text-decoration:underline; text-underline-offset:3px; }
+.motor-result-links a:hover { color:var(--an-ink); }
+.motor-result-url { display:block; color:var(--an-muted); font-size:14px; overflow-wrap:anywhere; margin:4px 0; }
