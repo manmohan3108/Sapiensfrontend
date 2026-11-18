@@ -16,7 +16,7 @@ type ResearchSection = { id: string; title: string; readingLabel: string; motiva
 const topics: ResearchTopic[] = [
     { id: 'philosophy', title: 'Why we are building Sapiens', description: 'Our ambition and the neuroscience and philosophical ideas guiding the research.' },
     { id: 'emergence', title: 'What we mean by emergence', description: 'Define the behaviour we seek and what would support or challenge the hypothesis.' },
-    { id: 'intelligence-understanding', title: 'Intelligence and understanding', description: 'The meanings of these concepts and how they guide our research.' },
+    { id: 'intelligence-understanding', title: 'What do we mean by intelligence and understanding?', description: 'Knowing, understanding, learning and adapting—and what we mean when we discuss these abilities in humans and AI.' },
     { id: 'self-agency', title: 'Self and agency', description: 'Questions about individuality, intentions and responsibility for action.' },
     { id: 'consciousness', title: 'Consciousness and its boundaries', description: 'Distinguish consciousness from intelligence, self-representation and observable behaviour.' },
     { id: 'inspiration', title: 'From neuroscience to computational design', description: 'Our sources of inspiration and the limits of translating them into software.' },

@@ -86,29 +86,38 @@ export const researchArticles: Partial<Record<string, ResearchArticle>> = {
     ]
   },
   "intelligence-understanding": {
-    "opening": "What would it mean for an artificial system to understand a situation, rather than simply produce a convincing response? This question matters because our research needs a clearer destination than making conversation sound increasingly human.",
+    "opening": "When we say someone understands something, what do we mean? They might know the facts, explain an idea or use it to solve a problem. These abilities are related, but they tell us different things. Before asking whether AI can develop intelligence and understanding, we need to explain what we mean by those words.",
     "sections": [
       {
-        "title": "Understanding something well enough to use it",
-        "text": "Consider someone who learns that a project demonstration is not permission to release the product. Repeating that sentence is one ability. Applying the distinction when a colleague later asks for a release, noticing an exception and explaining what remains uncertain are further abilities. We are interested in how information becomes usable across changing circumstances."
+        "title": "Knowing something and understanding it",
+        "text": "Knowing a fact gives us something to work with. Understanding involves seeing how it relates to other things and why it matters. For example, someone may remember every turn on a route to a shop. If a road closes, knowing how the streets connect can help them find another way. The remembered directions were useful, but the changed situation calls for a different use of what they know. This is one way to think about understanding: being able to work with the relationships behind the facts."
       },
       {
-        "title": "A working view of intelligence",
-        "text": "For this research, we look at the capacity to interpret situations, learn from experience, adapt decisions and pursue or reconsider outcomes. These are questions to investigate together, rather than a complete definition or a single score. Good performance in one familiar setting need not imply broad understanding."
+        "title": "Where intelligence fits",
+        "text": "For our research, we use intelligence to describe a broader ability to learn, reason, solve problems and adapt. Understanding can support these abilities. Someone who understands the streets may still need to compare routes, notice missing information or learn about an unfamiliar area. Understanding concerns what they grasp about the situation; intelligence includes how they learn and use what they know. We study these together without treating them as the same thing."
       },
       {
-        "title": "What language can and cannot establish",
-        "text": "An explanation gives us evidence about what a system can express. Its actions and revisions show whether that explanation remains connected to the situation. Both matter: successful behaviour without a reliable explanation can be hard to interpret, while a fluent explanation can accompany an unsuitable action."
+        "title": "What should we ask about AI?",
+        "text": "An AI can give directions, explain a route and suggest alternatives. We can ask what happens when the details change: can it use the new information, explain why its earlier answer no longer fits and work out another route? The same questions can help us examine human understanding. A convincing explanation is useful evidence, but we also want to see how it connects to what the person or AI does. Neither fluent wording nor a mistake settles the question on its own."
       },
       {
-        "title": "Why this leads to a continuing system",
-        "text": "We want to examine understanding across encounters: what the individual retained, how a later event changed its interpretation, and whether it recognized the limits of what it knew. That motivation leads toward experience and continuity. How to test those contributions belongs in our Experiments section; here, they define the kind of understanding we hope to investigate."
+        "title": "Understanding can be incomplete",
+        "text": "We may understand one part of a situation and still be unsure about another. Someone could know the streets well but not know which roads are open today. Recognizing that gap and looking for information can be part of using their understanding well. For AI too, we want to examine what it knows, where its reasoning stops being reliable and whether new evidence changes its view."
+      },
+      {
+        "title": "What this means for Sapiens",
+        "text": "These are working meanings for our research, not final definitions. Different views place more weight on explanation, practical ability or learning, and we want to keep those questions open. With Sapiens, we want to study whether experiences help it form useful connections, apply what it has learned in another setting and revise an idea when there is a reason to. Our Experiments articles discuss how we could examine those abilities."
+      },
+      {
+        "title": "How could these abilities arise?",
+        "text": "Clarifying what we mean gives us another question: how could a system develop these abilities? The next article, “What we mean by emergence,” explores how parts working together can produce a pattern or ability of the whole."
       }
     ],
     "related": [
+      "philosophy",
+      "emergence",
       "firsthand-experience",
       "continuity",
-      "emergence",
       "evaluation"
     ]
   },

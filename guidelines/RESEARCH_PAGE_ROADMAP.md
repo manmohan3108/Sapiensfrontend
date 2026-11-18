@@ -88,7 +88,7 @@ the brain?” currently belongs inside the first article, not a new duplicate pa
 | Existing article | Question or responsibility |
 | --- | --- |
 | `philosophy` — Why we are building Sapiens | Establish the problem through human–AI comparisons, why it matters, our ambition and inspiration, then the brief hypothesis and why we build to investigate |
-| `intelligence-understanding` — Intelligence and understanding | Clarify what we want to investigate and why fluent responses alone do not settle it |
+| `intelligence-understanding` — What do we mean by intelligence and understanding? | Distinguish knowing, understanding and broader intelligence; explain our working meanings through a human–AI comparison, then lead into emergence |
 | `emergence` — What we mean by emergence | Explain the intended meaning and what distinguishes it from merely surprising output |
 | `self-agency` — Self and agency | Explore continuity, perspective and responsibility before describing shared-self implementation |
 | `consciousness` — Consciousness and its boundaries | Distinguish the philosophical question from intelligence and observable behaviour |
@@ -118,6 +118,14 @@ explains how a whole can have properties its parts lack, with its own examples.
 The first article should link onward rather than repeat those explanations or
 introduce engine lists. Detailed implementation and evaluation belong in their
 respective sections.
+
+The intelligence and understanding article should follow:
+meaning and why it matters → understanding with one familiar example → broader
+intelligence → questions shared by humans and AI → partial understanding → our
+working meanings for Sapiens → the next question about emergence. Keep the
+example after the opening. Avoid treating fluent answers as proof, mistakes as
+disproof, or our working meanings as settled definitions. Keep evaluation
+procedures and engine details in their own articles.
 
 ### 2. Neuroscience foundations
 
