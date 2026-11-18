@@ -320,3 +320,17 @@ read-only request-ID lookup through the existing chat-list endpoint, never an
 automatic repeated POST. A refresh failure leaves messages visible and offers
 Refresh conversation. The previous synchronous response remains supported during
 backend/frontend rollout; polling does not trigger reasoning or tools.
+
+### Workspace message editing
+
+Persisted owner messages expose an inline editor only when chat detail advertises
+`message_editing_supported`. Edits POST to the dedicated message `/edit` endpoint
+with a stable request ID per submitted draft and the expected latest message ID.
+They use existing acceptance lookup and read-only turn polling; an uncertain save
+is not automatically resent. Switching accounts, Sapiens or threads discards stale
+responses. The transcript remains append-only; `chatMessages` projects each revision
+chain into one bubble with its version history and latest processing status.
+Completed replies remain visible. Editing during reasoning is allowed; only another
+HTTP submission temporarily disables Save. Waiting on earlier work is shown explicitly.
+Deploy the matching backend before enabling this UI. An older backend cannot treat
+an edit as an ordinary new message because the edit route is separate.

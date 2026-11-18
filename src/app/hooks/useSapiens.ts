@@ -168,6 +168,40 @@ export function useSapiens() {
   }, [currentSapiens, addChatMessage, updateChatMessage, setChatSessionId, setStatus,
       setLastDebugInfo, setLastMemoryUnits, setOverloaded]);
 
+  const editMessage = useCallback(async (messageId: string, text: string, requestId: string) => {
+    const state = useSapiensStore.getState();
+    if (!currentSapiens || !state.chatSessionId || state.status === 'processing') {
+      throw new Error('Wait for the current submission before saving this edit.');
+    }
+    const version = resourceSession.version;
+    const threadId = state.chatSessionId;
+    const current = () => resourceSession.version === version
+      && useSapiensStore.getState().currentSapiens?.id === currentSapiens.id
+      && useSapiensStore.getState().chatSessionId === threadId;
+    setStatus('processing');
+    try {
+      try {
+        const receipt = await sapiensService.sendTextInput({ sapiensId: currentSapiens.id,
+          text, sessionId: threadId, requestId, replacesMessageId: messageId });
+        if (receipt.status !== 'accepted' || receipt.thread_id !== threadId || !receipt.message_id) {
+          throw new Error('Edit acceptance was not confirmed.');
+        }
+      } catch (failure) {
+        const status = (failure as ApiError).status;
+        if (status && status >= 400 && status < 500) throw failure;
+        const accepted = await sapiensService.findAcceptedTurn(currentSapiens.id, requestId).catch(() => null);
+        if (!accepted?.message_id || accepted.thread_id !== threadId) {
+          throw new Error('Could not confirm the edit. Check history before changing it; saving the same edit again is safe.');
+        }
+      }
+      if (!current()) return;
+      const detail = await sapiensService.getChatDetail(currentSapiens.id, threadId);
+      if (current()) setChatMessages(chatMessages(detail));
+    } finally {
+      if (current()) setStatus('idle');
+    }
+  }, [currentSapiens, setStatus, setChatMessages]);
+
   const loadChat = useCallback(async (threadId: string) => {
     if (!currentSapiens) return;
     const version = resourceSession.version;
@@ -231,6 +265,7 @@ export function useSapiens() {
     loadSapiens,
     uploadFiles,
     sendTextInput,
+    editMessage,
     sendUserSignal,
     loadChat,
     startNewChat,

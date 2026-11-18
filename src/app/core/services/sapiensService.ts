@@ -157,7 +157,7 @@ class SapiensService {
    * Turn 2+: session_id = thread_id from previous response → continues thread
    */
   async sendTextInput(
-    request: TextInputRequest & { sessionId?: string | null; requestId: string }
+    request: TextInputRequest & { sessionId?: string | null; requestId: string; replacesMessageId?: string }
   ): Promise<ChatApiResponse> {
     const body: ChatRequest = {
       sapien_id: parseInt(request.sapiensId, 10),
@@ -165,8 +165,12 @@ class SapiensService {
       message: request.text,
       async: true,
       request_id: request.requestId,
+      ...(request.replacesMessageId ? { replaces_message_id: request.replacesMessageId } : {}),
     };
-    const response = await apiClient.post<ChatApiResponse>(API_ENDPOINTS.chat, body);
+    const endpoint = request.replacesMessageId
+      ? `${API_ENDPOINTS.sapienChats(request.sapiensId)}/${encodeURIComponent(request.sessionId ?? '')}/messages/${encodeURIComponent(request.replacesMessageId)}/edit`
+      : API_ENDPOINTS.chat;
+    const response = await apiClient.post<ChatApiResponse>(endpoint, body);
     const data = response.data;
     return {
       ...data,

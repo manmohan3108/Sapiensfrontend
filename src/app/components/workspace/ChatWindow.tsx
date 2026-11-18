@@ -1,3 +1,4 @@
+import { ChatMessageEditor, type EditChatMessage } from './ChatMessageEditor';
 import { quotaSummary, quotaReset, quotaRecovery } from '../../utils/quotaPresentation';
 import { ConversationHistory } from './ConversationHistory';
 import { useRememberedState } from '../navigation/NavigationState';
@@ -223,9 +224,11 @@ function TurnStatus({ status, quota, recoveryStatus, rejectionReason }: {
 
 // ─── Message Bubble ───────────────────────────────────────────────────────────
 function MessageBubble({
-  msg, sapienName, onSignal, isHighlighted, showTime,
+  msg, sapienName, onSignal, isHighlighted, showTime, onEdit, editDisabled,
 }: {
   msg: ChatMessage;
+  onEdit: EditChatMessage;
+  editDisabled: boolean;
   sapienName: string;
   onSignal: (id: string, s: UserSignalType) => void;
   isHighlighted: boolean;
@@ -312,6 +315,7 @@ function MessageBubble({
           </>
         )}
 
+        {isUser && <ChatMessageEditor message={msg} disabled={editDisabled} onSave={onEdit} />}
         {isUser && <TurnStatus status={msg.turnStatus} quota={msg.quota} recoveryStatus={msg.recoveryStatus} rejectionReason={msg.rejectionReason} />}
         {!msg.isLoading && <div className={`flex items-center gap-2 px-1 ${isUser ? 'flex-row-reverse' : ''}`}>
           {showTime && <time dateTime={msg.timestamp} title={new Date(msg.timestamp).toLocaleString()} className="text-[10px] text-sp-muted font-mono opacity-100 transition-opacity">{formatTime(msg.timestamp)}</time>}
@@ -381,7 +385,7 @@ export function ChatWindow() {
   const [historyError, setHistoryError] = useState<string | null>(null);
   const [attachmentsOpen, setAttachmentsOpen] = useState(false);
 
-  const { sendTextInput, sendUserSignal, loadChat, startNewChat } = useSapiens();
+  const { sendTextInput, editMessage, sendUserSignal, loadChat, startNewChat } = useSapiens();
   const msgs = useSapiensStore((s) => s.chatMessages);
   const currentSapiens = useSapiensStore((s) => s.currentSapiens);
   const chatClock = useWorkspaceChatClock(currentSapiens, canAnalyzeAndSimulate(user));
@@ -574,6 +578,8 @@ export function ChatWindow() {
                     showTime={showTime}
                     sapienName={currentSapiens?.name ?? 'Sapiens'}
                     onSignal={handleSignal}
+                    onEdit={editMessage}
+                    editDisabled={isProcessing || inactive}
                     isHighlighted={highlightedId === m.id}
                   />
                   </Fragment>

@@ -123,6 +123,7 @@ export interface ChatRequest {
   message: string;
   async?: boolean;
   request_id?: string;
+  replaces_message_id?: string;
 }
 
 /**
@@ -146,9 +147,14 @@ export interface ChatApiResponse {
 /**
  * A single message in the chat window, enriched with observability metadata.
  */
-export type ChatTurnStatus = 'queued' | 'processing' | 'replying' | 'waiting' | 'completed' | 'no_reply' | 'failed';
+export type ChatTurnStatus = 'queued' | 'processing' | 'replying' | 'waiting' | 'completed' | 'no_reply' | 'failed' | 'superseded';
 
 export interface ChatMessage {
+  latestMessageId?: string;
+  waitingForMessageId?: string | null;
+  editable?: boolean;
+  revisions?: { id: string; content: string; timestamp: string }[];
+  editedAt?: string;
   quota?: QuotaDetails | null;
   recoveryStatus?: QuotaRecoveryStatus | null;
   turnStatus?: ChatTurnStatus | 'sending' | 'unknown' | 'rejected';
@@ -365,9 +371,10 @@ export interface StoredChatMessage {
 }
 
 export interface ChatDetail extends ChatHistoryItem {
+  message_editing_supported?: boolean;
   sapien_id: number;
   messages: StoredChatMessage[];
-  turns?: { message_id: string; request_id?: string; status: ChatTurnStatus;
+  turns?: { message_id: string; request_id?: string; status: ChatTurnStatus; waiting_for_message_id?: string | null;
     quota?: QuotaDetails | null; recovery_status?: QuotaRecoveryStatus | null }[];
 }
 
