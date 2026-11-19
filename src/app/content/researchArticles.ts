@@ -139,59 +139,75 @@ export const researchArticles: Partial<Record<string, ResearchArticle>> = {
     ]
   },
   "inspiration": {
-    "opening": "How can studying a biological brain help us design software without confusing a useful analogy with a scientific explanation? The value of neuroscience for Sapiens lies in the questions and mechanisms it suggests, together with the discipline of stating what we have adapted.",
+    "opening": "If we want to learn from the brain, which ideas should we bring into Sapiens, and why? Our starting point is a question about an ability we want to understand. We then look for research that could help explain it and ask what we could investigate by adapting that idea in software.",
     "sections": [
       {
-        "title": "Begin with a phenomenon",
-        "text": "A familiar cue can bring back a distant experience. Some information stays available while we solve a problem. Experience can change later expectations. Each phenomenon gives us a problem to explain before we choose a software component or a biological name."
+        "title": "Start with something we want to understand",
+        "text": "A familiar place can remind us of a conversation. We can keep a question in mind while considering an answer, or change an expectation after a surprise. Each gives us a different question: what brings a memory back, what keeps information available, and what changes when an outcome is unexpected? These questions help us choose what to study in Sapiens. A component needs a reason to exist beyond having the name of a brain region."
       },
       {
-        "title": "Choose the level of interpretation",
-        "text": "A scientific account may concern synapses, neural populations, cognitive functions or observable behaviour. An engineering adaptation needs to say which level it addresses. Strengthening a stored relationship between memories, for example, is an interpretation of associative change; it does not reproduce the cellular process of changing a synapse."
+        "title": "Turn an inspiration into a clear proposal",
+        "text": "Consider the idea that activity can strengthen connections. In software, we could record when two memories are recalled together and change the strength of their relationship. That gives us something specific to examine: does this help useful information come back later, or mostly favour what was already familiar? The biological idea suggests a direction. The representation, rules and measurements are choices we make and need to justify."
       },
       {
-        "title": "Make the translation explicit",
-        "text": "For each mechanism, we want to identify its inputs, what changes through experience and how those changes could affect later behaviour. This makes the interpretation inspectable. If a brain-inspired name adds no explanatory value, it should not be used as evidence that a design is appropriate."
+        "title": "Different ideas explain different parts",
+        "text": "We draw on both neuroscience and research on thinking and behaviour. Some ideas concern connections between neurons, the nerve cells of the brain; others concern keeping information in mind or making it available across different functions. These are different levels of explanation. A stored memory is not a neuron, and a software engine is not a brain region. We need to say which relationship or function we are adapting, rather than treat everything as one biological analogy."
       },
       {
-        "title": "How to read these foundations",
-        "text": "The following articles introduce scientific concepts and their limits. Engine deep dives then explain our computational adaptations and whether they are currently connected. Experiments asks whether those adaptations contribute anything useful. These are separate steps: a convincing scientific inspiration does not establish that our particular software implementation works."
+        "title": "Give each question its own place",
+        "text": "The following articles separate the ideas we use. Attention concerns what receives priority; working memory concerns what stays available during thought. Association concerns what brings an experience to mind, plasticity concerns how connections change, and replay concerns revisiting experience. Prediction and reward introduce questions about expectations and value. They can influence one another, but each has a different job in our research story."
+      },
+      {
+        "title": "From inspiration to evidence",
+        "text": "An idea from neuroscience gives us a starting point, not a guarantee. We need to explain our adaptation, check that information reaches the parts meant to use it, and examine whether it makes a useful difference. Engine deep dives describe those adaptations and their current limits. Experiments and findings address what we have observed and what comparisons remain to be made. This separation lets us be ambitious about the hypothesis while being precise about what we have built."
       }
     ],
     "related": [
       "philosophy",
+      "emergence",
       "perception-attention",
       "associative-memory",
-      "architecture-overview"
+      "reinforcement-forgetting",
+      "architecture-overview",
+      "evaluation"
     ]
   },
   "perception-attention": {
-    "opening": "Why does some information become central to what we think and do while other information remains in the background? Attention and workspace theories address related parts of this problem: selection, and the availability of selected information to other processes.",
+    "opening": "How does one concern become the focus of thought while other information stays in the background? And how does that concern become available to the processes that can help with it? These questions matter to Sapiens because receiving information is only a first step; it must also be considered and used.",
     "sections": [
       {
-        "title": "Selection and availability",
-        "text": "Attention concerns the prioritization of information. A workspace account asks how selected content can become available across otherwise specialized functions. These ideas are related, but selecting an item and sharing it are different responsibilities. Neither should be reduced to merely storing a large amount of context."
+        "title": "Noticing and using information",
+        "text": "Imagine discussing a plan when someone mentions that an earlier agreement has changed. That detail may draw your attention, bring the agreement to mind and change the question you ask next. Noticing the update and using it across those activities are related but different steps. For Sapiens, we want to examine both: what receives attention, and whether the relevant information reaches the reasoning and actions that follow."
       },
       {
-        "title": "The workspace proposal",
-        "text": "In the neuronal workspace model developed by Dehaene, Kerszberg and Changeux, a distributed network connects specialized processors and supports effortful tasks that require coordination. This is a scientific model with particular assumptions; it is not a claim that every cognitive process must pass through a central executive."
+        "title": "The idea behind a global workspace",
+        "text": "Global Workspace Theory, associated with Bernard Baars, proposes that selected information can become widely available to otherwise specialized processes. A later neuronal model by Stanislas Dehaene, Michel Kerszberg and Jean-Pierre Changeux describes how distributed brain activity could support that coordination during effortful tasks. The important inspiration for us is shared availability: information noticed in one place can influence several functions. It is not the idea of a small person inside the brain directing everything."
       },
       {
-        "title": "What remains debated",
-        "text": "Workspace approaches contribute to the study of conscious access, but the relationship among attention, reportability and subjective experience remains contested. A computational system that shares information cannot be declared conscious simply because its architecture resembles part of a workspace account."
+        "title": "Attention and a workspace are not the same thing",
+        "text": "Attention concerns which information receives priority. A workspace account concerns how selected information becomes broadly available. In our plan example, prioritizing the changed agreement does not by itself ensure that it affects the decision. This distinction gives us a useful research question: when Sapiens selects a concern, what else needs to become available for it to understand and respond to that concern? Storing everything in one place would not answer that question."
       },
       {
-        "title": "The question for Sapiens",
-        "text": "The useful engineering question is how a selected concern can bring relevant information together without losing its origin or crowding out other concerns indefinitely. Awareness is our current interpretation of that problem. Its article explains the actual selection and decision flow rather than equating a prompt, a queue or a Bus with a biological workspace."
+        "title": "The connection to Awareness",
+        "text": "Awareness is where we investigate bringing a concern, supporting context and possible responses together. Its engine article explains our current decision process. Here, the inspiration is that a focus should help coordinate useful information without making other concerns disappear indefinitely. We want to study whether it can keep a relevant concern in view, reconsider it when evidence changes and recognize when a different concern deserves attention."
+      },
+      {
+        "title": "Where the comparison stops",
+        "text": "Workspace theories contribute to research on conscious access, but they do not provide a settled recipe for subjective experience. Our prompts, communication layer and decision loop are software choices. Resembling an aspect of a workspace theory would not establish that Sapiens is conscious. We can investigate selection and information use while keeping that deeper question separate, as discussed in our research philosophy."
       }
     ],
     "related": [
-      "philosophy",
+      "inspiration",
       "working-memory-foundation",
       "awareness",
-      "connections"
+      "connections",
+      "philosophy"
     ],
     "references": [
+      {
+        "title": "Bernard Baars — Global workspace theory of consciousness",
+        "url": "https://pubmed.ncbi.nlm.nih.gov/16186014/"
+      },
       {
         "title": "Dehaene, Kerszberg and Changeux — A neuronal model of a global workspace in effortful cognitive tasks",
         "url": "https://pubmed.ncbi.nlm.nih.gov/9826734/"
@@ -199,29 +215,35 @@ export const researchArticles: Partial<Record<string, ResearchArticle>> = {
     ]
   },
   "working-memory-foundation": {
-    "opening": "How do we keep an earlier part of a sentence in mind while interpreting the next part, or retain a constraint while considering an action? Working memory addresses the limited availability of information for ongoing thought.",
+    "opening": "How do we keep something in mind while using it to think? We may need an earlier instruction while comparing options, even as new information arrives. For Sapiens, this raises a question beyond storing memories: which information should remain available during the current thought, and when should it give way to something else?",
     "sections": [
       {
-        "title": "More than a short archive",
-        "text": "Working memory concerns information held available for current processing. It is commonly distinguished from long-term retention, but theories differ about how temporary storage, attention and control fit together. Some accounts emphasize separate components; others emphasize activated long-term representations and a focus of attention."
+        "title": "Keeping a constraint in view",
+        "text": "Suppose you are choosing a meeting time for people in different time zones. You need to compare the options while remembering that one person cannot attend in the morning. Knowing that constraint somewhere in your history is not enough; it needs to remain available as you compare. If a new message changes their availability, your current view needs to change too. This is the kind of problem that motivates our interest in working memory."
       },
       {
-        "title": "Why limits matter",
-        "text": "Keeping information available has limits, and interference can change what remains usable. There is no single item count that captures every task: the material, its organization and the way it is used matter. A software capacity setting therefore should not be presented as a discovered biological constant."
+        "title": "What working memory describes",
+        "text": "Working memory concerns holding information available and using it during ongoing thought. It differs from simply retaining information for later. Researchers disagree about exactly how it works. Some accounts emphasize separate temporary stores and control processes; others emphasize activated long-term memories and a narrower focus of attention. Nelson Cowan’s review explains these distinctions. We draw from the question they address without treating one software design as a complete account of human working memory."
       },
       {
-        "title": "An example of the problem",
-        "text": "While deciding how to respond to a colleague, a person may need the current question, an earlier agreement and a boundary on their authority. Retaining everything they have ever heard would not explain why those particular details remain available now. Selection and maintenance need to work together."
+        "title": "Why more context is not always better",
+        "text": "Human working memory is limited, and information can interfere with other information. What counts as an item also depends on how it is organized and understood. We therefore do not take a fixed number from a memory experiment and use it as a biological rule for Sapiens. Our practical question is whether the available context supports the current thinking. A larger prompt may contain more information while still obscuring the constraint that matters."
       },
       {
-        "title": "The computational interpretation",
-        "text": "For Sapiens, this motivates a bounded layer of active references whose relevance can change as thinking proceeds. The Working Memory engine article explains what we currently retain and how it reaches Awareness. The scientific concept provides the question; the software’s activation rules and storage choices remain engineering decisions."
+        "title": "An active set for Sapiens",
+        "text": "Our Working Memory keeps references to selected information, allowing its content to be retrieved when needed. This gives us a way to explore what stays active without treating every stored record as equally relevant now. The current Awareness connection uses it for supporting context and retained thoughts. The engine deep dive explains the selection and retention rules; those are engineering choices whose usefulness needs examination."
+      },
+      {
+        "title": "What we want to learn from it",
+        "text": "We want to know whether useful information stays available long enough to influence a decision, whether new evidence can displace an outdated assumption, and whether irrelevant material keeps returning. Losing the meeting constraint and holding on to an obsolete version are different failures. Attention determines what takes priority; long-term memory concerns what can be recalled. This article’s question is what remains available while the thinking proceeds."
       }
     ],
     "related": [
       "perception-attention",
+      "associative-memory",
       "working-memory-engine",
-      "memory"
+      "awareness",
+      "experience-evaluation"
     ],
     "references": [
       {
@@ -231,62 +253,74 @@ export const researchArticles: Partial<Record<string, ResearchArticle>> = {
     ]
   },
   "associative-memory": {
-    "opening": "How can a small cue bring a larger experience to mind? Remembering often involves relationships among parts of experience, which raises a design question: how can stored information remain connected without treating every connection as a reliable explanation?",
+    "opening": "How can one detail bring a larger experience to mind? People often remember through connections: a name recalls a conversation, or a place recalls something that happened there. For Sapiens, we want to explore how those relationships could make earlier experience useful when a new situation does not use the same words.",
     "sections": [
       {
-        "title": "A cue and its surrounding experience",
-        "text": "A person’s name may remind us of an earlier conversation, the problem being discussed and something still unresolved. An associative account asks how those elements become related and how part of an experience can help reinstate more of it. Shared wording alone is not the only possible connection."
+        "title": "A cue can lead beyond itself",
+        "text": "A colleague mentions that a review is delayed. You may remember an earlier discussion about missing evidence, who could provide it and why it mattered. The word “delayed” is only a cue; the useful information lies in the surrounding relationships. In Sapiens, we want to investigate recall that can bring back relevant context, rather than only a record that resembles the latest sentence."
       },
       {
-        "title": "Learning episodes and broader structure",
-        "text": "The complementary learning systems account of McClelland, McNaughton and O’Reilly proposes different learning roles for hippocampal and neocortical systems: rapidly retaining episodes and gradually integrating structure across experience. It is one influential account of how different learning demands might be reconciled, rather than a complete description of memory."
+        "title": "Remembering relationships",
+        "text": "An associative view of memory asks how parts of an experience become connected and how a cue can help bring back more of it. Models studied by James McClelland, Bruce McNaughton and Randall O’Reilly represent learning through changes in connections and explore how those connections support memory. Their wider account distinguishes retaining particular experiences from learning structure across them. We return to that distinction in the replay article; here, our focus is how a cue leads to related information."
       },
       {
-        "title": "Association is not a conclusion",
-        "text": "Two events may occur together without one causing the other. A remembered link can suggest where to look, but the original context still matters when deciding what it means. For software, this distinction is especially important when associations are generated or ranked rather than directly observed."
+        "title": "Similarity is one kind of connection",
+        "text": "Two conversations may use similar language but concern different projects. Two differently worded messages may describe the same unresolved issue. We therefore care about relationships such as shared people, events and context, as well as similarity of meaning. A useful connection should help recover why records belong together. Without that context, recall can bring back a plausible-looking memory that does not apply to the present situation."
       },
       {
-        "title": "From the idea to a memory system",
-        "text": "Engram explores connected memory units, contextual information and multiple routes for recall. Its records are computational representations, not individual biological neurons. The next foundations explain how relationships might strengthen and why revisiting experience matters; the Engram article describes which of those ideas are implemented."
+        "title": "A connection is a lead, not proof",
+        "text": "If a delay followed a team change, remembering them together does not prove that the change caused the delay. Likewise, repeatedly recalling the same explanation does not make it true. For Sapiens, associations should offer information to consider while keeping its source and uncertainty available. We want reasoning to be able to question a remembered connection, especially when a newer experience points in another direction."
+      },
+      {
+        "title": "Why this leads to Engram",
+        "text": "Engram is our exploration of connected long-term memory: retaining experiences with context and providing ways to recall related information. Its stored units and links are software representations, not biological neurons and synapses. The engine article covers how recall works. The next foundations ask how relationships might change through use and why revisiting memories could matter. Our aim here is to explain why connected recall belongs in the investigation at all."
       }
     ],
     "related": [
+      "continuity",
+      "working-memory-foundation",
       "reinforcement-forgetting",
       "replay-consolidation",
       "memory"
     ],
     "references": [
       {
-        "title": "McClelland, McNaughton and O’Reilly — Why there are complementary learning systems in the hippocampus and neocortex",
-        "url": "https://web.stanford.edu/~jlmcc/papers/McCMcNaughtonOReilly95.pdf"
+        "title": "McClelland, McNaughton and O’Reilly — Complementary learning systems in the hippocampus and neocortex",
+        "url": "https://pubmed.ncbi.nlm.nih.gov/7624455/"
       }
     ]
   },
   "reinforcement-forgetting": {
-    "opening": "How can experience make a connection easier to use later, without making repeatedly encountered information dominate forever? Strengthening and balancing are complementary problems when designing a system that changes through experience.",
+    "opening": "If experiences are connected, what should make a connection stronger or less prominent over time? Keeping every relationship fixed would ignore experience; strengthening everything repeatedly could make familiar ideas dominate. Hebbian learning and plasticity inspire how we investigate this balance in Sapiens.",
     "sections": [
       {
-        "title": "Hebbian strengthening",
-        "text": "Hebbian learning concerns activity-dependent changes in the effectiveness of connections. Its central inspiration is that coordinated activity can help strengthen a relationship. Research on long-term potentiation provides evidence for lasting changes in synaptic transmission, though biological learning includes many mechanisms and cannot be captured by a single slogan."
+        "title": "What Hebbian learning suggests",
+        "text": "Plasticity means that the nervous system can change. One influential idea, associated with Donald Hebb, is that activity in connected neurons can change how strongly they influence one another. In simplified terms, coordinated activity can strengthen a connection. This gives us a question for memory in software: could repeated use of related information make that relationship easier to use later? It is an inspiration for a rule, not a complete explanation of learning."
+      },
+      {
+        "title": "Connections in the brain can change",
+        "text": "A synapse is a connection through which one neuron influences another. Tim Bliss and Terje Lømo showed lasting increases in synaptic transmission after stimulation in the rabbit hippocampus, a brain region involved in memory. This increase is known as long-term potentiation. This supplies evidence that the effectiveness of connections can change. It does not show that every association should strengthen whenever two things occur together, or that a numerical link in our software behaves like a biological synapse."
       },
       {
         "title": "Why strengthening needs balance",
-        "text": "Unrestricted positive feedback would make already strong activity increasingly dominant. Homeostatic plasticity concerns mechanisms that help stabilize neural activity; synaptic scaling is one example. This is a different problem from deciding whether a remembered statement is true."
+        "text": "A strengthening process can create a feedback loop: stronger connections cause more activity, which can strengthen them again. Research on homeostatic plasticity examines how neural activity stays stable while connections change. Synaptic scaling, described in Gina Turrigiano’s work, is one such mechanism. For Sapiens, the design question is whether familiar memories crowd out other useful information. Stabilizing activity and deciding whether information is correct remain different problems."
       },
       {
-        "title": "Forgetting has more than one meaning",
-        "text": "Reduced accessibility, interference, changed associations and loss of stored information are different possibilities. A software system should likewise distinguish reducing a memory’s prominence from deleting its evidence. A useful old record may need to remain retrievable even when it is no longer routinely selected."
+        "title": "Less prominent does not mean erased",
+        "text": "Imagine repeatedly discussing one explanation for a delay. That explanation may become easy to recall even after evidence points elsewhere. We want a Sapien to reconsider it without losing the record of why it once seemed plausible. Reducing a connection’s prominence and deleting its supporting information have different consequences. The distinction matters to our design: an older account can remain useful for understanding how a situation or belief changed."
       },
       {
-        "title": "Our interpretation to investigate",
-        "text": "These ideas motivate experience-dependent association weights and balancing in Engram. Repeated joint recall can change a relationship’s prominence, but it is not proof of usefulness or accuracy. The engine article explains that local mechanism; Feedback addresses a separate question about what later outcomes support."
+        "title": "Our limited adaptation",
+        "text": "Engram can strengthen connections between memories recalled together and later reduce those connection weights to keep them from growing without balance. This is our computational interpretation of selected ideas, not a reconstruction of biological plasticity. It changes stored memory relationships, not the language model’s training. The Engram and replay deep dives explain the mechanism; evidence about usefulness requires a separate judgment. Frequent recall can reveal a recurring association while still reinforcing the wrong one."
       }
     ],
     "related": [
       "associative-memory",
+      "replay-consolidation",
       "memory",
       "hippocampus",
-      "action-feedback"
+      "action-feedback",
+      "experience-evaluation"
     ],
     "references": [
       {
@@ -300,28 +334,34 @@ export const researchArticles: Partial<Record<string, ResearchArticle>> = {
     ]
   },
   "replay-consolidation": {
-    "opening": "Could revisiting an experience after the immediate event help change what becomes useful later? Replay and consolidation research suggests that memory processing need not end when an interaction ends.",
+    "opening": "Does useful memory processing have to stop when an interaction ends? People can return to earlier experiences, and brain research shows that earlier activity can reappear during later rest or sleep. This inspires a question for Sapiens: could revisiting selected memories help their information become useful in future situations?",
     "sections": [
       {
-        "title": "Evidence of reactivation",
-        "text": "Wilson and McNaughton observed that hippocampal cells active together during spatial behaviour in rats were more likely to be active together during subsequent sleep. This showed re-expression of earlier activity. It does not mean that replay is a literal recording of an entire experience."
+        "title": "What researchers observed",
+        "text": "Matthew Wilson and Bruce McNaughton recorded activity in the hippocampus, a brain region involved in memory, as rats explored locations and slept before and afterward. Cells active together during the behaviour were more likely to be active together during subsequent sleep. This was evidence of earlier activity patterns being reactivated. It did not show a literal recording of the whole experience being played back, or establish that every reactivation produces a useful lesson."
       },
       {
-        "title": "A proposal about integration",
-        "text": "Complementary learning systems theory connects rapid episode learning with slower integration across experiences. Reinstating earlier patterns is one proposed way to support that integration. The broader question concerns stability and change: how new information can become useful without simply overwriting what was learned before."
+        "title": "Why revisit an experience?",
+        "text": "Suppose two conversations contain different parts of an unresolved problem. Returning to the earlier one may help bring its connection to the later one into view. That is an example of what we would like to investigate in Sapiens, not a claim that the rat experiment demonstrated this ability. Replay gives us a way to ask whether information becomes more useful through reconsideration, beyond simply being stored and left untouched."
       },
       {
-        "title": "What should be revisited?",
-        "text": "For our engineering work, replay raises a selection problem as well as a scheduling problem. Repeatedly revisiting only familiar or already prominent records could reinforce a narrow history. Revisiting misleading interpretations could strengthen an error. Replay therefore needs evaluation beyond whether the scheduled process completes."
+        "title": "Remembering an event and learning across events",
+        "text": "The complementary learning systems account of McClelland, McNaughton and O’Reilly proposes that the hippocampus rapidly learns particular experiences, while the neocortex, part of the brain’s outer layer, more gradually learns patterns across experiences. Reinstating memories is part of the proposed relationship between these systems. This motivates our interest in revisiting experience, while leaving open what kind of integration our software could support. Rereading a record alone is not evidence that it has learned a broader idea."
       },
       {
-        "title": "A limited adaptation in Sapiens",
-        "text": "Our Hippocampus engine schedules selected Engram recall and balancing. That is a narrow computational adaptation, not a simulation of sleep or the full interaction between hippocampus and cortex. Its deep dive distinguishes the currently connected replay path from other ideas that remain inactive."
+        "title": "Selection matters as much as repetition",
+        "text": "What should a Sapien revisit: a recent encounter, an unresolved question or an experience that challenged an earlier belief? Repeating only the most familiar records could narrow what it considers. Repeating an incorrect interpretation could make it more prominent. These are research questions about selection and consequences. A replay process completing successfully tells us that it ran; we still need to examine what changed and whether that helped."
+      },
+      {
+        "title": "What we currently adapt",
+        "text": "Our Hippocampus engine coordinates selected recalls through Engram, followed by balancing of the learned memory connections. This is a limited replay mechanism, not a simulation of sleep or a complete hippocampus–cortex learning system. The engine deep dive describes that boundary. Experience evaluation asks whether revisiting memories improves later recall and behaviour, has little effect or makes misleading associations harder to escape."
       }
     ],
     "related": [
       "associative-memory",
+      "reinforcement-forgetting",
       "hippocampus",
+      "memory",
       "experience-evaluation"
     ],
     "references": [
@@ -331,34 +371,39 @@ export const researchArticles: Partial<Record<string, ResearchArticle>> = {
       },
       {
         "title": "McClelland, McNaughton and O’Reilly — Complementary learning systems",
-        "url": "https://web.stanford.edu/~jlmcc/papers/McCMcNaughtonOReilly95.pdf"
+        "url": "https://pubmed.ncbi.nlm.nih.gov/7624455/"
       }
     ]
   },
   "prediction-reward-foundation": {
-    "opening": "Why can an ordinary outcome be informative when it was unexpected, while a desirable but fully expected outcome teaches us less? Prediction and reward research separates what happened from what was expected to happen.",
+    "opening": "What can a difference between what we expected and what happened tell us? People can use surprises to reconsider a situation, but something unexpected is not necessarily useful or rewarding. For Sapiens, we want to explore these distinctions before deciding how expectations should influence learning and action.",
     "sections": [
       {
-        "title": "Expectations give outcomes a comparison",
-        "text": "A prediction error expresses a difference between an expectation and an observation. Reward prediction error is narrower: it compares received and predicted reward. Research summarized by Schultz relates important patterns of dopamine activity to this difference, rather than treating dopamine as a simple signal of pleasure."
+        "title": "An outcome needs something to compare with",
+        "text": "Imagine expecting a colleague to provide a missing detail. Their reply arrives, but it reveals a different problem instead. The message is new information; the difference from your expectation gives it another meaning. A prediction error describes a mismatch between an expected and an observed outcome. For our research, the question is whether retaining an expectation could help a Sapien notice what needs reconsideration, rather than only record that something happened."
       },
       {
-        "title": "Novelty is a different question",
-        "text": "An unfamiliar event can be novel without being valuable. An unexpected event may be important even if its content is familiar. These distinctions matter for a computational design: similarity to previous events, prediction accuracy and usefulness should not silently become interchangeable scores."
+        "title": "Reward prediction error is more specific",
+        "text": "Reward prediction error concerns the difference between expected and received reward. Work reviewed by Wolfram Schultz describes dopamine responses that distinguish rewards better than expected, fully predicted rewards and outcomes worse than expected. This is more specific than treating dopamine as a signal of pleasure. It inspires a question about learning from outcomes relative to expectations; it does not give our software a feeling of satisfaction or disappointment."
       },
       {
-        "title": "Value depends on what is being pursued",
-        "text": "If a colleague replies promptly but does not provide the needed information, the interaction may succeed as message delivery while making little progress toward the intended outcome. Our design needs to specify which outcome a value estimate concerns and what evidence could change it."
+        "title": "Novel, surprising and useful are different",
+        "text": "An unfamiliar document may be novel but irrelevant to the current concern. A familiar colleague saying “no” may be surprising if approval was expected. An entirely expected answer may still be useful. For Sapiens, these distinctions matter because one score should not quietly stand for all three. We want to be able to ask whether information is unfamiliar, whether it challenges an expectation and whether it helps with something the individual is considering."
       },
       {
-        "title": "Where this leads",
-        "text": "Sapiens contains limited experimental components for value, expectations, novelty and reward error, described in the predictive-engine article. They are not an account of human emotion or an integrated model of motivation. The Future research section asks how such distinctions could eventually contribute to decisions."
+        "title": "Useful toward which outcome?",
+        "text": "A message can be delivered successfully while leaving the recipient confused. If we value only delivery, we miss the purpose of the conversation. Before introducing a reward signal, we need to decide which outcome it concerns and what evidence supports that assessment. We also want to consider whether a useful discovery can matter beyond finishing a task. Those choices belong to our research into motivation and value, not to the name of a brain chemical."
+      },
+      {
+        "title": "Where this stands in Sapiens",
+        "text": "We have experimental Cortex, Cerebellum and Dopamine components for aspects of value, expectations, novelty and reward error. They are not connected to the main runtime as a complete learning loop. Their names describe inspirations and limited design roles, not the full functions of the corresponding biology. The predictive-engine article covers those attempts; Future research explores what additional design and evidence would be needed before these ideas could guide ongoing behaviour."
       }
     ],
     "related": [
       "predictive-engines",
       "prediction",
       "reward-emotion",
+      "motivation-action",
       "action-feedback"
     ],
     "references": [

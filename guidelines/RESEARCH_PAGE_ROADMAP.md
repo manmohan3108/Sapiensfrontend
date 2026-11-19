@@ -73,8 +73,9 @@ reader's journey without changing current routes, category names or navigation.
   observations separate from explanations of them.
 - Do not invent a biological explanation for an ordinary engineering boundary.
   Practical software choices can support the research without being novel theories.
-- Preserve existing URLs and the theme. Updating this plan does not change article
-  content, ordering, titles or publication status.
+- Preserve the theme and keep internal links aligned with the current articles.
+  Retired philosophy URLs have no compatibility redirects. Updating this plan
+  alone does not change article content, ordering, titles or publication status.
 
 ## Topic map and preparation scope
 
@@ -188,23 +189,19 @@ and continuity. It owns their shared motivation, not their engine implementation
 Link to identity, memory, feedback, replay and experience evaluation. Do not claim
 personhood, subjective experience or proven developmental benefits.
 
-#### Canonical articles and older links
+#### Canonical articles and consolidated subjects
 
-| Topic or older link | Canonical home | Subject retained |
+| Article | URL slug | Subjects retained |
 | --- | --- | --- |
-| `philosophy` | Article 1 | Main motivation and introduction to our approach |
-| `intelligence-understanding` | Article 1 | Working meanings tied directly to our research |
-| `consciousness` | Article 1 | Focused subsection about inspiration, scope and claims |
-| `emergence` | Article 2 | The hypothesis, explanation, example and Sapiens connection |
-| `self-agency` | Article 3 | Perspective, intentions and responsibility |
-| `firsthand-experience` | Article 3 | Participation, choices and consequences |
-| `continuity` | Article 3 | Learning and revision across encounters |
+| Why we are building Sapiens | `philosophy` | Motivation, working meanings of intelligence and understanding, and consciousness as an open question |
+| Our hypothesis: how intelligence might emerge | `emergence` | The hypothesis, flock example, brain inspiration and Sapiens connection |
+| Why experience and individuality matter | `continuity` | Perspective, agency, participation and development over time |
 
-Older links for `intelligence-understanding` and `consciousness` redirect to
-`philosophy`; `self-agency` and `firsthand-experience` redirect to `continuity`.
-Preserve browsing filters on redirects. Internal related links use the canonical
-articles without duplicates. Keep superseded drafts in Git history, not as
-parallel published pages or a second content archive.
+Only these three articles appear in this section and its reading order.
+Retired article URLs use the existing unavailable-article view; do not retain
+aliases or redirects. Internal related links use the current articles without
+duplicates. Superseded drafts remain in Git history, not as parallel published
+pages or a second content archive.
 
 Keep each article substantial enough to explain its reasoning. Do not compress
 the combined subjects into a few summary sentences, or paste the old articles

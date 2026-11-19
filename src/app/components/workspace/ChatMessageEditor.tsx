@@ -1,11 +1,13 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import { Pencil } from 'lucide-react';
 import type { ChatMessage } from '../../types/sapiensTypes';
 
 export type EditChatMessage = (messageId: string, text: string, requestId: string) => Promise<void>;
 
 /** Local drafts are separate from the immutable versions returned by chat history. */
-export function ChatMessageEditor({ message, disabled, onSave }: {
+export function ChatMessageEditor({ message, disabled, onSave, actions, timestamp }: {
   message: ChatMessage; disabled: boolean; onSave: EditChatMessage;
+  actions?: ReactNode; timestamp?: ReactNode;
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
@@ -52,11 +54,20 @@ export function ChatMessageEditor({ message, disabled, onSave }: {
 
   return <div className="w-full min-w-0 space-y-2">
     {message.waitingForMessageId && <p role="status" className="text-sm text-sp-muted">Edit saved. Waiting for earlier work to finish or recover before continuing.</p>}
-    {message.editable && <button ref={trigger} type="button" className={buttonClass}
-      disabled={disabled || saving || editing} aria-expanded={editing}
-      onClick={() => { setDraft(message.content); setBaseId(message.latestMessageId ?? message.id); setError(''); setEditing(true); }}>
-      Edit message
-    </button>}
+    <div className="flex flex-wrap items-center justify-end gap-x-2">
+      <div className="flex items-center gap-1">
+        {message.editable && <button ref={trigger} type="button"
+          className="inline-flex min-h-10 items-center gap-1.5 rounded-md px-2 text-sm text-sp-muted hover:text-sp-ink hover:bg-sp-ink/10 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50"
+          disabled={disabled || saving || editing} aria-expanded={editing}
+          aria-label="Edit message"
+          onClick={() => { setDraft(message.content); setBaseId(message.latestMessageId ?? message.id); setError(''); setEditing(true); }}>
+          <Pencil aria-hidden="true" className="h-3.5 w-3.5" />
+          Edit
+        </button>}
+        {actions}
+      </div>
+      {timestamp}
+    </div>
     {editing && <div className="space-y-2 rounded-lg border border-sp-line bg-sp-panel p-3">
       <label htmlFor={inputId} className="block text-sm text-sp-ink">Edit your message</label>
       <textarea ref={input} id={inputId} name="message_edit" autoComplete="off" value={draft} disabled={saving} rows={4}

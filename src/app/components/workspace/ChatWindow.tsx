@@ -65,16 +65,16 @@ function CopyBtn({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
   return (
     <button
+      type="button"
       onClick={async () => {
         await navigator.clipboard.writeText(text);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
       }}
-      className="opacity-100 transition-opacity flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px]
-        text-sp-muted hover:text-sp-ink hover:bg-sp-ink/10 border border-transparent hover:border-sp-line"
+      className="inline-flex min-h-10 items-center gap-1.5 rounded-md px-2 text-sm text-sp-muted hover:text-sp-ink hover:bg-sp-ink/10 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50"
     >
-      {copied ? <Check className="w-2.5 h-2.5 text-sp-success" /> : <Copy className="w-2.5 h-2.5" />}
-      {copied ? 'Copied' : 'Copy'}
+      {copied ? <Check aria-hidden="true" className="w-3.5 h-3.5 text-sp-success" /> : <Copy aria-hidden="true" className="w-3.5 h-3.5" />}
+      <span aria-live="polite">{copied ? 'Copied' : 'Copy'}</span>
     </button>
   );
 }
@@ -335,9 +335,12 @@ function MessageBubble({
           </>
         )}
 
-        {isUser && <ChatMessageEditor message={msg} disabled={editDisabled} onSave={onEdit} />}
+        {isUser && <ChatMessageEditor message={msg} disabled={editDisabled} onSave={onEdit}
+          actions={!msg.isLoading && msg.content && !msg.emptyResponse ? <CopyBtn text={msg.content} /> : null}
+          timestamp={!msg.isLoading && showTime ? <time dateTime={msg.timestamp} title={new Date(msg.timestamp).toLocaleString()} className="text-[10px] text-sp-muted font-mono whitespace-nowrap">{formatTime(msg.timestamp)}</time> : null}
+        />}
         {isUser && <TurnStatus status={msg.turnStatus} quota={msg.quota} recoveryStatus={msg.recoveryStatus} rejectionReason={msg.rejectionReason} />}
-        {!msg.isLoading && <div className={`flex items-center gap-2 px-1 ${isUser ? 'flex-row-reverse' : ''}`}>
+        {!isUser && !msg.isLoading && <div className="flex flex-wrap items-center gap-2 px-1">
           {showTime && <time dateTime={msg.timestamp} title={new Date(msg.timestamp).toLocaleString()} className="text-[10px] text-sp-muted font-mono opacity-100 transition-opacity">{formatTime(msg.timestamp)}</time>}
           {msg.content && !msg.emptyResponse && <CopyBtn text={msg.content} />}
         </div>}

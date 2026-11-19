@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect } from 'react';
 import { AlertTriangle } from 'lucide-react';
-import { Link, Navigate, useParams, useSearchParams } from 'react-router';
+import { Link, useParams, useSearchParams } from 'react-router';
 import { researchArticles, type ResearchArticle } from '../content/researchArticles';
 import { useAuth } from '../contexts/AuthContext';
 import { YourSapiensLink } from '../components/navigation/YourSapiensLink';
@@ -17,8 +17,8 @@ type ResearchSection = { id: string; title: string; readingLabel: string; motiva
 const topics: ResearchTopic[] = [
     { id: 'philosophy', title: 'Why we are building Sapiens', description: 'Our ambition and the neuroscience and philosophical ideas guiding the research.' },
     { id: 'emergence', title: 'Our hypothesis: how intelligence might emerge', description: 'Why we study brain-inspired processes working together, and what emergence would mean for Sapiens.' },
-    { id: 'inspiration', title: 'From neuroscience to computational design', description: 'Our sources of inspiration and the limits of translating them into software.' },
-    { id: 'perception-attention', title: 'Attention and Global Workspace Theory', description: 'The scientific ideas about selection and shared availability; their relevance to Awareness and the limits of the comparison.' },
+    { id: 'inspiration', title: 'From neuroscience to computational design', description: 'How we choose ideas from brain research and turn them into questions we can investigate in Sapiens.' },
+    { id: 'perception-attention', title: 'Attention and Global Workspace Theory', description: 'What receives attention, how selected information becomes available for thought, and why this inspires Awareness.' },
     { id: 'biological-memory-learning', title: 'Memory and learning', description: 'Ideas about retaining, recalling and adapting through experience.' },
     { id: 'motivation-action', title: 'Motivation and action', description: 'How commitments, exploration and reasons to wait could shape what happens next.' },
     { id: 'architecture-overview', title: 'Bringing the mechanisms together', description: 'The overall architecture and the responsibilities of its engines.' },
@@ -38,17 +38,17 @@ const topics: ResearchTopic[] = [
     { id: 'missing-mechanisms', title: 'Missing mechanisms and research directions', description: 'Concepts not yet represented and approaches we still need to explore.' },
     { id: 'alternative-explanations', title: 'Alternative explanations', description: 'Other reasons observed behaviour might arise, without supporting emergence.' },
     { id: 'research-limitations', title: 'Limits of our evidence', description: 'Constraints of our implementation, experiments and current conclusions.' },
-  { id: 'associative-memory', title: 'How one experience brings another to mind', description: 'Associative memory: connecting experiences so the past can help explain a new situation.' },
-  { id: 'replay-consolidation', title: 'Replay, consolidation and balancing associations', description: 'Replay and consolidation: exploring how revisiting memories changes their connections.' },
-  { id: 'reinforcement-forgetting', title: 'Hebbian strengthening and plasticity', description: 'Reinforcement, forgetting and the risk of strengthening the wrong association.' },
+  { id: 'associative-memory', title: 'How one experience brings another to mind', description: 'Why a cue can bring back related experiences, and what that suggests for Engram’s connected recall.' },
+  { id: 'replay-consolidation', title: 'Replay and consolidation', description: 'Why revisiting experience may matter, and what our limited replay mechanism lets us investigate.' },
+  { id: 'reinforcement-forgetting', title: 'Hebbian strengthening and plasticity', description: 'How activity can change connections, why balance matters, and how these ideas inform Engram.' },
   { id: 'curiosity', title: 'What makes something worth exploring?', description: 'Curiosity can concern an unfamiliar pattern, an opportunity or an idea—not only a missing answer.' },
   { id: 'initiative', title: 'Why think when nobody has asked?', description: 'Making room for exploration, gathering information and ordinary conversation without forcing constant activity.' },
   { id: 'abstraction', title: 'When does an experience become a general idea?', description: 'Abstraction and generalization: exploring patterns that may apply beyond one remembered event.' },
   { id: 'prediction', title: 'Could expectations help a Sapien understand what is happening?', description: 'An exploratory direction: compare expectations with incoming evidence and connect events into an unfolding account.' },
   { id: 'reward-emotion', title: 'What could give an experience significance?', description: 'Research directions around motivation, reward and emotion-inspired processes, without claiming human feelings.' },
   { id: 'senses-roles', title: 'One individual across different roles and senses', description: 'Questions about carrying experience across settings and possible additional senses while preserving context.' },
-  { id: 'working-memory-foundation', title: 'Working memory', description: 'Why some information remains active for current thinking, and how this differs from long-term memory.' },
-  { id: 'prediction-reward-foundation', title: 'Prediction, novelty and reward prediction error', description: 'Expectations, surprise and differences between expected and observed value.' },
+  { id: 'working-memory-foundation', title: 'Working memory', description: 'What stays available while we think, and why stored information alone is not enough.' },
+  { id: 'prediction-reward-foundation', title: 'Prediction, novelty and reward prediction error', description: 'Why unfamiliar, unexpected and useful are different—and what those differences could mean for Sapiens.' },
   { id: 'language-models', title: 'The role of language models', description: 'What the underlying model contributes, and what memory, tools and the wider system add.' },
   { id: 'working-memory-engine', title: 'Working Memory engine', description: 'Keeping selected references active through activation, decay and capacity, without copying all long-term content.' },
   { id: 'hippocampus', title: 'Hippocampus: replay', description: 'Why revisit experience? The current replay driver, Engram strengthening and the separate dormant bundling design.' },
@@ -63,7 +63,7 @@ const topics: ResearchTopic[] = [
 const selectTopics = (...ids: string[]) => ids.flatMap(id => topics.filter(topic => topic.id === id));
 const sections: ResearchSection[] = [
   { id: 'philosophy', title: 'Research philosophy', readingLabel: 'Philosophical questions', motivation: 'What are we trying to understand about intelligence? Explore why we are building Sapiens, our emergence hypothesis and why an individual’s experience matters.', related: ['architecture', 'experiments'], topics: selectTopics('philosophy', 'emergence', 'continuity') },
-  { id: 'neuroscience', title: 'Neuroscience foundations', readingLabel: 'Scientific inspiration', motivation: 'Understand the concepts before the software. Engine deep dives explain how we adapt these ideas, where the analogy ends and what is actually implemented.', related: ['engines'], topics: selectTopics('inspiration', 'perception-attention', 'working-memory-foundation', 'associative-memory', 'reinforcement-forgetting', 'replay-consolidation', 'prediction-reward-foundation') },
+  { id: 'neuroscience', title: 'Neuroscience foundations', readingLabel: 'Scientific inspiration', motivation: 'Which ideas from brain research help us investigate intelligence? Each article connects a scientific inspiration to a question in Sapiens. Engine deep dives explain our adaptations and their current limits.', related: ['engines'], topics: selectTopics('inspiration', 'perception-attention', 'working-memory-foundation', 'associative-memory', 'reinforcement-forgetting', 'replay-consolidation', 'prediction-reward-foundation') },
   { id: 'architecture', title: 'Sapiens architecture', readingLabel: 'How the system connects', motivation: 'How do different responsibilities cooperate within one Sapien? Follow the overall structure and information flow before exploring individual engines.', related: ['philosophy', 'engines'], topics: selectTopics('architecture-overview', 'identity', 'process', 'connections', 'language-models') },
   { id: 'engines', title: 'Engine deep dives', readingLabel: 'Computational interpretations', motivation: 'Why does each engine exist? Each deep dive connects its motivation and scientific or philosophical influences to our interpretation, current implementation, interactions and limitations.', related: ['neuroscience', 'philosophy', 'experiments'], topics: selectTopics('awareness', 'memory', 'working-memory-engine', 'hippocampus', 'goals', 'hold', 'reasoning-questioning', 'curiosity', 'motor-conversation', 'action-feedback', 'tool-learning', 'predictive-engines', 'weave') },
   { id: 'experiments', title: 'Experiments and findings', readingLabel: 'Evidence and evaluation', motivation: 'What actually happens when these ideas work together? Examine conditions, observations, failures and alternative explanations rather than treating the architecture as proof.', related: ['engines', 'philosophy'], topics: selectTopics('simulation', 'findings', 'experience-evaluation', 'evaluation', 'alternative-explanations', 'research-limitations') },
@@ -73,14 +73,6 @@ const sections: ResearchSection[] = [
 const readingOrder = sections.flatMap(section => section.topics
   .filter(topic => Boolean(topic.content))
   .map(topic => ({ topic, sectionTitle: section.title })));
-
-// Keep published links working after consolidating the philosophy articles.
-const mergedArticleDestinations = new Map<string, string>([
-  ['intelligence-understanding', 'philosophy'],
-  ['consciousness', 'philosophy'],
-  ['self-agency', 'continuity'],
-  ['firsthand-experience', 'continuity'],
-]);
 
 let lastBrowsePosition: { url: string; y: number } | undefined;
 
@@ -138,9 +130,6 @@ export function ResearchPage() {
     // Filter edits stay in place; restore only when entering or leaving an article.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug]);
-
-  const mergedDestination = slug ? mergedArticleDestinations.get(slug) : undefined;
-  if (mergedDestination) return <Navigate replace to={articleUrl(mergedDestination)}/>;
 
   return <div className="direction-page direction-world direction-science research-page">
     <ScienceEnvironment/>
