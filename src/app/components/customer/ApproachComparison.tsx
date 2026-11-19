@@ -1,25 +1,58 @@
-import { ArrowDown, ArrowUpRight } from 'lucide-react';
-import { ApproachDiagram } from './ApproachDiagram';
 import '../../../styles/approach-comparison.css';
+
+const comparisons = [
+  {
+    aspect: 'Starting point',
+    common: 'Answer questions or carry out tasks through chat, predefined workflows or model-directed steps.',
+    sapiens: 'Investigate whether brain-inspired functions working together can support broader intelligence.',
+  },
+  {
+    aspect: 'Organization',
+    common: 'One model, several specialized agents or coordinated workflows can divide the work.',
+    sapiens: 'Engines handle different functions within one continuing Sapien, sharing information and a common identity.',
+  },
+  {
+    aspect: 'Memory and experience',
+    common: 'Retrieval, saved history and memory can inform later responses and actions.',
+    sapiens: 'Explore how connected memories, recall and replay make an individual’s past experience useful later.',
+  },
+  {
+    aspect: 'Decisions and feedback',
+    common: 'Agents can plan, use tools, evaluate results and adjust what they do.',
+    sapiens: 'Study how present attention, ongoing intentions and observed outcomes can inform later decisions.',
+  },
+];
 
 export function ApproachComparison() {
   return (
-    <section className="approach-comparison approach-compact" id="sapiens-approach" aria-labelledby="approach-title">
-      <header className="compact-heading"><span className="intelligence-eyebrow">SAPIENS & OTHER AI</span><h2 id="approach-title">The Sapiens <em>approach.</em></h2></header>
-      <div className="compact-approach-grid">
-        <div className="compact-approach-copy">
-          <div className="shared-ground"><span className="compact-label">WHAT OTHER AGENTS CAN ALREADY DO</span><p>Remember information, plan, use tools, review results and revise their approach. These capabilities are shared ground.</p></div>
-          <div className="sapiens-focus"><span className="compact-label">WHAT WE’RE EXPLORING</span><h3>How experience shapes<br/>what Sapiens does next.</h3><p>We’re building an experimental architecture that connects attention, understanding, memory and ongoing goals around each Sapiens.</p></div>
-          <a className="compact-example-link" href="#layered-chapters">See a simple example <ArrowDown size={18}/></a>
-        </div>
-        <figure className="compact-architecture">
-          <div className="compact-figure-heading"><span className="compact-label">ONE CONNECTED SYSTEM</span><span className="compact-status">Experimental</span></div>
-          <ApproachDiagram/>
-          <figcaption><strong>Past experience → present decisions</strong><span>The aim: use what happened before to help decide what deserves attention now.</span></figcaption>
-        </figure>
-      </div>
-      <div className="compact-footnote"><p>This explains our design focus, not an exclusive capability or a proven advantage over other AI.</p><a href="#direction-product">Meet Sapiens <ArrowUpRight size={17}/></a></div>
-      <details className="approach-sources"><summary>What supports this explanation?</summary><p>Other agents already support memory, tool use, planning, evaluation, revision and modular design. Sapiens’ description reflects the architecture we’re developing. A meaningful product comparison would need named systems, matched tasks and measured results; none are claimed here.</p><p>Sources checked October 2026: <a href="https://claude.com/resources/guides/building-effective-ai-agents/common-architecture-patterns" target="_blank" rel="noreferrer">Anthropic’s architecture guide</a> and <a href="https://www.anthropic.com/research/building-effective-agents" target="_blank" rel="noreferrer">Building effective agents</a>.</p></details>
+    <section className="approach-comparison approach-overview" id="sapiens-approach" aria-labelledby="approach-title">
+      <header className="approach-overview-heading">
+        <h3 id="approach-title">Comparing design approaches</h3>
+        <p id="approach-description">AI systems vary. These are common agent patterns and our research focus—not a feature checklist for every product.</p>
+      </header>
+      <table className="approach-comparison-table" role="table" aria-labelledby="approach-title" aria-describedby="approach-description approach-caveat">
+        <thead role="rowgroup">
+          <tr role="row">
+            <th scope="col" role="columnheader">Aspect</th>
+            <th scope="col" role="columnheader">Common AI agent approaches</th>
+            <th scope="col" role="columnheader">Sapiens research focus</th>
+          </tr>
+        </thead>
+        <tbody role="rowgroup">
+          {comparisons.map(({ aspect, common, sapiens }) => (
+            <tr key={aspect} role="row">
+              <th scope="row" role="rowheader">{aspect}</th>
+              <td role="cell"><span className="approach-column-label" aria-hidden="true">Common AI agent approaches</span>{common}</td>
+              <td role="cell"><span className="approach-column-label" aria-hidden="true">Sapiens research focus</span>{sapiens}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className="approach-caveat" id="approach-caveat">These capabilities overlap. Sapiens is experimental; this comparison does not claim exclusive abilities or a proven performance advantage.</p>
+      <details className="approach-sources">
+        <summary>Basis for this comparison</summary>
+        <p>The agent patterns are illustrated in <a href="https://www.anthropic.com/engineering/building-effective-agents" target="_blank" rel="noreferrer">Anthropic’s Building effective agents</a>. The Sapiens column describes our design and research direction. A performance comparison would require named systems, matched tasks and measured results.</p>
+      </details>
     </section>
   );
 }

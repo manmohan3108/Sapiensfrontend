@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState, useSyncExternalStore } from 'react';
-import { Pause, Play, RefreshCw } from 'lucide-react';
+import { Pause, Play, RefreshCw, WifiOff } from 'lucide-react';
 import { backendAvailability } from '../core/api/backendAvailability';
 import { SapiensBrandMark } from './customer/SapiensBrandMark';
 import { ThemeToggle } from './ThemeToggle';
@@ -8,8 +8,7 @@ import '../../styles/backend-unavailable.css';
 
 const messages = {
   restarting: { title: 'The server is restarting.', description: 'Sapiens will be available again shortly. We are checking the connection automatically.' },
-  unavailable: { title: 'Temporarily out of reach.', description: 'We cannot reach the Sapiens server right now. We are checking the connection automatically.' },
-  offline: { title: 'You are offline.', description: 'Check your internet connection. We will keep checking for the server to become reachable.' },
+  unavailable: { title: 'The server is temporarily unavailable.', description: 'Sapiens returned a server error. We are checking automatically and will return you to your page when it responds.' },
   recovered: { title: 'Connection restored.', description: 'The server is responding again. Automatic recovery could not finish; reload this page to continue.' },
   restoring: { title: 'Restoring your page…', description: 'The connection is back. We are refreshing this page automatically.' },
 };
@@ -30,20 +29,32 @@ function ConnectionIllustration({ paused }: { paused: boolean }) {
   </div>;
 }
 
-/** Keep the router mounted during outages; the monitor owns the guarded refresh. */
+/** Keep the router and drafts mounted; transport failures never block the page. */
 export function BackendUnavailableScreen() {
   const availability = useSyncExternalStore(backendAvailability.subscribe, backendAvailability.getSnapshot);
   const dialog = useRef<HTMLDialogElement>(null);
   const [paused, setPaused] = useState(false);
   const titleId = useId();
   const descriptionId = useId();
-  const open = availability !== 'available';
+  const connectionNotice = availability === 'offline' || availability === 'connection';
+  const open = availability !== 'available' && !connectionNotice;
 
   useEffect(() => {
     if (open && !dialog.current?.open) dialog.current?.showModal();
+    if (!open && dialog.current?.open) dialog.current.close();
   }, [open]);
 
   if (availability === 'available') return null;
+  if (availability === 'offline' || availability === 'connection') return (
+    <aside className="connection-notice" role="status" aria-live="polite">
+      <WifiOff size={20} aria-hidden="true" />
+      <p>{availability === 'offline'
+        ? 'You’re offline. Check your internet connection.'
+        : 'Connection interrupted. Checking automatically…'}
+        <span>Your page stays open. Check any interrupted action before trying again.</span>
+      </p>
+    </aside>
+  );
   const message = messages[availability];
   const recovered = availability === 'recovered' || availability === 'restoring';
   return <dialog ref={dialog} className="direction-page direction-world direction-science backend-unavailable"
@@ -61,7 +72,7 @@ export function BackendUnavailableScreen() {
         <button type="button" className="connection-reload" onClick={() => window.location.reload()} autoFocus>
           <RefreshCw size={19} aria-hidden="true"/>Reload page
         </button>
-        <p className="connection-note">{availability === 'recovered' ? 'Reloading may discard unsaved edits.' : 'This page refreshes automatically when the connection returns. Unsaved edits may be lost.'}</p>
+        <p className="connection-note">Your page stays open while we reconnect. Reloading may discard unsaved edits.</p>
       </div>
       <div className="connection-study">
         <ConnectionIllustration paused={paused || recovered}/>

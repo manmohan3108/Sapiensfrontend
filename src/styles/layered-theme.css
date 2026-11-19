@@ -63,12 +63,12 @@
 .direction-page.direction-layered .layered-theme-toggle:hover { background: var(--soft); color: var(--accent); }
 .direction-page.direction-layered .direction-cta { background: var(--button); color: var(--on-button)!important; }
 .direction-page.direction-layered .direction-cta:hover { background: var(--button-hover); }
-.direction-page.direction-layered :is(.experience-opening-copy h1 span, .experience-section-nav a:hover, .sapiens-focus .compact-label, .compact-heading h2 em) { color: var(--accent); }
+.direction-page.direction-layered :is(.experience-opening-copy h1 span, .experience-section-nav a:hover) { color: var(--accent); }
 .direction-page.direction-layered .experience-kicker i { background: var(--accent); }
-.direction-page.direction-layered :is(.experience-opening-copy>p, .world-heading p, .experience-scroll-cue, .experience-section-nav a, .experience-design-picker>summary, .experience-scene-top, .experience-scene-caption, .spectrum-contact p, .spectrum-footer p, .compact-footnote p, .shared-ground) { color: var(--muted); }
+.direction-page.direction-layered :is(.experience-opening-copy>p, .world-heading p, .experience-scroll-cue, .experience-section-nav a, .experience-design-picker>summary, .experience-scene-top, .experience-scene-caption, .spectrum-contact p, .spectrum-footer p) { color: var(--muted); }
 .direction-page.direction-layered :is(.experience-opening-copy>small, .experience-section-nav a>span, .experience-system-footer) { color: var(--quiet); }
 .direction-page.direction-layered .experience-section-nav a[aria-current] { color: var(--ink); border-bottom-color: var(--accent); }
-.direction-page.direction-layered :is(.experience-scene-caption, .experience-technical, .experience-scroll-cue svg, .spectrum-contact address a, .compact-footnote, .compact-architecture figcaption) { border-color: var(--line); }
+.direction-page.direction-layered :is(.experience-scene-caption, .experience-technical, .experience-scroll-cue svg, .spectrum-contact address a) { border-color: var(--line); }
 .direction-page.direction-layered :is(.experience-system-footer button, .experience-capabilities li, .sapiens-world) { color: var(--ink); }
 .direction-page.direction-layered .experience-capabilities li>span:last-child { background: var(--paper); }
 .direction-page.direction-layered .experience-design-picker nav button { color: var(--muted); border-color: var(--line); background: var(--paper); }
@@ -118,18 +118,6 @@
 .dark .direction-layered > .landing-cursor-trail .landing-cursor-blob-large { opacity: .12; }
 .dark .direction-layered > .landing-cursor-trail .landing-cursor-blob-small { opacity: .18; }
 
-/* Optional comparison uses the same readable palette, including its SVG. */
-.direction-page.direction-layered .compact-architecture { background: var(--panel); border-color: var(--line); }
-.direction-page.direction-layered .compact-status { color: var(--muted); border-color: var(--line); }
-.dark .direction-layered .system-node text { fill: var(--ink); }
-.dark .direction-layered .system-attention rect { fill: var(--world-attention-tint); stroke: var(--world-attention-color); }
-.dark .direction-layered .system-understanding rect { fill: var(--world-understanding-tint); stroke: var(--world-understanding-color); }
-.dark .direction-layered .system-memory rect { fill: var(--world-memory-tint); stroke: var(--world-memory-color); }
-.dark .direction-layered .system-goals rect { fill: var(--world-goals-tint); stroke: var(--world-goals-color); }
-.dark .direction-layered .system-core { fill: #365541; }
-.dark .direction-layered .system-core-ring { fill: #283c2e; }
-.dark .direction-layered .system-link { stroke: #94b68b; }
-.dark .direction-layered .system-orbit { stroke: #607a59; }
 
 @media(max-width:600px) {
   .direction-page.direction-layered .direction-header { flex-wrap: wrap; }

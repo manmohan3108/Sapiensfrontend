@@ -1,44 +1,94 @@
-/* One compact explanation replaces a feature matrix of overlapping capabilities. */
-.approach-comparison.approach-compact{padding-block:56px}
-.compact-heading h2{font-size:clamp(38px,4vw,56px);line-height:1.1;letter-spacing:-.04em;font-weight:550;margin:14px 0 30px}
-.compact-heading h2 em{font-family:'Source Serif 4',serif;font-weight:400;color:#a33b32}
-.compact-approach-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:64px;align-items:center}
-.compact-label{font-size:10px;font-weight:650;letter-spacing:.1em}
-.compact-approach-copy p{font-size:17px;line-height:1.6;max-width:48ch;margin-top:10px}
-.shared-ground{border-left:3px solid #b6bba4;padding-left:18px;color:#52604a}
-.sapiens-focus{margin-top:28px}
-.sapiens-focus .compact-label{color:#a33b32}
-.sapiens-focus h3{font-size:28px;font-weight:550;line-height:1.2;letter-spacing:-.025em;margin-top:10px}
-.compact-example-link{display:inline-flex;align-items:center;gap:14px;font-size:15px;font-weight:600;margin-top:14px;min-height:44px;text-decoration:underline;text-underline-offset:5px}
-.compact-architecture{margin:0;background:#e5edcf;border:1px solid #c7d3ae;border-radius:18px;padding:24px}
-.compact-figure-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.compact-status{font-size:11px;border:1px solid #a4b48f;border-radius:20px;padding:4px 9px}
-.compact-system-diagram{width:100%;height:auto;display:block;margin:12px auto;max-width:410px}
-.system-link{stroke:#6a8261;stroke-width:2;fill:none}
-.system-orbit{fill:none;stroke:#9cab80;stroke-dasharray:3 5;stroke-width:1}
-.system-node rect{stroke-width:1}
-.system-node text{text-anchor:middle;fill:#244735;font-family:'Source Sans 3',sans-serif;font-size:13px;font-weight:550}
-.system-attention rect{fill:#f5d88d;stroke:#d1ad53}
-.system-understanding rect{fill:#c5dbb1;stroke:#8ea77e}
-.system-memory rect{fill:#edbdba;stroke:#cb9690}
-.system-goals rect{fill:#f1cca4;stroke:#cca775}
-.system-core-ring{fill:#c2d09e}
-.system-core{fill:#244e3c}
-.system-core-label{text-anchor:middle;fill:#fff8df;font-family:'Source Serif 4',serif;font-size:17px}
-.compact-architecture figcaption{border-top:1px solid #b6c59e;padding-top:16px}
-.compact-architecture figcaption strong{display:block;font-size:17px;font-weight:600}
-.compact-architecture figcaption span{display:block;font-size:14px;line-height:1.5;margin-top:6px;max-width:45ch}
-.compact-footnote{display:flex;align-items:center;justify-content:space-between;gap:32px;border-top:1px solid #cdd0b9;margin-top:30px;padding-top:18px}
-.compact-footnote p{font-size:13px;line-height:1.5;color:#52604a;max-width:72ch}
-.compact-footnote a{display:flex;align-items:center;gap:10px;font-size:14px;white-space:nowrap;min-height:44px}
-.approach-compact .approach-sources{margin-top:8px;border-top:0;padding-top:0}
-@media(max-width:900px){.compact-approach-grid{gap:30px}.compact-architecture{padding:18px}}
-@media(max-width:760px){
-  .approach-comparison.approach-compact{padding-block:40px}
-  .compact-approach-grid{grid-template-columns:1fr;gap:24px}
-  .compact-heading h2{font-size:39px;margin-bottom:24px}
-  .compact-approach-copy p{font-size:16px}
-  .sapiens-focus h3{font-size:27px}
-  .compact-footnote{flex-direction:column;align-items:start;gap:8px;margin-top:24px}
-  .compact-figure-heading{gap:8px}.compact-figure-heading .compact-label{font-size:9px}
+.approach-comparison.approach-overview {
+  padding: 20px 0 8px;
+  min-width: 0;
+  background: transparent;
+  color: var(--ink, #193b39);
+}
+.approach-overview .approach-overview-heading h3 {
+  margin: 0 0 10px;
+  font: 500 clamp(24px, 2.4vw, 32px)/1.2 'Source Serif 4', Georgia, serif;
+  text-wrap: balance;
+}
+.approach-overview .approach-overview-heading p {
+  max-width: 75ch;
+  margin: 0 0 24px;
+  color: var(--muted, #506563);
+  font-size: 16px;
+  line-height: 1.6;
+}
+.approach-overview .approach-comparison-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  text-align: left;
+  font-size: 16px;
+  line-height: 1.6;
+}
+.approach-overview .approach-comparison-table :is(th, td) {
+  padding: 16px 20px;
+  vertical-align: top;
+  border-bottom: 1px solid var(--line, #a9bfb0);
+  overflow-wrap: anywhere;
+}
+.approach-overview .approach-comparison-table thead th {
+  background: var(--panel, #e3ece3);
+  font-weight: 600;
+}
+.approach-overview .approach-comparison-table thead th:first-child { width: 21%; }
+.approach-overview .approach-comparison-table tbody th { font-weight: 600; }
+.approach-overview .approach-comparison-table tbody td:last-child {
+  background: color-mix(in srgb, var(--panel, #e3ece3) 50%, transparent);
+}
+.approach-overview .approach-column-label { display: none; }
+.approach-overview .approach-caveat {
+  max-width: 85ch;
+  margin: 20px 0 8px;
+  color: var(--muted, #506563);
+  font-size: 15px;
+  line-height: 1.6;
+}
+.approach-overview .approach-sources {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  color: var(--muted, #506563);
+  font-size: 15px;
+  line-height: 1.6;
+}
+.approach-overview .approach-sources summary {
+  min-height: 44px;
+  padding-block: 10px;
+  color: var(--ink, #193b39);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.approach-overview .approach-sources p { max-width: 85ch; margin: 8px 0 0; }
+.approach-overview .approach-sources a { text-decoration: underline; text-underline-offset: 3px; }
+.approach-overview :is(a, summary):hover { color: var(--accent, #ac442e); }
+.approach-overview :is(a, summary):focus-visible { outline: 2px solid var(--accent, #ac442e); outline-offset: 4px; }
+
+@media (max-width: 700px) {
+  /* Explicit table roles in the markup preserve relationships when rows stack. */
+  .approach-overview .approach-comparison-table,
+  .approach-overview .approach-comparison-table :is(tbody, tr, th, td) { display: block; width: 100%; }
+  .approach-overview .approach-comparison-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .approach-overview .approach-comparison-table tbody tr {
+    padding-block: 18px;
+    border-top: 1px solid var(--line, #a9bfb0);
+  }
+  .approach-overview .approach-comparison-table tbody th { padding: 0 0 12px; border: 0; font-size: 18px; }
+  .approach-overview .approach-comparison-table td { padding: 12px; border: 0; }
+  .approach-overview .approach-comparison-table td + td { margin-top: 4px; }
+  .approach-overview .approach-column-label {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 15px;
+    font-weight: 600;
+  }
 }

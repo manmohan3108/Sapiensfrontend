@@ -1,4 +1,19 @@
 /* Reuse the science landing palette; keep layout and motion local to the outage screen. */
+.connection-notice {
+  position: fixed; z-index: 1000;
+  bottom: max(16px, env(safe-area-inset-bottom));
+  left: max(16px, env(safe-area-inset-left));
+  right: max(16px, env(safe-area-inset-right));
+  width: fit-content; max-width: 560px; margin-inline: auto;
+  display: flex; align-items: flex-start; gap: 12px; padding: 14px 18px;
+  border: 1px solid var(--sp-line); border-radius: 12px;
+  background: var(--sp-panel); color: var(--sp-ink);
+  font: 16px/1.4 'Source Sans 3', sans-serif;
+  pointer-events: none;
+}
+.connection-notice svg { flex-shrink: 0; margin-top: 2px; }
+.connection-notice p { margin: 0; }
+.connection-notice span { display: block; margin-top: 4px; color: var(--sp-muted); font-size: 14px; }
 .direction-page.direction-world.direction-science.backend-unavailable {
   position: fixed; inset: 0; margin: 0; width: 100%; max-width: none;
   height: 100dvh; max-height: none; padding: 0; border: 0;

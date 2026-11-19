@@ -39,7 +39,6 @@
 .direction-page.direction-forest .spectrum-contact { width:80%; max-width:1240px; margin:0 auto; border:1px solid var(--line); border-radius:8px 8px 60px 8px; background:color-mix(in srgb,var(--paper) 95%,transparent); padding:48px 0; }
 .direction-forest .spectrum-contact>.direction-wrap { width:calc(100% - 80px); gap:40px; }
 .direction-page.direction-forest .spectrum-footer { margin-top:40px; width:80%; padding:28px; background:color-mix(in srgb,var(--paper) 96%,transparent); border-radius:8px 8px 0 0; }
-.direction-forest .experience-technical .compact-architecture { background:var(--panel); }
 @media(max-width:1100px) {
   .direction-forest .experience-opening { width:84%; gap:24px; }
   .direction-forest .experience-scroll-stack .experience-thesis { padding:44px 30px; gap:24px; }

@@ -41,7 +41,6 @@
 @media(prefers-reduced-motion:reduce){.experience-hero-core{transform:none}.layered-experience *{animation:none!important;transition:none!important}}
 
 @media(max-width:600px){.experience-actions{gap:12px}.direction-layered .experience-actions .direction-cta{font-size:13px;gap:12px;padding:12px}.experience-actions>a:last-child{font-size:13px;gap:6px}.experience-actions>a:last-child svg{width:14px}}
-.experience-technical .approach-comparison.approach-compact{padding-block:24px}.experience-technical .compact-architecture{background:#f6f2e4;border-color:#d2cbbb}.experience-technical .compact-heading h2 em{font-style:normal;font-family:inherit;color:#b44725}
 
 /* Keep the original diagram sculpture independent of the compact header mark. */
 .direction-layered .sapiens-brand-mark.world-core-brand{width:140px;height:140px}

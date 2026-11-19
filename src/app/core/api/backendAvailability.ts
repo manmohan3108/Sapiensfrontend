@@ -1,13 +1,13 @@
 import { apiConfig } from '../config/apiConfig';
 import { rateLimits, requestBucket, type RateLimitedRequestInit } from './rateLimits';
 
-type Availability = 'available' | 'restarting' | 'unavailable' | 'offline' | 'recovered' | 'restoring';
+type Availability = 'available' | 'restarting' | 'unavailable' | 'offline' | 'connection' | 'recovered' | 'restoring';
 const GATEWAY_STATUSES = new Set([502, 503, 504]);
 const CHECK_INTERVAL_MS = 10_000;
 const CHECK_TIMEOUT_MS = 8_000;
 const RECOVERY_RELOAD_KEY = 'sapiens.backend.recovery-reload';
 const STABLE_CONNECTION_MS = 30_000;
-let availability: Availability = 'available';
+let availability: Availability = navigator.onLine === false ? 'offline' : 'available';
 let checking: Promise<void> | null = null;
 let timer: ReturnType<typeof setTimeout> | undefined;
 let restartRevision = 0;
@@ -50,6 +50,12 @@ function noteHealthyResponse() {
 }
 
 function recoverPage() {
+  // Ordinary connectivity loss must not discard the mounted page or its drafts.
+  // Only an explicitly blocked session bootstrap requires the guarded reload.
+  if (!recoveryRequested) {
+    publish('available');
+    return;
+  }
   recoveryRequested = false;
   if (availability === 'restoring') return;
   try {
@@ -96,7 +102,11 @@ function probeUrl() {
 async function probeAvailability() {
   const revision = restartRevision;
   let response: Response | undefined;
-  let reason: Availability = navigator.onLine ? 'unavailable' : 'offline';
+  if (navigator.onLine === false) {
+    publish('offline');
+    return;
+  }
+  let reason: Availability = 'connection';
   try {
     // Raw fetch avoids auth refresh and prevents the probe from observing itself.
     response = await fetch(probeUrl(), {
@@ -109,6 +119,7 @@ async function probeAvailability() {
       if (availability !== 'available' || recoveryRequested) recoverPage();
       return;
     }
+    if (response.status >= 500) reason = 'unavailable';
     if (response.status === 503 && body?.code === 'runtime_draining') reason = 'restarting';
   } catch { /* Connectivity and probe timeouts are retried, never application actions. */ }
   if (revision !== restartRevision) return;
@@ -127,7 +138,25 @@ function checkAvailability() {
   return checking;
 }
 
+// Browser connectivity is a hint: "online" still needs a successful server probe.
+window.addEventListener('offline', () => {
+  restartRevision += 1;
+  if (timer !== undefined) clearTimeout(timer);
+  timer = undefined;
+  publish('offline');
+});
+window.addEventListener('online', () => {
+  if (timer !== undefined) clearTimeout(timer);
+  timer = undefined;
+  publish('connection');
+  void checkAvailability();
+});
+
 async function observeResponse(response: Response) {
+  if (navigator.onLine === false) {
+    publish('offline');
+    return;
+  }
   if (!GATEWAY_STATUSES.has(response.status)) {
     if (response.ok) noteHealthyResponse();
     return;
