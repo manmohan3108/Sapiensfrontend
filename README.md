@@ -37,6 +37,13 @@ continue after disconnect. The frontend never generates, receives or stores priv
 
 ## Fulfilling access requests
 
+Pending requests show a compact service, target and reason summary. **Review**
+opens the shared connection form in a dialog without moving the list. Full request
+requirements, account selection, setup guidance and errors stay together there.
+Closing returns focus to the original control; clicking outside does not discard
+form input. Saved accounts that still need setup remain open for the next step,
+including public-key installation. Completed connections close the dialog.
+
 Providers with `browser_authorization` use the shared sign-in flow. GitLab opens
 its own consent page and returns directly to the backend OAuth callback. The backend
 exchanges the code and redirects to `/connection-return` with only a safe result.

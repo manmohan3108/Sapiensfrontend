@@ -23,7 +23,7 @@
 .connections-page :is(.text-xs,[class*='text-[11px]']) { font-size:14px; line-height:1.5; }
 .connections-page [class*='text-[10px]'] { font-size:12px; line-height:1.5; }
 .connections-page .rounded-2xl { border-radius:10px; }
-.connections-page :is(button,a,input,textarea,select,summary):focus-visible,.connections-dialog :is(button,a,input):focus-visible { outline:2px solid var(--sp-accent); outline-offset:3px; }
+.connections-page :is(button,a,input,textarea,select,summary):focus-visible,.connections-dialog :is(button,a,input,textarea,select,summary):focus-visible { outline:2px solid var(--sp-accent); outline-offset:3px; }
 .connections-page button { cursor:pointer; min-height:40px; }
 .connections-page button:disabled { cursor:not-allowed; }
 .connections-page input { accent-color:var(--sp-action); }
@@ -62,3 +62,27 @@
  .connections-empty { grid-template-columns:28px minmax(0,1fr); padding:18px; }
 }
 @media(prefers-reduced-motion:reduce) { .connections-page * { animation:none!important; transition:none!important; scroll-behavior:auto!important; } }
+
+/* Review stays above the list, without moving its rows or losing scroll position. */
+.connections-request-list { border:1px solid var(--sp-line); border-radius:10px; background:var(--sp-panel); }
+.connections-request-row { display:flex; justify-content:space-between; align-items:center; gap:24px; padding:18px 20px; }
+.connections-request-row + .connections-request-row { border-top:1px solid var(--sp-line); }
+.connections-request-row p { overflow-wrap:anywhere; }
+.connections-review { width:calc(100% - 32px); max-width:720px; max-height:88dvh; overflow-y:auto; overscroll-behavior:contain; padding:24px; }
+.connections-review .connections-form { min-width:0; }
+.connections-review :is(.text-xs,[class*='text-[11px]']) { font-size:14px; line-height:1.5; }
+.connections-review button { min-height:40px; cursor:pointer; }
+.connections-review button:disabled { cursor:not-allowed; }
+.connections-review > button { min-width:40px; right:12px; top:12px; color:var(--sp-muted); }
+.connections-review :is(p,dd,h2,li) { overflow-wrap:anywhere; }
+.connections-review select { max-width:100%; }
+.connections-review input { accent-color:var(--sp-action); }
+#connections-heading:focus { outline:none; }
+@media(max-width:600px) {
+ .connections-request-row { flex-direction:column; align-items:stretch; gap:12px; padding:16px; }
+ .connections-review { width:calc(100% - 24px); max-height:90dvh; padding:20px 16px; }
+ .connections-review .connections-form > div:first-child { flex-wrap:wrap; }
+}
+@media(prefers-reduced-motion:reduce) {
+ .connections-review,.connections-review * { animation:none!important; transition:none!important; scroll-behavior:auto!important; }
+}

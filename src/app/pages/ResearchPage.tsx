@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect } from 'react';
+import { AlertTriangle } from 'lucide-react';
 import { Link, useParams, useSearchParams } from 'react-router';
 import { researchArticles, type ResearchArticle } from '../content/researchArticles';
 import { useAuth } from '../contexts/AuthContext';
@@ -150,7 +151,7 @@ export function ResearchPage() {
         </nav>
       </header>
       <main id="research-main" tabIndex={-1} className="direction-wrap research-main">
-        {slug && <p className="research-update-note">These articles are being updated and may not yet reflect the latest product changes or research findings.</p>}
+        {slug && <p className="research-update-note"><AlertTriangle className="research-update-icon" size={20} aria-hidden="true"/><span>These articles are being updated and may not yet reflect the latest product changes or research findings.</span></p>}
         {slug ? article && articleSection && articleContent ? <div className="research-article-layout">
           <nav className="research-breadcrumb" aria-label="Breadcrumb">
             <Link to={browseUrl}>Research</Link><span aria-hidden="true">/</span>
@@ -213,7 +214,7 @@ export function ResearchPage() {
               <p className="research-intro">Can intelligence emerge from interacting brain-inspired mechanisms? We explore this question through neuroscience, philosophy, computational design and experiments.</p>
             </div>
             <aside className="research-update-card" aria-label="Article update notice">
-              <strong>Articles are being updated</strong>
+              <strong><AlertTriangle className="research-update-icon" size={20} aria-hidden="true"/><span>Articles are being updated</span></strong>
               <p>Some articles may not yet reflect the latest product changes or research findings.</p>
             </aside>
           </header>
