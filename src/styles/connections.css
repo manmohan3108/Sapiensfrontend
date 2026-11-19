@@ -77,6 +77,19 @@
 .connections-review :is(p,dd,h2,li) { overflow-wrap:anywhere; }
 .connections-review select { max-width:100%; }
 .connections-review input { accent-color:var(--sp-action); }
+.connections-review .connection-help > button { display:inline-flex; align-items:center; gap:6px; min-height:36px; padding:4px 0; color:var(--sp-muted); font-size:14px; text-align:left; }
+.connections-review .connection-help > button svg { flex-shrink:0; }
+.connections-review .connection-help > button:hover,.connections-review .connection-help > button[aria-expanded=true] { color:var(--sp-ink); text-decoration:underline; text-underline-offset:3px; }
+.connection-help-content { padding:10px 12px; border-left:2px solid var(--sp-line); background:var(--sp-recessed); color:var(--sp-muted); font-size:14px; line-height:1.5; overflow-wrap:anywhere; }
+.connection-help-content > * + * { margin-top:10px; }
+.connection-setup { margin:12px 0 16px; display:grid; gap:10px; }
+.connection-setup-status { border-left:2px solid var(--sp-accent); padding:2px 12px; }
+.connection-setup-status h3 { font-size:15px; font-weight:600; }
+.connection-setup-status p { font-size:14px; color:var(--sp-muted); margin-top:4px; }
+.connection-optional { border-top:1px solid var(--sp-line); padding-top:12px; }
+.connection-optional summary { padding:4px 0; min-height:36px; }
+.connection-next-step { margin-top:16px; font-size:14px; line-height:1.5; color:var(--sp-muted); }
+.connections-ssh-form .connections-form-actions { border-top:1px solid var(--sp-line); padding-top:12px; margin-top:12px; }
 #connections-heading:focus { outline:none; }
 @media(max-width:600px) {
  .connections-request-row { flex-direction:column; align-items:stretch; gap:12px; padding:16px; }

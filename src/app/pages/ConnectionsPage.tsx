@@ -23,6 +23,7 @@ import {
 import { connectionAccountLabel, ConnectionAccountDetails, ConnectionSubscriptions, FulfilledRequests } from '../components/connections/ConnectionDetails';
 import { ConnectionFields } from '../components/connections/ConnectionFields';
 import { ConnectionGuidance } from '../components/connections/ConnectionGuidance';
+import { ConnectionHelp } from '../components/connections/ConnectionHelp';
 
 const accent = 'var(--sp-accent)';
 
@@ -49,16 +50,19 @@ function StatusBadge({ status }: { status: string }) {
   return <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium" style={{ color: config.color, background: config.bg, border: `1px solid color-mix(in srgb, ${config.color} 20.78%, transparent)` }}><Icon className="h-3 w-3" />{config.label}</span>;
 }
 
-function RequestDetails({ request }: { request: SapiensConnectionRequest }) {
+function RequestDetails({ request, concise = false }: { request: SapiensConnectionRequest; concise?: boolean }) {
   const access = request.metadata.access;
+  const collapseReason = concise && Boolean(access?.target && access.operations.length);
+  const reason = <p className="break-words">{request.reason || 'No reason was recorded for this older request.'}</p>;
   return <div className="my-4 space-y-3 text-sm">
-    <p className="break-words">{request.reason || 'No reason was recorded for this older request.'}</p>
+    {!collapseReason && reason}
     {access && <dl className="grid gap-3 sm:grid-cols-2">
       <div><dt className="text-sp-muted">Target or workspace</dt><dd className="break-words">{access.target || 'Choose when connecting'}</dd></div>
       {access.account && <div><dt className="text-sp-muted">Account needed</dt><dd className="break-words">{access.account}</dd></div>}
       {access.operations.length > 0 && <div className="sm:col-span-2"><dt className="text-sp-muted">Needed access</dt><dd className="break-words">{access.operations.join('; ')}</dd></div>}
       {access.connection_id && <div><dt className="text-sp-muted">Existing connection to review</dt><dd>#{access.connection_id}</dd></div>}
     </dl>}
+    {collapseReason && <ConnectionHelp label="Why this access was requested">{reason}</ConnectionHelp>}
     <details>
       <summary className="cursor-pointer text-sp-muted">More request details</summary>
       <div className="mt-3 space-y-2">
@@ -109,6 +113,7 @@ function ProviderForm({ provider, request, connection, connections, busy, onCanc
   const requestBlocked = Boolean(request && request.status !== 'pending');
   const [generationId] = useState(() => crypto.randomUUID());
   const generatesKey = Boolean(provider.capabilities?.key_generation);
+  const ssh = provider.id === 'ssh';
   const browserAuthorization = Boolean(provider.capabilities?.browser_authorization);
   const awaitingConfirmation = browserAuthorization && connection?.metadata.setup_stage === 'awaiting_confirmation';
   const [validation, setValidation] = useState<Record<string, string>>({});
@@ -150,14 +155,15 @@ function ProviderForm({ provider, request, connection, connections, busy, onCanc
     }
   };
 
-  return <form onSubmit={submit} className="connections-form">
+  const accountLabelField = <label className="sm:col-span-2"><span className="mb-1.5 block text-sm text-sp-muted">Account label (optional)</span><input name="account_label" autoComplete="off" value={accountLabel} onChange={e => setAccountLabel(e.target.value)} disabled={busy} placeholder={ssh ? 'e.g. Backend server' : `e.g. Product team ${provider.label}`} className="w-full rounded-lg border border-sp-line bg-sp-panel px-3 py-2.5 text-sm text-sp-ink placeholder:text-sp-muted" /></label>;
+  return <form onSubmit={submit} className={`connections-form${ssh ? ' connections-ssh-form' : ''}`}>
     <div className="mb-5 flex items-start justify-between gap-4 pr-7">
-      <div><div className="flex items-center gap-2"><KeyRound aria-hidden="true" className="h-4 w-4" style={{ color: accent }} /><DialogTitle ref={headingRef} tabIndex={-1} className="text-xl font-semibold text-sp-ink">{request ? `Review ${provider.label} access` : connection ? `Edit ${connection.account_label}` : `Connect ${provider.label}`}</DialogTitle></div><DialogDescription className="mt-2 text-sm text-sp-muted">{browserAuthorization ? 'Sign in through the service in a separate window. Return here to confirm the account; do not paste passwords or tokens.' : connection ? 'Leave credential fields blank to keep their saved values. Stored credentials are never displayed.' : 'Enter the account details this service requires. Saved credentials are never displayed.'}</DialogDescription></div>
+      <div><div className="flex items-center gap-2"><KeyRound aria-hidden="true" className="h-4 w-4" style={{ color: accent }} /><DialogTitle ref={headingRef} tabIndex={-1} className="text-xl font-semibold text-sp-ink">{request ? `Review ${provider.label} access` : connection ? `Edit ${connection.account_label}` : `Connect ${provider.label}`}</DialogTitle></div><DialogDescription className="mt-2 text-sm text-sp-muted">{ssh ? 'Let Sapiens use a server through a restricted Linux account. The server’s permissions determine what it can read or change.' : browserAuthorization ? 'Sign in through the service in a separate window. Return here to confirm the account; do not paste passwords or tokens.' : connection ? 'Leave credential fields blank to keep their saved values. Stored credentials are never displayed.' : 'Enter the account details this service requires. Saved credentials are never displayed.'}</DialogDescription></div>
       {request && <StatusBadge status={request.status} />}
     </div>
-    {provider.description && <p className="mb-4 text-sm text-sp-muted">{provider.description}</p>}
+    {!ssh && provider.description && <p className="mb-4 text-sm text-sp-muted">{provider.description}</p>}
     {request && <>
-      <RequestDetails request={request} />
+      <RequestDetails request={request} concise={ssh} />
       {requestBlocked && <p role="status" className="mb-3 text-sm text-sp-warning">This request is {request.status}. Reopen a denied request before fulfilling it; a completed request cannot be reassigned.</p>}
       {!connection && connections.length > 0 && <fieldset className="mb-5 space-y-3 rounded-lg border border-sp-line p-4">
         <legend className="px-1 text-sm font-medium">Use an existing account</legend>
@@ -178,22 +184,24 @@ function ProviderForm({ provider, request, connection, connections, busy, onCanc
       </fieldset>}
       <p className="mb-3 text-sm text-sp-muted">{requestBlocked ? 'Review the request status before continuing.' : browserAuthorization ? `Request #${request.id} stays pending until you confirm the signed-in account.` : connection ? `Save and verify this account to fulfill request #${request.id}.` : generatesKey ? 'Or prepare a new account below. This request stays pending until setup and verification are complete.' : 'Or enter a new account below to fulfill this request.'}</p>
     </>}
-    {connection && <ConnectionAccountDetails connection={connection} provider={provider} />}
-    <ConnectionGuidance guidance={connection?.guidance ?? provider.setup} />
+    {connection && (ssh ? <ConnectionHelp label="Saved connection details"><ConnectionAccountDetails connection={connection} provider={provider} /></ConnectionHelp> : <ConnectionAccountDetails connection={connection} provider={provider} />)}
+    <ConnectionGuidance guidance={connection?.guidance ?? provider.setup} disclosure={ssh} showStatus={Boolean(connection)} description={ssh ? provider.description : undefined} />
     {awaitingConfirmation && connection && <div className="my-4 space-y-3 rounded-lg border border-sp-line p-4">
       <p className="text-sm">Confirm that this username and site are the intended account. Sapien can read the projects this account may access.</p>
       <button type="button" disabled={busy || requestBlocked} onClick={() => void onConfirm(connection.id)} className="rounded-lg bg-sp-action px-4 py-2 text-sp-on-action disabled:opacity-40">{request ? `Confirm account and fulfill request #${request.id}` : 'Confirm account and enable access'}</button>
       <p className="text-sm text-sp-muted">Wrong account? Use sign-in again below, switching accounts on the service’s sign-in page.</p>
     </div>}
     <div className="grid gap-4 sm:grid-cols-2">
-      <label className="sm:col-span-2"><span className="mb-1.5 block text-xs text-sp-muted">Account label <span className="text-sp-muted">(optional)</span></span><input name="account_label" autoComplete="off" value={accountLabel} onChange={e => setAccountLabel(e.target.value)} disabled={busy} placeholder={`e.g. Product team ${provider.label}`} className="w-full rounded-lg px-3 py-2.5 text-sm text-sp-ink outline-none placeholder:text-sp-muted focus:ring-1" style={{ background: 'rgb(var(--sp-ink-rgb, 255 255 255) / .045)', border: '1px solid rgb(var(--sp-ink-rgb, 255 255 255) / .1)' }} /></label>
-      <div className="sm:col-span-2"><ConnectionFields fields={provider.fields} values={values} errors={validation}
+      {!ssh && accountLabelField}
+      <div className="sm:col-span-2"><ConnectionFields fields={ssh ? provider.fields.map(field => ['port', 'access_note'].includes(field.name) ? { ...field, advanced: true } : field) : provider.fields} values={values} errors={validation}
+        compactHelp={ssh} optionalContent={ssh ? accountLabelField : undefined}
         editing={Boolean(connection)} busy={busy || (browserAuthorization && Boolean(connection))} onChange={(name, value) => {
           setValues(current => ({ ...current, [name]: value }));
           setValidation(current => ({ ...current, [name]: '' }));
         }} /></div>
     </div>
-    <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><button type="button" onClick={onCancel} disabled={busy} className="rounded-lg px-4 py-2 text-xs text-sp-muted hover:bg-sp-ink/5 hover:text-sp-ink disabled:opacity-40">Cancel</button><button type="submit" disabled={busy || requestBlocked} className="flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-xs font-medium text-sp-on-action disabled:cursor-not-allowed disabled:opacity-50" style={{ background: 'var(--sp-action)' }}>{busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <LockKeyhole className="h-3.5 w-3.5" />}{busy ? 'Connecting…' : browserAuthorization ? (connection ? 'Sign in again' : provider.setup?.action_label ?? `Connect with ${provider.label}`) : connection ? (request ? `Save, verify & fulfill #${request.id}` : 'Save and verify') : provider.setup?.action_label ?? (generatesKey ? 'Generate access key' : request ? 'Approve and connect' : `Connect ${provider.label}`)}</button></div>
+    {ssh && <p className="connection-next-step">{connection?.status === 'connected' ? 'Save changes to check this server’s access again.' : connection ? 'Install the public key and enter a trusted server fingerprint before verifying.' : 'Next: generate a public key for your administrator to install. This does not connect the server yet.'}</p>}
+    <div className="connections-form-actions mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><button type="button" onClick={onCancel} disabled={busy} className="rounded-lg px-4 py-2 text-xs text-sp-muted hover:bg-sp-ink/5 hover:text-sp-ink disabled:opacity-40">Cancel</button><button type="submit" disabled={busy || requestBlocked} className="flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-xs font-medium text-sp-on-action disabled:cursor-not-allowed disabled:opacity-50" style={{ background: 'var(--sp-action)' }}>{busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <LockKeyhole className="h-3.5 w-3.5" />}{busy ? 'Connecting…' : browserAuthorization ? (connection ? 'Sign in again' : provider.setup?.action_label ?? `Connect with ${provider.label}`) : connection ? (request ? `Save, verify & fulfill #${request.id}` : 'Save and verify') : provider.setup?.action_label ?? (generatesKey ? 'Generate access key' : request ? 'Approve and connect' : `Connect ${provider.label}`)}</button></div>
   </form>;
 }
 

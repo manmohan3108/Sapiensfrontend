@@ -1,5 +1,6 @@
 import { useId, useState } from 'react';
 import type { ConnectionGuidance as Guidance } from '../../types/connectionTypes';
+import { ConnectionHelp } from './ConnectionHelp';
 
 function PublicConnectionValue({ label, value, help_text }: { label: string; value: string; help_text: string }) {
   const id = useId();
@@ -18,8 +19,18 @@ function PublicConnectionValue({ label, value, help_text }: { label: string; val
   </div>;
 }
 
-export function ConnectionGuidance({ guidance, compact = false }: { guidance?: Guidance | null; compact?: boolean }) {
+export function ConnectionGuidance({ guidance, compact = false, disclosure = false, showStatus = false, description }: { guidance?: Guidance | null; compact?: boolean; disclosure?: boolean; showStatus?: boolean; description?: string }) {
   if (!guidance) return null;
+  if (disclosure) return <section className="connection-setup" aria-label={guidance.title}>
+    {showStatus && <div className="connection-setup-status"><h3>{guidance.title}</h3><p>{guidance.description}</p></div>}
+    {guidance.public_values?.map((item, index) => <PublicConnectionValue key={index} {...item} />)}
+    <ConnectionHelp label="Setup and access info">
+      {description && <p>{description}</p>}
+      {!showStatus && <p>{guidance.description}</p>}
+      {guidance.steps.length > 0 && <ol className="list-decimal space-y-2 pl-5">{guidance.steps.map((step, index) => <li key={index}>{step}</li>)}</ol>}
+      {guidance.disconnect_notice && <p>{guidance.disconnect_notice}</p>}
+    </ConnectionHelp>
+  </section>;
   const instructions = <>
     {guidance.steps.length > 0 && <ol className="list-decimal space-y-2 pl-5 text-sm text-sp-muted">{guidance.steps.map((step, index) => <li key={index}>{step}</li>)}</ol>}
     {guidance.public_values?.map((item, index) => <PublicConnectionValue key={index} {...item} />)}
