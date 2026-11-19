@@ -155,7 +155,6 @@ export function ResearchPage() {
           </nav>
           <article className="research-article">
             <header>
-              <p className="research-status">Introduction</p>
               <h1>{article.title}</h1>
               <p className="research-intro">{articleContent.opening}</p>
             </header>
@@ -171,7 +170,7 @@ export function ResearchPage() {
               </section>}
             </div>
             <footer className="research-article-footer">
-              <p>This introduction separates our research motivation, engineering approach and current limits. More detailed studies will build on these notes.</p>
+              <p>This article separates our research motivation, engineering approach and current limits. More detailed studies will build on these notes.</p>
               <Link className="research-back" to={browseUrl}>Back to topics</Link>
               {(previousArticle || nextArticle) && <nav className="research-sequence" aria-labelledby="research-sequence-title">
                 <h2 id="research-sequence-title">Continue in reading order</h2>
@@ -247,7 +246,7 @@ export function ResearchPage() {
                 <ul className="research-topic-list">
                   {section.topics.map(topic => <li key={topic.id}>
                     {topic.content ? <Link className="research-topic research-topic-link" to={'/research/' + topic.id + (searchParams.size ? '?' + searchParams : '')} onClick={rememberPosition}>
-                      <div className="research-topic-heading"><h3>{topic.title}</h3><span className="research-topic-status">Read introduction <span aria-hidden="true">→</span></span></div>
+                      <div className="research-topic-heading"><h3>{topic.title}</h3><span className="research-topic-status">Read <span aria-hidden="true">→</span></span></div>
                       <p className="research-topic-description">{topic.description}</p>
                     </Link> : <div className="research-topic research-topic-planned">
                       <div className="research-topic-heading"><h3>{topic.title}</h3><span className="research-topic-status">Not published yet</span></div>
@@ -263,7 +262,7 @@ export function ResearchPage() {
           </div>
         </>}
         <footer className="research-footer">
-          <p className="research-note">Sapiens is experimental. Our design ideas and introductions are not evidence of proven capabilities.</p>
+          <p className="research-note">Sapiens is experimental. The ideas described here are not evidence of proven capabilities.</p>
           <a className="research-back" href="/#layered-chapters">Back to the system overview</a>
         </footer>
       </main>

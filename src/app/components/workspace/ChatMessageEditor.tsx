@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
-import { Pencil } from 'lucide-react';
+import { ChevronDown, ChevronRight, Pencil } from 'lucide-react';
 import type { ChatMessage } from '../../types/sapiensTypes';
 
 export type EditChatMessage = (messageId: string, text: string, requestId: string) => Promise<void>;
@@ -10,6 +10,7 @@ export function ChatMessageEditor({ message, disabled, onSave, actions, timestam
   actions?: ReactNode; timestamp?: ReactNode;
 }) {
   const [editing, setEditing] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [draft, setDraft] = useState('');
   const [baseId, setBaseId] = useState('');
   const [saving, setSaving] = useState(false);
@@ -18,6 +19,7 @@ export function ChatMessageEditor({ message, disabled, onSave, actions, timestam
   const input = useRef<HTMLTextAreaElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const inputId = useId();
+  const historyId = useId();
   const restoreFocus = useRef(false);
   const buttonClass = 'min-h-10 rounded-md px-3 text-sm text-sp-muted hover:text-sp-ink focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50';
   useEffect(() => {
@@ -66,6 +68,13 @@ export function ChatMessageEditor({ message, disabled, onSave, actions, timestam
         </button>}
         {actions}
       </div>
+      {(message.revisions?.length ?? 0) > 1 && <button type="button"
+        className="inline-flex min-h-10 items-center gap-1.5 whitespace-nowrap rounded-md px-2 text-sm text-sp-muted hover:text-sp-ink hover:bg-sp-ink/10 focus-visible:outline-2 focus-visible:outline-offset-2"
+        aria-expanded={historyOpen} aria-controls={historyId}
+        onClick={() => setHistoryOpen(value => !value)}>
+        {historyOpen ? <ChevronDown aria-hidden="true" className="h-3.5 w-3.5" /> : <ChevronRight aria-hidden="true" className="h-3.5 w-3.5" />}
+        Edited · {message.revisions!.length} versions
+      </button>}
       {timestamp}
     </div>
     {editing && <div className="space-y-2 rounded-lg border border-sp-line bg-sp-panel p-3">
@@ -84,10 +93,7 @@ export function ChatMessageEditor({ message, disabled, onSave, actions, timestam
       </div>
       {error && <p role="alert" className="text-sm text-sp-danger">{error}</p>}
     </div>}
-    {(message.revisions?.length ?? 0) > 1 && <details className="text-sm text-sp-muted">
-      <summary className="min-h-10 cursor-pointer rounded-md py-2 focus-visible:outline-2 focus-visible:outline-offset-2">
-        Edited · {message.revisions!.length} versions
-      </summary>
+    {(message.revisions?.length ?? 0) > 1 && <div id={historyId} hidden={!historyOpen} className="rounded-lg border border-sp-line bg-sp-panel p-3 text-sm text-sp-muted">
       <p className="pb-2">Earlier replies may refer to an older version.</p>
       <ol className="space-y-3 border-l border-sp-line pl-3">
         {message.revisions!.map((version, index) => <li key={version.id}>
@@ -96,6 +102,6 @@ export function ChatMessageEditor({ message, disabled, onSave, actions, timestam
           <p className="whitespace-pre-wrap break-words text-sp-ink">{version.content}</p>
         </li>)}
       </ol>
-    </details>}
+    </div>}
   </div>;
 }
