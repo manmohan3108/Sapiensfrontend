@@ -11,28 +11,28 @@ export const researchArticles: Partial<Record<string, ResearchArticle>> = {
     "opening": "We often face new situations without being told exactly what to do. We use what we know, ask questions and change our approach as we learn more. AI can also reason about a situation and suggest useful steps. But can AI develop the kind of understanding that allows people to learn from experience and adapt to new situations? This is one of the questions behind Sapiens.",
     "sections": [
       {
-        "title": "What a new experience can change",
-        "text": "For example, someone joining a team might think two colleagues disagree. After talking with them, they learn that each is describing a different part of the work. That changes how they understand the discussion and may help them interpret a similar situation later. An AI can reason about this too when given the details. We want to study how its experience of one situation could shape its understanding of another."
+        "title": "What we mean by intelligence and understanding",
+        "text": "For this research, knowing means having information available. Understanding means grasping how it fits together and when it is useful. We use intelligence more broadly: it includes reasoning through a problem, learning from what happens and adapting when circumstances change. These are working meanings that guide what we want to study in Sapiens. We want to explore how these abilities develop and support one another, while keeping open the question of what would count as evidence of understanding."
       },
       {
-        "title": "Why this matters",
-        "text": "New situations often differ from the ones we have seen before. What we learned may help, but we may also need to question it or try another explanation. We want to understand how AI could develop knowledge that it can use across these changes. This includes learning from what happens, connecting ideas and recognizing when an earlier belief no longer fits. Remembering facts is part of the question; how those facts become useful is another."
+        "title": "Why this matters to us",
+        "text": "Someone joining a team might think two colleagues disagree, then discover that each is describing a different part of the work. Understanding the situation involves connecting what they hear, considering explanations and asking a useful question. An AI can reason about this too when given the details. Our interest is in what makes that ability possible and how it could develop across different situations. This is part of a broader ambition to understand intelligence, including how we form ideas, imagine possibilities and revise what we believe."
       },
       {
         "title": "Why learn from the brain?",
-        "text": "People can use a past experience in a new situation, imagine what might happen and change their minds. We look to neuroscience, the study of the brain and nervous system, for ideas about how these abilities work. Those ideas may help us explore how understanding and learning could develop in artificial systems. We want to understand why each process matters and what role it could play in Sapiens."
+        "text": "Human intelligence gives us a reason to look closely at the brain. We can recognize familiar patterns, imagine what might happen and change our minds. Neuroscience, the study of the brain and nervous system, offers ideas about the processes involved. We want to examine which of those ideas could help us build and study intelligence in software. Each process we explore should have a clear reason to be there and a question it helps us investigate."
       },
       {
         "title": "Why philosophy matters too",
-        "text": "What do we mean when we say that a person or an AI understands something? How could we tell whether it has learned something it can use in a different situation? People make mistakes too, so a single success or failure cannot answer these questions. Philosophy helps us examine what we mean by intelligence, understanding and making decisions. It helps us ask what the behaviour we observe can tell us, and what remains uncertain."
+        "text": "What makes an explanation meaningful? When can we say that someone understands, or that a decision is their own? Philosophy helps us examine the assumptions behind questions like these. It shapes what we want to investigate and how we interpret what Sapiens does. A successful answer or a mistake gives us something to examine, but neither settles these questions by itself."
       },
       {
-        "title": "The idea we want to test",
-        "text": "Our idea is that intelligence could emerge when processes inspired by the brain work together in software. We want to find out whether that is possible. The article “What we mean by emergence” explains this idea with examples."
+        "title": "Where consciousness fits",
+        "text": "Consciousness raises another question: could a system have an experience of what is happening, beyond processing information and acting on it? This interests us because the brain inspires questions about both intelligence and experience. Ideas about how information becomes available for conscious thought can inform our design. Being able to act intelligently does not tell us whether the system experiences anything. Our software uses the name Awareness for a function; that name is not a claim that Sapiens is conscious."
       },
       {
         "title": "Why we are building Sapiens",
-        "text": "Sapiens gives us a way to explore these questions in practice. We can study how earlier experiences affect its response to a new situation, whether it notices a conflict and whether it changes its mind for a good reason. Those observations can help us examine the ideas behind the design. We want to learn which ideas help explain the behaviour, where they fall short and what to explore next."
+        "text": "Sapiens gives us a way to explore these ideas in practice. We can build processes, study how they work together and examine what helps or fails. Our hypothesis is that intelligence could emerge when processes inspired by the brain work together. Building the system lets us investigate that possibility; it does not establish that it will happen. The article “What we mean by emergence” explains the hypothesis and why it guides our approach."
       }
     ],
     "related": [

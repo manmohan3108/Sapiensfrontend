@@ -1,207 +1,299 @@
 # Research page: editorial roadmap
 
 This guide applies only to the public Research index and its articles at
-`/research` and `/research/:slug`. It is not a general product, coding or
-engine-design policy. Follow the frontend `AGENTS.md` for implementation and UI
-work. This file records the agreed content direction so future edits can continue
-without reconstructing the discussion.
+`/research` and `/research/:slug`. Follow the frontend `AGENTS.md` for UI work.
+This is the editorial plan for review, not authorization to rewrite or publish
+all articles. Existing articles may still differ from this direction.
 
-## What we are building
+## Purpose and research boundary
 
-A connected explanation of the Sapiens research: why we are investigating it,
-which ideas inform it, how we interpret those ideas computationally, and what
-evidence could support or challenge the approach.
+The Research section tells the story of **our Sapiens investigation**: what we
+want to understand, why we take this approach, which ideas inspire us, what we
+build to explore them, and what we learn.
 
-The central question is whether intelligence can emerge from interacting
-computational mechanisms informed by neuroscience and philosophical concepts of
-intelligence. Persistence, identity and experience support this investigation;
-none should replace the broader hypothesis as the entire product philosophy.
+Our central question is whether intelligence can emerge as we bring processes
+inspired by neuroscience and philosophical thinking together in software.
+Experience, memory, identity and continuity are parts of this investigation;
+none should replace the whole ambition. Reducing human supervision is not the
+central motivation.
 
-Explain how we arrive at mechanisms before introducing their names. Do not begin
-with a list of memory, attention, goals and engines as though their necessity and
-meaning were already established.
+Explain our philosophy first, then our inspirations, then our own design and
+investigations. Credit existing scientific and philosophical ideas to their
+sources. Distinguish those ideas from our interpretations, engineering choices
+and observations. An implementation is not automatically a new scientific finding.
 
-The site should invite curiosity and communicate substantive thinking. It is not
-a collection of marketing claims, a code reference, or a claim that we have
-reproduced the brain or demonstrated emergence.
+Every topic must answer: **Why does this belong in the story of Sapiens, and
+what does it tell readers about our work?** Background explanation earns its
+place by helping answer that question. This is not a general course in
+neuroscience, philosophy or AI.
+
+## Reading structure and section ownership
+
+These four reading stages use the existing six categories. They clarify the
+reader's journey without changing current routes, category names or navigation.
+
+| Reading stage | Existing category | What belongs here | Boundary |
+| --- | --- | --- | --- |
+| Our philosophy | Research philosophy | Our motivation, questions, working meanings, assumptions and hypothesis | Our position before our solution; no general philosophy survey |
+| Our inspirations | Neuroscience foundations | Selected ideas, why we draw from them, the questions they raise for Sapiens, and limits of our interpretation | Brief sourced background; engine articles own the implementation |
+| Our research and design | Sapiens architecture | Our choices about how the whole system fits together and why | Relationships and trade-offs; each engine owns its internal design |
+| Our research and design | Engine deep dives | Specific questions, relevant inspiration, our interpretation, actual design and open questions | Code is an implementation of an idea, not proof of effectiveness or biological equivalence |
+| Findings and open questions | Experiments and findings | Observations, conditions, comparisons, failures and what they support | Separate observation from interpretation and completed experiments from proposals |
+| Findings and open questions | Future research | Our unanswered questions, candidate approaches and reasons to explore them | Proposed work, without promises or claims that it already operates |
 
 ## Writing approach
 
-- Start every article with the question, hypothesis, inspiration or problem that
-  motivates it. The opening must make sense to someone unfamiliar with Sapiens.
-- Explain why that question matters, then develop the idea or approach. Names and
-  implementation follow the motivation.
-- Use plain language with enough detail to make the reasoning meaningful.
-  Prefer direct sentences about what someone does or what happens. Avoid abstract
-  openings such as “Everyday life asks us” when “We often face” says it plainly.
-  Introduce necessary technical terms beside their meaning. Explain a familiar
-  example before naming its model or creator; the name should add context after
-  the reader understands the idea.
-- Keep emergence focused on properties or organized patterns arising through
-  interactions among parts. Learning from experience, unexpected output and
-  connecting components are not sufficient evidence of emergence. Deliberately
-  designed local rules do not rule out an emergent collective pattern.
-  Connect the example to a specific brain-inspired interaction, then briefly
-  explain how Sapiens explores it. Avoid replacing that connection with our
-  general research philosophy; keep evidence limits in their dedicated section.
-- Give each concept one primary home. Elsewhere, explain its relevance briefly
-  and link to that home instead of repeating the whole explanation.
-- Richness comes from reasons, concrete examples, trade-offs, competing
-  explanations and evidence—not length or repeated claims.
-- Distinguish scientific findings, our hypothesis, our engineering interpretation,
-  current implementation, observations from experiments and future proposals.
-- Describe implementation only after checking current code and composition.
-  Documentation can be outdated; a module's presence does not establish runtime
-  integration or deployment.
-- Do not invent historical motivations, successful experiments or quantitative
-  results. Use our discussions for intent and inspected evidence for factual
-  claims. Mark uncertain interpretations honestly.
-- Cite appropriate scientific sources when explaining research concepts.
-  Sources support the scientific account, not the effectiveness of our software.
-- Avoid stock disclaimers in every paragraph. State the relevant limits clearly
-  where they matter; do not let caveats overwhelm the explanation.
-- Keep paragraphs focused. Headings should express the article's actual ideas,
-  not force every article into identical generic labels.
+- Start with the topic's question or problem and why it matters to Sapiens.
+  Do not open with a solution, engine list or general lesson.
+- Use the flow that fits: **our question → necessary background → our position
+  or approach → what is known or open → related work in Sapiens**. This is a
+  reasoning guide, not a repeated set of headings.
+- Use short, direct sentences and familiar words. Prefer “We often face” to
+  “Everyday life asks us”. Explain necessary terms beside their meaning.
+- Examples support the explanation after the motivation is clear. Explain the
+  example before naming its academic model or creator, then return to why it
+  matters to Sapiens. Do not let it become a separate lesson.
+- Where useful, compare human abilities and AI and state the question this raises.
+  Avoid blanket claims that AI cannot reason, learn or act. Distinguish a language
+  model from its surrounding system when that distinction matters.
+- State the question before describing our approach. Do not replace understanding,
+  learning and adapting with productivity, reminders or reduced supervision.
+- Give each subject one primary home. Other articles explain its relevance briefly
+  and link onward. Richness comes from reasons, examples and meaningful choices,
+  not repeating attention, memory or curiosity in every article.
+- Credit sources and distinguish their findings from our hypothesis, interpretation,
+  implementation, observations and proposals. Do not invent historical motivations,
+  quantitative results or claims of originality.
+- Check current code and composition before describing implementation. A module,
+  outdated document or deployed fix does not establish active or proven capability.
+- A single success or mistake does not settle whether a person or AI understands.
+  Learning, surprising output or connected components alone do not demonstrate
+  emergence. Designed local rules can still produce a collective pattern.
+- Put uncertainty where it matters without repeating disclaimers. Keep original
+  observations separate from explanations of them.
+- Do not invent a biological explanation for an ordinary engineering boundary.
+  Practical software choices can support the research without being novel theories.
+- Preserve existing URLs and the theme. Updating this plan does not change article
+  content, ordering, titles or publication status.
 
-## Section boundaries
+## Topic map and preparation scope
 
-| Section | Purpose and useful depth | Keep out |
+Slugs identify existing articles. Research philosophy has a planned three-article
+consolidation below; other categories retain their current reading order. Labels
+describe editorial purpose; public title and navigation changes require a later
+content pass. Each row defines content, relevance and boundaries. Suggested connections
+are editorial relationships, not a requirement to add every link to every page.
+
+### 1. Research philosophy — three articles about our position
+
+Use three substantial articles, each with clear subsections. Preserve depth by
+developing the reasoning within them instead of stretching closely related ideas
+across seven introductions. Their distinct jobs are **our motivation → our
+hypothesis → why an individual's experience matters**.
+
+These are planned editorial destinations. Existing articles, URLs and navigation
+stay as they are until the later content consolidation is reviewed.
+
+#### Article 1: Why we are building Sapiens
+
+**Purpose:** Explain the problem that motivates us, the abilities we want to
+understand, and why we take inspiration from neuroscience and philosophy.
+
+**Planned content and flow:**
+
+1. **The motivating problem.** Relate human understanding, learning and adapting
+   to what we want to investigate in AI. State the research question explicitly
+   before introducing our approach. An example can support the opening, but must
+   not replace the problem as the starting point.
+2. **What we mean by intelligence and understanding.** Briefly explain our working
+   distinctions between knowing, understanding, reasoning, learning and adapting.
+   Tie these meanings to the abilities we want to investigate in Sapiens rather
+   than giving a general definitions lesson.
+3. **Why this matters to us.** Explain the broader ambition of understanding
+   intelligence. Do not narrow it to reduced supervision, productivity, reminders
+   or choosing the next task automatically.
+4. **Why neuroscience and philosophy guide us.** Explain why the brain is a source
+   of ideas and why questions about understanding and agency shape our choices.
+   Specific scientific mechanisms belong in the inspiration articles.
+5. **Where consciousness fits.** Include a focused subsection about its influence
+   on our thinking, the distinction from intelligence and observable behaviour,
+   and what we can and cannot claim about Sapiens. Do not equate the Awareness
+   engine with subjective experience. A separate article is warranted only when
+   we have a distinct research argument to develop.
+6. **Why build Sapiens.** Explain how building and studying a system helps us
+   investigate these questions. State the emergence hypothesis briefly and lead
+   to Article 2 for its explanation.
+
+**Boundary and links:** This article owns our motivation and working meanings.
+It links to selected inspirations and evaluation. It does not explain the flock
+example, engine internals or detailed experimental methods.
+
+#### Article 2: Our hypothesis: how intelligence might emerge
+
+**Purpose:** Explain the particular hypothesis guiding our approach and why it
+leads us to investigate cooperating processes.
+
+**Planned content and flow:**
+
+1. **Our hypothesis and why we explore it.** Ask whether broader abilities could
+   arise through processes working together. Connect this to the intelligence
+   questions established in Article 1 without repeating their definitions.
+2. **What we mean by emergence.** Explain the idea plainly, using the flock
+   example after establishing its relevance. Introduce Craig Reynolds and Boids
+   after the reader understands the example; credit the source.
+3. **The connection to our inspiration.** Describe a specific brain-inspired
+   interaction that helps explain why we are interested in this direction.
+   Do not replace this connection with a generic statement about neuroscience.
+4. **How the hypothesis shapes Sapiens.** Briefly explain our choice to build
+   cooperating functions and investigate what their interaction contributes.
+   Distinguish established source ideas from our own interpretation and design.
+5. **What remains a hypothesis.** Explain that connected components, learning or
+   surprising output alone do not establish emergence. Identify the question we
+   would need evidence to answer, then link to evaluation instead of reproducing
+   its procedures.
+
+**Boundary and links:** This article owns the emergence explanation and its role
+in our research. Link to architecture, relevant inspirations and evaluation.
+Keep the detailed story of an individual's experience in Article 3; do not use
+ordinary learning as if it were proof of emergence.
+
+#### Article 3: Why experience and individuality matter
+
+**Purpose:** Explain why our investigation follows one continuing individual
+whose encounters, choices and consequences may affect its later understanding.
+
+**Planned content and flow:**
+
+1. **Why study one individual over time.** Introduce the question of how earlier
+   encounters might matter to later understanding. Explain why continuity serves
+   our investigation without making persistence the whole research thesis.
+2. **A perspective and actions of its own.** Explain our interest in a consistent
+   point of view, intentions and responsibility for actions. Different functions
+   belong to the same Sapien; other people's words and actions remain theirs.
+3. **Why taking part may matter.** Compare receiving information with encountering
+   a situation, choosing an action and observing its consequences. Explain what
+   we hope to investigate, without claiming that participation guarantees learning.
+4. **How experience could change understanding.** Discuss retaining connections,
+   questioning earlier ideas and applying what was learned elsewhere. Use a
+   supporting example if it makes our research question clearer.
+5. **Development rather than accumulation.** Explain why storing more history is
+   not enough: we want to examine revision, useful learning and the possibility
+   of misleading associations over time.
+6. **What this motivates in Sapiens.** Briefly connect the questions to shared
+   identity, memory, feedback and replay. Link to their design and evaluation
+   articles for what actually exists and what has been observed.
+
+**Boundary and links:** This article combines self/agency, firsthand experience
+and continuity. It owns their shared motivation, not their engine implementation.
+Link to identity, memory, feedback, replay and experience evaluation. Do not claim
+personhood, subjective experience or proven developmental benefits.
+
+#### Where the existing seven topics go
+
+| Existing topic | Planned home | Treatment |
 | --- | --- | --- |
-| Research philosophy | Motivation, hypotheses, definitions, philosophical questions and alternative viewpoints | Premature engine lists, code details and extended evaluation procedures |
-| Neuroscience foundations | Scientific concepts, supporting evidence, debates and limits | Detailed software implementation or claims of biological equivalence |
-| Sapiens architecture | Design rationale, ownership, information flow and trade-offs | Re-teaching neuroscience or describing every engine's internals |
-| Engine deep dives | Problem, relevant inspiration, our interpretation, current implementation, interactions and limits | Unrelated concepts or future capabilities presented as operational |
-| Experiments and findings | Conditions, observations, failures, comparisons and alternative explanations | Treating a demo, successful run or code fix as proof of emergence |
-| Future research | Unanswered questions, possible approaches and how their contribution could be investigated | Promises, invented results or another summary of existing engines |
+| `philosophy` | Article 1 | Main motivation and introduction to our approach |
+| `intelligence-understanding` | Article 1 | Working meanings tied directly to our research |
+| `consciousness` | Article 1 | Focused subsection about inspiration, scope and claims |
+| `emergence` | Article 2 | The hypothesis, explanation, example and Sapiens connection |
+| `self-agency` | Article 3 | Perspective, intentions and responsibility |
+| `firsthand-experience` | Article 3 | Participation, choices and consequences |
+| `continuity` | Article 3 | Learning and revision across encounters |
 
-These boundaries guide emphasis. A short explanation or example may cross a
-boundary when needed for understanding; link onward for the full treatment.
+This mapping replaces the seven-article philosophy plan. It does not delete or
+redirect any existing page now. When implementing the consolidation, review old
+links and preserve access through appropriate destinations or redirects.
 
-## Topic map and reading order
+Keep each article substantial enough to explain its reasoning. Do not compress
+the combined subjects into a few summary sentences, or paste the old articles
+end to end. Remove repeated explanations and give each subsection a distinct
+purpose. Other research categories retain their existing planned scope.
 
-Titles can be refined during review. Existing slugs below identify the current
-articles; preserve their URLs unless a change is explicitly agreed. “Why look to
-the brain?” currently belongs inside the first article, not a new duplicate page.
+### 2. Neuroscience foundations — the ideas we draw from
 
-### 1. Research philosophy
+Start with why a selected idea matters to Sapiens. Explain enough of the source
+concept to understand our interest, cite it, state the research question it
+raises, and link to our interpretation. The foundation owns the source idea;
+the engine article owns our implementation.
 
-| Existing article | Question or responsibility |
-| --- | --- |
-| `philosophy` — Why we are building Sapiens | Establish the problem through human–AI comparisons, why it matters, our ambition and inspiration, then the brief hypothesis and why we build to investigate |
-| `intelligence-understanding` — What do we mean by intelligence and understanding? | Distinguish knowing, understanding and broader intelligence; explain our working meanings through a human–AI comparison, then lead into emergence |
-| `emergence` — What we mean by emergence | Explain the intended meaning and what distinguishes it from merely surprising output |
-| `self-agency` — Self and agency | Explore continuity, perspective and responsibility before describing shared-self implementation |
-| `consciousness` — Consciousness and its boundaries | Distinguish the philosophical question from intelligence and observable behaviour |
-| `firsthand-experience` — What can an AI learn by taking part? | Explain why an individual's own history could matter |
-| `continuity` — Development over time | Explore development and revision across experience, beyond accumulating records |
+| Topic | What belongs here | Sapiens research connection and boundary |
+| --- | --- | --- |
+| `inspiration` — Choosing and adapting inspirations | Why neuroscience; how we select ideas, form software interpretations and identify where analogies end | Explain our approach through concrete foundation/engine pairs; no history of neuroscience or claim to copy the whole brain |
+| `perception-attention` — Selection and shared availability | Our need to select relevant information; the specific attention and Global Workspace ideas that inform it | Motivate questions behind Awareness. Explain distinctions and limits; leave prompt stages and execution flow to Awareness |
+| `working-memory-foundation` — Information available for current thought | Relevant working-memory ideas, limits and distinction from long-term memory | Explain our interest in active context. Link to Working Memory; software capacity settings are not biological facts |
+| `associative-memory` — Related experiences coming to mind | Why one encounter might cue another; selected association ideas behind our approach | Motivate connected recall. Link to Engram; leave storage, retrieval and scoring to its article |
+| `reinforcement-forgetting` — Hebbian strengthening and plasticity | Strengthening/weakening concepts we draw from and why repeated use need not mean usefulness | Motivate changes in memory associations. Link to Engram, replay and feedback; distinguish these changes from training the language model |
+| `replay-consolidation` — Revisiting experience | Replay/consolidation ideas we draw from and why revisiting memories may matter | Motivate our replay investigation. Link to Hippocampus and evaluation; do not imply all biological consolidation is implemented |
+| `prediction-reward-foundation` — Expectations, surprise and value | Selected prediction, novelty and reward prediction-error ideas; distinctions needed to explain our interest | Motivate predictive components and future questions. Link there for implementation; no implied full integration or human feelings |
 
-The first article should follow:
-problem → human–AI comparison → explicit research question → supporting example
-and why it matters → why neuroscience → why philosophy → brief hypothesis →
-why build Sapiens to investigate. Open with the problem, not the example or the
-proposed solution. Its purpose is motivation, not an explanation of emergence.
+### 3. Sapiens architecture — our overall design choices
 
-Keep the motivation about intelligence: understanding, learning and adapting.
-Do not narrow it to reducing supervision, reminders or instructions for the next
-step. Let the human–AI comparison lead to a question before introducing our
-approach. Keep software plumbing in the architecture articles; neither a single
-success nor a single failure establishes whether a person or AI understands.
+| Topic | What belongs here | Sapiens research connection and boundary |
+| --- | --- | --- |
+| `architecture-overview` — Bringing functions together | Why separate responsibilities, how they cooperate and the trade-offs | Show how our hypothesis informs design. Link to engines; connection alone is not evidence of emergence |
+| `identity` — Identity and the shared self | How the design represents one Sapien, supplies its identity and preserves other speakers' perspectives | Translate the position in “Why experience and individuality matter” into design. Keep its philosophical arguments there and verify implementation claims |
+| `process` — From experience to action | One representative experience through consideration, action or waiting, and assessment | Make the experience–behaviour relationship concrete. Link to owners; avoid exhaustive code walkthroughs |
+| `connections` — Preserving and sharing information | Why source, context, references and retrieval matter; how information becomes available to consumers | Explain a condition the investigation depends on. Keep API schemas and internal plumbing in technical documentation |
+| `language-models` — What the model contributes | Roles of the model and surrounding system in reasoning, memory, tools and ongoing activity | Clarify the basis of our experiments. Link to alternatives; do not attribute a model's existing abilities to our architecture |
 
-Where useful, explain how AI handles a human ability being discussed and what
-remains difficult. Distinguish language-model abilities from the surrounding
-system, without blanket claims that AI cannot reason, learn or act independently.
-Memory and continuity illustrate the broader challenge; they are not its entirety.
+### 4. Engine deep dives — specific questions and our approach
 
-Keep these neighbouring articles distinct: the first explains why we are building
-Sapiens; Intelligence and understanding examines what those terms mean; Emergence
-explains how a whole can have properties its parts lack, with its own examples.
-The first article should link onward rather than repeat those explanations or
-introduce engine lists. Detailed implementation and evaluation belong in their
-respective sections.
+For each engine: problem → relevant inspiration → our interpretation and design
+→ information it uses and produces → actual integration and open questions.
+Link to the inspiration instead of reteaching it. Verify status before writing:
+the scope below is not a claim of deployed capability.
 
-The intelligence and understanding article should follow:
-meaning and why it matters → understanding with one familiar example → broader
-intelligence → questions shared by humans and AI → partial understanding → our
-working meanings for Sapiens → the next question about emergence. Keep the
-example after the opening. Avoid treating fluent answers as proof, mistakes as
-disproof, or our working meanings as settled definitions. Keep evaluation
-procedures and engine details in their own articles.
+| Topic | What belongs here | Sapiens research connection and boundary |
+| --- | --- | --- |
+| `awareness` | Why a coherent focus is needed; selection, context, decisions and assessment in our design | Examine how available information contributes to behaviour. Link to attention/workspace ideas; do not claim subjective awareness |
+| `memory` — Engram | Why experience needs context and associations; ingestion, recall and association changes | Explore when past experience becomes useful. Link to associative memory/plasticity; retrieval alone is not understanding |
+| `working-memory-engine` | Why selected information stays active; representation, capacity and activation | Examine the role of current context. Link to its foundation; do not repeat long-term storage design |
+| `hippocampus` | Why revisit experience; our replay coordination, effects on memory and actual integration | Investigate whether replay helps later recall. Link to foundations/evaluation; identify dormant capabilities honestly |
+| `goals` | Why outcomes and unfinished work persist; how evidence informs progress and revision | Study intentions across changing circumstances. Link to continuity, Hold and feedback; stored goals are not completed actions |
+| `hold` | Why waiting can be appropriate; retaining and reconsidering unresolved conditions | Explore waiting without forgetting or repeating actions. Link to Goals/Awareness; no invented biological counterpart |
+| `reasoning-questioning` | Why identifying questions matters; generation, storage and actual consumers | Investigate how questions might support understanding. Link to Curiosity; distinguish generating questions from pursuing answers |
+| `curiosity` | Why possibilities are worth exploring; our approach to relevance, novelty and uncertainty | Explore how investigation might be selected. Link to Questioning/initiative; no automatic exploration claim without verified wiring |
+| `motor-conversation` | Why choosing, executing and communicating have distinct responsibilities; results returned | Explain how decisions encounter consequences and other people. Link to process/feedback; practical boundaries, not biological equivalence |
+| `action-feedback` | How later observations inform interpretations of earlier actions, with evidence and uncertainty | Explore how consequences become useful information. Link to experience/learning; distinguish observation from inferred cause |
+| `tool-learning` | How tool experience becomes revisable guidance and how it is used | Investigate practical learning from outcomes. Link to feedback/evaluation; guidance is not permission or a guarantee |
+| `predictive-engines` | Questions behind Cortex, Cerebellum and Dopamine; exact limited implementations and integration status | Explain what we have attempted around expectations and value. Link to foundations; no claims of complete biological models |
+| `weave` | Why synthesis, abstraction and belief revision matter; design, incomplete parts and intended role | Explain our investigation of broader understanding. Link to future abstraction; distinguish code, proposals and active behaviour |
 
-### 2. Neuroscience foundations
+A component may be a practical part of the investigation without being an
+original scientific contribution. Do not add an inspiration solely to justify
+the component's name.
 
-| Existing article | Question or responsibility |
-| --- | --- |
-| `inspiration` | How should scientific concepts inform computational design, and where does analogy end? |
-| `perception-attention` | Explain attention and workspace accounts of shared availability, including their distinctions |
-| `working-memory-foundation` | Why does some information remain available for current thinking? |
-| `associative-memory` | How can one experience cue another? |
-| `reinforcement-forgetting` | Explain Hebbian strengthening, plasticity and the need for balancing—not repetition as truth |
-| `replay-consolidation` | Why might revisiting experience matter beyond immediate interaction? |
-| `prediction-reward-foundation` | Distinguish expectations, novelty and reward prediction error |
+### 5. Experiments and findings — what our work shows
 
-Link these articles to the relevant engines, where the computational adaptation
-is explained. Do not imply that every engine already implements every concept.
+| Topic | What belongs here | Sapiens research connection and boundary |
+| --- | --- | --- |
+| `simulation` | Why simulated settings, what the case controls and what the environment can obscure | Explain how we observe Sapiens. Link to findings/limits; no general simulation tutorial |
+| `findings` | Specific sequences, conditions, alternative causes, changes and verification status | Show what we learned about our design. Link to affected engines; avoid a release diary or treating fixes as proven gains |
+| `experience-evaluation` | Comparisons that reveal when experience helps, has no effect or misleads | Address our experience hypothesis. Link to memory/replay/feedback; separate proposed comparisons from results |
+| `evaluation` | Evidence and comparisons that could support or challenge the central hypothesis | Connect ambition to assessable questions. Link to emergence/alternatives; task success alone does not establish emergence |
+| `alternative-explanations` | Whether models, prompts, extra computation, tools or simulation explain the behaviour | Keep attribution of our contribution honest. Link to model role/experiments; use alternatives relevant to our observations |
+| `research-limitations` | Limits of implementation, experiment coverage, measurements and conclusions | State how far our claims reach. Link to evidence/open questions; avoid repeating generic caveats everywhere |
 
-### 3. Sapiens architecture
+Observed results and proposed experiments must remain distinct. A simulation can
+cause an error itself; trace the sequence before assigning responsibility.
+A code change is not evidence of improvement until the relevant behaviour is checked.
 
-| Existing article | Question or responsibility |
-| --- | --- |
-| `architecture-overview` | Why separate responsibilities, and how do they cooperate? |
-| `identity` | How do different functions belong to one individual while preserving other speakers' perspectives? |
-| `process` | How does experience lead to consideration, action or waiting, then assessment? |
-| `connections` | How do information and references retain source, context and meaning across boundaries? |
-| `language-models` | What does the model provide, and what does the surrounding system contribute? |
+### 6. Future research — questions we want to pursue
 
-### 4. Engine deep dives
+Each direction needs a reason to exist, relevant current ingredients, what is
+missing and what we could learn by trying it. A similarly named engine does not
+establish implementation. Do not invent delivery dates.
 
-| Existing article | Motivating problem |
-| --- | --- |
-| `awareness` | Form a coherent present focus and decide what to do |
-| `memory` — Engram | Make past experience available with context and associations |
-| `working-memory-engine` | Maintain selected active context without duplicating all memory |
-| `hippocampus` | Revisit experience and coordinate replay |
-| `goals` — Goals and planning | Retain desired outcomes and interpret progress over time |
-| `hold` | Wait for conditions without forgetting or repeatedly acting |
-| `reasoning-questioning` | Identify useful questions and separate generation from pursuing answers |
-| `curiosity` | Evaluate what may be worth exploring |
-| `motor-conversation` | Separate choosing actions, execution and outward communication |
-| `action-feedback` | Interpret what later evidence says about earlier behaviour |
-| `tool-learning` | Retain revisable practical guidance from tool experience |
-| `predictive-engines` | Explore limited value, expectation, novelty and reward-error mechanisms |
-| `weave` | Explore abstraction, synthesis, evaluation and belief revision |
-
-For each deep dive, establish the problem first, then the relevant inspiration,
-our interpretation, actual implementation, important interactions and open
-questions. Use an example when it makes the mechanism easier to understand.
-Do not force invented biological explanations onto ordinary software boundaries.
-
-### 5. Experiments and findings
-
-| Existing article | Question or responsibility |
-| --- | --- |
-| `simulation` | Why use simulated workplaces, and what can they reveal? |
-| `findings` | What happened, what caused it and what changed? |
-| `experience-evaluation` | Does experience improve later behaviour, and when can it mislead? |
-| `evaluation` | What comparisons could support or challenge our hypothesis? |
-| `alternative-explanations` | Could the model, prompt, extra computation or scenario explain the behaviour? |
-| `research-limitations` | How far does our current evidence allow us to conclude? |
-
-Keep observed results separate from proposed experiments. A simulation can cause
-an error itself; trace the sequence before assigning responsibility to Sapiens.
-Do not imply that a changed implementation has passed runtime verification.
-
-### 6. Future research
-
-| Existing article | Open direction |
-| --- | --- |
-| `prediction` | Expectations and understanding an unfolding situation |
-| `imagination` | Exploring possibilities while preserving evidence boundaries |
-| `abstraction` | General ideas, applicability and counterexamples |
-| `motivation-action` | Reasons to act, explore, wait or rest |
-| `reward-emotion` | Significance and value without claiming human feelings |
-| `senses-roles` | Continuity across settings, roles and possible additional senses |
-| `missing-mechanisms` | Identify gaps by their purpose, not by adding brain-inspired names |
-| `initiative` | Context-sensitive exploration and interaction without forced activity |
+| Topic | What belongs here | Sapiens research connection and boundary |
+| --- | --- | --- |
+| `prediction` | How expectations might help interpret unfolding events; candidate approach and questions | Extend understanding through time. Link to predictive components; keep existing implementation details there |
+| `imagination` | Why considering possibilities may help; possible representation and evidence boundaries | Explore reasoning beyond observed facts. Link to Questioning/Weave where relevant; imagined events are not observations |
+| `abstraction` | How experiences might support general ideas; applicability, revision and counterexamples | Investigate transfer to unfamiliar settings. Link to Weave/memory; summaries are not automatically learned principles |
+| `motivation-action` | Reasons to act, explore, wait or rest; candidate ways reasons affect choices | Explore a broader basis for decisions. Link to Goals/Hold/Curiosity; do not reduce intelligence to autonomous task completion |
+| `reward-emotion` | Questions about significance and value; specific inspirations and possible interpretations | Explore why experiences might matter differently. Link to prediction/reward; no claim of human emotions |
+| `senses-roles` | Why more forms of experience or changing roles matter; possible approaches and difficulties | Explore understanding across settings. Link to identity/experience; distinguish available inputs from proposed ones |
+| `missing-mechanisms` | Gaps from questions or evidence, their needed function and plausible alternatives | Prioritize research by what it could explain. Link to concrete directions; no checklist of brain parts to reproduce |
+| `initiative` | When exploration or social interaction is worthwhile, how to avoid empty activity and what is untested | Explore encountering new experiences. Link to Curiosity/motivation; frequency of activity is not evidence of intelligence |
 
 ## Link design
 
@@ -214,8 +306,8 @@ for returning to the topic list. Related reading remains a separate set of
 editorially chosen connections.
 
 
-- Philosophy points to definitions and scientific foundations before requiring
-  readers to understand engine architecture.
+- Philosophy links to our working meanings and selected inspirations before
+  requiring readers to understand engine architecture.
 - Foundations link to their computational interpretations in engine articles.
 - Architecture links to the engines that own the responsibilities it describes.
 - Engines link back to relevant foundations and onward to experiments or open
@@ -261,12 +353,14 @@ progress, test results and publication status in the conversation, not in this f
 ## Incremental workflow
 
 1. Work on one article at a time unless a batch is explicitly requested.
-2. Identify its question, section boundary, source evidence and links first.
+2. Identify its Sapiens-specific question, section boundary, source evidence and
+   links first. State what readers should learn about our research from it.
 3. Check current code where making implementation claims; consult reliable
    scientific sources for scientific explanations.
 4. Rewrite the article using the existing structured content format.
-5. Review whether it explains why before how, introduces terms, avoids overlap,
-   distinguishes status and gives readers a useful next step.
+5. Review whether each explanation serves our research story, explains why before
+   how, uses plain language, avoids overlap and distinguishes status. Remove
+   background that does not support the topic's purpose.
 6. Retain the current theme and responsive hierarchy. Make presentation changes
    only when the content needs them.
 7. Report the article changed and its local/deployment status briefly. Follow
