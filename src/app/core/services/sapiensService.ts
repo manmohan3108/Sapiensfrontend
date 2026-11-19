@@ -90,7 +90,8 @@ class SapiensService {
 
   async setActivity(sapienId: string, activityState: ActivityState, signal: AbortSignal): Promise<SapienActivity> {
     const response = await apiClient.post<BackendSapienActivity>(API_ENDPOINTS.sapienActivity(sapienId), { activity_state: activityState },
-      { signal: AbortSignal.any([signal, AbortSignal.timeout(ACCESS_CHECK_TIMEOUT_MS)]) });
+      { signal: AbortSignal.any([signal, AbortSignal.timeout(ACCESS_CHECK_TIMEOUT_MS)]),
+        rateLimitBucket: activityState === 'active' ? 'api_write' : 'control' });
     return transformActivity(sapienId, response.data);
   }
 

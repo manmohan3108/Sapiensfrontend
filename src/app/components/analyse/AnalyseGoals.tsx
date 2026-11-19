@@ -1,3 +1,5 @@
+import { RateLimitButton } from '../shared/RateLimitButton';
+import { secondsRemaining } from '../../core/api/rateLimits';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { ChevronRight } from 'lucide-react';
@@ -69,6 +71,7 @@ function GoalRequest({ sapienId, goalId, scope, stepId, onAccepted, targets }: {
   const label = scope === 'revise' ? 'Request a plan review' : targets ? 'Add information' : `Add information to this ${scope}`;
   const close = () => { if (!submitting.current) { setOpen(false); setError(''); trigger.current?.focus(); } };
   async function submit() {
+    if (secondsRemaining('api_write') > 0) return;
     if (submitting.current || !text.trim() || targetMissing) return;
     submitting.current = true; setBusy(true); setError(''); setNotice('');
     try {
@@ -92,7 +95,7 @@ function GoalRequest({ sapienId, goalId, scope, stepId, onAccepted, targets }: {
       <textarea ref={field} name="information" autoComplete="off" id={`${id}-text`} value={text} onChange={event => setText(event.target.value)} rows={3} disabled={busy} aria-describedby={`${id}-help`} />
       <p id={`${id}-help`} className="ag-muted">This sends a request for background processing; it does not directly edit the record.</p>
       {error && <p role="alert" className="ag-error">{error}</p>}
-      <div className="ag-actions"><button className="analyse-button" disabled={busy || !text.trim() || targetMissing}>{busy ? 'Sending…' : scope === 'revise' ? 'Send revision request' : 'Send information'}</button><button type="button" className="ag-text-button" disabled={busy} onClick={close}>Cancel</button></div>
+      <div className="ag-actions"><RateLimitButton className="analyse-button" disabled={busy || !text.trim() || targetMissing}>{busy ? 'Sending…' : scope === 'revise' ? 'Send revision request' : 'Send information'}</RateLimitButton><button type="button" className="ag-text-button" disabled={busy} onClick={close}>Cancel</button></div>
     </form>}
     {notice && <p role="status" className="ag-muted">{notice}</p>}
   </div>;

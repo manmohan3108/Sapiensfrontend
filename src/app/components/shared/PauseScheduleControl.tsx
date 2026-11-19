@@ -1,4 +1,6 @@
 import { useId, useState } from 'react';
+import { RateLimitButton } from './RateLimitButton';
+import type { RateLimitBucket } from '../../core/api/rateLimits';
 import * as Popover from '@radix-ui/react-popover';
 import { Clock3, ChevronDown, X } from 'lucide-react';
 import '../../../styles/pause-schedule.css';
@@ -8,9 +10,10 @@ const pauseTime = (value: string) => new Intl.DateTimeFormat(undefined, {
 }).format(new Date(value));
 
 /** Presentation only: each runtime owns its persisted schedule and pause behavior. */
-export function PauseScheduleControl({ label, scheduledAt, disabled, onSchedule }: {
+export function PauseScheduleControl({ label, scheduledAt, disabled, onSchedule, rateLimitBucket = 'api_write' }: {
   label: string; scheduledAt?: string | null; disabled: boolean;
   onSchedule: (minutes: number | null) => void;
+  rateLimitBucket?: RateLimitBucket;
 }) {
   const id = useId();
   const [minutes, setMinutes] = useState(60);
@@ -48,10 +51,10 @@ export function PauseScheduleControl({ label, scheduledAt, disabled, onSchedule 
         </fieldset>
         <p className="pause-schedule-caption">Starts when you save the timer.</p>
         <div className="pause-schedule-actions">
-          <button type="button" className="pause-schedule-save" disabled={disabled} onClick={() => onSchedule(minutes)}>
+          <RateLimitButton rateLimitBucket={rateLimitBucket} type="button" className="pause-schedule-save" disabled={disabled} onClick={() => onSchedule(minutes)}>
             {validTime ? 'Update timer' : 'Schedule pause'}
-          </button>
-          {validTime && <button type="button" className="pause-schedule-cancel" disabled={disabled} onClick={() => onSchedule(null)}>Cancel timer</button>}
+          </RateLimitButton>
+          {validTime && <RateLimitButton rateLimitBucket={rateLimitBucket} type="button" className="pause-schedule-cancel" disabled={disabled} onClick={() => onSchedule(null)}>Cancel timer</RateLimitButton>}
         </div>
       </Popover.Content>
     </Popover.Root>

@@ -1,3 +1,5 @@
+import { RateLimitButton } from '../shared/RateLimitButton';
+import { secondsRemaining } from '../../core/api/rateLimits';
 import { RecordText, recordDate, useListReaderNavigation } from './ContextReader';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { toast } from 'sonner';
@@ -261,6 +263,7 @@ function CommentPopover({
   }, [open]);
 
   const submit = async () => {
+    if (secondsRemaining('api_write') > 0) return;
     const now = Date.now();
     if (now - lastSubmitRef.current < 1000) return; // debounce 1s
     lastSubmitRef.current = now;
@@ -374,13 +377,13 @@ function CommentPopover({
                 className="px-2.5 py-1 rounded-lg text-[10px] text-sp-muted hover:text-sp-muted transition-colors">
                 Cancel
               </button>
-              <button onClick={submit} disabled={!text.trim() || submitting}
+              <RateLimitButton onClick={submit} disabled={!text.trim() || submitting}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-medium disabled:opacity-40 transition-all"
                 style={{ background: 'rgb(var(--sp-accent-rgb, 129 140 248) / 0.2)', border: '1px solid rgb(var(--sp-accent-rgb, 129 140 248) / 0.4)', color: 'var(--sp-accent, #a5b4fc)' }}>
                 {submitting
                   ? <><Loader2 className="w-3 h-3 animate-spin" />Processing…</>
                   : <><Send className="w-3 h-3" />Send</>}
-              </button>
+              </RateLimitButton>
             </div>
           </div>
         </div>
@@ -624,6 +627,7 @@ function GoalDetailPane({
   }, []);
 
   const handleReplan = async () => {
+    if (secondsRemaining('api_write') > 0) return;
     if (!replanReason.trim()) return;
     setReplanning(true);
     try {
@@ -812,12 +816,12 @@ function GoalDetailPane({
                   style={{ borderColor: 'rgb(var(--sp-ink-rgb, 255 255 255) / 0.15)' }}
                 />
                 <div className="flex gap-2">
-                  <button onClick={handleReplan} disabled={!replanReason.trim() || replanning}
+                  <RateLimitButton onClick={handleReplan} disabled={!replanReason.trim() || replanning}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] disabled:opacity-40 transition-all"
                     style={{ background: 'rgb(var(--sp-accent-rgb, 124 58 237) / 0.2)', border: '1px solid rgb(var(--sp-accent-rgb, 124 58 237) / 0.35)', color: 'var(--sp-accent, #c4b5fd)' }}>
                     {replanning ? <Loader2 className="w-3 h-3 animate-spin" /> : <RotateCcw className="w-3 h-3" />}
                     {replanning ? 'Submitting…' : 'Submit'}
-                  </button>
+                  </RateLimitButton>
                   <button onClick={() => { setReplanOpen(false); setReplanReason(''); }}
                     className="px-3 py-1.5 rounded-lg text-[10px] text-sp-muted hover:text-sp-muted transition-colors">
                     Cancel

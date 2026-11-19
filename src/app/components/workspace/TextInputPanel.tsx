@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { secondsRemaining } from '../../core/api/rateLimits';
 import { Send } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Textarea } from '../ui/textarea';
@@ -15,7 +16,7 @@ export function TextInputPanel() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!text.trim() || isProcessing) {
+    if (!text.trim() || isProcessing || secondsRemaining('api_write') > 0) {
       return;
     }
 
@@ -62,6 +63,7 @@ export function TextInputPanel() {
               Press Cmd/Ctrl + Enter to send
             </p>
             <Button
+              rateLimitBucket="api_write"
               type="submit"
               disabled={!text.trim() || isProcessing}
             >

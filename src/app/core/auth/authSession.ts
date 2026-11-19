@@ -1,5 +1,6 @@
 import { apiConfig } from '../config/apiConfig';
 import { backendFetch } from '../api/backendAvailability';
+import { rateLimits, type RateLimitedRequestInit } from '../api/rateLimits';
 import type { TokenPair } from '../../types/authTypes';
 import type { SapiensDirectoryEntry } from '../../types/sapiensTypes';
 
@@ -44,6 +45,7 @@ export const authSession = {
   get tokens() { return readTokens(); },
   save(tokens: TokenPair) { localStorage.setItem(STORAGE_KEY, JSON.stringify(tokens)); },
   clear(notify = false) {
+    rateLimits.clearAccount();
     sessionVersion += 1;
     cancelAccessCheck();
     resourceSession.verifiedVersion = -1;
@@ -155,7 +157,7 @@ async function getRefreshedAccessToken() {
   return refreshPromise;
 }
 
-export async function authenticatedFetch(input: RequestInfo | URL, init: RequestInit = {}, retry = true): Promise<Response> {
+export async function authenticatedFetch(input: RequestInfo | URL, init: RateLimitedRequestInit = {}, retry = true): Promise<Response> {
   init.signal?.throwIfAborted();
   const version = sessionVersion;
   const selectionVersion = resourceSession.version;

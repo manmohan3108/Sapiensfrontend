@@ -1,3 +1,5 @@
+import { RateLimitButton } from '../shared/RateLimitButton';
+import { secondsRemaining } from '../../core/api/rateLimits';
 import { useState } from 'react';
 import type { ConnectionProvider, SapiensConnection, SapiensConnectionRequest } from '../../types/connectionTypes';
 
@@ -83,6 +85,7 @@ export function ConnectionSubscriptions({ connection, busy, onSave }: {
   const [error, setError] = useState('');
   const status = String(connection.metadata.notification_status || 'not_configured').replaceAll('_', ' ');
   const save = async () => {
+    if (busy || secondsRemaining('api_write') > 0) return;
     setError('');
     const requested = resources.split('\n').map(value => value.trim()).filter(Boolean);
     if (requested.length > 20) { setError('Choose at most 20 notification resources.'); return; }
@@ -100,8 +103,8 @@ export function ConnectionSubscriptions({ connection, busy, onSave }: {
       value={resources} onChange={event => setResources(event.target.value)} disabled={busy || connection.status !== 'connected'}
       className="mt-2 w-full rounded-lg border border-sp-line bg-sp-panel p-3 text-sm text-sp-ink" />
     {error && <p role="alert" className="mt-2 text-sm text-sp-danger">{error}</p>}
-    <button type="button" onClick={() => void save()} disabled={busy || connection.status !== 'connected'}
-      className="mt-2 rounded-lg border border-sp-line px-3 py-2 text-sm hover:bg-sp-ink/5 disabled:opacity-40">{busy ? 'Saving…' : 'Save notification settings'}</button>
+    <RateLimitButton type="button" onClick={() => void save()} disabled={busy || connection.status !== 'connected'}
+      className="mt-2 rounded-lg border border-sp-line px-3 py-2 text-sm hover:bg-sp-ink/5 disabled:opacity-40">{busy ? 'Saving…' : 'Save notification settings'}</RateLimitButton>
     {connection.status !== 'connected' && <p className="mt-2 text-sm text-sp-muted">Verify this account before changing subscriptions.</p>}
   </details>;
 }

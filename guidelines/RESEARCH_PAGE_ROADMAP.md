@@ -78,10 +78,9 @@ reader's journey without changing current routes, category names or navigation.
 
 ## Topic map and preparation scope
 
-Slugs identify existing articles. Research philosophy has a planned three-article
-consolidation below; other categories retain their current reading order. Labels
-describe editorial purpose; public title and navigation changes require a later
-content pass. Each row defines content, relevance and boundaries. Suggested connections
+Slugs identify articles. Research philosophy uses the three-article structure
+below; other categories retain their current reading order. Labels describe
+editorial purpose. Each row defines content, relevance and boundaries. Suggested connections
 are editorial relationships, not a requirement to add every link to every page.
 
 ### 1. Research philosophy — three articles about our position
@@ -91,8 +90,9 @@ developing the reasoning within them instead of stretching closely related ideas
 across seven introductions. Their distinct jobs are **our motivation → our
 hypothesis → why an individual's experience matters**.
 
-These are planned editorial destinations. Existing articles, URLs and navigation
-stay as they are until the later content consolidation is reviewed.
+The canonical destinations are `philosophy`, `emergence` and `continuity`, in
+that reading order. Consolidated topics share those articles rather than
+remaining separate introductions.
 
 #### Article 1: Why we are building Sapiens
 
@@ -188,9 +188,9 @@ and continuity. It owns their shared motivation, not their engine implementation
 Link to identity, memory, feedback, replay and experience evaluation. Do not claim
 personhood, subjective experience or proven developmental benefits.
 
-#### Where the existing seven topics go
+#### Canonical articles and older links
 
-| Existing topic | Planned home | Treatment |
+| Topic or older link | Canonical home | Subject retained |
 | --- | --- | --- |
 | `philosophy` | Article 1 | Main motivation and introduction to our approach |
 | `intelligence-understanding` | Article 1 | Working meanings tied directly to our research |
@@ -200,9 +200,11 @@ personhood, subjective experience or proven developmental benefits.
 | `firsthand-experience` | Article 3 | Participation, choices and consequences |
 | `continuity` | Article 3 | Learning and revision across encounters |
 
-This mapping replaces the seven-article philosophy plan. It does not delete or
-redirect any existing page now. When implementing the consolidation, review old
-links and preserve access through appropriate destinations or redirects.
+Older links for `intelligence-understanding` and `consciousness` redirect to
+`philosophy`; `self-agency` and `firsthand-experience` redirect to `continuity`.
+Preserve browsing filters on redirects. Internal related links use the canonical
+articles without duplicates. Keep superseded drafts in Git history, not as
+parallel published pages or a second content archive.
 
 Keep each article substantial enough to explain its reasoning. Do not compress
 the combined subjects into a few summary sentences, or paste the old articles

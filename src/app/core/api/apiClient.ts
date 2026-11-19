@@ -1,6 +1,7 @@
 import { apiConfig } from '../config/apiConfig';
 import { ApiError, ApiResponse } from '../../types/apiTypes';
 import { authenticatedFetch } from '../auth/authSession';
+import type { RateLimitedRequestInit } from './rateLimits';
 
 class ApiClient {
   private baseUrl: string;
@@ -18,7 +19,7 @@ class ApiClient {
 
   private async request<T>(
     endpoint: string,
-    options: RequestInit = {}
+    options: RateLimitedRequestInit = {}
   ): Promise<ApiResponse<T>> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), this.timeout);
@@ -76,7 +77,7 @@ class ApiClient {
   async post<T>(
     endpoint: string,
     data?: unknown,
-    options: RequestInit = {}
+    options: RateLimitedRequestInit = {}
   ): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
       ...options,

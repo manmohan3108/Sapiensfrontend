@@ -1,4 +1,5 @@
 import { useId } from 'react';
+import { RateLimitButton } from '../shared/RateLimitButton';
 import { Pause, Play, RefreshCw, MessageSquare, Power } from 'lucide-react';
 import { PauseScheduleControl } from '../shared/PauseScheduleControl';
 import { useSapienActivity } from '../../hooks/useSapienActivity';
@@ -33,18 +34,18 @@ export function SapienActivityControl({ sapien, refreshOnMount = false, onActivi
   return <div className={`sapien-activity-control${compact ? ' sapien-activity-compact' : ''}`} aria-busy={pending !== null}>
     <span className="sapien-activity-status" role="status" aria-live="polite">{status}{activity?.draining ? ' · Finishing work…' : ''}</span>
     {!(compact && blocked) && reason !== 'simulation_only' && <div className="sapien-activity-actions">
-      <button type="button" className="sapien-activity-button" disabled={!!pending || blocked || activity?.draining}
+      <RateLimitButton rateLimitBucket={activity ? state === 'active' ? 'control' : 'api_write' : false} type="button" className="sapien-activity-button" disabled={!!pending || blocked || activity?.draining}
         aria-label={label + ' ' + sapien.name} aria-describedby={helpId} title={explanation}
         onClick={() => activity ? void setActivity(state === 'active' ? 'paused' : 'active') : refresh()}>
         <Icon size={15} aria-hidden="true" /><span>{label}</span>
-      </button>
-      {activity && !blocked && <button type="button" className="sapien-activity-button" disabled={!!pending || activity.draining}
+      </RateLimitButton>
+      {activity && !blocked && <RateLimitButton rateLimitBucket="control" type="button" className="sapien-activity-button" disabled={!!pending || activity.draining}
         aria-label={`${state === 'inactive' ? 'Enable chat for' : 'Deactivate'} ${sapien.name}`}
         aria-describedby={helpId}
         onClick={() => void setActivity(state === 'inactive' ? 'paused' : 'inactive')}>
         {state === 'inactive' ? <MessageSquare size={15} aria-hidden="true" /> : <Power size={15} aria-hidden="true" />}
         <span>{state === 'inactive' ? 'Chat only' : 'Deactivate'}</span>
-      </button>}
+      </RateLimitButton>}
     </div>}
     {activity && state === 'active' && !blocked && <PauseScheduleControl
       label={sapien.name} scheduledAt={activity.scheduledPauseAt} disabled={!!pending}

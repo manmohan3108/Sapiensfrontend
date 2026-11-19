@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect } from 'react';
 import { AlertTriangle } from 'lucide-react';
-import { Link, useParams, useSearchParams } from 'react-router';
+import { Link, Navigate, useParams, useSearchParams } from 'react-router';
 import { researchArticles, type ResearchArticle } from '../content/researchArticles';
 import { useAuth } from '../contexts/AuthContext';
 import { YourSapiensLink } from '../components/navigation/YourSapiensLink';
@@ -16,10 +16,7 @@ type ResearchSection = { id: string; title: string; readingLabel: string; motiva
 
 const topics: ResearchTopic[] = [
     { id: 'philosophy', title: 'Why we are building Sapiens', description: 'Our ambition and the neuroscience and philosophical ideas guiding the research.' },
-    { id: 'emergence', title: 'What we mean by emergence', description: 'Define the behaviour we seek and what would support or challenge the hypothesis.' },
-    { id: 'intelligence-understanding', title: 'What do we mean by intelligence and understanding?', description: 'Knowing, understanding, learning and adapting—and what we mean when we discuss these abilities in humans and AI.' },
-    { id: 'self-agency', title: 'Self and agency', description: 'Questions about individuality, intentions and responsibility for action.' },
-    { id: 'consciousness', title: 'Consciousness and its boundaries', description: 'Distinguish consciousness from intelligence, self-representation and observable behaviour.' },
+    { id: 'emergence', title: 'Our hypothesis: how intelligence might emerge', description: 'Why we study brain-inspired processes working together, and what emergence would mean for Sapiens.' },
     { id: 'inspiration', title: 'From neuroscience to computational design', description: 'Our sources of inspiration and the limits of translating them into software.' },
     { id: 'perception-attention', title: 'Attention and Global Workspace Theory', description: 'The scientific ideas about selection and shared availability; their relevance to Awareness and the limits of the comparison.' },
     { id: 'biological-memory-learning', title: 'Memory and learning', description: 'Ideas about retaining, recalling and adapting through experience.' },
@@ -34,7 +31,7 @@ const topics: ResearchTopic[] = [
     { id: 'reasoning-questioning', title: 'Reasoning and questioning', description: 'Why forming a question and choosing to pursue its answer are separate responsibilities.' },
     { id: 'action-feedback', title: 'Action and feedback', description: 'How later observations become revisable evidence about earlier behaviour.' },
     { id: 'learning', title: 'Learning from experience', description: 'How remembered outcomes and feedback can inform future behaviour.' },
-    { id: 'continuity', title: 'Development over time', description: 'How understanding and behaviour may change across accumulated experiences.' },
+    { id: 'continuity', title: 'Why experience and individuality matter', description: 'How one Sapien’s encounters, choices and consequences could shape its understanding over time.' },
     { id: 'simulation', title: 'Studying Sapiens through simulation', description: 'Why we use simulated workplaces and what they can reveal.' },
     { id: 'findings', title: 'Observations, failures and changes', description: 'Documented findings and how they influenced our implementation.' },
     { id: 'evaluation', title: 'Evaluating the hypothesis', description: 'What evidence could distinguish progress from expected model or tool behaviour.' },
@@ -46,7 +43,6 @@ const topics: ResearchTopic[] = [
   { id: 'reinforcement-forgetting', title: 'Hebbian strengthening and plasticity', description: 'Reinforcement, forgetting and the risk of strengthening the wrong association.' },
   { id: 'curiosity', title: 'What makes something worth exploring?', description: 'Curiosity can concern an unfamiliar pattern, an opportunity or an idea—not only a missing answer.' },
   { id: 'initiative', title: 'Why think when nobody has asked?', description: 'Making room for exploration, gathering information and ordinary conversation without forcing constant activity.' },
-  { id: 'firsthand-experience', title: 'What can an AI learn by taking part?', description: 'Why an individual’s own choices and their consequences could inform later understanding.' },
   { id: 'abstraction', title: 'When does an experience become a general idea?', description: 'Abstraction and generalization: exploring patterns that may apply beyond one remembered event.' },
   { id: 'prediction', title: 'Could expectations help a Sapien understand what is happening?', description: 'An exploratory direction: compare expectations with incoming evidence and connect events into an unfolding account.' },
   { id: 'reward-emotion', title: 'What could give an experience significance?', description: 'Research directions around motivation, reward and emotion-inspired processes, without claiming human feelings.' },
@@ -66,7 +62,7 @@ const topics: ResearchTopic[] = [
 ].map(topic => ({ ...topic, content: researchArticles[topic.id] }));
 const selectTopics = (...ids: string[]) => ids.flatMap(id => topics.filter(topic => topic.id === id));
 const sections: ResearchSection[] = [
-  { id: 'philosophy', title: 'Research philosophy', readingLabel: 'Philosophical questions', motivation: 'What are we trying to understand about intelligence? Start with our ambition, then explore the questions and ideas guiding the research.', related: ['architecture', 'experiments'], topics: selectTopics('philosophy', 'intelligence-understanding', 'emergence', 'self-agency', 'consciousness', 'firsthand-experience', 'continuity') },
+  { id: 'philosophy', title: 'Research philosophy', readingLabel: 'Philosophical questions', motivation: 'What are we trying to understand about intelligence? Explore why we are building Sapiens, our emergence hypothesis and why an individual’s experience matters.', related: ['architecture', 'experiments'], topics: selectTopics('philosophy', 'emergence', 'continuity') },
   { id: 'neuroscience', title: 'Neuroscience foundations', readingLabel: 'Scientific inspiration', motivation: 'Understand the concepts before the software. Engine deep dives explain how we adapt these ideas, where the analogy ends and what is actually implemented.', related: ['engines'], topics: selectTopics('inspiration', 'perception-attention', 'working-memory-foundation', 'associative-memory', 'reinforcement-forgetting', 'replay-consolidation', 'prediction-reward-foundation') },
   { id: 'architecture', title: 'Sapiens architecture', readingLabel: 'How the system connects', motivation: 'How do different responsibilities cooperate within one Sapien? Follow the overall structure and information flow before exploring individual engines.', related: ['philosophy', 'engines'], topics: selectTopics('architecture-overview', 'identity', 'process', 'connections', 'language-models') },
   { id: 'engines', title: 'Engine deep dives', readingLabel: 'Computational interpretations', motivation: 'Why does each engine exist? Each deep dive connects its motivation and scientific or philosophical influences to our interpretation, current implementation, interactions and limitations.', related: ['neuroscience', 'philosophy', 'experiments'], topics: selectTopics('awareness', 'memory', 'working-memory-engine', 'hippocampus', 'goals', 'hold', 'reasoning-questioning', 'curiosity', 'motor-conversation', 'action-feedback', 'tool-learning', 'predictive-engines', 'weave') },
@@ -77,6 +73,14 @@ const sections: ResearchSection[] = [
 const readingOrder = sections.flatMap(section => section.topics
   .filter(topic => Boolean(topic.content))
   .map(topic => ({ topic, sectionTitle: section.title })));
+
+// Keep published links working after consolidating the philosophy articles.
+const mergedArticleDestinations = new Map<string, string>([
+  ['intelligence-understanding', 'philosophy'],
+  ['consciousness', 'philosophy'],
+  ['self-agency', 'continuity'],
+  ['firsthand-experience', 'continuity'],
+]);
 
 let lastBrowsePosition: { url: string; y: number } | undefined;
 
@@ -134,6 +138,9 @@ export function ResearchPage() {
     // Filter edits stay in place; restore only when entering or leaving an article.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug]);
+
+  const mergedDestination = slug ? mergedArticleDestinations.get(slug) : undefined;
+  if (mergedDestination) return <Navigate replace to={articleUrl(mergedDestination)}/>;
 
   return <div className="direction-page direction-world direction-science research-page">
     <ScienceEnvironment/>

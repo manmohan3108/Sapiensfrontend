@@ -1,4 +1,5 @@
 import { ChatMessageEditor, type EditChatMessage } from './ChatMessageEditor';
+import { useRateLimitCountdown } from '../../core/api/rateLimits';
 import { quotaSummary, quotaReset, quotaRecovery } from '../../utils/quotaPresentation';
 import { ConversationHistory } from './ConversationHistory';
 import { useRememberedState } from '../navigation/NavigationState';
@@ -388,6 +389,7 @@ function EmptyState({ name, onHint, recent, onResume, loading }: { name: string;
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export function ChatWindow() {
+  const retrySeconds = useRateLimitCountdown('api_write');
   const { user } = useAuth();
   const sending = useRef(false);
   const chatUpdates = useChatUpdates();
@@ -513,7 +515,7 @@ export function ChatWindow() {
 
   const send = async (confirmedPaused = false) => {
     const t = input.trim();
-    if (!t || isProcessing || inactive || sending.current) return;
+    if (!t || isProcessing || inactive || sending.current || retrySeconds > 0) return;
     if (pausedWarningOpen && !confirmedPaused) return;
     if (paused && !confirmedPaused && !hasSeenPausedChatWarning(pausedWarningKey)) {
       rememberPausedChatWarning(pausedWarningKey);
@@ -644,7 +646,7 @@ export function ChatWindow() {
                     sapienName={currentSapiens?.name ?? 'Sapiens'}
                     onSignal={handleSignal}
                     onEdit={editMessage}
-                    editDisabled={isProcessing || inactive}
+                    editDisabled={isProcessing || inactive || retrySeconds > 0}
                     isHighlighted={highlightedId === m.id}
                   />
                   </Fragment>
@@ -725,18 +727,20 @@ export function ChatWindow() {
           {/* Chat button — /api/chat */}
           <button
             onClick={() => send()}
-            disabled={!input.trim() || isProcessing || inactive}
+            disabled={!input.trim() || isProcessing || inactive || retrySeconds > 0}
+            aria-describedby={retrySeconds > 0 ? 'chat-rate-limit' : undefined}
             title="Send message (Enter)" aria-label="Send message"
             className="flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200 active:scale-95 disabled:cursor-not-allowed"
             style={{
               background: input.trim() && !isProcessing && !inactive ? 'var(--sp-action, #7434ce)' : 'rgb(var(--sp-ink-rgb, 255 255 255) / 0.05)',
               boxShadow: input.trim() && !isProcessing && !inactive ? '0 0 20px rgb(var(--sp-accent-rgb, 124 58 237) / 0.35)' : 'none',
-              opacity: !input.trim() || isProcessing || inactive ? 0.3 : 1,
+              opacity: !input.trim() || isProcessing || inactive || retrySeconds > 0 ? 0.3 : 1,
             }}
           >
             {isProcessing ? <Loader2 className="w-4 h-4 text-sp-muted animate-spin" /> : <Send className={input.trim() ? 'w-4 h-4 text-sp-on-action' : 'w-4 h-4 text-sp-muted'} />}
           </button>
         </div>
+        {retrySeconds > 0 && <p id="chat-rate-limit" role="timer" aria-live="off" className="px-3 py-2 text-sm text-sp-ink tabular-nums">Try again in {retrySeconds} seconds. Your next message will not be sent automatically.</p>}
       </div>
       </div>
     </div>

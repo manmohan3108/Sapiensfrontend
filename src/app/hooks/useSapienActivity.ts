@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { sapiensService } from '../core/services/sapiensService';
+import { secondsRemaining } from '../core/api/rateLimits';
 import { useSapiensStore } from '../core/state/sapiensStore';
 import type { ActivityState, SapienActivity, Sapiens } from '../types/sapiensTypes';
 
@@ -24,6 +25,10 @@ export function useSapienActivity(sapien: Sapiens, refreshOnMount = false,
 
   const execute = useCallback(async (desired?: ActivityState | { pauseAfterMinutes: number | null }) => {
     if (request.current && !request.current.signal.aborted) return;
+    if (desired !== undefined) {
+      const seconds = secondsRemaining(typeof desired === 'object' || desired === 'active' ? 'api_write' : 'control');
+      if (seconds > 0) { setError(`Try again in ${seconds} seconds.`); return; }
+    }
     const controller = new AbortController();
     request.current = controller;
     setPending(desired === undefined ? 'reading' : 'saving');

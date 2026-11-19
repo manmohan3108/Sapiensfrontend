@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { secondsRemaining } from '../../core/api/rateLimits';
 import { ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -28,6 +29,7 @@ export function CreateSapiensForm({ onNameChange }: CreateSapiensFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isCreating || secondsRemaining('create_sapien') > 0) return;
     
     if (!name.trim()) {
       return;
@@ -124,6 +126,7 @@ export function CreateSapiensForm({ onNameChange }: CreateSapiensFormProps) {
           )}
           
           <Button
+            rateLimitBucket="create_sapien"
             type="submit"
             className="home-open-button h-11 w-full"
             disabled={!name.trim() || isCreating}

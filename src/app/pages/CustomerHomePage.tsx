@@ -1,3 +1,5 @@
+import { RateLimitButton } from '../components/shared/RateLimitButton';
+import { secondsRemaining } from '../core/api/rateLimits';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import * as Dialog from '@radix-ui/react-dialog';
@@ -81,6 +83,7 @@ export function CustomerHomePage() {
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (secondsRemaining('create_sapien') > 0) return;
     if (busy.current || confirmed || unknown) return;
     const invalid = validateCreation(name, focus);
     setErrors(invalid);
@@ -146,7 +149,7 @@ export function CustomerHomePage() {
               </label>
               <p id="customer-simulation-help" className="customer-form-description">Allow this Sapien to be selected in Simulation Lab. This does not start a simulation or reset its memories.</p>
             </div>}
-            <div className="customer-form-actions"><button type="button" className="customer-secondary" disabled={creating} onClick={() => unknown ? inspectHome() : setDialogOpen(false)}>{unknown ? 'Check your Sapiens' : 'Cancel'}</button>{!unknown && <button type="submit" className="customer-primary" disabled={creating}>{creating ? 'Creating…' : 'Create and open'}</button>}</div>
+            <div className="customer-form-actions"><button type="button" className="customer-secondary" disabled={creating} onClick={() => unknown ? inspectHome() : setDialogOpen(false)}>{unknown ? 'Check your Sapiens' : 'Cancel'}</button>{!unknown && <RateLimitButton rateLimitBucket="create_sapien" type="submit" className="customer-primary" disabled={creating}>{creating ? 'Creating…' : 'Create and open'}</RateLimitButton>}</div>
             <p className="sr-only" role="status">{creating ? 'Creating your Sapiens. Please wait.' : ''}</p>
           </form>}
       </Dialog.Content></Dialog.Portal>

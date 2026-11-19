@@ -1,4 +1,5 @@
 import { FormEvent, useState } from 'react';
+import { useRateLimitCountdown } from '../core/api/rateLimits';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { AlertCircle, Eye, EyeOff, Loader2, LockKeyhole } from 'lucide-react';
 import { authErrorMessage, useAuth } from '../contexts/AuthContext';
@@ -11,6 +12,7 @@ import '../../styles/auth.css';
 import { authDestination, authLink, readAuthIntent } from '../core/auth/navigation';
 
 export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
+  const retrySeconds = useRateLimitCountdown(mode);
   const motionRef = useLandingMotion();
   const { login, register, notice } = useAuth();
   const navigate = useNavigate();
@@ -27,6 +29,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
 
   const submit = async (event: FormEvent) => {
     event.preventDefault(); setError('');
+    if (busy || retrySeconds > 0) return;
     if (!username.trim()) { setError('Enter your username.'); return; }
     if (!password) { setError('Enter your password.'); return; }
     if (isRegister && email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setError('Enter a valid email address, or leave it blank.'); return; }
@@ -64,7 +67,8 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
           <div className="customer-field"><label htmlFor="auth-password">Password</label><div className="relative"><input id="auth-password" type={showPassword ? 'text' : 'password'} autoComplete={isRegister ? 'new-password' : 'current-password'} value={password} onChange={e => setPassword(e.target.value)} disabled={busy} aria-required="true" aria-describedby={isRegister ? 'password-help' : undefined} style={{ paddingRight: 52 }} /><button type="button" onClick={() => setShowPassword(value => !value)} className="customer-icon-button absolute right-1 top-0.5" aria-label={showPassword ? 'Hide password' : 'Show password'}>{showPassword ? <EyeOff size={17} /> : <Eye size={17} />}</button></div>{isRegister && <small id="password-help">Use at least 8 characters.</small>}</div>
           {isRegister && <div className="customer-field"><label htmlFor="auth-confirm">Confirm password</label><input id="auth-confirm" type="password" autoComplete="new-password" value={confirm} onChange={e => setConfirm(e.target.value)} disabled={busy} aria-required="true" /></div>}
           {error && <p role="alert" className="customer-notice flex items-start gap-2"><AlertCircle size={18} className="shrink-0 mt-1" />{error}</p>}
-          <button disabled={busy} className="customer-primary w-full">{busy && <Loader2 size={16} className="animate-spin" />}{busy ? (isRegister ? 'Creating account…' : 'Signing in…') : (isRegister ? 'Create account' : 'Sign in')}</button>
+          {retrySeconds > 0 && <p id="auth-rate-limit" role="timer" aria-live="off" className="customer-notice tabular-nums">Try again in {retrySeconds} seconds.</p>}
+          <button disabled={busy || retrySeconds > 0} aria-describedby={retrySeconds > 0 ? 'auth-rate-limit' : undefined} className="customer-primary w-full">{busy && <Loader2 size={16} className="animate-spin" />}{busy ? (isRegister ? 'Creating account…' : 'Signing in…') : (isRegister ? 'Create account' : 'Sign in')}</button>
         </form>
         <p className="auth-switch">{isRegister ? 'Already have an account?' : 'New to Sapiens?'} <Link to={authLink(isRegister ? '/login' : '/register', intent)}>{isRegister ? 'Sign in' : 'Create an account'}</Link></p>
         <Link to="/" className="auth-back">Back to the main page</Link>

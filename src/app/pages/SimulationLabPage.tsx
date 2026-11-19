@@ -1,4 +1,5 @@
 import { PauseScheduleControl } from '../components/shared/PauseScheduleControl';
+import { secondsRemaining, type RateLimitBucket } from '../core/api/rateLimits';
 import { SimulationPauseNotice } from '../components/simulation/SimulationPauseNotice';
 import { SimulationPurpose } from '../components/simulation/SimulationPurpose';
 import { useRestoreSapienSelection } from '../components/navigation/useRestoreSapienSelection';
@@ -744,8 +745,11 @@ export function SimulationLabPage() {
   async function mutate(
     label: string,
     operation: () => Promise<SimulationRun | void>,
+    policy: RateLimitBucket = 'api_write',
   ) {
     if (busy) return;
+    const seconds = secondsRemaining(policy);
+    if (seconds > 0) { setError(`Try again in ${seconds} seconds.`); return; }
     setBusy(label);
     setError("");
     try {
@@ -771,6 +775,7 @@ export function SimulationLabPage() {
   }
   async function create() {
     if (!selectedCase || busy) return;
+    if (secondsRemaining('api_write') > 0) return;
     let request = pendingCreate.current;
     if (!request) {
       const speedNumber = speed.trim() ? Number(speed) : undefined,
@@ -865,14 +870,17 @@ export function SimulationLabPage() {
   }
   async function control(action: "pause" | "resume" | "stop") {
     if (!run || busy || !run.allowed_controls.includes(action)) return;
+    const policy = action === 'resume' ? 'api_write' : 'control';
+    if (secondsRemaining(policy) > 0) return;
     if (action === "stop" && !window.confirm(
       run.status === "scheduled"
         ? "Cancel this scheduled simulation? Saved history will be kept."
         : "Stop this simulation? It cannot be resumed after stopping. Saved history will be kept. To continue later, choose Pause instead.",
     )) return;
-    await mutate(action, () => simulationService.control(run.run_id, action));
+    await mutate(action, () => simulationService.control(run.run_id, action), policy);
   }
   async function remove() {
+    if (secondsRemaining('api_write') > 0) return;
     if (
       !run ||
       busy ||
@@ -911,12 +919,14 @@ export function SimulationLabPage() {
   }
   async function submitAction(payload: Record<string, unknown>) {
     if (!run || busy || !run.participant_actions_available) return;
+    if (secondsRemaining('api_write') > 0) return;
     const withId = { ...payload, operation_id: `manual:${newId()}` };
     setPendingAction(withId);
     await sendAction(withId);
   }
   async function sendAction(payload: Record<string, unknown>) {
     if (!run) return;
+    if (secondsRemaining('api_write') > 0) return;
     setBusy("action");
     setError("");
     try {
@@ -1151,6 +1161,7 @@ export function SimulationLabPage() {
               <div className="flex flex-wrap items-center gap-3" aria-label="Current simulation controls" aria-busy={!!busy}>
                   {allowed("resume") && (
                     <Button
+                      rateLimitBucket="api_write"
                       className="min-h-11"
                       disabled={!!busy}
                       onClick={() => void control("resume")}
@@ -1160,6 +1171,7 @@ export function SimulationLabPage() {
                   )}
                   {allowed("pause") && (
                     <Button
+                      rateLimitBucket="control"
                       variant="outline"
                       className="min-h-11 border-foreground/30"
                       disabled={!!busy}
@@ -1170,6 +1182,7 @@ export function SimulationLabPage() {
                   )}
                   {allowed("stop") && (
                     <Button
+                      rateLimitBucket="control"
                       variant="outline"
                       className="min-h-11 border-red-500/50 text-red-700 hover:bg-red-500/10 dark:text-red-300"
                       disabled={!!busy}
@@ -1503,7 +1516,7 @@ export function SimulationLabPage() {
                   </details>
                   <div className="flex items-center gap-3">
                     <Button
-                      disabled={!!busy || !selectedSapienId}
+                      rateLimitBucket="api_write" disabled={!!busy || !selectedSapienId}
                       onClick={() => void create()}
                     >
                       {busy === "schedule"
@@ -1794,7 +1807,7 @@ export function SimulationLabPage() {
                       />
                       <Button
                         variant="outline"
-                        disabled={!!busy || !speedOverrideValid}
+                        rateLimitBucket="api_write" disabled={!!busy || !speedOverrideValid}
                         onClick={() =>
                           void mutate("speed", () =>
                             simulationService.setSpeed(
@@ -1818,7 +1831,7 @@ export function SimulationLabPage() {
                       <Button
                         variant="destructive"
                         disabled={!!busy}
-                        onClick={() => void remove()}
+                        rateLimitBucket="api_write" onClick={() => void remove()}
                       >
                         Delete run & history
                       </Button>
@@ -1985,7 +1998,7 @@ export function SimulationLabPage() {
                           onChange={(e) => setReplyTo(e.target.value)}
                         />
                       </Field>
-                      <Button
+                      <Button rateLimitBucket="api_write"
                         disabled={
                           !!busy ||
                           !run.participant_actions_available ||
@@ -2059,7 +2072,7 @@ export function SimulationLabPage() {
                           </Field>
                         </>
                       )}
-                      <Button
+                      <Button rateLimitBucket="api_write"
                         disabled={
                           !!busy ||
                           !run.participant_actions_available ||
@@ -2088,7 +2101,7 @@ export function SimulationLabPage() {
                     <Button
                       variant="outline"
                       disabled={!!busy}
-                      onClick={() => void sendAction(pendingAction)}
+                      rateLimitBucket="api_write" onClick={() => void sendAction(pendingAction)}
                     >
                       Retry exact action ID
                     </Button>

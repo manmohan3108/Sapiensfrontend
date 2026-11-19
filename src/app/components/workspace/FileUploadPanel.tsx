@@ -1,3 +1,4 @@
+import { secondsRemaining } from '../../core/api/rateLimits';
 import { useState, useRef } from 'react';
 import { FolderOpen, File, X, Folder } from 'lucide-react';
 import { Button } from '../ui/button';
@@ -51,7 +52,7 @@ export function FileUploadPanel() {
   };
 
   const handleUpload = async () => {
-    if (selectedFiles.length === 0) return;
+    if (selectedFiles.length === 0 || isUploading || secondsRemaining('api_write') > 0) return;
 
     try {
       setIsUploading(true);
@@ -225,6 +226,7 @@ export function FileUploadPanel() {
         )}
 
         <Button
+          rateLimitBucket="api_write"
           onClick={handleUpload}
           disabled={selectedFiles.length === 0 || isUploading}
           className="w-full flex-shrink-0"

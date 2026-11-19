@@ -32,43 +32,53 @@ export const researchArticles: Partial<Record<string, ResearchArticle>> = {
       },
       {
         "title": "Why we are building Sapiens",
-        "text": "Sapiens gives us a way to explore these ideas in practice. We can build processes, study how they work together and examine what helps or fails. Our hypothesis is that intelligence could emerge when processes inspired by the brain work together. Building the system lets us investigate that possibility; it does not establish that it will happen. The article “What we mean by emergence” explains the hypothesis and why it guides our approach."
+        "text": "Sapiens gives us a way to explore these ideas in practice. We can build processes, study how they work together and examine what helps or fails. Our hypothesis is that intelligence could emerge when processes inspired by the brain work together. Building the system lets us investigate that possibility; it does not establish that it will happen. The next article, “Our hypothesis: how intelligence might emerge,” explains the hypothesis and why it guides our approach."
       }
     ],
     "related": [
-      "intelligence-understanding",
-      "inspiration",
       "emergence",
+      "continuity",
+      "inspiration",
       "evaluation"
+    ],
+    "references": [
+      {
+        "title": "Stanford Encyclopedia of Philosophy — Consciousness",
+        "url": "https://plato.stanford.edu/entries/consciousness/"
+      }
     ]
   },
   "emergence": {
-    "opening": "Could intelligence arise from many processes working together, even though none has the whole ability on its own? This is the emergence question behind Sapiens.",
+    "opening": "Could intelligence grow from many processes working together, with each contributing something different? Our hypothesis is that bringing brain-inspired processes together could support broader abilities than any one of those processes provides alone. This idea guides how we build Sapiens and what we want to investigate.",
     "sections": [
       {
-        "title": "What emergence means",
-        "text": "Sometimes, parts that affect one another create a pattern or ability that belongs to the whole. We call this emergence. To understand it, we need to look at how the parts work together, as well as what each part does."
+        "title": "What we mean by emergence",
+        "text": "Sometimes, parts that affect one another produce a pattern or ability that belongs to the whole. We call this emergence. Looking at each part separately does not give the full explanation; we also need to understand their relationships. This interests us because intelligence involves many abilities working together. We want to explore how their interaction could contribute to understanding, rather than assume that adding more parts will produce it."
       },
       {
         "title": "Imagine a flock of birds",
-        "text": "In a simple computer simulation, each bird follows three rules: avoid crowding nearby birds, move in a similar direction and stay close to the group. Together, they form a coordinated flock, even though no bird controls the whole formation. Each bird’s movement affects its neighbours, whose movements affect others. The flock’s shared movement grows out of these interactions. Craig Reynolds demonstrated this in Boids, a well-known computer simulation of flocking."
+        "text": "In a simple computer simulation, each bird follows three rules: avoid crowding nearby birds, move in a similar direction to its neighbours and stay near them. Together, the birds form a coordinated flock, even though no bird controls the whole formation. A bird changes direction, its neighbours respond, and their movements affect others. This is the idea behind Boids, a well-known model in computer science created by Craig Reynolds."
       },
       {
-        "title": "Simple rules can produce a larger pattern",
-        "text": "The rules for each bird are programmed, but the flock’s movements do not need to be planned bird by bird. Each bird responds to its neighbours, and their combined movements form the flock’s changing pattern. The pattern belongs to the group, even though each bird follows only its own local rules."
+        "title": "The pattern comes from how the birds interact",
+        "text": "The rules for each bird are programmed, but the flock’s changing formation does not need to be planned bird by bird. It develops as they respond to one another. This makes the example useful for our research: it shows why we should study what parts do together, as well as what each does alone. It explains an emergent pattern, not intelligence. Our question is whether interactions among processes inspired by the brain could contribute to the much broader abilities we are interested in."
       },
       {
-        "title": "From the brain to Sapiens",
-        "text": "The brain brings processes such as perception, memory and attention together. Remembering a past danger, for example, can change what catches our attention and how we respond. This inspires how we organize Sapiens. Remembered information can inform Awareness’s decisions; Motor carries out selected tool actions and returns what happened, which can inform the next decision. Each function contributes something different, and information moves between them. Our emergence question is what broader abilities the whole system might develop through these interactions."
+        "title": "What the brain inspires us to explore",
+        "text": "The brain brings perception, attention and memory together. Think of hearing a familiar voice in a crowded room. Recognizing it can draw your attention; listening more closely gives you information that may change who you think is speaking. What you remember affects what you notice, and what you notice can change your understanding. This kind of relationship motivates our research. We want to explore processes that influence one another as a situation unfolds, rather than treat each ability as an isolated task."
+      },
+      {
+        "title": "How this shapes Sapiens",
+        "text": "We organize Sapiens into functions with different responsibilities, which we call engines. Memory can bring earlier information into consideration. Awareness uses the available context to decide how to respond. Motor carries out selected tool actions and returns what happened, giving later decisions new information to work with. These are software choices inspired by questions about the brain, not copies of brain regions. We study what their cooperation contributes, while recognizing that the language model already supplies substantial reasoning and language abilities."
       },
       {
         "title": "What we still need to show",
-        "text": "Learning from an experience or giving an unexpected answer is not enough to demonstrate emergence. We need to identify an ability of the whole system and show how its parts working together contribute to it. We also need to account for abilities already present in the language model. Our Experiments section explains how we could examine those questions."
+        "text": "Connecting engines does not establish emergence. Neither does remembering an event, learning a useful lesson or producing an unexpected answer. We would need to identify an ability of the whole system and examine how the interactions contribute to it, including what changes when those interactions are absent. We also need to distinguish that contribution from what the language model, tools or extra information already provide. Our evaluation articles develop these questions; the architecture is a way to investigate the hypothesis, not proof of it."
       }
     ],
     "related": [
       "philosophy",
-      "intelligence-understanding",
+      "continuity",
       "perception-attention",
       "architecture-overview",
       "evaluation",
@@ -85,159 +95,47 @@ export const researchArticles: Partial<Record<string, ResearchArticle>> = {
       }
     ]
   },
-  "intelligence-understanding": {
-    "opening": "When we say someone understands something, what do we mean? They might know the facts, explain an idea or use it to solve a problem. These abilities are related, but they tell us different things. Before asking whether AI can develop intelligence and understanding, we need to explain what we mean by those words.",
+  "continuity": {
+    "opening": "People can revisit a situation with a different understanding because of what they have encountered, tried and learned. AI systems can also use past information. Our question is how a Sapien’s own history of choices and consequences could shape its understanding over time. Following one individual lets us study that development, as one part of our broader investigation of intelligence.",
     "sections": [
       {
-        "title": "Knowing something and understanding it",
-        "text": "Knowing a fact gives us something to work with. Understanding involves seeing how it relates to other things and why it matters. For example, someone may remember every turn on a route to a shop. If a road closes, knowing how the streets connect can help them find another way. The remembered directions were useful, but the changed situation calls for a different use of what they know. This is one way to think about understanding: being able to work with the relationships behind the facts."
+        "title": "Why follow one individual over time?",
+        "text": "An answer shows how a system responds at one moment. Following the same individual across encounters lets us ask something more: does earlier experience change how it understands a later situation? Can it recognize a useful connection, question an old assumption or apply an idea somewhere new? For Sapiens, continuity means keeping a meaningful connection between earlier and later experiences. A lasting name and a growing history make that investigation possible, but do not establish that development is happening."
       },
       {
-        "title": "Where intelligence fits",
-        "text": "For our research, we use intelligence to describe a broader ability to learn, reason, solve problems and adapt. Understanding can support these abilities. Someone who understands the streets may still need to compare routes, notice missing information or learn about an unfamiliar area. Understanding concerns what they grasp about the situation; intelligence includes how they learn and use what they know. We study these together without treating them as the same thing."
+        "title": "A perspective and actions of its own",
+        "text": "People can remember, consider alternatives and act while remaining the same person. We use that idea to guide a shared perspective in Sapiens: its different functions belong to one individual. We want to connect its actions to the information and intentions behind them, so that reasons can be examined and reconsidered. Other people’s actions must remain theirs. If someone says “I approved this,” remembering the message should not turn it into the Sapien’s own approval. Here, individuality describes a design choice; it does not establish personhood or moral responsibility."
       },
       {
-        "title": "What should we ask about AI?",
-        "text": "An AI can give directions, explain a route and suggest alternatives. We can ask what happens when the details change: can it use the new information, explain why its earlier answer no longer fits and work out another route? The same questions can help us examine human understanding. A convincing explanation is useful evidence, but we also want to see how it connects to what the person or AI does. Neither fluent wording nor a mistake settles the question on its own."
+        "title": "Why taking part may matter",
+        "text": "Being told how something works can be valuable. Taking part also gives an individual choices to make and consequences to examine. Suppose a Sapien is told that a colleague needs evidence before approving a proposal. By discussing a real proposal, it might discover which evidence matters, why a detail is missing and how that changes the decision. Participation can reveal information that the original instruction did not contain. A sufficiently detailed account could convey that information too; we want to examine when taking part adds something useful."
       },
       {
-        "title": "Understanding can be incomplete",
-        "text": "We may understand one part of a situation and still be unsure about another. Someone could know the streets well but not know which roads are open today. Recognizing that gap and looking for information can be part of using their understanding well. For AI too, we want to examine what it knows, where its reasoning stops being reliable and whether new evidence changes its view."
+        "title": "How an experience could change understanding",
+        "text": "In that example, the useful lesson might concern why particular evidence matters, not just which colleague to contact. A later proposal could require different evidence while raising a similar concern. We want to investigate whether a Sapien can use the relationship it learned, notice where the new situation differs and revise its view when needed. For this research, experience means what it encountered and attempted, what followed, and how it interpreted those events. An interpretation may be wrong, so it must remain distinguishable from what actually happened. This use of experience does not imply a felt experience."
       },
       {
-        "title": "What this means for Sapiens",
-        "text": "These are working meanings for our research, not final definitions. Different views place more weight on explanation, practical ability or learning, and we want to keep those questions open. With Sapiens, we want to study whether experiences help it form useful connections, apply what it has learned in another setting and revise an idea when there is a reason to. Our Experiments articles discuss how we could examine those abilities."
+        "title": "Development means more than keeping history",
+        "text": "More memories can help, distract or reinforce a mistaken idea. A request might succeed because of temporary permission; a failed action might reflect an unavailable service rather than a poor decision. Repeating either outcome should not make its explanation unquestionable. We want to study whether earlier conclusions can be corrected and whether an individual can recognize when an experience no longer applies. Useful development may mean letting go of an assumption, not merely adding another record or repeating a familiar response."
       },
       {
-        "title": "How could these abilities arise?",
-        "text": "Clarifying what we mean gives us another question: how could a system develop these abilities? The next article, “What we mean by emergence,” explores how parts working together can produce a pattern or ability of the whole."
+        "title": "What this motivates in Sapiens",
+        "text": "These questions give shared identity, memory, feedback and replay distinct reasons to exist. Identity keeps the individual’s perspective consistent. Memory retains experiences and connections; Feedback examines what later evidence suggests about earlier behaviour; replay revisits memories and their associations. Their design articles explain how these functions work and where the limits are. Changes to remembered information and later reasoning are not the same as retraining the language model. Our experience-evaluation work asks whether those changes actually help understanding and behaviour, or sometimes make them worse."
       }
     ],
     "related": [
       "philosophy",
-      "emergence",
-      "firsthand-experience",
-      "continuity",
-      "evaluation"
-    ]
-  },
-  "self-agency": {
-    "opening": "What makes a decision belong to one individual when many processes contribute to it? Before designing a shared identity for Sapiens, we need to distinguish having a perspective, retaining a history and being able to act for reasons.",
-    "sections": [
-      {
-        "title": "A continuing point of view",
-        "text": "An individual can encounter the same situation at different times and understand it differently. The earlier experience still belongs to its history. Our design question is how that continuity could be represented while allowing beliefs, commitments and roles to change. A permanent name alone would not answer it."
-      },
-      {
-        "title": "From a reaction to an action",
-        "text": "Philosophical accounts of agency ask how actions relate to intentions, reasons and control, and disagree about which of these are necessary. For Sapiens, this motivates a practical question: can a decision be connected to the information and purpose that informed it, and reconsidered when those reasons change?"
-      },
-      {
-        "title": "One perspective among other people",
-        "text": "A message saying “I approved this” belongs to its speaker. Reading it should not make the approval part of the reader’s own authority or history of action. Maintaining a perspective therefore includes recognizing other perspectives, their sources and the boundaries of what each person has done."
-      },
-      {
-        "title": "The engineering question that follows",
-        "text": "We interpret the shared self as continuity across the system’s functions: interpreting, remembering and acting belong to the same Sapien. This is a design commitment, not a resolution of philosophical personhood or moral responsibility. The architecture article explains how identity and attribution are supplied to those functions."
-      }
-    ],
-    "related": [
       "identity",
-      "continuity",
-      "consciousness"
+      "memory",
+      "action-feedback",
+      "hippocampus",
+      "experience-evaluation"
     ],
     "references": [
       {
         "title": "Stanford Encyclopedia of Philosophy — Agency",
         "url": "https://plato.stanford.edu/entries/agency/"
       }
-    ]
-  },
-  "consciousness": {
-    "opening": "Could a system coordinate information, describe itself and act intelligently without having subjective experience? Consciousness makes this question unavoidable, but it also requires us to be precise about what our engineering can actually investigate.",
-    "sections": [
-      {
-        "title": "Several questions behind one word",
-        "text": "Being awake, having information available for reasoning, and there being something it feels like to have an experience are distinct concerns in the study of consciousness. A system’s ability to report an internal state does not, by itself, settle the question of subjective experience."
-      },
-      {
-        "title": "Why the distinction matters here",
-        "text": "We are interested in how information becomes available to a continuing process of consideration and action. Accounts such as Global Workspace Theory offer ideas about that functional organization. They are part of a wider scientific and philosophical debate, not an agreed recipe for producing consciousness."
-      },
-      {
-        "title": "What the name Awareness means",
-        "text": "In Sapiens, Awareness names an engineered responsibility: bringing selected information into a present focus, deciding how to respond and assessing what followed. The name reflects an inspiration. Neither the name nor a generated statement such as “I am aware” establishes that the software has conscious experience."
-      },
-      {
-        "title": "Keeping the deeper question open",
-        "text": "We can examine information sharing, self-representation and changes in behaviour without treating those observations as a complete account of consciousness. The neuroscience foundations explore workspace ideas; the engine article describes our computational interpretation. Keeping these levels distinct lets us learn from consciousness research without presenting an unresolved question as an achieved capability."
-      }
-    ],
-    "related": [
-      "self-agency",
-      "perception-attention",
-      "awareness",
-      "research-limitations"
-    ],
-    "references": [
-      {
-        "title": "Stanford Encyclopedia of Philosophy — Consciousness",
-        "url": "https://plato.stanford.edu/entries/consciousness/"
-      }
-    ]
-  },
-  "firsthand-experience": {
-    "opening": "What could an AI learn from taking part in events that it would not get from receiving a description afterward? Our hypothesis is that an individual’s own history of choices and consequences can become useful context for later judgment.",
-    "sections": [
-      {
-        "title": "Knowing a rule and encountering its consequences",
-        "text": "Imagine being told that a colleague needs evidence before approving work. Later, you submit a request, discover which evidence is missing and observe how the colleague responds when it is provided. The experience connects a general instruction with a particular situation, an attempted action and its outcome."
-      },
-      {
-        "title": "What we mean by experience",
-        "text": "Here, experience means recorded participation: what information was available, what the Sapien attempted, what happened and how it interpreted the result. It does not imply a felt experience. Keeping those parts separate matters because an interpretation can be mistaken even when the underlying event was recorded correctly."
-      },
-      {
-        "title": "Experience can mislead as well as help",
-        "text": "A successful request might depend on temporary permission. A failure might come from an unavailable service rather than a poor decision. A useful memory must retain enough context to avoid turning either episode into an unrestricted rule. Later evidence should be able to challenge the lesson."
-      },
-      {
-        "title": "From participation to development",
-        "text": "Our interest is whether this history changes future choices in appropriate ways, including recognizing when an earlier experience does not apply. Memory and feedback provide different ingredients for that investigation. The experience-evaluation article asks how to distinguish useful learning from repetition, familiarity or a stronger prompt."
-      }
-    ],
-    "related": [
-      "continuity",
-      "memory",
-      "action-feedback",
-      "experience-evaluation"
-    ]
-  },
-  "continuity": {
-    "opening": "What would it mean for an artificial individual to develop over time? Keeping a growing archive is only a starting point. The harder question is how earlier experience should influence present understanding while leaving room for correction and change.",
-    "sections": [
-      {
-        "title": "Continuity without becoming fixed",
-        "text": "A continuing individual needs some connection between past and present. Yet carrying every earlier judgment forward unchanged would make adaptation difficult. We want continuity of experience alongside revisable interpretations: remembering why an idea once seemed plausible while recognizing why it no longer applies."
-      },
-      {
-        "title": "Development can involve letting go",
-        "text": "Suppose a Sapien first learns to ask a manager for a decision. Responsibility later moves to another colleague. Useful development includes retaining the history, updating the relevant understanding and acting according to the current arrangement. Simply retrieving the most repeated instruction could preserve the wrong habit."
-      },
-      {
-        "title": "Several kinds of change",
-        "text": "Changes to remembered associations, practical guidance, active context and unfinished intentions serve different purposes. They should not all be called learning without explanation. In our present approach, experience can alter retained state and what is supplied to later reasoning; this does not imply that an experience retrains the underlying language model."
-      },
-      {
-        "title": "A direction for investigation",
-        "text": "We want to study whether these changes produce more appropriate behaviour across varied encounters, and whether the individual can recover from misleading experience. This article motivates development as a research direction. The memory and feedback articles explain current mechanisms, while Experiments addresses evidence for improvement."
-      }
-    ],
-    "related": [
-      "firsthand-experience",
-      "reinforcement-forgetting",
-      "experience-evaluation",
-      "identity"
     ]
   },
   "inspiration": {
@@ -288,7 +186,7 @@ export const researchArticles: Partial<Record<string, ResearchArticle>> = {
       }
     ],
     "related": [
-      "consciousness",
+      "philosophy",
       "working-memory-foundation",
       "awareness",
       "connections"
@@ -518,7 +416,7 @@ export const researchArticles: Partial<Record<string, ResearchArticle>> = {
       }
     ],
     "related": [
-      "self-agency",
+      "continuity",
       "connections",
       "awareness",
       "memory"
@@ -859,7 +757,7 @@ export const researchArticles: Partial<Record<string, ResearchArticle>> = {
       }
     ],
     "related": [
-      "firsthand-experience",
+      "continuity",
       "motor-conversation",
       "tool-learning",
       "experience-evaluation"
@@ -886,7 +784,7 @@ export const researchArticles: Partial<Record<string, ResearchArticle>> = {
       }
     ],
     "related": [
-      "firsthand-experience",
+      "continuity",
       "motor-conversation",
       "action-feedback",
       "experience-evaluation"
@@ -1054,7 +952,6 @@ export const researchArticles: Partial<Record<string, ResearchArticle>> = {
       }
     ],
     "related": [
-      "firsthand-experience",
       "continuity",
       "memory",
       "tool-learning",
@@ -1139,7 +1036,7 @@ export const researchArticles: Partial<Record<string, ResearchArticle>> = {
       "findings",
       "simulation",
       "evaluation",
-      "consciousness",
+      "philosophy",
       "missing-mechanisms"
     ]
   },
@@ -1245,7 +1142,7 @@ export const researchArticles: Partial<Record<string, ResearchArticle>> = {
       }
     ],
     "related": [
-      "self-agency",
+      "continuity",
       "goals",
       "hold",
       "curiosity",
@@ -1302,7 +1199,7 @@ export const researchArticles: Partial<Record<string, ResearchArticle>> = {
     "related": [
       "identity",
       "connections",
-      "firsthand-experience",
+      "continuity",
       "experience-evaluation"
     ]
   },

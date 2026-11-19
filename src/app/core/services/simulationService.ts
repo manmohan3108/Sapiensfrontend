@@ -1,13 +1,14 @@
 import type { InspectionStory, InspectionOverviewDetails } from '../../types/simulationTypes';
 import { authenticatedFetch, HttpError } from '../auth/authSession';
 import { apiConfig } from '../config/apiConfig';
+import type { RateLimitedRequestInit } from '../api/rateLimits';
 import type { CaseCatalog, CaseCreateRequest, DebugGuide, EventPage, InspectionActivityPage, InspectionCollection, InspectionPerson, InspectionProgressItem, InspectionQuery, InspectionResults, InspectionSpecificationResponse, ParticipantOutcome, SimulationEvent, SimulationList, SimulationResult, SimulationRun, WorldActivityPage, WorldChannel, WorldCollection, WorldCommentsPage, WorldConnection, WorldEmployee, WorldOverview, WorldQuery, WorldTicket } from '../../types/simulationTypes';
 
 const base = `${apiConfig.baseUrl}/simulations/`;
 const runPath = (id: string) => `runs/${encodeURIComponent(id)}/`;
 const query = (values: WorldQuery = {}) => { const params = new URLSearchParams(); Object.entries(values).forEach(([key, value]) => { if (value !== undefined && value !== '') params.set(key, String(value)); }); const suffix = params.toString(); return suffix ? `?${suffix}` : ''; };
 const inspectionQuery = (values: InspectionQuery = {}) => { const params = new URLSearchParams(); Object.entries(values).forEach(([key, value]) => { if (value !== undefined && value !== '') params.set(key, String(value)); }); const suffix = params.toString(); return suffix ? `?${suffix}` : ''; };
-async function request<T>(path: string, init: RequestInit = {}, accepted: number[] = []): Promise<T> {
+async function request<T>(path: string, init: RateLimitedRequestInit = {}, accepted: number[] = []): Promise<T> {
   let response: Response;
   try { response = await authenticatedFetch(`${base}${path}`, { ...init, headers: { 'Content-Type': 'application/json', ...init.headers }, signal: init.signal ?? AbortSignal.timeout(30_000) }); }
   catch (error) { if (error instanceof HttpError || (error instanceof DOMException && error.name === 'AbortError')) throw error; throw new Error('Simulation API unavailable. Check the server and single-worker routing.'); }
@@ -23,7 +24,7 @@ export const simulationService = {
   list: (signal?: AbortSignal) => request<SimulationList>('runs/', { signal, cache: 'no-store' }),
   get: (id: string, signal?: AbortSignal) => request<SimulationRun>(runPath(id), { signal }),
   create: (body: CaseCreateRequest) => request<SimulationRun>('runs/', { method: 'POST', body: JSON.stringify(body) }),
-  control: (id: string, action: 'start' | 'pause' | 'resume' | 'stop') => request<SimulationRun>(`${runPath(id)}${action}/`, { method: 'POST', body: '{}' }),
+  control: (id: string, action: 'start' | 'pause' | 'resume' | 'stop') => request<SimulationRun>(`${runPath(id)}${action}/`, { method: 'POST', body: '{}', rateLimitBucket: action === 'pause' || action === 'stop' ? 'control' : 'api_write' }),
   schedulePause: (id: string, minutes: number | null) => request<SimulationRun>(`${runPath(id)}pause/`, { method: 'POST', body: JSON.stringify({ pause_after_minutes: minutes }) }),
   setSpeed: (id: string, speed: number) => request<SimulationRun>(`${runPath(id)}speed/`, { method: 'PATCH', body: JSON.stringify({ speed }) }),
   remove: (id: string) => request<SimulationRun | void>(runPath(id), { method: 'DELETE' }),

@@ -1,4 +1,5 @@
 import { apiConfig } from '../config/apiConfig';
+import { rateLimits, requestBucket, type RateLimitedRequestInit } from './rateLimits';
 
 type Availability = 'available' | 'restarting' | 'unavailable' | 'offline' | 'recovered' | 'restoring';
 const GATEWAY_STATUSES = new Set([502, 503, 504]);
@@ -143,10 +144,17 @@ async function observeResponse(response: Response) {
   }
 }
 
-/** Observe availability without changing responses or replaying failed requests. */
-export async function backendFetch(input: RequestInfo | URL, init: RequestInit = {}): Promise<Response> {
+/** Respect request cooldowns and observe availability; never replay failed writes. */
+export async function backendFetch(input: RequestInfo | URL, init: RateLimitedRequestInit = {}): Promise<Response> {
+  init.signal?.throwIfAborted();
+  const bucket = requestBucket(input, init);
+  const version = rateLimits.accountVersion;
+  const blocked = rateLimits.blockedResponse(bucket);
+  if (blocked) return blocked;
   try {
-    const response = await fetch(input, init);
+    const { rateLimitBucket: _policy, ...requestInit } = init;
+    const response = await fetch(input, requestInit);
+    rateLimits.observe(response, bucket, version);
     void observeResponse(response);
     return response;
   } catch (error) {

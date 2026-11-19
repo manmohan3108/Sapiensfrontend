@@ -1,4 +1,5 @@
 import { RouterProvider } from 'react-router';
+import { RateLimitNotice } from './components/RateLimitNotice';
 import { router } from './routes';
 import { Toaster } from './components/ui/sonner';
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -13,6 +14,7 @@ export default function App() {
         <NavigationStateProvider><RouterProvider router={router} /></NavigationStateProvider>
         <Toaster richColors position="bottom-right" closeButton />
         <BackendUnavailableScreen />
+        <RateLimitNotice />
       </AuthProvider>
     </ThemeProvider>
   );
