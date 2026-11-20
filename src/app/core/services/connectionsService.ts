@@ -52,9 +52,9 @@ export const connectionsService = {
     return connectionFetch(`${collectionPath(sapienId)}/${connectionId}`, { signal });
   },
 
-  confirmAuthorization(sapienId: number, connectionId: number, requestId?: number): Promise<ConnectionResponse> {
+  confirmAuthorization(sapienId: number, connectionId: number, requestId?: number, approvalHint = ''): Promise<ConnectionResponse> {
     return connectionFetch(`${collectionPath(sapienId)}/authorization`, {
-      method: 'POST', body: JSON.stringify({ action: 'confirm', connection_id: connectionId, request_id: requestId }),
+      method: 'POST', body: JSON.stringify({ action: 'confirm', connection_id: connectionId, request_id: requestId, approval_hint: approvalHint }),
     });
   },
 
@@ -90,17 +90,17 @@ export const connectionsService = {
     return connectionFetch(`${collectionPath(sapienId)}/${connectionId}`, { method: 'DELETE' });
   },
 
-  fulfillRequest(sapienId: number, requestId: number, connectionId: number): Promise<RequestResponse & ConnectionResponse> {
+  fulfillRequest(sapienId: number, requestId: number, connectionId: number, approvalHint = ''): Promise<RequestResponse & ConnectionResponse> {
     return connectionFetch(`/sapien/${sapienId}/connection-requests/${requestId}`, {
       method: 'POST',
-      body: JSON.stringify({ action: 'fulfill', connection_id: connectionId }),
+      body: JSON.stringify({ action: 'fulfill', connection_id: connectionId, approval_hint: approvalHint }),
     });
   },
 
-  updateRequest(sapienId: number, requestId: number, action: 'reject' | 'reopen'): Promise<RequestResponse> {
+  updateRequest(sapienId: number, requestId: number, action: 'reject' | 'reopen', denialReason = ''): Promise<RequestResponse> {
     return connectionFetch<RequestResponse>(`/sapien/${sapienId}/connection-requests/${requestId}`, {
       method: 'POST',
-      body: JSON.stringify({ action }),
+      body: JSON.stringify({ action, ...(action === 'reject' ? { denial_reason: denialReason } : {}) }),
     });
   },
 };

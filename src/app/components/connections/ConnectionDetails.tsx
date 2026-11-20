@@ -26,7 +26,7 @@ export function connectionAccountLabel(connection: SapiensConnection): string {
   ].filter(Boolean).join(' · ');
 }
 
-export function ConnectionAccountDetails({ connection, provider }: { connection: SapiensConnection; provider?: ConnectionProvider }) {
+export function ConnectionAccountDetails({ connection, provider, compact = false }: { connection: SapiensConnection; provider?: ConnectionProvider; compact?: boolean }) {
   const metadata = connection.metadata;
   const identity = metadata.provider_identity;
   const verified = identity && typeof identity === 'object' ? Object.entries(identity)
@@ -39,11 +39,12 @@ export function ConnectionAccountDetails({ connection, provider }: { connection:
   if (identity && typeof identity === 'object' && 'id' in identity && typeof identity.id === 'string' && identity.id) {
     technical.push({ label: 'Verified account ID', value: identity.id });
   }
+  if (compact) technical.unshift({ label: 'Connection ID', value: connection.id });
   return <div className="my-3 space-y-2 text-sm break-words">
     <dl className="grid gap-3 sm:grid-cols-2">
       <div><dt className="text-sp-muted">{provider?.fields.find(field => field.source === 'workspace')?.label ?? 'Workspace'}</dt><dd>{connection.workspace || 'Not provided'}</dd></div>
       <div><dt className="text-sp-muted">{provider?.fields.find(field => field.source === 'account_identifier')?.label ?? 'Account'}</dt><dd>{connection.account_identifier || 'Not provided'}</dd></div>
-      <div><dt className="text-sp-muted">Connection</dt><dd>#{connection.id}</dd></div>
+      {!compact && <div><dt className="text-sp-muted">Connection</dt><dd>#{connection.id}</dd></div>}
       {typeof metadata.port === 'number' && <div><dt className="text-sp-muted">Port</dt><dd>{metadata.port}</dd></div>}
       {choices.map(field => <div key={field.name}><dt className="text-sp-muted">{field.label}</dt><dd>{field.choice_details?.[String(metadata[field.name])]?.label ?? String(metadata[field.name])}</dd></div>)}
     </dl>
@@ -71,6 +72,7 @@ export function FulfilledRequests({ requests, connections }: {
         <p className="mt-2 text-sm text-sp-muted break-words">{account
           ? connectionAccountLabel(account)
           : request.metadata.connection_id ? 'The selected account has been removed.' : 'Legacy request: selected account was not recorded.'}</p>
+        {request.metadata.owner_response?.status === 'connected' && request.metadata.owner_response.hint && <p className="mt-2 whitespace-pre-wrap break-words text-sm"><span className="text-sp-muted">Owner hint: </span>{request.metadata.owner_response.hint}</p>}
         <p className="mt-1 text-sm text-sp-muted">{dateLabel(request.resolved_at)}</p>
       </article>;
     })}</div>

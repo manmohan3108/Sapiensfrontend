@@ -69,6 +69,7 @@ export interface SapiensConnectionRequest {
     access?: AccessNeed;
     work_refs?: string[];
     additional_reasons?: string[];
+    owner_response?: { status: 'connected' | 'denied'; hint?: string; reason?: string; recorded_at: string };
     connection_id?: number;
   };
   created_at: string;

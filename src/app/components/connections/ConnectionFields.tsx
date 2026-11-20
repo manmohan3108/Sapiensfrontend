@@ -17,8 +17,9 @@ function ConnectionField({ field, value, error, editing, busy, compactHelp, onCh
   const secret = field.type === 'password' || field.source === 'credential';
   const required = field.required && !(editing && secret);
   const choice = field.choice_details?.[String(value ?? '')];
-  const help = [choice?.description, field.help_text, editing && secret ? 'Leave blank to keep the saved value. It is never displayed.' : ''].filter(Boolean).join(' ');
-  const describedBy = [help && !compactHelp ? `${id}-help` : '', error ? `${id}-error` : ''].filter(Boolean).join(' ') || undefined;
+  const help = [!compactHelp && choice?.description, field.help_text, editing && secret ? 'Leave blank to keep the saved value. It is never displayed.' : ''].filter(Boolean).join(' ');
+  const discloseHelp = compactHelp && field.type !== 'boolean' && !(editing && secret);
+  const describedBy = [compactHelp && choice?.description ? id + '-choice' : '', help && !discloseHelp ? `${id}-help` : '', error ? `${id}-error` : ''].filter(Boolean).join(' ') || undefined;
   const style = 'w-full rounded-lg border border-sp-line bg-sp-panel px-3 py-2.5 text-sm text-sp-ink disabled:opacity-40';
   return <div className={field.type === 'boolean' || field.type === 'url' || (compactHelp && field.name === 'host_fingerprint') ? 'min-w-0 sm:col-span-2' : 'min-w-0'}>
     <label htmlFor={id} className="mb-1.5 block text-sm">{field.label}{required && <span className="ml-1 text-sp-danger">*</span>}</label>
@@ -36,7 +37,8 @@ function ConnectionField({ field, value, error, editing, busy, compactHelp, onCh
             spellCheck={false} autoComplete={secret ? 'new-password' : 'off'} placeholder={field.placeholder}
             aria-required={required} aria-invalid={Boolean(error)} aria-describedby={describedBy}
             onChange={event => onChange(field.name, event.target.value)} className={style} />}
-    {help && (compactHelp ? <ConnectionHelp label={`About ${field.label.toLowerCase()}`}><p>{help}</p></ConnectionHelp>
+    {compactHelp && choice?.description && <p id={id + '-choice'} className="mt-1 text-sm text-sp-muted">{choice.description}</p>}
+    {help && (discloseHelp ? <ConnectionHelp label={`About ${field.label.toLowerCase()}`}><p>{help}</p></ConnectionHelp>
       : <p id={`${id}-help`} className="mt-1 text-sm text-sp-muted">{help}</p>)}
     {error && <p id={`${id}-error`} role="alert" className="mt-1 text-sm text-sp-danger">{error}</p>}
   </div>;
@@ -63,7 +65,7 @@ export function ConnectionFields({ fields, values, errors, editing, busy, onChan
     <div className="grid gap-4 sm:grid-cols-2">{basic.map(renderField)}</div>
     {(advanced.length > 0 || optionalContent) && <details className={compactHelp ? 'connection-optional' : undefined} open={expanded || advancedError} onToggle={event => setExpanded(event.currentTarget.open)}>
       <summary className="cursor-pointer text-sm font-medium">{compactHelp ? 'Optional settings' : 'Advanced settings (optional)'}</summary>
-      <p className="my-3 text-sm text-sp-muted">{compactHelp ? 'Port, account label and access notes. Existing values are kept unless you change them.' : 'Ask an administrator if these settings are needed. Saved values remain in use when you leave this section closed.'}</p>
+      <p className="my-3 text-sm text-sp-muted">{compactHelp ? 'Existing values are kept unless you change them.' : 'Ask an administrator if these settings are needed. Saved values remain in use when you leave this section closed.'}</p>
       <div className="grid gap-4 sm:grid-cols-2">{optionalContent}{advanced.map(renderField)}</div>
     </details>}
   </div>;

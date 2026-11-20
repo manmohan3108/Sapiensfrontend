@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
 import {
   AlertCircle, CheckCircle2, Clock3, ArrowRight, KeyRound, Loader2,
-  LockKeyhole, Plug, RefreshCw, RotateCcw, ShieldCheck, Trash2, XCircle,
+  Plug, RefreshCw, RotateCcw, ShieldCheck, Trash2, XCircle,
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '../components/ui/dialog';
 import { useSapiensStore } from '../core/state/sapiensStore';
@@ -25,7 +25,7 @@ import {
 import { connectionAccountLabel, ConnectionAccountDetails, ConnectionSubscriptions, FulfilledRequests } from '../components/connections/ConnectionDetails';
 import { ConnectionFields } from '../components/connections/ConnectionFields';
 import { ConnectionGuidance } from '../components/connections/ConnectionGuidance';
-import { ConnectionHelp } from '../components/connections/ConnectionHelp';
+
 
 const accent = 'var(--sp-accent)';
 
@@ -52,19 +52,20 @@ function StatusBadge({ status }: { status: string }) {
   return <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium" style={{ color: config.color, background: config.bg, border: `1px solid color-mix(in srgb, ${config.color} 20.78%, transparent)` }}><Icon className="h-3 w-3" />{config.label}</span>;
 }
 
-function RequestDetails({ request, concise = false }: { request: SapiensConnectionRequest; concise?: boolean }) {
+function RequestDetails({ request }: { request: SapiensConnectionRequest }) {
   const access = request.metadata.access;
-  const collapseReason = concise && Boolean(access?.target && access.operations.length);
+
   const reason = <p className="break-words">{request.reason || 'No reason was recorded for this older request.'}</p>;
   return <div className="my-4 space-y-3 text-sm">
-    {!collapseReason && reason}
+    {reason}
     {access && <dl className="grid gap-3 sm:grid-cols-2">
       <div><dt className="text-sp-muted">Target or workspace</dt><dd className="break-words">{access.target || 'Choose when connecting'}</dd></div>
       {access.account && <div><dt className="text-sp-muted">Account needed</dt><dd className="break-words">{access.account}</dd></div>}
       {access.operations.length > 0 && <div className="sm:col-span-2"><dt className="text-sp-muted">Needed access</dt><dd className="break-words">{access.operations.join('; ')}</dd></div>}
       {access.connection_id && <div><dt className="text-sp-muted">Existing connection to review</dt><dd>#{access.connection_id}</dd></div>}
     </dl>}
-    {collapseReason && <ConnectionHelp label="Why this access was requested">{reason}</ConnectionHelp>}
+    {request.status === 'denied' && request.metadata.owner_response?.status === 'denied' && request.metadata.owner_response.reason && <p className="whitespace-pre-wrap break-words"><span className="text-sp-muted">Owner denial reason: </span>{request.metadata.owner_response.reason}</p>}
+
     <details>
       <summary className="cursor-pointer text-sp-muted">More request details</summary>
       <div className="mt-3 space-y-2">
@@ -86,11 +87,13 @@ function savedSetupRequest(connection: SapiensConnection, requests: SapiensConne
   return requests.find(item => item.id === connection.metadata.setup_request_id && item.provider === connection.provider);
 }
 
-function ProviderForm({ provider, request, connection, connections, busy, onCancel, onSubmit, onFulfill, onEditConnection, onConfirm }: {
+function ProviderForm({ provider, request, connection, connections, approvalHint, onApprovalHintChange, busy, onCancel, onSubmit, onFulfill, onEditConnection, onConfirm }: {
   provider: ConnectionProvider;
   request?: SapiensConnectionRequest;
   connection?: SapiensConnection;
   connections: SapiensConnection[];
+  approvalHint: string;
+  onApprovalHintChange: (hint: string) => void;
   onFulfill: (connectionId: number) => Promise<void>;
   onConfirm: (connectionId: number) => Promise<void>;
   onEditConnection: (connectionId: number) => void;
@@ -112,6 +115,7 @@ function ProviderForm({ provider, request, connection, connections, busy, onCanc
   const [accountLabel, setAccountLabel] = useState(connection?.account_label ?? '');
   const [selectedConnection, setSelectedConnection] = useState('');
   const selectedAccount = connections.find(account => account.id === Number(selectedConnection));
+  const choosingSavedAccount = Boolean(request && !connection && connections.length > 0 && selectedConnection !== 'new');
   const requestBlocked = Boolean(request && request.status !== 'pending');
   const [generationId] = useState(() => crypto.randomUUID());
   const generatesKey = Boolean(provider.capabilities?.key_generation);
@@ -123,6 +127,12 @@ function ProviderForm({ provider, request, connection, connections, busy, onCanc
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (requestBlocked || busy || secondsRemaining('api_write') > 0) return;
+    if (choosingSavedAccount) {
+      if (!selectedAccount) return;
+      if (browserAuthorization && !selectedAccount.metadata.authorization_confirmed) onEditConnection(selectedAccount.id);
+      else await onFulfill(selectedAccount.id);
+      return;
+    }
     const errors: Record<string, string> = {};
     provider.fields.forEach(field => {
       if (field.required && field.type !== 'boolean' && !(connection && (field.type === 'password' || field.source === 'credential')) && !String(values[field.name] ?? '').trim()) errors[field.name] = `${field.label} is required`;
@@ -157,53 +167,77 @@ function ProviderForm({ provider, request, connection, connections, busy, onCanc
     }
   };
 
-  const accountLabelField = <label className="sm:col-span-2"><span className="mb-1.5 block text-sm text-sp-muted">Account label (optional)</span><input name="account_label" autoComplete="off" value={accountLabel} onChange={e => setAccountLabel(e.target.value)} disabled={busy} placeholder={ssh ? 'e.g. Backend server' : `e.g. Product team ${provider.label}`} className="w-full rounded-lg border border-sp-line bg-sp-panel px-3 py-2.5 text-sm text-sp-ink placeholder:text-sp-muted" /></label>;
-  return <form onSubmit={submit} className={`connections-form${ssh ? ' connections-ssh-form' : ''}`}>
-    <div className="mb-5 flex items-start justify-between gap-4 pr-7">
-      <div><div className="flex items-center gap-2"><KeyRound aria-hidden="true" className="h-4 w-4" style={{ color: accent }} /><DialogTitle ref={headingRef} tabIndex={-1} className="text-xl font-semibold text-sp-ink">{request ? `Review ${provider.label} access` : connection ? `Edit ${connection.account_label}` : `Connect ${provider.label}`}</DialogTitle></div><DialogDescription className="mt-2 text-sm text-sp-muted">{ssh ? 'Let Sapiens use a server through a restricted Linux account. The server’s permissions determine what it can read or change.' : browserAuthorization ? 'Sign in through the service in a separate window. Return here to confirm the account; do not paste passwords or tokens.' : connection ? 'Leave credential fields blank to keep their saved values. Stored credentials are never displayed.' : 'Enter the account details this service requires. Saved credentials are never displayed.'}</DialogDescription></div>
+  const accountLabelField = <label className="sm:col-span-2"><span className="mb-1.5 block text-sm text-sp-muted">Account label (optional)</span><input name="account_label" autoComplete="off" value={accountLabel} onChange={e => setAccountLabel(e.target.value)} disabled={busy} placeholder={ssh ? 'e.g. Backend server…' : 'e.g. Product team…'} className="w-full rounded-lg border border-sp-line bg-sp-panel px-3 py-2.5 text-sm text-sp-ink placeholder:text-sp-muted" /></label>;
+  return <form onSubmit={submit} className="connections-form">
+    <div className="mb-4 flex items-start justify-between gap-4 pr-7">
+      <div className="min-w-0">
+        <div className="flex items-center gap-2">
+          <KeyRound aria-hidden="true" className="h-4 w-4 shrink-0" style={{ color: accent }} />
+          <DialogTitle ref={headingRef} tabIndex={-1} className="text-xl font-semibold text-sp-ink">{request ? 'Review ' + provider.label + ' access' : connection ? 'Edit ' + connection.account_label : 'Connect ' + provider.label}</DialogTitle>
+        </div>
+        <DialogDescription className="mt-2 text-sm text-sp-muted">{request ? 'Choose which account Sapien may use for this request.' : 'Manage the account and access shared with Sapien.'}</DialogDescription>
+      </div>
       {request && <StatusBadge status={request.status} />}
     </div>
-    {!ssh && provider.description && <p className="mb-4 text-sm text-sp-muted">{provider.description}</p>}
-    {request && <>
-      <RequestDetails request={request} concise={ssh} />
-      {requestBlocked && <p role="status" className="mb-3 text-sm text-sp-warning">This request is {request.status}. Reopen a denied request before fulfilling it; a completed request cannot be reassigned.</p>}
-      {!connection && connections.length > 0 && <fieldset className="mb-5 space-y-3 rounded-lg border border-sp-line p-4">
-        <legend className="px-1 text-sm font-medium">Use an existing account</legend>
-        <label htmlFor="fulfillment-account" className="block text-sm text-sp-muted">Choose an account that meets this request</label>
-        <select id="fulfillment-account" name="fulfillment-account" value={selectedConnection} onChange={event => setSelectedConnection(event.target.value)} disabled={busy} className="w-full rounded-lg border border-sp-line bg-sp-panel p-2 text-sp-ink">
-          <option value="">Select an account…</option>
-          {connections.map(account => <option key={account.id} value={account.id}>{connectionAccountLabel(account)}</option>)}
-        </select>
-        {selectedAccount && <><ConnectionAccountDetails connection={selectedAccount} provider={provider} /><ConnectionGuidance guidance={selectedAccount.guidance} compact={selectedAccount.status === 'connected'} /></>}
-        <p className="text-sm text-sp-muted">Confirm that the chosen account meets the target and access requirements above. Authentication will be checked before this request is fulfilled.</p>
-        <div className="flex flex-wrap gap-2">
-          <RateLimitButton type="button" disabled={!selectedConnection || busy || requestBlocked} onClick={() => {
-            if (browserAuthorization && !selectedAccount?.metadata.authorization_confirmed) onEditConnection(Number(selectedConnection));
-            else void onFulfill(Number(selectedConnection));
-          }} className="rounded-lg bg-sp-action px-3 py-2 text-sm text-sp-on-action disabled:opacity-40">{browserAuthorization && selectedAccount && !selectedAccount.metadata.authorization_confirmed ? 'Finish this account’s setup' : `Verify and fulfill request #${request.id}`}</RateLimitButton>
-          <button type="button" disabled={!selectedConnection || busy} onClick={() => onEditConnection(Number(selectedConnection))} className="rounded-lg border border-sp-line px-3 py-2 text-sm disabled:opacity-40">Edit this account</button>
-        </div>
-      </fieldset>}
-      <p className="mb-3 text-sm text-sp-muted">{requestBlocked ? 'Review the request status before continuing.' : browserAuthorization ? `Request #${request.id} stays pending until you confirm the signed-in account.` : connection ? `Save and verify this account to fulfill request #${request.id}.` : generatesKey ? 'Or prepare a new account below. This request stays pending until setup and verification are complete.' : 'Or enter a new account below to fulfill this request.'}</p>
-    </>}
-    {connection && (ssh ? <ConnectionHelp label="Saved connection details"><ConnectionAccountDetails connection={connection} provider={provider} /></ConnectionHelp> : <ConnectionAccountDetails connection={connection} provider={provider} />)}
-    <ConnectionGuidance guidance={connection?.guidance ?? provider.setup} disclosure={ssh} showStatus={Boolean(connection)} description={ssh ? provider.description : undefined} />
-    {awaitingConfirmation && connection && <div className="my-4 space-y-3 rounded-lg border border-sp-line p-4">
-      <p className="text-sm">Confirm that this username and site are the intended account. Sapien can read the projects this account may access.</p>
-      <RateLimitButton type="button" disabled={busy || requestBlocked} onClick={() => void onConfirm(connection.id)} className="rounded-lg bg-sp-action px-4 py-2 text-sp-on-action disabled:opacity-40">{request ? `Confirm account and fulfill request #${request.id}` : 'Confirm account and enable access'}</RateLimitButton>
-      <p className="text-sm text-sp-muted">Wrong account? Use sign-in again below, switching accounts on the service’s sign-in page.</p>
+    {request && <RequestDetails request={request} />}
+    {requestBlocked && <p role="status" className="mb-3 text-sm text-sp-warning">{request?.status === 'denied' ? 'Reopen this denied request before approving access.' : 'This request is already fulfilled and cannot be reassigned.'}</p>}
+
+    {request && !connection && connections.length > 0 && <div className="connection-review-section">
+      <label htmlFor="fulfillment-account" className="mb-2 block text-sm font-medium">Account to use</label>
+      <select id="fulfillment-account" name="fulfillment-account" value={selectedConnection} onChange={event => setSelectedConnection(event.target.value)} disabled={busy || requestBlocked} className="w-full rounded-lg border border-sp-line bg-sp-panel p-2.5 text-sp-ink">
+        <option value="">Select an account…</option>
+        {connections.map(account => <option key={account.id} value={account.id}>{connectionAccountLabel(account)}</option>)}
+        <option value="new">Connect another account…</option>
+      </select>
+      {selectedAccount && <>
+        <ConnectionAccountDetails connection={selectedAccount} provider={provider} compact />
+        <ConnectionGuidance guidance={selectedAccount.guidance} disclosure showStatus={selectedAccount.status !== 'connected'} />
+        <button type="button" disabled={busy || requestBlocked} onClick={() => onEditConnection(selectedAccount.id)} className="text-sm text-sp-muted underline underline-offset-4 hover:text-sp-ink disabled:opacity-40">Edit this account</button>
+      </>}
+      <p className="mt-2 text-sm text-sp-muted">Approve only if this account allows the requested access.</p>
     </div>}
-    <div className="grid gap-4 sm:grid-cols-2">
-      {!ssh && accountLabelField}
-      <div className="sm:col-span-2"><ConnectionFields fields={ssh ? provider.fields.map(field => ['port', 'access_note'].includes(field.name) ? { ...field, advanced: true } : field) : provider.fields} values={values} errors={validation}
-        compactHelp={ssh} optionalContent={ssh ? accountLabelField : undefined}
-        editing={Boolean(connection)} busy={busy || (browserAuthorization && Boolean(connection))} onChange={(name, value) => {
-          setValues(current => ({ ...current, [name]: value }));
-          setValidation(current => ({ ...current, [name]: '' }));
-        }} /></div>
+
+    {!choosingSavedAccount && <div className="connection-review-section">
+      {connection && <ConnectionAccountDetails connection={connection} provider={provider} compact />}
+      <ConnectionGuidance guidance={connection?.guidance ?? provider.setup} disclosure
+        showStatus={Boolean(connection && connection.status !== 'connected')} description={provider.description} />
+      {!awaitingConfirmation && <div className="grid gap-4 sm:grid-cols-2">
+        <div className="sm:col-span-2">
+          <ConnectionFields fields={ssh ? provider.fields.map(field => ['port', 'access_note'].includes(field.name) ? { ...field, advanced: true } : field) : provider.fields}
+            values={values} errors={validation} compactHelp optionalContent={accountLabelField}
+            editing={Boolean(connection)} busy={busy || (browserAuthorization && Boolean(connection))} onChange={(name, value) => {
+              setValues(current => ({ ...current, [name]: value }));
+              setValidation(current => ({ ...current, [name]: '' }));
+            }} />
+        </div>
+      </div>}
+      {ssh && connection?.status !== 'connected' && <p className="connection-next-step">{connection ? 'Install the public key and enter a trusted server fingerprint before verifying.' : 'Generate a public key for your administrator to install. This does not connect the server yet.'}</p>}
+      {browserAuthorization && !awaitingConfirmation && <p className="connection-next-step">Sign in in the service window, then return here to confirm the account.</p>}
+    </div>}
+
+    {request && !requestBlocked && <label className="connection-review-section block text-left">
+      <span className="mb-1.5 block text-sm font-medium">Hint for Sapien (optional)</span>
+      <textarea name="approval_hint" autoComplete="off" rows={2} maxLength={1000} value={approvalHint}
+        onChange={event => onApprovalHintChange(event.target.value)} disabled={busy} aria-describedby="approval-hint-help"
+        className="w-full resize-y rounded-lg border border-sp-line bg-sp-panel px-3 py-2 text-sm text-sp-ink" />
+      <span id="approval-hint-help" className="mt-1 block text-sm text-sp-muted">Shared after approval. No passwords or keys.</span>
+    </label>}
+
+    {awaitingConfirmation && connection && <div className="connection-review-section">
+      <p className="mb-3 text-sm">Check the signed-in account and site above before enabling access.</p>
+      <RateLimitButton type="button" disabled={busy || requestBlocked} onClick={() => void onConfirm(connection.id)} className="rounded-lg bg-sp-action px-4 py-2 text-sm text-sp-on-action disabled:opacity-40">{request ? 'Confirm account and approve' : 'Confirm account and enable access'}</RateLimitButton>
+    </div>}
+    <div className="connections-form-actions flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+      <button type="button" onClick={onCancel} disabled={busy} className="rounded-lg px-4 py-2 text-sm text-sp-muted hover:bg-sp-ink/5 hover:text-sp-ink disabled:opacity-40">Cancel</button>
+      <RateLimitButton type="submit" disabled={busy || requestBlocked || (choosingSavedAccount && !selectedAccount)}
+        className={'flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50 ' + (awaitingConfirmation ? 'border border-sp-line text-sp-muted hover:bg-sp-ink/5' : 'bg-sp-action text-sp-on-action')}>
+        {busy && <Loader2 aria-hidden="true" className="h-3.5 w-3.5 animate-spin" />}
+        {busy ? 'Connecting…' : choosingSavedAccount ? (browserAuthorization && selectedAccount && !selectedAccount.metadata.authorization_confirmed ? 'Finish account setup' : 'Verify and approve')
+          : browserAuthorization ? (connection ? 'Sign in again' : provider.setup?.action_label ?? 'Connect ' + provider.label)
+          : connection ? (request ? 'Save, verify and approve' : 'Save and verify')
+          : provider.setup?.action_label ?? (generatesKey ? 'Generate access key' : request ? 'Approve and connect' : 'Connect ' + provider.label)}
+      </RateLimitButton>
     </div>
-    {ssh && <p className="connection-next-step">{connection?.status === 'connected' ? 'Save changes to check this server’s access again.' : connection ? 'Install the public key and enter a trusted server fingerprint before verifying.' : 'Next: generate a public key for your administrator to install. This does not connect the server yet.'}</p>}
-    <div className="connections-form-actions mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><button type="button" onClick={onCancel} disabled={busy} className="rounded-lg px-4 py-2 text-xs text-sp-muted hover:bg-sp-ink/5 hover:text-sp-ink disabled:opacity-40">Cancel</button><RateLimitButton type="submit" disabled={busy || requestBlocked} className="flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-xs font-medium text-sp-on-action disabled:cursor-not-allowed disabled:opacity-50" style={{ background: 'var(--sp-action)' }}>{busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <LockKeyhole className="h-3.5 w-3.5" />}{busy ? 'Connecting…' : browserAuthorization ? (connection ? 'Sign in again' : provider.setup?.action_label ?? `Connect with ${provider.label}`) : connection ? (request ? `Save, verify & fulfill #${request.id}` : 'Save and verify') : provider.setup?.action_label ?? (generatesKey ? 'Generate access key' : request ? 'Approve and connect' : `Connect ${provider.label}`)}</RateLimitButton></div>
   </form>;
 }
 
@@ -221,6 +255,8 @@ export function ConnectionsPage() {
   const [busyKey, setBusyKey] = useState('');
   const [authorizationStage, setAuthorizationStage] = useState('');
   const [formError, setFormError] = useState('');
+  const [approvalHint, setApprovalHint] = useState('');
+  const [denialReason, setDenialReason] = useState('');
   const formErrorRef = useRef<HTMLParagraphElement>(null);
   useEffect(() => { if (formError) formErrorRef.current?.focus(); }, [formError]);
   const authorizationAbort = useRef<AbortController | null>(null);
@@ -238,6 +274,8 @@ export function ConnectionsPage() {
     finally { setLoading(false); }
   }, [sapienId]);
   useEffect(() => { void load(); }, [load]);
+  useEffect(() => { setApprovalHint(''); }, [sapienId, activeRequest]);
+  useEffect(() => { setDenialReason(''); }, [sapienId, confirm?.kind, confirm?.id]);
 
   const provider = data?.providers.find(item => item.id === activeProvider);
   const request = data?.requests.find(item => item.id === activeRequest);
@@ -275,7 +313,7 @@ export function ConnectionsPage() {
     setFormError('');
     try {
       const { connection: saved } = await connectionsService.create(sapienId,
-        { ...payload, ...(activeRequest !== undefined ? { request_id: activeRequest } : {}) });
+        { ...payload, ...(activeRequest !== undefined ? { request_id: activeRequest, approval_hint: approvalHint } : {}) });
       setData(current => current ? { ...current, connections: [...current.connections.filter(item => item.id !== saved.id), saved] } : current);
       if (saved.status === 'connected') {
         toast.success(`${provider?.label ?? 'Provider'} connected`);
@@ -307,7 +345,7 @@ export function ConnectionsPage() {
     if (provider?.capabilities?.browser_authorization) return beginAuthorization({ ...payload, connection_id: connectionToEdit.id });
     setBusyKey('update'); setFormError('');
     try {
-      await connectionsService.update(sapienId, connectionToEdit.id, { ...payload, ...(activeRequest !== undefined ? { request_id: activeRequest } : {}) });
+      await connectionsService.update(sapienId, connectionToEdit.id, { ...payload, ...(activeRequest !== undefined ? { request_id: activeRequest, approval_hint: approvalHint } : {}) });
       toast.success(`${connectionToEdit.account_label} updated and verified`);
       await load();
       setActiveProvider(null); setActiveConnection(undefined); setActiveRequest(undefined);
@@ -322,7 +360,7 @@ export function ConnectionsPage() {
     if (busyKey || activeRequest === undefined) return;
     setBusyKey('fulfill'); setFormError('');
     try {
-      await connectionsService.fulfillRequest(sapienId, activeRequest, connectionId);
+      await connectionsService.fulfillRequest(sapienId, activeRequest, connectionId, approvalHint);
       toast.success('Access request fulfilled');
       await load();
       setActiveProvider(null); setActiveRequest(undefined); setActiveConnection(undefined);
@@ -338,7 +376,7 @@ export function ConnectionsPage() {
     authorizationAbort.current = controller;
     try {
       const saved = await authorizeConnection(sapienId,
-        { ...payload, ...(activeRequest !== undefined ? { request_id: activeRequest } : {}) },
+        { ...payload, ...(activeRequest !== undefined ? { request_id: activeRequest, approval_hint: approvalHint } : {}) },
         controller.signal, setAuthorizationStage);
       setActiveConnection(saved.id);
       await load();
@@ -363,7 +401,7 @@ export function ConnectionsPage() {
     if (busyKey) return;
     setBusyKey('confirm-authorization'); setFormError('');
     try {
-      await connectionsService.confirmAuthorization(sapienId, connectionId, activeRequest);
+      await connectionsService.confirmAuthorization(sapienId, connectionId, activeRequest, approvalHint);
       toast.success(activeRequest ? 'Account connected and access request fulfilled' : 'Account connected');
       await load();
       setActiveProvider(null); setActiveConnection(undefined); setActiveRequest(undefined);
@@ -379,12 +417,12 @@ export function ConnectionsPage() {
     catch (err) { toast.error('Verification failed', { description: errorMessage(err) }); await load(); }
     finally { setBusyKey(''); }
   };
-  const updateRequest = async (item: SapiensConnectionRequest, action: 'reject' | 'reopen') => {
+  const updateRequest = async (item: SapiensConnectionRequest, action: 'reject' | 'reopen', reason = '') => {
     if (secondsRemaining('api_write') > 0) return;
     if (busyKey) return; setBusyKey(`request-${item.id}`);
-    try { await connectionsService.updateRequest(sapienId, item.id, action); toast.success(action === 'reject' ? 'Request denied' : 'Request reopened'); await load(); }
+    try { await connectionsService.updateRequest(sapienId, item.id, action, reason); toast.success(action === 'reject' ? 'Request denied' : 'Request reopened'); setConfirm(null); await load(); }
     catch (err) { toast.error('Could not update request', { description: errorMessage(err) }); }
-    finally { setBusyKey(''); setConfirm(null); }
+    finally { setBusyKey(''); }
   };
   const configureSubscriptions = async (connectionId: number, resources: string[]) => {
     if (secondsRemaining('api_write') > 0) return;
@@ -446,7 +484,7 @@ export function ConnectionsPage() {
 
         <section><div className="mb-3 flex items-end justify-between gap-4"><div><h2 className="text-sm font-semibold">Saved accounts</h2><p className="mt-1 text-xs text-sp-muted">Check account health, repair access or disconnect. Accounts linked to a pending request show what verification will fulfill.</p></div>{loading && <Loader2 className="h-4 w-4 animate-spin text-sp-muted" />}</div>{data.connections.length === 0 ? <div className="connections-empty rounded-2xl border border-dashed border-sp-line px-5 py-6"><Plug className="mx-auto h-7 w-7 text-sp-muted" /><h3 className="mt-3 text-sm text-sp-muted">No accounts connected yet</h3><p className="mt-1 text-xs text-sp-muted">{data.providers.length ? 'Start by choosing a service below. You’ll review its setup before connecting.' : 'No supported services are available to connect right now.'}</p>{data.providers.length > 0 && <a href="#connection-services" className="connections-text-link">Choose a service <ArrowRight size={15} /></a>}</div> : <div className="connections-account-list">{data.connections.map(connection => { const catalog = data.providers.find(p => p.id === connection.provider); const setupRequest = savedSetupRequest(connection, data.requests); const reviewSetup = connection.guidance?.next_action === 'edit'; return <article key={connection.id} className="connections-account rounded-2xl p-5" style={{ background: 'rgb(var(--sp-panel-rgb, 10 16 29) / .86)', border: `1px solid ${connection.status === 'needs_attention' ? 'rgba(251,146,60,.3)' : 'rgb(var(--sp-ink-rgb, 255 255 255) / .08)'}` }}><div className="flex items-start justify-between gap-3"><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h3 className="truncate text-sm font-semibold">{connection.account_label}</h3></div><p className="mt-1 text-[11px] uppercase tracking-wider text-sp-muted">{catalog?.label ?? connection.provider}</p></div><StatusBadge status={connection.status} /></div><ConnectionAccountDetails connection={connection} provider={catalog} />
         <p className="mt-3 flex items-center gap-1.5 text-sm text-sp-muted"><ShieldCheck aria-hidden="true" className="h-3.5 w-3.5" />Last verified: {formatDate(connection.last_verified_at)}</p>
-        <ConnectionGuidance guidance={connection.guidance} compact={connection.status === 'connected'} />{setupRequest && <div className="mt-4 rounded-lg border border-sp-line p-3"><p className="text-sm font-medium">Linked setup request · {setupRequest.status}</p><RequestDetails request={setupRequest} /><p className="text-sm text-sp-muted">{setupRequest.status === 'pending' ? 'Successful verification will fulfill this request using this account.' : setupRequest.status === 'denied' ? 'Reopen this request under Denied requests before verifying this account.' : 'This request is already fulfilled. Verification only updates this account.'}</p></div>}<div className="mt-5 flex flex-wrap gap-2 border-t border-sp-line pt-4"><RateLimitButton onClick={() => { if (reviewSetup) openForm(connection.provider, undefined, connection.id); else void verify(connection); }} disabled={Boolean(busyKey) || setupRequest?.status === 'denied'} className="flex items-center gap-1.5 rounded-lg border border-sp-line px-3 py-2 text-[11px] text-sp-muted hover:bg-sp-ink/5 disabled:opacity-40">{busyKey === `verify-${connection.id}` ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}{setupRequest?.status === 'pending' ? `${connection.guidance?.action_label ?? 'Verify and fulfill'} (request #${setupRequest.id})` : connection.guidance?.action_label ?? 'Check access'}</RateLimitButton><button onClick={() => openForm(connection.provider, undefined, connection.id)} disabled={!catalog || Boolean(busyKey)} className="flex items-center gap-1.5 rounded-lg border border-sp-accent/15 px-3 py-2 text-[11px] text-sp-accent hover:bg-sp-accent/[.06] disabled:opacity-40"><RotateCcw className="h-3 w-3" />Edit connection</button><button onClick={event => { confirmationTrigger.current = event.currentTarget; setConfirm({ kind: 'disconnect', id: connection.id, label: connection.account_label }); }} disabled={Boolean(busyKey)} className="ml-auto flex items-center gap-1.5 rounded-lg px-3 py-2 text-[11px] text-sp-danger hover:bg-red-400/[.07] hover:text-sp-danger disabled:opacity-40"><Trash2 className="h-3 w-3" />Disconnect</button></div>{catalog?.capabilities?.subscriptions && <ConnectionSubscriptions connection={connection} busy={Boolean(busyKey)} onSave={resources => configureSubscriptions(connection.id, resources)} />}</article>; })}</div>}</section>
+        <ConnectionGuidance guidance={connection.guidance} compact={connection.status === 'connected'} />{setupRequest && <div className="mt-4 rounded-lg border border-sp-line p-3"><p className="text-sm font-medium">Linked setup request · {setupRequest.status}</p><RequestDetails request={setupRequest} /><p className="text-sm text-sp-muted">{setupRequest.status === 'pending' ? 'Successful verification will fulfill this request using this account.' : setupRequest.status === 'denied' ? 'Reopen this request under Denied requests before verifying this account.' : 'This request is already fulfilled. Verification only updates this account.'}</p></div>}<div className="mt-5 flex flex-wrap gap-2 border-t border-sp-line pt-4"><RateLimitButton onClick={() => { if (reviewSetup || setupRequest?.status === 'pending') openForm(connection.provider, undefined, connection.id); else void verify(connection); }} disabled={Boolean(busyKey) || setupRequest?.status === 'denied'} className="flex items-center gap-1.5 rounded-lg border border-sp-line px-3 py-2 text-[11px] text-sp-muted hover:bg-sp-ink/5 disabled:opacity-40">{busyKey === `verify-${connection.id}` ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}{setupRequest?.status === 'pending' ? `${connection.guidance?.action_label ?? 'Verify and fulfill'} (request #${setupRequest.id})` : connection.guidance?.action_label ?? 'Check access'}</RateLimitButton><button onClick={() => openForm(connection.provider, undefined, connection.id)} disabled={!catalog || Boolean(busyKey)} className="flex items-center gap-1.5 rounded-lg border border-sp-accent/15 px-3 py-2 text-[11px] text-sp-accent hover:bg-sp-accent/[.06] disabled:opacity-40"><RotateCcw className="h-3 w-3" />Edit connection</button><button onClick={event => { confirmationTrigger.current = event.currentTarget; setConfirm({ kind: 'disconnect', id: connection.id, label: connection.account_label }); }} disabled={Boolean(busyKey)} className="ml-auto flex items-center gap-1.5 rounded-lg px-3 py-2 text-[11px] text-sp-danger hover:bg-red-400/[.07] hover:text-sp-danger disabled:opacity-40"><Trash2 className="h-3 w-3" />Disconnect</button></div>{catalog?.capabilities?.subscriptions && <ConnectionSubscriptions connection={connection} busy={Boolean(busyKey)} onSave={resources => configureSubscriptions(connection.id, resources)} />}</article>; })}</div>}</section>
 
         <section id="connection-services"><div className="mb-3"><h2 className="text-sm font-semibold">Available services</h2><p className="mt-1 text-xs text-sp-muted">{data.providers.length ? 'Add another account for a service. Manage saved accounts above.' : 'No services are available to connect right now.'}</p></div><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{data.providers.map(item => <button key={item.id} onClick={() => openForm(item.id)} disabled={Boolean(busyKey)} className="group rounded-2xl p-4 text-left transition hover:-translate-y-0.5 disabled:opacity-40" style={{ background: 'rgb(var(--sp-panel-rgb, 10 16 29) / .72)', border: '1px solid rgb(var(--sp-ink-rgb, 255 255 255) / .08)' }}><div className="flex items-center justify-between"><div className="flex items-center gap-3"><div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sp-accent/[.09]"><Plug className="h-4 w-4 text-sp-accent" /></div><div><span className="block text-sm font-medium">{item.label}</span><span className="text-[10px] text-sp-muted">{data.connections.some(connection => connection.provider === item.id) ? 'Add another account' : 'Set up connection'}</span></div></div><ArrowRight className="h-3.5 w-3.5 text-sp-muted group-hover:text-sp-accent" /></div></button>)}</div></section>
 
@@ -471,9 +509,16 @@ export function ConnectionsPage() {
         <button type="button" className="mt-3 rounded-lg border border-sp-line px-3 py-2" onClick={() => authorizationAbort.current?.abort('owner_cancelled')}>Cancel sign-in</button>
       </div>}
         {formError && <p ref={formErrorRef} tabIndex={-1} role="alert" className="rounded-lg border border-sp-line p-4 text-sp-danger">{formError}</p>}
-        <ProviderForm key={`${provider.id}-${activeRequest ?? 'none'}-${activeConnection ?? 'new'}`} provider={provider} request={request} connection={connectionToEdit} connections={data.connections.filter(item => item.provider === provider.id)} onConfirm={confirmAuthorization} onFulfill={fulfillRequest} onEditConnection={id => openForm(provider.id, activeRequest, id)} busy={Boolean(busyKey)} onCancel={closeForm} onSubmit={payload => connectionToEdit ? updateConnection(payload as UpdateConnectionPayload) : create(payload as CreateConnectionPayload)} />
+        <ProviderForm key={`${provider.id}-${activeRequest ?? 'none'}-${activeConnection ?? 'new'}`} provider={provider} request={request} connection={connectionToEdit} connections={data.connections.filter(item => item.provider === provider.id)} approvalHint={approvalHint} onApprovalHintChange={setApprovalHint} onConfirm={confirmAuthorization} onFulfill={fulfillRequest} onEditConnection={id => openForm(provider.id, activeRequest, id)} busy={Boolean(busyKey)} onCancel={closeForm} onSubmit={payload => connectionToEdit ? updateConnection(payload as UpdateConnectionPayload) : create(payload as CreateConnectionPayload)} />
       </DialogContent>}
     </Dialog>
-    <AlertDialog open={Boolean(confirm)} onOpenChange={open => { if (!open && !busyKey) setConfirm(null); }}><AlertDialogContent onCloseAutoFocus={event => { if (confirmationTrigger.current?.isConnected) { event.preventDefault(); confirmationTrigger.current.focus(); } }} className="product-surface science-product-theme connections-dialog product-dialog max-h-[85dvh] overflow-y-auto border-sp-line bg-sp-panel text-sp-ink"><AlertDialogHeader><AlertDialogTitle className="break-words">{confirm?.kind === 'disconnect' ? `Disconnect ${confirm.label}?` : `Deny ${confirm?.label} request #${confirm?.id} for ${confirmationRequest?.metadata.access?.target || 'the unspecified target'}?`}</AlertDialogTitle><AlertDialogDescription className="text-sp-muted">{confirm?.kind === 'disconnect' ? `This permanently removes the saved connection and its encrypted credentials. It cannot be undone. ${disconnectNotice ?? 'Check the external service if you also need to revoke access there.'}` : `${currentSapiens.name} will be told this specific access request was denied. Other accounts and requests are unaffected.`}</AlertDialogDescription>{confirmationRequest && <RequestDetails request={confirmationRequest} />}</AlertDialogHeader><AlertDialogFooter><AlertDialogCancel disabled={Boolean(busyKey)} className="border-sp-line bg-transparent text-sp-ink hover:bg-sp-ink/5">Cancel</AlertDialogCancel><AlertDialogAction disabled={Boolean(busyKey) || retrySeconds > 0} onClick={event => { event.preventDefault(); if (!confirm) return; if (confirm.kind === 'disconnect') void disconnect(confirm.id); else { const item = data?.requests.find(r => r.id === confirm.id); if (item) void updateRequest(item, 'reject'); } }} className="connections-destructive">{busyKey ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : null}{confirm?.kind === 'disconnect' ? 'Disconnect permanently' : 'Deny request'}</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
+    <AlertDialog open={Boolean(confirm)} onOpenChange={open => { if (!open && !busyKey) setConfirm(null); }}><AlertDialogContent onCloseAutoFocus={event => { if (confirmationTrigger.current?.isConnected) { event.preventDefault(); confirmationTrigger.current.focus(); } }} className="product-surface science-product-theme connections-dialog product-dialog max-h-[85dvh] overflow-y-auto border-sp-line bg-sp-panel text-sp-ink"><AlertDialogHeader><AlertDialogTitle className="break-words">{confirm?.kind === 'disconnect' ? `Disconnect ${confirm.label}?` : `Deny ${confirm?.label} request #${confirm?.id} for ${confirmationRequest?.metadata.access?.target || 'the unspecified target'}?`}</AlertDialogTitle><AlertDialogDescription className="text-sp-muted">{confirm?.kind === 'disconnect' ? `This permanently removes the saved connection and its encrypted credentials. It cannot be undone. ${disconnectNotice ?? 'Check the external service if you also need to revoke access there.'}` : `${currentSapiens.name} will be told this specific access request was denied. Other accounts and requests are unaffected.`}</AlertDialogDescription>{confirmationRequest && <RequestDetails request={confirmationRequest} />}</AlertDialogHeader>
+      {confirm?.kind === 'deny' && <label className="block text-left">
+        <span className="mb-1.5 block text-sm text-sp-muted">Reason for denying (optional)</span>
+        <textarea name="denial_reason" autoComplete="off" rows={2} maxLength={1000} value={denialReason}
+          onChange={event => setDenialReason(event.target.value)} disabled={Boolean(busyKey)} aria-describedby="denial-reason-help"
+          className="w-full resize-y rounded-lg border border-sp-line bg-sp-panel px-3 py-2 text-sm text-sp-ink" />
+        <span id="denial-reason-help" className="mt-1 block text-sm text-sp-muted">Shared with Sapien. No passwords or keys.</span>
+      </label>}<AlertDialogFooter><AlertDialogCancel disabled={Boolean(busyKey)} className="border-sp-line bg-transparent text-sp-ink hover:bg-sp-ink/5">Cancel</AlertDialogCancel><AlertDialogAction disabled={Boolean(busyKey) || retrySeconds > 0} onClick={event => { event.preventDefault(); if (!confirm) return; if (confirm.kind === 'disconnect') void disconnect(confirm.id); else { const item = data?.requests.find(r => r.id === confirm.id); if (item) void updateRequest(item, 'reject', denialReason); } }} className="connections-destructive">{busyKey ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : null}{confirm?.kind === 'disconnect' ? 'Disconnect permanently' : 'Deny request'}</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
   </div>;
 }

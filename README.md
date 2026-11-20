@@ -40,9 +40,24 @@ continue after disconnect. The frontend never generates, receives or stores priv
 Pending requests show a compact service, target and reason summary. **Review**
 opens the shared connection form in a dialog without moving the list. Full request
 requirements, account selection, setup guidance and errors stay together there.
+The request reason, target, operations, selected identity and access limits stay
+visible. Owners choose an existing account or **Connect another account**; only
+the chosen setup path is shown. General explanations use the shared help
+disclosures, while errors, recovery status, public keys and permission choices
+remain visible. The optional hint stays open beside the approval controls.
 Closing returns focus to the original control; clicking outside does not discard
 form input. Saved accounts that still need setup remain open for the next step,
 including public-key installation. Completed connections close the dialog.
+
+Owners may add a **Hint for Sapien (optional)** before approving a request or a
+**Reason for denying (optional)** in the denial dialog. These are request-specific,
+limited to 1,000 characters, and shared with Sapien; never enter credentials here.
+Hints remain in the open form through account selection, setup and verification
+failures, and are recorded only when approval succeeds. Closing the form or
+changing requests discards the draft. Saved-account actions linked to pending
+requests open the review form first. Recorded hints appear under fulfilled requests;
+denial reasons appear with denied requests. The backend carries them in the same
+Awareness event as the decision; reopening clears the previous current response.
 
 Providers with `browser_authorization` use the shared sign-in flow. GitLab opens
 its own consent page and returns directly to the backend OAuth callback. The backend
@@ -78,7 +93,8 @@ values without knowing which service produced them. Failed verification shows
 recovery guidance; descriptions distinguish authentication from task permissions.
 Saved accounts show identity and access limits once. Technical IDs and filters stay
 under Advanced details; verified accounts collapse supplementary setup instructions,
-while incomplete setup keeps its steps visible. Provider `choice_details` supplies
+while incomplete setup keeps recovery status and public values visible. In the
+review dialog, detailed setup procedures remain available under help. Provider `choice_details` supplies
 readable labels and selected-option explanations without changing submitted values.
 Administrators remain responsible for external setup where the provider says it is
 needed. Guidance alone does not add sign-in or provisioning; browser authorization

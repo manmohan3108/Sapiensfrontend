@@ -89,7 +89,9 @@
 .connection-optional { border-top:1px solid var(--sp-line); padding-top:12px; }
 .connection-optional summary { padding:4px 0; min-height:36px; }
 .connection-next-step { margin-top:16px; font-size:14px; line-height:1.5; color:var(--sp-muted); }
-.connections-ssh-form .connections-form-actions { border-top:1px solid var(--sp-line); padding-top:12px; margin-top:12px; }
+.connection-review-section { margin-top:16px; padding-top:16px; border-top:1px solid var(--sp-line); }
+.connections-review .connections-form-actions { border-top:1px solid var(--sp-line); padding-top:12px; margin-top:16px; }
+.connections-review .connection-review-section > .connection-setup:first-child { margin-top:0; }
 #connections-heading:focus { outline:none; }
 @media(max-width:600px) {
  .connections-request-row { flex-direction:column; align-items:stretch; gap:12px; padding:16px; }
