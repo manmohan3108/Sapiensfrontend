@@ -414,139 +414,166 @@ export const researchArticles: Partial<Record<string, ResearchArticle>> = {
     ]
   },
   "architecture-overview": {
-    "opening": "How can several mechanisms contribute to one continuing individual without duplicating decisions or losing information between them? Sapiens separates responsibilities so that the interaction of mechanisms can be examined and revised.",
+    "opening": "Understanding a situation can involve remembering what happened, considering different possibilities and deciding whether to act. How could we bring these functions together in Sapiens? Our research explores whether their cooperation can support abilities that are harder to explain by looking at each function alone.",
     "sections": [
       {
-        "title": "Separate the questions each function answers",
-        "text": "Choosing what to do, carrying it out and deciding what the result means are different jobs. Awareness owns consideration and assessment. Motor executes tools. Conversation owns transcripts and delivery. Goals interprets progress toward desired outcomes. These are cooperating functions within one Sapien, not a collection of independent characters."
+        "title": "Why build cooperating functions?",
+        "text": "Our neuroscience foundations describe ideas about attention, memory and learning that guide us. In Sapiens, we give different functions clear responsibilities so we can examine what each contributes and how they affect one another. We call these parts engines. The divisions are software choices for our investigation; they do not mean each engine corresponds to a separate brain region."
       },
       {
-        "title": "Keep information with its owner",
-        "text": "Long-term memories, active context, goals and learned tool guidance have different lifecycles. Each owner retains its records and exposes a defined way to use them. References connect those records without requiring every engine to copy or rewrite another engine’s state."
+        "title": "One situation, several kinds of work",
+        "text": "For example, imagine a colleague says a project may be delayed because an important review is unfinished. A useful response could depend on earlier discussions, what the review is meant to establish and whether someone has already offered to arrange it. Recalling that history, considering its meaning and asking a question are different kinds of work. We want to investigate how they can support one another as the situation develops."
       },
       {
-        "title": "Coordinate immediate and background work",
-        "text": "Some information is needed during a decision; other work, such as enriching memories, can run later. A shared communication layer, the Bus, carries requests and events; background jobs manage scheduling and retries. Delivering an event does not establish that the recipient has understood it or completed the work."
+        "title": "Giving each function a responsibility",
+        "text": "Awareness considers the current situation, chooses a response and assesses what happened. Engram retains and recalls experience. Goals maintains desired outcomes and evaluates progress. Motor carries out tool operations, while Conversation manages messages and their delivery. These functions belong to the same Sapien. Their separate responsibilities help distinguish a decision from its execution, and an observed result from an interpretation of that result."
       },
       {
-        "title": "Make the boundaries inspectable",
-        "text": "This organization lets us trace a decision from incoming evidence through action and later interpretation. It also creates responsibilities that must be wired correctly: information stored by one function is useful elsewhere only when a consumer actually receives and uses it. The deep dives distinguish active connections from experimental components that remain disconnected."
+        "title": "Cooperation continues over time",
+        "text": "Not all work happens during the immediate response. Some memory processing and learning run later as background jobs. The engines exchange requests and observations through a shared communication layer called the Engine Bus. Each engine owns its records and provides agreed ways for other functions to use them. In the review example, asking a question now and learning from a later answer can therefore involve different functions at different times."
+      },
+      {
+        "title": "What this design lets us investigate",
+        "text": "Separating responsibilities makes it possible to inspect where useful information influenced a decision and where it failed to reach the next function. It also creates difficulties: extra processing can take time, handoffs can lose context, and several functions can repeat the same work. Our question is whether their cooperation helps a Sapien understand and adapt across situations. Connecting them gives us a way to study that question; it does not establish emergence."
       }
     ],
     "related": [
+      "emergence",
+      "inspiration",
       "identity",
       "process",
-      "connections",
-      "language-models"
+      "awareness",
+      "evaluation"
     ]
   },
   "identity": {
-    "opening": "How can a system use different processing functions while preserving one perspective and recognizing other people’s words as their own? The shared-self design addresses this practical consequence of the questions raised in Self and agency.",
+    "opening": "If different functions remember, reason and act, what makes them parts of the same individual? We want to study how one Sapien develops through its encounters over time. That requires a consistent way to represent whose experience, words and actions each function is handling.",
     "sections": [
       {
-        "title": "The same individual across functions",
-        "text": "A Sapien has a stable identity reference and a current name. Relevant prompts receive common guidance that interpreting, remembering and acting belong to that individual. An instruction addressed to a processing function does not give that function a separate personal identity."
+        "title": "One individual, different functions",
+        "text": "In “Why experience and individuality matter,” we explain why continuity is part of our research. Here, the design question is how to preserve that continuity across the system. Remembering a conversation and deciding how to answer it are functions of the same Sapien. An engine does not acquire another identity just because it receives its own instructions or makes a separate language-model call."
       },
       {
-        "title": "Quoted words keep their speaker",
-        "text": "If a colleague writes “I will contact the customer,” the first person refers to the colleague. When the Sapien later reads that message, it should not remember the statement as its own commitment. Speaker, recipient and source context therefore accompany the content they explain."
+        "title": "Whose commitment is it?",
+        "text": "Return to the example of an unfinished project review. Suppose the colleague adds, “I’ll arrange the review.” The word “I” belongs to that colleague. When Sapiens processes or later recalls the message, it should retain who made the commitment. Otherwise, another person’s promise could become a false memory of what the Sapien agreed to do. Keeping the speaker and source beside the message helps preserve that distinction."
       },
       {
-        "title": "Identity and role are different",
-        "text": "A workplace role describes responsibilities and authority in a setting. It does not replace the individual’s identity, and it does not transfer another person’s authority merely because their message is being processed. Current self-context and historical attribution serve different purposes and must remain distinguishable."
+        "title": "Identity is not the same as a role",
+        "text": "A role describes responsibilities in a particular setting. A Sapien supporting a project may help coordinate work without having authority to approve a review. Reading an approver’s message does not transfer that authority. The design therefore needs to distinguish the individual, its current responsibilities and the people it encounters. These distinctions matter both when choosing an action and when interpreting what happened afterward."
       },
       {
-        "title": "What the shared guidance does",
-        "text": "The identity package supplies reusable prompt guidance and current identity through composition. It is not a second personality engine or a new memory store. Clear presentation reduces an avoidable source of confusion, but model interpretation remains fallible; source-aware records and outcome inspection are still necessary."
+        "title": "How we represent the shared self",
+        "text": "A Sapien has a stable identity reference and a current name. Relevant model calls receive shared guidance explaining that the engines belong to that individual and that quoted words keep their original speaker. Records also retain source information where available. This gives the system a consistent basis for interpreting experience; it does not ensure that every model response will interpret it correctly."
+      },
+      {
+        "title": "Continuity without a fixed story",
+        "text": "A continuing perspective should still allow revision. A Sapien might first understand that a review is waiting to be arranged, then receive evidence that it has already happened. Its earlier understanding and the newer report need to remain distinguishable. Our interest is whether a consistent perspective helps experience remain meaningful as understanding changes. This design represents continuity and attribution; it is not evidence of personhood or subjective experience."
       }
     ],
     "related": [
       "continuity",
+      "process",
       "connections",
       "awareness",
       "memory"
     ]
   },
   "process": {
-    "opening": "What should happen between encountering information and acting on it? A continuing system needs room to understand the situation, decide whether anything is needed, observe what an action actually did and retain what remains unresolved.",
+    "opening": "What happens between encountering something and deciding how to respond? Information may call for a question, a closer look, a change of plan or no immediate action. In Sapiens, we want to study how the situation and the experience available at that moment shape what happens next.",
     "sections": [
       {
-        "title": "An event becomes a possible focus",
-        "text": "A conversation message, a due review or another observation can supply information for Awareness. The input carries content with its source and supporting context. Preparation interprets what may need consideration; that interpretation remains distinct from the original event. Periodic consideration can also select a focus or find no useful next step."
+        "title": "An encounter becomes something to consider",
+        "text": "Imagine a colleague reports that a project may be delayed because a review is unfinished. Conversation records the message and requests consideration from Awareness, with its source and relevant conversation context. Awareness prepares an interpretation while keeping the original message distinct. A message is one starting point: a scheduled review or a periodic run can also bring a remembered concern into consideration."
       },
       {
-        "title": "Consider, then act or wait",
-        "text": "The controller receives the selected situation, relevant context and available capabilities. It can choose actions, communication or waiting. When it requests a tool, Motor performs the execution and returns the result. Further decisions can use that result within the same bounded cycle."
+        "title": "Making sense of the situation",
+        "text": "Awareness receives selected context and information about the capabilities currently available. In this example, useful context might include why the review matters and whether someone has already agreed to arrange it. That information can affect whether another question would help or merely repeat an earlier exchange. Retrieval and preparation determine what reaches the decision; useful information elsewhere in storage is not automatically part of this consideration."
       },
       {
-        "title": "Execution and assessment",
-        "text": "A tool may succeed, fail before execution or leave an uncertain outcome. Awareness assesses what this evidence means for the concern it was addressing. Sending a question, receiving an answer and completing the wider task are separate developments; one does not automatically imply the others."
+        "title": "Choosing an action or a reason to wait",
+        "text": "A reasonable response might be to ask what is blocking the review, consult an available record or wait for an answer already requested. The choice depends on the evidence, responsibilities and capabilities available. These are illustrative possibilities, not a fixed sequence written for this scenario. Awareness can also reconsider a choice after a tool result supplies new information."
       },
       {
-        "title": "What continues afterward",
-        "text": "Conversation handles outward delivery and its record. Other engines consume relevant events through their existing connections: Goals may evaluate unfinished work, while memory and learning jobs can process experience later. An assessment is therefore a handoff of evidence, not a promise that every background interpretation or future action has already happened."
+        "title": "Finding out what actually happened",
+        "text": "When Awareness selects a tool operation, Motor validates its inputs and attempts execution. Conversation manages ordinary reply delivery through the appropriate route. A generated message, a confirmed send and a useful answer are different events. If the Sapien asks about the review, successful delivery establishes that the question was sent; it does not establish that the review is complete or the delay resolved."
+      },
+      {
+        "title": "Carrying the outcome forward",
+        "text": "Awareness assesses the result and retains what it understood, including uncertainty and unfinished work. Relevant outcomes can then reach other engines through the Bus. Goals interprets evidence about ongoing work, while memory and learning processes retain or examine experience. These later steps may run in the background after the immediate response. Our research asks whether this continuing exchange helps later decisions use what actually happened, rather than repeatedly starting from an incomplete account."
       }
     ],
     "related": [
+      "connections",
       "awareness",
       "motor-conversation",
       "goals",
       "hold",
-      "connections"
+      "action-feedback"
     ]
   },
   "connections": {
-    "opening": "How can information pass between functions without losing who said it, what happened or what a later interpretation refers to? The architecture needs both a way to transport information and a way to preserve its meaning over time.",
+    "opening": "How can information remain useful as it moves between functions and is revisited later? Remembering some words is not always enough. Our investigation depends on preserving what they refer to and making the relevant details available when another function needs them.",
     "sections": [
       {
-        "title": "Facts beside their context",
-        "text": "An incoming message has text, a speaker, an audience and a time when known. A tool result belongs to a particular attempted operation. We carry that context beside the original content, rather than replacing the content with a summary whose attribution is unclear. Derived interpretations can then remain identifiable as interpretations."
+        "title": "Meaning depends on context",
+        "text": "Suppose a colleague later says, “The review is finished.” Which review, for which project, and when? Who is reporting it? In the unfinished-review example, those details help connect the new message to the earlier concern. Without them, a clear sentence can still lead to the wrong conclusion. Sapiens carries available source, subject and time information beside the content it describes."
       },
       {
-        "title": "Transport and durable references",
-        "text": "The Engine Bus is the system’s communication layer. It carries defined requests and events between functions. Shared memory references identify records owned elsewhere, and registered readers resolve supported references when needed. A delivery identifier and a record reference answer different questions: one traces transport, while the other identifies information that can be revisited."
+        "title": "Keep the report and the interpretation distinct",
+        "text": "The colleague’s message is a report. “The project may now proceed” is a possible interpretation, and “Tell the team” is a proposed action. They have different meanings and may need different evidence. Preserving those distinctions lets a later engine reconsider the interpretation without losing what the colleague actually said. A derived summary should remain identifiable as a summary, with a supported route back to its retained source."
       },
       {
-        "title": "A link offers context, not a decision",
-        "text": "Suppose an outgoing question relates to an existing goal. A later response may carry enough history or references to help Awareness recognize that connection. The reference does not prove the response completes the goal. The relevant engine must still interpret the evidence, and missing or ambiguous relationships must remain uncertain."
+        "title": "Sharing records without copying everything",
+        "text": "Engines keep different records, including conversations, memories, goals and tool results. The Engine Bus carries requests and events between them. A shared reference identifies a record and the kind of source that owns it; the resolver uses that information to ask the appropriate service for its content. This allows another engine to revisit supported records without needing to know how they are stored."
       },
       {
-        "title": "Bounded access",
-        "text": "The system uses explicit, bounded retrieval rather than assuming every reference will expand into all connected history. Prompt construction presents identified originals with clear references to repeated copies where supported. This makes information available more efficiently, but neither storage nor transport guarantees that the right context will be selected."
+        "title": "Making information available for a decision",
+        "text": "A reference alone does not explain a record to the language model. The relevant content must be retrieved and included in the material supplied for reasoning. The system selects relevant material within size limits and can use prepared summaries while retaining originals. Where supported, repeated content within a prompt can point to one clearly identified copy. Missing context must remain visible as a limitation rather than being filled in with assumptions."
+      },
+      {
+        "title": "A connection still needs interpretation",
+        "text": "Linking the completed review to an existing goal helps identify what the new evidence concerns. It does not prove that the entire goal is finished: other requirements may remain. The receiving engine must interpret the evidence within that scope. We study these handoffs because an apparently poor decision can begin with missing or misattributed information, before reasoning about the situation even starts."
       }
     ],
     "related": [
       "identity",
       "process",
+      "language-models",
+      "memory",
       "working-memory-engine",
-      "goals",
-      "findings"
+      "goals"
     ]
   },
   "language-models": {
-    "opening": "What does a language model contribute to Sapiens, and what must the surrounding system provide? Understanding that division is essential when deciding whether a behaviour comes from the model, the supplied context or interactions across the architecture.",
+    "opening": "Which abilities come from the language model, and what are we investigating through the system around it? Sapiens uses models that already bring substantial language and reasoning abilities. Understanding their contribution is essential when asking what our architecture and accumulated experience add.",
     "sections": [
       {
-        "title": "Language and interpretation",
-        "text": "Models help interpret messages, prepare context, propose decisions and assess evidence. Different tasks can use different prompts and output contracts. The model’s existing capabilities matter greatly: an architecture cannot take credit for every useful response it receives from an already capable model."
+        "title": "What the model brings",
+        "text": "Language models help interpret messages, relate information, propose actions and assess outcomes. Sapiens uses these abilities in several functions, with instructions and context suited to each purpose. The engines are not individually trained replicas of brain functions. They are software components that organize different kinds of processing, some of which use a language model and some of which do not."
       },
       {
-        "title": "State beyond a single call",
-        "text": "The surrounding system supplies selected history, current identity, capabilities and relevant records. It also persists experiences and schedules later work. These mechanisms determine what a particular call can consider; information absent from its input cannot be assumed to have influenced its decision."
+        "title": "What the surrounding system supplies",
+        "text": "Sapiens retains records between calls and selects material for current consideration. A call can receive the Sapien’s identity, relevant history, current information and definitions of available tools. The system also manages external connections and schedules later work. This organization affects what the model can consider about that Sapien’s experience; a stored event cannot influence a call through context if it never reaches that call."
       },
       {
-        "title": "Proposals must meet the world",
-        "text": "A model can propose a tool call, but the tool layer validates arguments and attempts execution. A well-formed response is not necessarily a correct interpretation, and successful execution is not necessarily progress. The architecture keeps these distinctions visible so later reasoning can use actual outcomes."
+        "title": "Following the review example",
+        "text": "When a colleague reports a possible delay, the model may interpret the message and propose asking about the unfinished review. Retrieved history could reveal that the question was already asked, changing what response makes sense. The surrounding system checks and attempts the selected operation, then records the result. A later model call can then consider that result. This illustrates how model reasoning and recorded experience contribute at different points."
       },
       {
-        "title": "What changes through experience",
-        "text": "Sapiens can retain memories and practical guidance for later calls without changing model weights. This is one form of adaptation at the system level. Comparisons must therefore account for the model, the prompt, accessible experience and computation together; changing the model can alter behaviour even when the surrounding architecture stays the same."
+        "title": "Learning without retraining the model",
+        "text": "Sapiens can retain memories, revised understandings and practical guidance for later calls without changing the model’s trained parameters. Those records can change the information presented in a new situation. We investigate when that makes experience useful and when it preserves a mistaken conclusion or irrelevant detail. Storing more information is not, by itself, evidence that the system has learned something useful."
+      },
+      {
+        "title": "What we need to compare",
+        "text": "A good response may come largely from the model’s existing abilities. It may also depend on a useful prompt, retrieved experience, a tool result or additional processing. To understand our contribution, we need comparisons that examine these factors rather than attributing every success to the architecture. The engine articles explain our individual mechanisms; the experiments section asks what evidence could show whether they help understanding and adaptation over time."
       }
     ],
     "related": [
       "architecture-overview",
       "awareness",
+      "memory",
       "tool-learning",
+      "experience-evaluation",
       "alternative-explanations"
     ]
   },

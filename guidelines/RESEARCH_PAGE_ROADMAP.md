@@ -227,13 +227,28 @@ the engine article owns our implementation.
 
 ### 3. Sapiens architecture — our overall design choices
 
-| Topic | What belongs here | Sapiens research connection and boundary |
+This section asks: **How are we turning our research ideas into a system we can
+study?** Follow the sequence **organization → shared individual → unfolding
+behaviour → information continuity → model and system contributions**.
+
+Use one illustrative situation where helpful: a colleague reports a possible
+project delay because an important review is unfinished. Each article examines
+a different aspect; do not retell the whole sequence five times or present it
+as an observed simulation result. The example supports the broader research
+question, rather than narrowing intelligence to project management.
+
+| Topic and opening question | Content flow | Boundary and connections |
 | --- | --- | --- |
-| `architecture-overview` — Bringing functions together | Why separate responsibilities, how they cooperate and the trade-offs | Show how our hypothesis informs design. Link to engines; connection alone is not evidence of emergence |
-| `identity` — Identity and the shared self | How the design represents one Sapien, supplies its identity and preserves other speakers' perspectives | Translate the position in “Why experience and individuality matter” into design. Keep its philosophical arguments there and verify implementation claims |
-| `process` — From experience to action | One representative experience through consideration, action or waiting, and assessment | Make the experience–behaviour relationship concrete. Link to owners; avoid exhaustive code walkthroughs |
-| `connections` — Preserving and sharing information | Why source, context, references and retrieval matter; how information becomes available to consumers | Explain a condition the investigation depends on. Keep API schemas and internal plumbing in technical documentation |
-| `language-models` — What the model contributes | Roles of the model and surrounding system in reasoning, memory, tools and ongoing activity | Clarify the basis of our experiments. Link to alternatives; do not attribute a model's existing abilities to our architecture |
+| `architecture-overview` — Bringing functions together. How could remembering, considering and acting work together in Sapiens? | Why cooperating functions → the different work involved in the example → engine responsibilities → immediate and background cooperation → research value and trade-offs | Own the overall organization. Explain engines as software functions, not brain regions. Link to emergence, inspirations, shared identity, the action flow and evaluation; leave engine internals to deep dives. |
+| `identity` — Identity and the shared self. What makes different functions parts of one individual? | Continuity across functions → the colleague’s “I’ll arrange the review” remains their commitment → identity versus role and authority → shared identity guidance and source attribution → revisable understanding | Own the design interpretation of individuality. Link back to `continuity`, and onward to information sharing, Awareness and memory. Do not repeat the philosophical argument or imply subjective experience. |
+| `process` — From experience to action. What happens between encountering information and deciding how to respond? | Encounter and context → making sense of the possible delay → choosing to investigate, communicate or wait → actual execution and results → assessment and later consideration | Own the sequence, including periodic or scheduled starting points. Distinguish asking, confirmed delivery, receiving an answer and resolving the concern. Link to Awareness, Motor/Conversation, Goals, Hold and Feedback; avoid a code walkthrough. |
+| `connections` — Preserving and sharing information. How does information remain useful across functions and time? | “The review is finished” needs source and subject context → original report versus interpretation and proposed action → records, Bus and shared references → retrieval and presentation for reasoning → interpreting what the connection means | Own information continuity and availability. Explain references in plain language; no API schemas or database tutorial. A link is not proof of completion, and storage is not automatic availability. Link to identity, memory, Working Memory, Goals and model inputs. |
+| `language-models` — What the language model contributes. What comes from the model and what are we investigating through the surrounding system? | Existing model abilities → context, records, tools and scheduling supplied by Sapiens → division of work in the example → retained experience without model retraining → comparisons needed to assess our contribution | Own the division of contribution, not a model ranking or superiority claim. Link to engine deep dives and experience evaluation/alternative explanations. Keep proposed comparisons distinct from findings. |
+
+Verify implementation claims against current code and composition before
+rewriting. Use plain language, explain each design choice through its purpose,
+and keep current mechanisms, illustrative possibilities and research questions
+distinguishable. Preserve the existing article routes and reading order.
 
 ### 4. Engine deep dives — specific questions and our approach
 
