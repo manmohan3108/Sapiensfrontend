@@ -202,12 +202,12 @@ export function useSapiens() {
     }
   }, [currentSapiens, setStatus, setChatMessages]);
 
-  const loadChat = useCallback(async (threadId: string) => {
+  const loadChat = useCallback(async (threadId: string, signal?: AbortSignal) => {
     if (!currentSapiens) return;
     const version = resourceSession.version;
     const previousThread = useSapiensStore.getState().chatSessionId;
-    const detail = await sapiensService.getChatDetail(currentSapiens.id, threadId);
-    if (resourceSession.version !== version || useSapiensStore.getState().chatSessionId !== previousThread) return;
+    const detail = await sapiensService.getChatDetail(currentSapiens.id, threadId, signal);
+    if (signal?.aborted || resourceSession.version !== version || useSapiensStore.getState().chatSessionId !== previousThread) return;
     setChatMessages(chatMessages(detail));
     setChatSessionId(detail.thread_id);
     setLastMemoryUnits([]);

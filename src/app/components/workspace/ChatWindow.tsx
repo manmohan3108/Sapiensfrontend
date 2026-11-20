@@ -435,6 +435,7 @@ export function ChatWindow() {
   const pausedWarningOpen = paused && pausedWarning?.key === pausedWarningKey
     && pausedWarning.sessionId === chatSessionId && pausedWarning.version === resourceSession.version;
   const replying = !chatUpdates.error && msgs.some(message => message.turnStatus === 'replying');
+  const historyRequest = useRef(0);
 
   useEffect(() => {
     setPausedWarning(null);
@@ -442,24 +443,55 @@ export function ChatWindow() {
 
   const refreshHistory = useCallback(async () => {
     if (!currentSapiens) return;
+    const request = ++historyRequest.current;
+    const version = resourceSession.version;
+    const isCurrent = () => request === historyRequest.current && version === resourceSession.version
+      && useSapiensStore.getState().currentSapiens?.id === currentSapiens.id;
     setHistoryLoading(true);
     setHistoryError(null);
     try {
       const result = await sapiensService.getChatHistory(currentSapiens.id);
+      if (!isCurrent()) return;
       setHistory(result.chats ?? []);
+      return result.chats ?? [];
     } catch (error) {
+      if (!isCurrent()) return;
       setHistoryError((error as ApiError).message || 'Could not load chat history.');
     } finally {
-      setHistoryLoading(false);
+      if (isCurrent()) setHistoryLoading(false);
     }
   }, [currentSapiens]);
 
   useEffect(() => {
-    startNewChat();
+    const controller = new AbortController();
     setHistory([]);
     setHistoryOpen(false);
-    void refreshHistory();
-  }, [currentSapiens?.id]); // Reset the conversation when the selected sapien changes.
+    if (!currentSapiens) {
+      setDetailLoading(false);
+      setHistoryLoading(false);
+      return;
+    }
+    setDetailLoading(true);
+    void (async () => {
+      try {
+        const chats = await refreshHistory();
+        if (controller.signal.aborted || !chats) return;
+        // Keep an explicitly opened conversation or an in-progress local message.
+        const state = useSapiensStore.getState();
+        if (state.chatSessionId || state.chatMessages.length) return;
+        const latest = [...chats].sort((a, b) => (Date.parse(b.updated_at) || 0) - (Date.parse(a.updated_at) || 0))[0];
+        if (latest) {
+          await loadChat(latest.thread_id, controller.signal);
+          atBottomRef.current = true;
+        }
+      } catch (error) {
+        if (!controller.signal.aborted) setHistoryError((error as ApiError).message || 'Could not open the latest conversation. Select a conversation to retry.');
+      } finally {
+        if (!controller.signal.aborted) setDetailLoading(false);
+      }
+    })();
+    return () => { controller.abort(); historyRequest.current += 1; };
+  }, [currentSapiens?.id]); // Choose the latest conversation once per Sapien, not on history refresh.
 
   const selectChat = async (threadId: string) => {
     if (detailLoading || isProcessing) return;
@@ -518,7 +550,7 @@ export function ChatWindow() {
 
   const send = async (confirmedPaused = false) => {
     const t = input.trim();
-    if (!t || isProcessing || inactive || sending.current || retrySeconds > 0) return;
+    if (!t || detailLoading || isProcessing || inactive || sending.current || retrySeconds > 0) return;
     if (pausedWarningOpen && !confirmedPaused) return;
     if (paused && !confirmedPaused && !hasSeenPausedChatWarning(pausedWarningKey)) {
       rememberPausedChatWarning(pausedWarningKey);
@@ -632,7 +664,7 @@ export function ChatWindow() {
           style={{ background: 'linear-gradient(to bottom, rgb(var(--sp-panel-rgb, 8 12 22) / 0.6), transparent)' }} />
         <div ref={scrollRef} onScroll={handleScroll}
           className="workspace-scrollbar h-full overflow-y-auto px-4 py-3 space-y-4">
-          {msgs.length === 0
+          {detailLoading && msgs.length === 0 ? <p role="status" className="px-2 py-4 text-sm text-sp-muted">Loading conversation…</p> : msgs.length === 0
             ? <EmptyState name={currentSapiens?.name ?? 'Sapiens'} recent={latestChat} onResume={() => latestChat && void selectChat(latestChat.thread_id)} loading={detailLoading || isProcessing} onHint={(h) => { setInput(h); textareaRef.current?.focus(); }} />
             : (
               <>
@@ -720,7 +752,7 @@ export function ChatWindow() {
             placeholder={inactive ? 'Enable chat or activate this Sapien…' : isProcessing ? 'Sending…' : `Message ${currentSapiens?.name ?? 'Sapiens'}…`}
             aria-label={`Message ${currentSapiens?.name ?? 'Sapiens'}`}
             aria-describedby={paused ? pausedNoticeId : undefined}
-            disabled={isProcessing || inactive} rows={1}
+            disabled={detailLoading || isProcessing || inactive} rows={1}
             className="flex-1 resize-none overflow-y-auto bg-transparent border-none outline-none
               min-h-[36px] max-h-[140px] px-2 py-2 text-sm text-sp-ink placeholder:text-sp-muted
               leading-relaxed disabled:opacity-40"
@@ -730,7 +762,7 @@ export function ChatWindow() {
           {/* Chat button — /api/chat */}
           <button
             onClick={() => send()}
-            disabled={!input.trim() || isProcessing || inactive || retrySeconds > 0}
+            disabled={!input.trim() || detailLoading || isProcessing || inactive || retrySeconds > 0}
             aria-describedby={retrySeconds > 0 ? 'chat-rate-limit' : undefined}
             title="Send message (Enter)" aria-label="Send message"
             className="flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200 active:scale-95 disabled:cursor-not-allowed"
