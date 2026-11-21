@@ -1,4 +1,5 @@
 import { ChatMessageEditor, type EditChatMessage } from './ChatMessageEditor';
+import { LinkifiedText } from '../shared/LinkifiedText';
 import { useRateLimitCountdown } from '../../core/api/rateLimits';
 import { quotaSummary, quotaReset, quotaRecovery } from '../../utils/quotaPresentation';
 import { ConversationHistory } from './ConversationHistory';
@@ -294,7 +295,7 @@ function MessageBubble({
             className="px-4 py-3 rounded-2xl rounded-tr-sm text-sm leading-relaxed text-sp-ink"
             style={{ background: 'var(--sp-recessed)', border: '1px solid var(--sp-line)' }}
           >
-            <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+            <p className="whitespace-pre-wrap break-words"><LinkifiedText text={msg.content ?? ''} /></p>
           </div>
         ) : (
           <>
@@ -308,7 +309,7 @@ function MessageBubble({
             >
               {msg.isLoading
                 ? <TypingDots name={sapienName} />
-                : <p className="whitespace-pre-wrap break-words">{msg.content ?? ''}</p>
+                : <p className="whitespace-pre-wrap break-words"><LinkifiedText text={msg.content ?? ''} /></p>
               }
             </div>
 
