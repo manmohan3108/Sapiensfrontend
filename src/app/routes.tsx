@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate } from 'react-router';
 import { LandingPage } from './pages/LandingPage';
 import { WorkspacePage } from './pages/WorkspacePage';
 import { ConnectionsPage } from './pages/ConnectionsPage';
+import { ProfilePage } from './pages/ProfilePage';
 import { ConnectionAuthorizationReturn } from './pages/ConnectionAuthorizationReturn';
 import { AnalysePage } from './pages/AnalysePage';
 import { SimulationLabPage } from './pages/SimulationLabPage';
@@ -21,6 +22,7 @@ function RoleHome() {
 }
 
 export const router = createBrowserRouter([
+  { Component: () => <ProtectedRoute selection={false} />, children: [{ path: '/account/profile', Component: ProfilePage, ErrorBoundary }] },
   { path: '/connection-return', Component: ConnectionAuthorizationReturn, ErrorBoundary },
   { path: '/', Component: ScienceLandingPage, ErrorBoundary },
   { path: '/research', Component: ResearchPage, ErrorBoundary },

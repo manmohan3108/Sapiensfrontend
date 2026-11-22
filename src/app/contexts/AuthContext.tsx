@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { authenticatedFetch, authSession, HttpError, parseAuthResponse, resourceSession } from '../core/auth/authSession';
 import { toast } from 'sonner';
 import { selectionStorage } from '../core/auth/selectionStorage';
-import type { AuthCredentials, AuthUser, RegistrationCredentials, TokenPair } from '../types/authTypes';
+import type { AccountProfile, AuthCredentials, AuthUser, RegistrationCredentials, TokenPair } from '../types/authTypes';
 import { useSapiensStore } from '../core/state/sapiensStore';
 import { backendFetch, isTemporaryBackendFailure, recoverPageWhenAvailable } from '../core/api/backendAvailability';
 
@@ -15,6 +15,7 @@ interface AuthContextValue {
   login: (credentials: AuthCredentials) => Promise<AuthUser>;
   register: (credentials: RegistrationCredentials) => Promise<AuthUser>;
   logout: () => Promise<void>;
+  saveProfile: (profile: AccountProfile) => Promise<AuthUser>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -152,7 +153,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch { setNotice('Signed out on this device. The server could not be reached to revoke the session.'); }
   }, [clearSession]);
 
-  const value = useMemo(() => ({ status, user, notice, login, register, logout }), [status, user, notice, login, register, logout]);
+  const saveProfile = useCallback(async (profile: AccountProfile) => {
+    const saved = await parseAuthResponse<AuthUser>(await authenticatedFetch(authSession.url('me/'), {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(profile), signal: AbortSignal.timeout(30_000),
+    }));
+    setUser(current => current?.user_id === saved.user_id ? saved : current);
+    return saved;
+  }, []);
+
+  const value = useMemo(() => ({ status, user, notice, login, register, logout, saveProfile }), [status, user, notice, login, register, logout, saveProfile]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

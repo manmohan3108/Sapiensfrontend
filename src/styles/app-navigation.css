@@ -78,3 +78,7 @@
   .app-account summary svg { display:none; }
   .app-picker-dialog { padding:20px 16px; }
 }
+
+.app-account-name { display:block; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.app-account>div>a { display:block; padding:10px 8px; border-radius:6px; }
+.app-account>div>a:hover { background:var(--sp-recessed); }

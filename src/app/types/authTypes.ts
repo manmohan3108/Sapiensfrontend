@@ -1,6 +1,17 @@
 export type UserRole = 'customer' | 'admin';
 
+export interface AccountProfile {
+  first_name: string;
+  last_name: string;
+  preferred_name: string;
+  occupation: string;
+  organisation: string;
+  timezone: string;
+  about: string;
+}
+
 export interface AuthUser {
+  profile?: AccountProfile;
   user_id: string;
   username: string;
   email: string;

@@ -37,6 +37,7 @@ export function AppNavigationFrame({ children, requiresSelection = false }: { ch
   useNavigationScroll(page, `${area === 'directory' ? 'directory' : selected?.id || 'none'}:${location.pathname}${location.search}`);
   const isRun = /^\/admin\/simulations\/[^/]+\/world(?:\/|$)/.test(location.pathname);
   const admin = user?.role === 'admin';
+  const accountName = user?.profile?.preferred_name || [user?.profile?.first_name, user?.profile?.last_name].filter(Boolean).join(' ') || user?.username || 'Account';
   const destinations = appDestinations(admin, canAnalyzeAndSimulate(user));
   const keyFor = (id: string) => `${selected?.id || 'none'}:${id}`;
 
@@ -86,8 +87,8 @@ export function AppNavigationFrame({ children, requiresSelection = false }: { ch
         <span><small>{isRun ? 'App Sapien' : 'Selected Sapien'}</small><strong>{selected?.name || 'Choose a Sapiens'}{selected && <em> #{selected.id}</em>}</strong></span><ChevronDown size={16} aria-hidden="true" />
       </button>
       <div className="app-account-controls"><ThemeToggle /><details className="app-account" onKeyDown={event => { if (event.key === 'Escape') { event.currentTarget.open = false; event.currentTarget.querySelector('summary')?.focus(); } }}>
-        <summary aria-label="Account menu">Account<ChevronDown size={14} aria-hidden="true" /></summary>
-        <div><p>{user?.username}<small>{admin ? 'Admin account' : 'Customer account'}</small></p><button onClick={() => void logout()}><LogOut size={16} />Sign out</button></div>
+        <summary aria-label="Account menu"><span className="app-account-name" title={accountName}>{accountName}</span><ChevronDown size={14} aria-hidden="true" /></summary>
+        <div><p>{accountName}<small>{admin ? 'Admin account' : 'Customer account'}</small></p><Link to="/account/profile" onClick={event => { const menu = event.currentTarget.closest('details'); if (menu) menu.open = false; }}>My profile</Link><button onClick={() => void logout()}><LogOut size={16} />Sign out</button></div>
       </details></div>
       <button ref={menuTrigger} className="app-menu-button" aria-label="Open main navigation" aria-expanded={menu} onClick={() => setMenu(true)}><Menu size={20} /></button>
     </header>
