@@ -12,6 +12,8 @@ import { appArea, appDestinations, destinationAfterSwitch, simulationLabPath } f
 import { useNavigationMemory } from './NavigationState';
 import { useSelectSapien } from './useSelectSapien';
 import { useNavigationScroll } from './useNavigationScroll';
+import { useIsMobile } from '../ui/use-mobile';
+import { PersonalAssistantMenu } from './PersonalAssistantMenu';
 import { ThemeToggle } from '../ThemeToggle';
 import { SapiensBrandMark } from '../customer/SapiensBrandMark';
 import '../../../styles/app-navigation.css';
@@ -20,6 +22,8 @@ export function AppNavigationFrame({ children, requiresSelection = false }: { ch
   const { user, logout } = useAuth();
   const selected = useSapiensStore(state => state.currentSapiens);
   const location = useLocation();
+  const mobile = useIsMobile();
+  const personalChat = mobile && user?.role === 'customer' && location.pathname === '/workspace';
   const memory = useNavigationMemory();
   const [menu, setMenu] = useState(false);
   const [picker, setPicker] = useState(false);
@@ -79,26 +83,28 @@ export function AppNavigationFrame({ children, requiresSelection = false }: { ch
   const links = destinations.map(item => <Link key={item.id} to={hrefFor(item)} aria-current={area === item.id ? 'page' : undefined} onClick={event => follow(event, item)}>{item.id === 'directory' && <LayoutGrid size={16} aria-hidden="true" />}{item.label}</Link>);
   const matched = items.filter(item => [item.name, item.id, item.role].some(value => value?.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())));
 
-  return <div className="app-shell" data-app-area={area || 'other'}>
+  return <div className="app-shell" data-app-area={area || 'other'} data-personal-chat={personalChat || undefined}>
     <header className="app-navigation product-surface science-product-theme">
-      <Link to="/" className="app-brand" aria-label="Sapiens website"><SapiensBrandMark /></Link>
-      <nav className="app-destinations" aria-label="Main navigation">{links}</nav>
+      {!personalChat && <Link to="/" className="app-brand" aria-label="Sapiens website"><SapiensBrandMark /></Link>}
+      {!personalChat && <nav className="app-destinations" aria-label="Main navigation">{links}</nav>}
       <button ref={pickerTrigger} className="app-sapien-picker" onClick={() => openPicker(destinationAfterSwitch(location.pathname), true)} aria-haspopup="dialog" aria-expanded={picker}>
-        <span><small>{isRun ? 'App Sapien' : 'Selected Sapien'}</small><strong>{selected?.name || 'Choose a Sapiens'}{selected && <em> #{selected.id}</em>}</strong></span><ChevronDown size={16} aria-hidden="true" />
+        <span><small>{personalChat ? 'Your personal assistant' : isRun ? 'App Sapien' : 'Selected Sapien'}</small><strong>{selected?.name || 'Choose a Sapiens'}{selected && !personalChat && <em> #{selected.id}</em>}</strong></span><ChevronDown size={16} aria-hidden="true" />
       </button>
-      <div className="app-account-controls"><ThemeToggle /><details className="app-account" onKeyDown={event => { if (event.key === 'Escape') { event.currentTarget.open = false; event.currentTarget.querySelector('summary')?.focus(); } }}>
+      {!personalChat && <div className="app-account-controls"><ThemeToggle /><details className="app-account" onKeyDown={event => { if (event.key === 'Escape') { event.currentTarget.open = false; event.currentTarget.querySelector('summary')?.focus(); } }}>
         <summary aria-label="Account menu"><span className="app-account-name" title={accountName}>{accountName}</span><ChevronDown size={14} aria-hidden="true" /></summary>
         <div><p>{accountName}<small>{admin ? 'Admin account' : 'Customer account'}</small></p><Link to="/account/profile" onClick={event => { const menu = event.currentTarget.closest('details'); if (menu) menu.open = false; }}>My profile</Link><button onClick={() => void logout()}><LogOut size={16} />Sign out</button></div>
-      </details></div>
-      <button ref={menuTrigger} className="app-menu-button" aria-label="Open main navigation" aria-expanded={menu} onClick={() => setMenu(true)}><Menu size={20} /></button>
+      </details></div>}
+      <button ref={menuTrigger} className="app-menu-button" aria-label={personalChat ? 'Open assistant menu' : 'Open main navigation'} aria-expanded={menu} onClick={() => setMenu(true)}><Menu size={20} /></button>
     </header>
-    <Dialog.Root open={menu} onOpenChange={setMenu}><Dialog.Portal><Dialog.Overlay className="app-nav-scrim" /><Dialog.Content className="app-menu-dialog product-surface science-product-theme" onCloseAutoFocus={event => { event.preventDefault(); if (!picker) menuTrigger.current?.focus(); }}>
-      <Dialog.Title>Go to</Dialog.Title><Dialog.Description className="sr-only">Navigate between your Sapiens and application pages.</Dialog.Description><Dialog.Close className="app-dialog-close" aria-label="Close navigation"><X size={20} /></Dialog.Close>
-      <nav aria-label="Main navigation">{links}</nav>
-    </Dialog.Content></Dialog.Portal></Dialog.Root>
+    {personalChat && selected ? <PersonalAssistantMenu key={selected.id} sapien={selected}
+      open={menu} onOpenChange={setMenu} trigger={menuTrigger} /> :
+      <Dialog.Root open={menu} onOpenChange={setMenu}><Dialog.Portal><Dialog.Overlay className="app-nav-scrim" /><Dialog.Content className="app-menu-dialog product-surface science-product-theme" onCloseAutoFocus={event => { event.preventDefault(); if (!picker) menuTrigger.current?.focus(); }}>
+        <Dialog.Title>Go to</Dialog.Title><Dialog.Description className="sr-only">Navigate between your Sapiens and application pages.</Dialog.Description><Dialog.Close className="app-dialog-close" aria-label="Close navigation"><X size={20} /></Dialog.Close>
+        <nav aria-label="Main navigation">{links}</nav>
+      </Dialog.Content></Dialog.Portal></Dialog.Root>}
     <Dialog.Root open={picker} onOpenChange={open => { if (!busy) setPicker(open); }}><Dialog.Portal><Dialog.Overlay className="app-nav-scrim" /><Dialog.Content className="app-picker-dialog product-surface science-product-theme" onCloseAutoFocus={event => { event.preventDefault(); pickerTrigger.current?.focus(); }}>
       <Dialog.Title>{selected ? 'Switch Sapiens' : 'Choose a Sapiens'}</Dialog.Title>
-      <Dialog.Description>{isRun ? 'Open the selected Sapien’s Simulation Lab. This run keeps its original Sapien.' : `Choose who to open in ${target.path.startsWith('/admin/analyse') ? 'Analyse' : target.path === '/connections' ? 'Connections' : target.path.startsWith('/admin/simulations') ? 'Simulation Lab' : 'Workspace'}.`}</Dialog.Description>
+      <Dialog.Description>{personalChat ? 'Choose the assistant you want to chat with.' : isRun ? 'Open the selected Sapien’s Simulation Lab. This run keeps its original Sapien.' : `Choose who to open in ${target.path.startsWith('/admin/analyse') ? 'Analyse' : target.path === '/connections' ? 'Connections' : target.path.startsWith('/admin/simulations') ? 'Simulation Lab' : 'Workspace'}.`}</Dialog.Description>
       <Dialog.Close className="app-dialog-close" aria-label="Close Sapiens picker" disabled={Boolean(busy)}><X size={20} /></Dialog.Close>
       <label className="app-picker-search"><Search size={17} aria-hidden="true" /><input autoComplete="off" aria-label="Search Sapiens by name, ID or role" placeholder="Search name, ID or role" value={query} onChange={event => setQuery(event.target.value)} /></label>
       <div className="app-picker-list" aria-busy={loading || Boolean(busy)}>

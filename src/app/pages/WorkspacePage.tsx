@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router';
 import { toast } from 'sonner';
 import { BrainCircuit, Eye, Target, CircleHelp, Expand, Minimize2, X } from 'lucide-react';
+import { useIsMobile } from '../components/ui/use-mobile';
 import { HeaderBar } from '../components/workspace/HeaderBar';
 import { AwarenessPanel } from '../components/workspace/AwarenessPanel';
 import { ChatWindow } from '../components/workspace/ChatWindow';
@@ -24,7 +25,7 @@ const VIEWS = [
 ] as const;
 
 // Keep readers and in-flight requests scoped to one Sapien, including on navigation.
-function WorkspaceViews({ sapienId, name }: { sapienId: string; name: string }) {
+function WorkspaceViews({ sapienId, name, personalChat }: { sapienId: string; name: string; personalChat: boolean }) {
   const viewKey = `workspace:${sapienId}`;
   const [savedView, setView] = useRememberedState<WorkspaceView | 'plans'>(`${viewKey}:tab`, 'goals');
   const view: WorkspaceView = savedView === 'plans' ? 'goals' : savedView;
@@ -50,9 +51,9 @@ function WorkspaceViews({ sapienId, name }: { sapienId: string; name: string }) 
     setWide(false);
   }
 
-  return <main className={`workspace-layout${open ? ' workspace-panel-open' : ''}${open && wide ? ' workspace-context-wide' : ''}`}>
-    <section className="workspace-chat-area" aria-label="Conversation"><ChatWindow /></section>
-    <aside className="workspace-context-area" aria-label={`Explore ${name}`}>
+  return <main className={`workspace-layout${!personalChat && open ? ' workspace-panel-open' : ''}${!personalChat && open && wide ? ' workspace-context-wide' : ''}`}>
+    <section className="workspace-chat-area" aria-label="Conversation"><ChatWindow personalChat={personalChat} /></section>
+    {!personalChat && <aside className="workspace-context-area" aria-label={`Explore ${name}`}>
       <nav ref={buttons} className="workspace-explore-buttons" aria-label="Workspace information">
         <span className="workspace-explore-label">Explore</span>
         {VIEWS.map(({ id, label, icon: Icon }) => <button
@@ -82,7 +83,7 @@ function WorkspaceViews({ sapienId, name }: { sapienId: string; name: string }) 
           {visited.includes('memory') && <div hidden={view !== 'memory'} className="workspace-context-view"><MemoryPanel active={open && view === 'memory'} /></div>}
         </div>
       </section>
-    </aside>
+    </aside>}
   </main>;
 }
 
@@ -92,6 +93,8 @@ export function WorkspacePage() {
   const heading = useRef<HTMLHeadingElement>(null);
   const announced = useRef<string | null>(null);
   const { user } = useAuth();
+  const mobile = useIsMobile();
+  const personalChat = mobile && user?.role === 'customer';
   const currentSapiens = useSapiensStore(state => state.currentSapiens);
   useOrchestratorStatus();
 
@@ -110,8 +113,8 @@ export function WorkspacePage() {
   }, [currentSapiens?.id, location.state, location.pathname, navigate, user?.role]);
 
   if (!currentSapiens) return null;
-  return <div className="product-surface workspace-shell">
-    <HeaderBar headingRef={heading} />
-    <WorkspaceViews key={currentSapiens.id} sapienId={currentSapiens.id} name={currentSapiens.name} />
+  return <div className={`product-surface workspace-shell${personalChat ? ' personal-chat' : ''}`}>
+    {!personalChat && <HeaderBar headingRef={heading} />}
+    <WorkspaceViews key={currentSapiens.id} sapienId={currentSapiens.id} name={currentSapiens.name} personalChat={personalChat} />
   </div>;
 }

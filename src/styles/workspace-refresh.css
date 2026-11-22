@@ -157,3 +157,14 @@
 .workspace-shell .workspace-conversation [data-message-id] { transition-duration:180ms; }
 .workspace-shell .workspace-goal-next { padding:12px; border-left:2px solid var(--sp-accent); background:var(--sp-recessed); }
 .workspace-shell .workspace-memory-detail>summary::marker { color:var(--sp-muted); }
+
+/* Customer mobile chat uses the existing conversation without inspection panels. */
+.personal-chat .workspace-layout { display:flex; padding:0; gap:0; }
+.personal-chat .workspace-conversation { border:0!important; border-radius:0; box-shadow:none!important; backdrop-filter:none!important; }
+.personal-chat .workspace-chat-heading { min-height:44px; padding:0 16px; }
+.personal-chat .workspace-chat-title h2 { font-size:14px; color:var(--sp-muted); font-weight:400; }
+.personal-chat .workspace-history-toggle { display:inline-flex; min-height:44px; align-items:center; gap:6px; }
+.personal-chat .workspace-composer { padding:8px 12px max(12px,env(safe-area-inset-bottom)); }
+.personal-chat .workspace-composer textarea { font-size:16px; }
+.workspace-shell.personal-chat .workspace-conversation .workspace-composer button { min-width:44px; min-height:44px; }
+.personal-chat :is(button,textarea):focus-visible { outline:2px solid var(--sp-action); outline-offset:2px; }

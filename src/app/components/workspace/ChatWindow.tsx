@@ -392,7 +392,7 @@ function EmptyState({ name, onHint, recent, onResume, loading }: { name: string;
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
-export function ChatWindow() {
+export function ChatWindow({ personalChat = false }: { personalChat?: boolean }) {
   const retrySeconds = useRateLimitCountdown('api_write');
   const { user } = useAuth();
   const sending = useRef(false);
@@ -623,7 +623,7 @@ export function ChatWindow() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      <aside className={`workspace-history ${historyCollapsed ? 'is-collapsed' : ''}`}>
+      {!personalChat && <aside className={`workspace-history ${historyCollapsed ? 'is-collapsed' : ''}`}>
         {historyCollapsed ? (
           <div className="flex h-full flex-col items-center gap-2 py-3">
             <button onClick={() => setHistoryCollapsed(false)} title="Expand chat history" aria-label="Expand chat history" className="p-2.5 rounded-xl text-sp-accent bg-sp-accent/10 hover:bg-sp-accent/20 border border-sp-accent/20">
@@ -636,10 +636,10 @@ export function ChatWindow() {
         ) : <ConversationHistory history={history} historyLoading={historyLoading} historyError={historyError}
           detailLoading={detailLoading} isProcessing={isProcessing} chatSessionId={chatSessionId}
           onRefresh={() => void refreshHistory()} onNewChat={startNewChat} onSelectChat={(id) => void selectChat(id)} onCollapse={() => setHistoryCollapsed(true)} />}
-      </aside>
+      </aside>}
       <div className="min-w-0 flex-1 flex flex-col relative">
       <div className="workspace-chat-heading">
-        <div className="workspace-chat-title"><h2>Conversation</h2><p>With {currentSapiens?.name ?? 'Sapiens'}</p></div>
+        <div className="workspace-chat-title"><h2>{personalChat ? 'Chat' : 'Conversation'}</h2>{!personalChat && <p>With {currentSapiens?.name ?? 'Sapiens'}</p>}</div>
         <div className="flex items-center gap-2">
           {isProcessing && <span role="status" className="text-sm text-sp-muted">Sending…</span>}
           <button onClick={() => setHistoryOpen(open => !open)} aria-expanded={historyOpen} className="workspace-history-toggle"><History size={16} />History</button>
@@ -707,10 +707,10 @@ export function ChatWindow() {
       {inactive && <p role="status" className="px-4 py-2 text-sm text-sp-muted">
         {currentSapiens?.activityUnavailableReason === 'deletion_pending'
           ? 'This Sapien is being deleted. New messages are unavailable.'
-          : 'This Sapien is inactive. Choose “Chat only” above to talk without autonomous work, or “Activate” to resume all work.'}
+          : `This Sapien is inactive. Choose “Chat only” ${personalChat ? 'in the assistant menu' : 'above'} to talk without autonomous work, or “Activate” to resume all work.`}
       </p>}
-      <div className="flex-shrink-0 relative p-2" style={{ background: 'var(--sp-recessed, rgba(0,0,0,0.25))', borderTop: '1px solid rgb(var(--sp-ink-rgb, 255 255 255) / 0.05)' }}>
-        {attachmentsOpen && (
+      <div className="workspace-composer flex-shrink-0 relative p-2" style={{ background: 'var(--sp-recessed, rgba(0,0,0,0.25))', borderTop: '1px solid rgb(var(--sp-ink-rgb, 255 255 255) / 0.05)' }}>
+        {!personalChat && attachmentsOpen && (
           <div
             className="absolute z-30 bottom-[calc(100%-4px)] left-3 right-3 sm:right-auto sm:w-[390px] h-[min(30rem,70vh)] rounded-2xl"
             style={{ boxShadow: '0 22px 60px rgb(var(--sp-shadow-rgb, 0 0 0) / var(--sp-shadow-opacity, 0.65))' }}
@@ -732,7 +732,7 @@ export function ChatWindow() {
             border: `1px solid ${focused ? 'rgb(var(--sp-accent-rgb, 124 58 237) / 0.45)' : 'rgb(var(--sp-ink-rgb, 255 255 255) / 0.07)'}`,
             boxShadow: focused ? '0 0 0 3px rgb(var(--sp-accent-rgb, 124 58 237) / 0.07)' : 'none',
           }}>
-          <button
+          {!personalChat && <button
             onClick={() => setAttachmentsOpen((open) => !open)}
             disabled={isProcessing || currentSapiens?.active === false}
             title="Attach files or a folder"
@@ -746,7 +746,7 @@ export function ChatWindow() {
             }}
           >
             <Paperclip className="w-4 h-4" />
-          </button>
+          </button>}
 
           <textarea ref={textareaRef} value={input} onChange={onInputChange} onKeyDown={onKey}
             onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}

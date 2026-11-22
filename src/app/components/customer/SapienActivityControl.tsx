@@ -10,7 +10,15 @@ export function SapienActivityControl({ sapien, refreshOnMount = false, onActivi
   sapien: Sapiens; refreshOnMount?: boolean; compact?: boolean; hidePausedHelp?: boolean;
   onActivityChange?: (sapienId: string, activity: SapienActivity | null) => void;
 }) {
-  const { activity, pending, error, notice, refresh, setActivity, schedulePause } = useSapienActivity(sapien, refreshOnMount, onActivityChange);
+  const controller = useSapienActivity(sapien, refreshOnMount, onActivityChange);
+  return <SapienActivityActions sapien={sapien} controller={controller} compact={compact} hidePausedHelp={hidePausedHelp} />;
+}
+
+/** The owner keeps activity requests alive independently of where controls are displayed. */
+export function SapienActivityActions({ sapien, controller, compact = false, hidePausedHelp = false }: {
+  sapien: Sapiens; controller: ReturnType<typeof useSapienActivity>; compact?: boolean; hidePausedHelp?: boolean;
+}) {
+  const { activity, pending, error, notice, refresh, setActivity, schedulePause } = controller;
   const helpId = useId();
   const reason = activity?.activityUnavailableReason;
   const blocked = !!reason;
