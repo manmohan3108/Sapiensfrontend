@@ -94,7 +94,7 @@ export function WorkspacePage() {
   const announced = useRef<string | null>(null);
   const { user } = useAuth();
   const mobile = useIsMobile();
-  const personalChat = mobile && user?.role === 'customer';
+  const personalChat = mobile;
   const currentSapiens = useSapiensStore(state => state.currentSapiens);
   useOrchestratorStatus();
 

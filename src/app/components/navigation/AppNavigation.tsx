@@ -23,7 +23,7 @@ export function AppNavigationFrame({ children, requiresSelection = false }: { ch
   const selected = useSapiensStore(state => state.currentSapiens);
   const location = useLocation();
   const mobile = useIsMobile();
-  const personalChat = mobile && user?.role === 'customer' && location.pathname === '/workspace';
+  const personalChat = mobile && location.pathname === '/workspace';
   const memory = useNavigationMemory();
   const [menu, setMenu] = useState(false);
   const [picker, setPicker] = useState(false);

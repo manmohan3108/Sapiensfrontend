@@ -113,6 +113,15 @@
 .auth-science .auth-switch a { font-weight:600; text-decoration:underline; text-underline-offset:3px; }
 .auth-science .auth-back { font-size:13px; color:var(--cx-muted); }
 .auth-science .auth-back:hover { color:var(--cx-ink); text-decoration:underline; }
+.auth-science .auth-optional-profile { margin-block:20px; padding-block:12px; border-block:1px solid var(--cx-line); }
+.auth-science .auth-optional-profile summary { padding-block:10px; cursor:pointer; color:var(--cx-ink); font-size:16px; }
+.auth-science .auth-optional-profile summary span { color:var(--cx-muted); }
+.auth-science .auth-optional-profile > p { margin:8px 0 20px; color:var(--cx-muted); font-size:15px; line-height:1.5; }
+.auth-science .auth-optional-profile fieldset { min-width:0; border:0; padding:0; margin:0; }
+.auth-science .auth-optional-profile textarea { width:100%; box-sizing:border-box; resize:vertical; padding:12px; border:1px solid var(--cx-line); border-radius:4px; background:var(--cx-bg); color:var(--cx-ink); font:inherit; font-size:16px; }
+.auth-science .auth-use-timezone { min-height:44px; text-align:left; color:var(--cx-ink); text-decoration:underline; text-underline-offset:3px; }
+.auth-science .auth-use-timezone:hover { color:var(--cx-violet); }
+.auth-science .auth-optional-profile :is(summary, textarea, button):focus-visible { outline:2px solid var(--cx-violet); outline-offset:3px; }
 @media(max-width:800px) {
   .auth-science .auth-layout { gap:24px; padding-top:24px; }
   .auth-science .auth-identity-art { width:88px; margin:0; background:none; }

@@ -158,7 +158,7 @@
 .workspace-shell .workspace-goal-next { padding:12px; border-left:2px solid var(--sp-accent); background:var(--sp-recessed); }
 .workspace-shell .workspace-memory-detail>summary::marker { color:var(--sp-muted); }
 
-/* Customer mobile chat uses the existing conversation without inspection panels. */
+/* Mobile chat uses the existing conversation without inspection panels. */
 .personal-chat .workspace-layout { display:flex; padding:0; gap:0; }
 .personal-chat .workspace-conversation { border:0!important; border-radius:0; box-shadow:none!important; backdrop-filter:none!important; }
 .personal-chat .workspace-chat-heading { min-height:44px; padding:0 16px; }

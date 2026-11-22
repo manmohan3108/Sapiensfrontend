@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { useLocation, useNavigate } from 'react-router';
 import { useAuth, authErrorMessage } from '../contexts/AuthContext';
 import type { AccountProfile } from '../types/authTypes';
 import '../../styles/account-profile.css';
@@ -17,7 +18,10 @@ const fields: { key: Exclude<keyof AccountProfile, 'about'>; label: string; auto
 
 export function ProfilePage() {
   const { user, saveProfile } = useAuth();
-  const [profile, setProfile] = useState<AccountProfile>(() => ({ ...emptyProfile, ...user?.profile }));
+  const location = useLocation();
+  const navigate = useNavigate();
+  const recovery = location.state?.profileOwner === user?.user_id ? location.state : null;
+  const [profile, setProfile] = useState<AccountProfile>(() => ({ ...emptyProfile, ...user?.profile, ...recovery?.profileDraft }));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [saved, setSaved] = useState(false);
@@ -29,6 +33,7 @@ export function ProfilePage() {
     try {
       const result = await saveProfile(profile);
       setProfile({ ...emptyProfile, ...result.profile }); setSaved(true);
+      if (recovery) navigate(location.pathname, { replace: true, state: null });
     } catch (failure) { setError(authErrorMessage(failure)); }
     finally { setBusy(false); }
   };
@@ -37,6 +42,7 @@ export function ProfilePage() {
       <h1>My profile</h1>
       <p>Help your Sapiens know who you are. These optional details are shared with your Sapiens when they next think or respond.</p>
       <form onSubmit={submit} aria-busy={busy}>
+        {recovery && !saved && <p role="alert">Your account was created, but we couldn’t confirm your optional details were saved. Your entries are below; check them and select Save profile. {recovery.profileSaveError}</p>}
         <fieldset disabled={busy}>
           <legend className="sr-only">Account-holder details</legend>
           <div className="account-profile-grid">

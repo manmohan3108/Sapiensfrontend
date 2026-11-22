@@ -34,4 +34,7 @@ export interface AuthCredentials {
 
 export interface RegistrationCredentials extends AuthCredentials {
   email?: string;
+  profile?: Partial<AccountProfile>;
 }
+
+export type RegistrationResult = AuthUser & { profileSaveError?: string };

@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { authenticatedFetch, authSession, HttpError, parseAuthResponse, resourceSession } from '../core/auth/authSession';
 import { toast } from 'sonner';
 import { selectionStorage } from '../core/auth/selectionStorage';
-import type { AccountProfile, AuthCredentials, AuthUser, RegistrationCredentials, TokenPair } from '../types/authTypes';
+import type { AccountProfile, AuthCredentials, AuthUser, RegistrationCredentials, RegistrationResult, TokenPair } from '../types/authTypes';
 import { useSapiensStore } from '../core/state/sapiensStore';
 import { backendFetch, isTemporaryBackendFailure, recoverPageWhenAvailable } from '../core/api/backendAvailability';
 
@@ -13,7 +13,7 @@ interface AuthContextValue {
   user: AuthUser | null;
   notice: string;
   login: (credentials: AuthCredentials) => Promise<AuthUser>;
-  register: (credentials: RegistrationCredentials) => Promise<AuthUser>;
+  register: (credentials: RegistrationCredentials) => Promise<RegistrationResult>;
   logout: () => Promise<void>;
   saveProfile: (profile: AccountProfile) => Promise<AuthUser>;
 }
@@ -143,7 +143,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = useCallback((credentials: AuthCredentials) => complete(exchange('login/', credentials)), [complete]);
-  const register = useCallback((credentials: RegistrationCredentials) => complete(exchange('register/', credentials)), [complete]);
+  const register = useCallback(async ({ profile, ...credentials }: RegistrationCredentials): Promise<RegistrationResult> => {
+    let profileSaveError: string | undefined;
+    const registered = await complete((async () => {
+      const account = await exchange('register/', credentials);
+      if (!profile || !Object.keys(profile).length) return account;
+      try {
+        return await parseAuthResponse<AuthUser>(await authenticatedFetch(authSession.url('me/'), {
+          method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(profile), signal: AbortSignal.timeout(30_000),
+        }));
+      } catch (error) {
+        // Account creation succeeded. Never ask the user to register again.
+        profileSaveError = authErrorMessage(error);
+        return account;
+      }
+    })());
+    return { ...registered, profileSaveError };
+  }, [complete]);
   const logout = useCallback(async () => {
     const refresh = authSession.tokens?.refresh;
     clearSession();
