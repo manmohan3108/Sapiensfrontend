@@ -117,6 +117,25 @@ labelled separately in detail. Changing Sapien or filters must invalidate pendin
 list/detail requests and clear pagination. Verify these states manually against
 the matching deployed API; source review is not a live integration check.
 
+## AI Usage allowance snapshots
+
+Analyse reads optional allowance snapshots from the existing usage endpoints.
+Show successful-call history separately from admitted daily allowance and burst
+credits; never calculate remaining allowance from successful totals. Refresh
+retrieves current balances without consuming credits. Show the snapshot time,
+blocking retry boundaries, activity state and retained quota waits independently.
+A personal counter adjustment does not rewrite history or reschedule waiting jobs.
+Missing snapshots are unavailable, not zero. Simulation-owned personal balances
+require the simulation clock and are not inferred from this real-day report.
+Global counts remain restricted to the existing admin view.
+Always display the daily reset time and explain that burst credits refill
+continuously, with no hourly reset. Show the earliest retained quota retry
+separately as a not-before time, not a promise of execution.
+The open, visible panel refreshes the selected resource every 30 seconds or
+sooner at a displayed real-clock refill/reset/retry boundary. Pause polling while
+hidden or loading; refresh on returning to the tab or changing resource. Closing
+the panel cancels its timer. Keep manual Refresh and the snapshot timestamp.
+
 ## Review standard
 
 Use AGENTS.md's state, accessibility and navigation checks. Verify both themes,
