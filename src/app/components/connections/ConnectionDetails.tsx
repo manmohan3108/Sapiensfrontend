@@ -1,3 +1,4 @@
+import { ConnectionInspectionCard } from './ConnectionInspectionCard';
 import { RateLimitButton } from '../shared/RateLimitButton';
 import { secondsRemaining } from '../../core/api/rateLimits';
 import { useState } from 'react';
@@ -64,9 +65,9 @@ export function FulfilledRequests({ requests, connections }: {
   return <section aria-label="Fulfilled access requests">
     <h2 className="text-sm font-semibold">Fulfilled requests</h2>
     <p className="mt-1 text-sm text-sp-muted">Past owner decisions. Check the saved account's current health before relying on access.</p>
-    <div className="mt-3 space-y-3">{fulfilled.map(request => {
+    <div className="connections-card-grid mt-3">{fulfilled.map(request => {
       const account = connections.find(item => item.id === request.metadata.connection_id);
-      return <article key={request.id} className="rounded-xl border border-sp-line p-4">
+      return <ConnectionInspectionCard key={request.id} title={request.metadata.access?.target || request.provider} subtitle="Fulfilled access request" summary={request.reason || "Access request fulfilled."} footer={dateLabel(request.resolved_at)}>
         <p className="font-medium break-words">{request.metadata.access?.target || request.provider}</p>
         <p className="mt-1 text-sm break-words">{request.reason || 'Access request fulfilled.'}</p>
         <p className="mt-2 text-sm text-sp-muted break-words">{account
@@ -74,7 +75,7 @@ export function FulfilledRequests({ requests, connections }: {
           : request.metadata.connection_id ? 'The selected account has been removed.' : 'Legacy request: selected account was not recorded.'}</p>
         {request.metadata.owner_response?.status === 'connected' && request.metadata.owner_response.hint && <p className="mt-2 whitespace-pre-wrap break-words text-sm"><span className="text-sp-muted">Owner hint: </span>{request.metadata.owner_response.hint}</p>}
         <p className="mt-1 text-sm text-sp-muted">{dateLabel(request.resolved_at)}</p>
-      </article>;
+      </ConnectionInspectionCard>;
     })}</div>
   </section>;
 }

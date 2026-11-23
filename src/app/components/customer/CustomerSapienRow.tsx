@@ -16,9 +16,11 @@ export function CustomerSapienRow({ individual, opening, disabled, error, onOpen
       <span className="customer-sapien-identity">
         <span className="customer-sapien-title"><span className="customer-sapien-name">{individual.name}</span><span className="customer-sapien-id">ID {individual.id}</span></span>
         <span className="customer-sapien-role">{individual.role || 'Generalist'}</span>
-        {opening && <span className="sr-only">Opening…</span>}
       </span>
-      {opening ? <Loader2 size={20} className="animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <ChevronRight size={20} aria-hidden="true" />}
+      <span className="customer-sapien-open-label">
+        <span>{opening ? 'Opening…' : 'Open'}</span>
+        {opening ? <Loader2 size={18} className="animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <ChevronRight size={18} aria-hidden="true" />}
+      </span>
     </button>
     {error && <p className="customer-sapien-error" role="alert">{error}</p>}
     <div className="customer-sapien-controls"><SapienActivityActions sapien={individual} controller={controller} compact secondaryUnderMore /></div>
