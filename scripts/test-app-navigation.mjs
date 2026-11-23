@@ -37,8 +37,8 @@ const useAuth = () => ({user:globalThis.navTest.user,logout:()=>{}});
 const usePresentation = () => ({adminView:globalThis.navTest.user?.role === 'admin' && !globalThis.navTest.preview,analysisAccess:globalThis.navTest.user?.role === 'admin' ? !globalThis.navTest.preview || !!globalThis.navTest.customerAnalysis : !!globalThis.navTest.user?.analysis_simulation_access});
 const AdminPreviewControls = () => null;
 const WorkspaceHeaderControls = () => React.createElement('nav', {'aria-label':'Workspace controls'}, 'Pause');
-const useIsMobile = () => false;
-const PersonalAssistantMenu = () => null;
+const useIsMobile = (breakpoint=768) => (globalThis.navTest.width ?? 1920) < breakpoint;
+const PersonalAssistantMenu = ({sapien,navigation}) => React.createElement('aside', {'data-workspace-menu':sapien?.id}, navigation);
 const useSapiensStore = select => select({currentSapiens:globalThis.navTest.selected});
 const useLocation = () => ({pathname:globalThis.navTest.path,search:''});
 const useNavigationMemory = () => globalThis.navTest.memory;
@@ -72,6 +72,26 @@ globalThis.navTest.customerAnalysis = true;
 assert(render().includes('href="/analyse"'), 'Customer preview uses its own Analyse destination');
 globalThis.navTest.preview = false;
 assert(render().includes('href="/admin/analyse/goals"'), 'Admin navigation memory is separate');
+for (const user of [
+  {user_id:'admin1',role:'admin'},
+  {user_id:'customer1',role:'customer'},
+  {user_id:'customer2',role:'customer',analysis_simulation_access:true},
+]) {
+  globalThis.navTest.user=user;
+  for (const width of [320,390,767,768,1024,1099,1100,1440,1920]) {
+    globalThis.navTest.width=width;
+    html=render();
+    assert.equal((html.match(/<header/g)||[]).length,1,'One combined header');
+    assert.equal(html.includes('aria-label="Workspace controls"'),width>=1100,`Inline actions at ${width}`);
+    assert.equal(html.includes('data-workspace-menu="58"'),width<1100,`Compact menu retains Sapien actions at ${width}`);
+    assert(html.includes('<em> #58</em>'),'ID remains separate from the truncated name');
+    assert.equal(html.includes('data-preview-controls="true"'),user.role==='admin');
+    if(user.role==='customer') assert(!html.includes('href="/admin/analyse'),'Customer routes remain separate');
+  }
+}
+globalThis.navTest.width=1920;
+globalThis.navTest.user={user_id:'admin1',role:'admin'};
+
 globalThis.navTest.selected = null;
 assert(render().includes('Choose a Sapiens'), 'No-selection state offers a picker');
 globalThis.navTest.user = {user_id:'admin1',role:'admin'};

@@ -6,7 +6,6 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { Link, useLocation } from 'react-router';
 import { ChevronDown, LayoutGrid, Loader2, LogOut, Menu, Search, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { canAnalyzeAndSimulate } from '../../core/auth/permissions';
 import { useSapiensStore } from '../../core/state/sapiensStore';
 import { sapiensService } from '../../core/services/sapiensService';
 import { selectionStorage } from '../../core/auth/selectionStorage';
@@ -103,7 +102,7 @@ export function AppNavigationFrame({ children, requiresSelection = false }: { ch
       {!mobile && <Link to="/" className="app-brand" aria-label="Sapiens website"><SapiensBrandMark /></Link>}
       {!mobile && <nav className="app-destinations" aria-label="Main navigation">{links}</nav>}
       <button ref={pickerTrigger} className="app-sapien-picker" onClick={() => openPicker(destinationAfterSwitch(location.pathname), true)} aria-haspopup="dialog" aria-expanded={picker}>
-        <span><small>{mobile ? 'Selected Sapien' : isRun ? 'App Sapien' : 'Selected Sapien'}</small><strong>{selected?.name || 'Choose a Sapiens'}{selected && <em> #{selected.id}</em>}</strong>{area === 'workspace' && selected?.role && !mobile && <small className="app-sapien-role" title={selected.role}>{selected.role}</small>}</span><ChevronDown size={16} aria-hidden="true" />
+        <span><small>{mobile ? 'Selected Sapien' : isRun ? 'App Sapien' : 'Selected Sapien'}</small><strong><span title={selected?.name}>{selected?.name || 'Choose a Sapiens'}</span>{selected && <em> #{selected.id}</em>}</strong>{area === 'workspace' && selected?.role && !mobile && <small className="app-sapien-role" title={selected.role}>{selected.role}</small>}</span><ChevronDown size={16} aria-hidden="true" />
       </button>
       {area === 'workspace' && selected && !narrowHeader && <WorkspaceHeaderControls key={selected.id} />}
       {!mobile && <div className="app-account-controls"><ThemeToggle /><details className="app-account" onKeyDown={event => { if (event.key === 'Escape') { event.currentTarget.open = false; event.currentTarget.querySelector('summary')?.focus(); } }}>

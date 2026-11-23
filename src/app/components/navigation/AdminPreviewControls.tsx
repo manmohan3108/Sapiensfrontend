@@ -20,7 +20,7 @@ export function AdminPreviewControls() {
       event.stopPropagation();
     }
   }}>
-    <summary>View as: <strong>{customerPreview ? 'Customer' : 'Admin'}</strong></summary>
+    <summary><span>View as:</span> <strong>{customerPreview ? 'Customer' : 'Admin'}</strong></summary>
     <div className="admin-preview-panel">
     <label>View as <select value={customerPreview ? 'customer' : 'admin'}
       onChange={event => setPreview({ customer: event.target.value === 'customer', analysis: customerAnalysis })}>
