@@ -4,13 +4,22 @@
 .app-shell { --app-nav-height:64px; min-height:100dvh; }
 .app-navigation { position:sticky; top:0; z-index:45; height:var(--app-nav-height); display:flex; align-items:center; gap:12px; padding:8px 20px; border-bottom:1px solid var(--sp-line); background-image:none!important; }
 .app-brand { flex-shrink:0; display:grid; place-items:center; width:32px; height:36px; }
-.app-navigation[data-preview-controls] { height:auto; min-height:64px; flex-wrap:wrap; }
-.admin-preview-controls { flex-basis:100%; display:flex; align-items:center; flex-wrap:wrap; gap:4px 18px; border-top:1px solid var(--sp-line); padding-top:4px; font-size:14px; }
+.app-navigation[data-preview-controls] { height:auto; min-height:64px; }
+.admin-preview-controls { position:relative; flex-shrink:0; font-size:14px; }
+.admin-preview-controls summary { display:flex; align-items:center; gap:5px; min-height:44px; padding:6px 10px; border:1px solid var(--sp-line); border-radius:6px; cursor:pointer; list-style:none; white-space:nowrap; }
+.admin-preview-controls summary::-webkit-details-marker { display:none; }
+.admin-preview-controls summary::after { content:'⌄'; margin-left:3px; }
+.admin-preview-controls summary:hover { background:var(--sp-recessed); }
+.admin-preview-panel { position:absolute; right:0; top:calc(100% + 8px); width:min(310px,calc(100vw - 24px)); display:grid; gap:8px; padding:14px; border:1px solid var(--sp-line); border-radius:8px; background:var(--sp-panel); box-shadow:0 10px 25px #0002; }
 .admin-preview-controls label { display:inline-flex; align-items:center; gap:8px; min-height:44px; }
 .admin-preview-controls select { min-height:40px; padding:6px 10px; border:1px solid var(--sp-line); border-radius:6px; background:var(--sp-panel); color:var(--sp-ink); }
 .admin-preview-controls input { width:18px; height:18px; accent-color:var(--sp-action); }
-.admin-preview-controls > span { color:var(--sp-muted); font-size:13px; }
+.admin-preview-panel > span { color:var(--sp-muted); font-size:13px; }
 .admin-preview-controls :is(select,input):focus-visible { outline:2px solid var(--sp-action); outline-offset:3px; }
+@media(min-width:1001px) and (max-width:1380px) {
+  .app-navigation[data-preview-controls] .app-destinations { display:none; }
+  .app-navigation[data-preview-controls] .app-menu-button { display:grid; place-items:center; min-width:44px; height:44px; }
+}
 .app-brand .sapiens-brand-mark { width:30px; height:30px; }
 .app-brand img { width:100%; height:100%; object-fit:contain; }
 .app-destinations { display:flex; align-items:center; gap:3px; }
