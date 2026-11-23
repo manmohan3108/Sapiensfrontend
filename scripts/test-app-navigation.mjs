@@ -36,7 +36,6 @@ const {useEffect,useRef,useState} = React;
 const useAuth = () => ({user:globalThis.navTest.user,logout:()=>{}});
 const usePresentation = () => ({adminView:globalThis.navTest.user?.role === 'admin' && !globalThis.navTest.preview,analysisAccess:globalThis.navTest.user?.role === 'admin' ? !globalThis.navTest.preview || !!globalThis.navTest.customerAnalysis : !!globalThis.navTest.user?.analysis_simulation_access});
 const AdminPreviewControls = () => null;
-const WorkspaceHeaderControls = () => React.createElement('nav', {'aria-label':'Workspace controls'}, 'Pause');
 const useIsMobile = (breakpoint=768) => (globalThis.navTest.width ?? 1920) < breakpoint;
 const PersonalAssistantMenu = ({sapien,navigation}) => React.createElement('aside', {'data-workspace-menu':sapien?.id}, navigation);
 const useSapiensStore = select => select({currentSapiens:globalThis.navTest.selected});
@@ -56,7 +55,7 @@ const render = () => renderToStaticMarkup(React.createElement(AppNavigationFrame
 let html = render();
 for (const label of ['Your Sapiens','Workspace','Connections','Analyse','Simulations','Sapien 58','Page content']) assert(html.includes(label), label);
 assert.match(html, /href="\/workspace" aria-current="page"/);
-assert.match(html, /<header[\s\S]*Workspace controls[\s\S]*<\/header>/, 'Workspace actions belong in the shared header');
+assert(!html.includes('aria-label="Workspace controls"'), 'Workspace actions stay out of the main navigation');
 globalThis.navTest.memory.destinations.set('admin:58:analyse', '/admin/analyse/goals');
 assert(render().includes('href="/admin/analyse/goals"'), 'Return to the last Analyse section');
 globalThis.navTest.user = {user_id:'customer1',role:'customer'};
@@ -81,9 +80,9 @@ for (const user of [
   for (const width of [320,390,767,768,1024,1099,1100,1440,1920]) {
     globalThis.navTest.width=width;
     html=render();
-    assert.equal((html.match(/<header/g)||[]).length,1,'One combined header');
-    assert.equal(html.includes('aria-label="Workspace controls"'),width>=1100,`Inline actions at ${width}`);
-    assert.equal(html.includes('data-workspace-menu="58"'),width<1100,`Compact menu retains Sapien actions at ${width}`);
+    assert.equal((html.match(/<header/g)||[]).length,1,'One main navigation header');
+    assert(!html.includes('aria-label="Workspace controls"'),'Workspace actions stay in their own toolbar');
+    assert.equal(html.includes('data-workspace-menu="58"'),width<768,`Mobile menu retains Sapien actions at ${width}`);
     assert(html.includes('<em> #58</em>'),'ID remains separate from the truncated name');
     assert.equal(html.includes('data-preview-controls="true"'),user.role==='admin');
     if(user.role==='customer') assert(!html.includes('href="/admin/analyse'),'Customer routes remain separate');

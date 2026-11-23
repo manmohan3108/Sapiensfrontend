@@ -6,6 +6,7 @@ import { useNavigate, useLocation } from 'react-router';
 import { toast } from 'sonner';
 import { BrainCircuit, Eye, Target, CircleHelp, Expand, Minimize2, X } from 'lucide-react';
 import { useIsMobile } from '../components/ui/use-mobile';
+import { HeaderBar } from '../components/workspace/HeaderBar';
 import { ActivityTicker } from '../components/workspace/ActivityTicker';
 import { AwarenessPanel } from '../components/workspace/AwarenessPanel';
 import { ChatWindow } from '../components/workspace/ChatWindow';
@@ -116,7 +117,7 @@ export function WorkspacePage() {
 
   if (!currentSapiens) return null;
   return <div className={`product-surface workspace-shell${personalChat ? ' personal-chat' : ''}`}>
-    <h1 ref={heading} tabIndex={-1} className="sr-only">{currentSapiens.name} workspace</h1>
+    {personalChat ? <h1 ref={heading} tabIndex={-1} className="sr-only">{currentSapiens.name} workspace</h1> : <HeaderBar headingRef={heading} />}
     {adminView && <ActivityTicker key={'activity:' + currentSapiens.id} sapienId={currentSapiens.id} />}
     <WorkspaceViews key={'views:' + currentSapiens.id} sapienId={currentSapiens.id} name={currentSapiens.name} personalChat={personalChat} />
   </div>;
