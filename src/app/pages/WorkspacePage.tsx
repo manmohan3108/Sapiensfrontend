@@ -116,7 +116,7 @@ export function WorkspacePage() {
   if (!currentSapiens) return null;
   return <div className={`product-surface workspace-shell${personalChat ? ' personal-chat' : ''}`}>
     {!personalChat && <HeaderBar headingRef={heading} />}
-    {user?.role === 'admin' && <ActivityTicker key={currentSapiens.id} sapienId={currentSapiens.id} />}
-    <WorkspaceViews key={currentSapiens.id} sapienId={currentSapiens.id} name={currentSapiens.name} personalChat={personalChat} />
+    {user?.role === 'admin' && <ActivityTicker key={'activity:' + currentSapiens.id} sapienId={currentSapiens.id} />}
+    <WorkspaceViews key={'views:' + currentSapiens.id} sapienId={currentSapiens.id} name={currentSapiens.name} personalChat={personalChat} />
   </div>;
 }
