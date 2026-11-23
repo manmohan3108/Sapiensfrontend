@@ -1,5 +1,6 @@
 import { usePresentation } from '../../contexts/PresentationContext';
 import { AdminPreviewControls } from './AdminPreviewControls';
+import { WorkspaceHeaderControls } from '../workspace/WorkspaceHeaderControls';
 import { useEffect, useRef, useState, type ReactNode, type MouseEvent } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { Link, useLocation } from 'react-router';
@@ -97,10 +98,11 @@ export function AppNavigationFrame({ children, requiresSelection = false }: { ch
   return <div className="app-shell" data-app-area={area || 'other'} data-mobile-navigation={mobile || undefined}>
     <header ref={header} data-preview-controls={user?.role === 'admin' || undefined} className="app-navigation product-surface science-product-theme">
       {!mobile && <Link to="/" className="app-brand" aria-label="Sapiens website"><SapiensBrandMark /></Link>}
-      {!mobile && <nav className="app-destinations" aria-label="Main navigation">{links}</nav>}
+      <nav className="app-destinations" aria-label="Main navigation">{links}</nav>
       <button ref={pickerTrigger} className="app-sapien-picker" onClick={() => openPicker(destinationAfterSwitch(location.pathname), true)} aria-haspopup="dialog" aria-expanded={picker}>
-        <span><small>{mobile ? 'Selected Sapien' : isRun ? 'App Sapien' : 'Selected Sapien'}</small><strong><span title={selected?.name}>{selected?.name || 'Choose a Sapiens'}</span>{selected && <em> #{selected.id}</em>}</strong></span><ChevronDown size={16} aria-hidden="true" />
+        <span>{isRun && <small>App Sapien</small>}<strong><span title={selected?.name}>{selected?.name || 'Choose a Sapiens'}</span>{selected && <em> #{selected.id}</em>}</strong></span><ChevronDown size={16} aria-hidden="true" />
       </button>
+      {area === 'workspace' && selected && <WorkspaceHeaderControls key={selected.id} sapien={selected} />}
       {!mobile && <div className="app-account-controls"><ThemeToggle /><details className="app-account" onKeyDown={event => { if (event.key === 'Escape') { event.currentTarget.open = false; event.currentTarget.querySelector('summary')?.focus(); } }}>
         <summary aria-label="Account menu"><span className="app-account-name" title={accountName}>{accountName}</span><ChevronDown size={14} aria-hidden="true" /></summary>
         <div><p>{accountName}<small>{user?.role === 'admin' ? 'Admin account' : 'Customer account'}</small></p><Link to="/account/profile" onClick={event => { const menu = event.currentTarget.closest('details'); if (menu) menu.open = false; }}>My profile</Link><button onClick={() => void logout()}><LogOut size={16} />Sign out</button></div>
@@ -108,7 +110,7 @@ export function AppNavigationFrame({ children, requiresSelection = false }: { ch
       <button ref={menuTrigger} className="app-menu-button" aria-label="Open main navigation" aria-expanded={menu} onClick={() => setMenu(true)}><Menu size={20} /></button>
       <AdminPreviewControls />
     </header>
-    {mobile ? <PersonalAssistantMenu sapien={personalChat ? selected ?? undefined : undefined}
+    {mobile ? <PersonalAssistantMenu
       open={menu} onOpenChange={setMenu} trigger={menuTrigger} navigation={links} accountName={accountName} pickerOpen={picker} /> :
       <Dialog.Root open={menu} onOpenChange={setMenu}><Dialog.Portal><Dialog.Overlay className="app-nav-scrim" /><Dialog.Content className="app-menu-dialog product-surface science-product-theme" onCloseAutoFocus={event => { event.preventDefault(); if (!picker) menuTrigger.current?.focus(); }}>
         <Dialog.Title>Go to</Dialog.Title><Dialog.Description className="sr-only">Navigate between your Sapiens and application pages.</Dialog.Description><Dialog.Close className="app-dialog-close" aria-label="Close navigation"><X size={20} /></Dialog.Close>

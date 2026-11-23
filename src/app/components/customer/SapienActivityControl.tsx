@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { RateLimitButton } from '../shared/RateLimitButton';
 import { Pause, Play, RefreshCw, MessageSquare, Power } from 'lucide-react';
 import { PauseScheduleControl } from '../shared/PauseScheduleControl';
@@ -16,13 +16,24 @@ export function SapienActivityControl({ sapien, refreshOnMount = false, onActivi
 }
 
 /** The owner keeps activity requests alive independently of where controls are displayed. */
-export function SapienActivityActions({ sapien, controller, compact = false, hidePausedHelp = false, secondaryUnderMore = false }: {
+export function SapienActivityActions({ sapien, controller, compact = false, hidePausedHelp = false, secondaryUnderMore = false, extraActions, dismissMoreOnOutside = false }: {
   sapien: Sapiens; controller: ReturnType<typeof useSapienActivity>; compact?: boolean; hidePausedHelp?: boolean; secondaryUnderMore?: boolean;
+  extraActions?: ReactNode;
+  dismissMoreOnOutside?: boolean;
 }) {
   const { activity, pending, error, notice, refresh, setActivity, schedulePause } = controller;
   const helpId = useId();
   const [moreOpen, setMoreOpen] = useState(false);
   const moreId = useId();
+  const controls = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!dismissMoreOnOutside || !moreOpen) return;
+    const closeOutside = (event: PointerEvent) => {
+      if (event.target instanceof Node && !controls.current?.contains(event.target)) setMoreOpen(false);
+    };
+    document.addEventListener('pointerdown', closeOutside);
+    return () => document.removeEventListener('pointerdown', closeOutside);
+  }, [dismissMoreOnOutside, moreOpen]);
   useEffect(() => { if (error) setMoreOpen(true); }, [error]);
   const reason = activity?.activityUnavailableReason;
   const blocked = !!reason;
@@ -58,7 +69,13 @@ export function SapienActivityActions({ sapien, controller, compact = false, hid
       label={sapien.name} scheduledAt={activity.scheduledPauseAt} disabled={!!pending}
       onSchedule={minutes => void schedulePause(minutes)} /> : null;
 
-  return <div className={`sapien-activity-control${compact ? ' sapien-activity-compact' : ''}${secondaryUnderMore ? ' sapien-directory-actions' : ''}`} aria-busy={pending !== null}>
+  return <div ref={controls} className={`sapien-activity-control${compact ? ' sapien-activity-compact' : ''}${secondaryUnderMore ? ' sapien-directory-actions' : ''}`} aria-busy={pending !== null} onKeyDown={event => {
+    if (event.key === 'Escape' && moreOpen) {
+      setMoreOpen(false);
+      controls.current?.querySelector<HTMLButtonElement>('.sapien-directory-more')?.focus();
+      event.stopPropagation();
+    }
+  }}>
     <span className="sapien-activity-status" role="status" aria-live="polite">{status}{activity?.draining ? ' · Finishing work…' : ''}</span>
     {!(compact && blocked) && reason !== 'simulation_only' && <div className="sapien-activity-actions">
       <RateLimitButton rateLimitBucket={activity ? state === 'active' ? 'control' : 'api_write' : false} type="button" className="sapien-activity-button" disabled={!!pending || blocked || activity?.draining}
@@ -73,7 +90,7 @@ export function SapienActivityActions({ sapien, controller, compact = false, hid
         aria-controls={moreId} onClick={() => setMoreOpen(open => !open)}>
         More<span aria-hidden="true">{moreOpen ? '−' : '+'}</span><span className="sr-only"> actions for {sapien.name}</span>
       </button>
-      <div id={moreId} className="sapien-directory-more-content" hidden={!moreOpen}>{secondary}{schedule}<p>{explanation}</p></div>
+      <div id={moreId} className="sapien-directory-more-content" hidden={!moreOpen}>{secondary}{schedule}<p>{explanation}</p>{extraActions}</div>
     </> : schedule}
     <span id={helpId} className={!secondaryUnderMore && showHelp ? 'sapien-activity-help' : 'sr-only'}>{explanation}</span>
     {error && <p className="sapien-activity-error" role="alert">{error}</p>}
