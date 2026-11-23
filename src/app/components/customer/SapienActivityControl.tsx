@@ -4,6 +4,7 @@ import { Pause, Play, RefreshCw, MessageSquare, Power } from 'lucide-react';
 import { PauseScheduleControl } from '../shared/PauseScheduleControl';
 import { useSapienActivity } from '../../hooks/useSapienActivity';
 import type { SapienActivity, Sapiens } from '../../types/sapiensTypes';
+import { activityStatusLabel } from '../../utils/activityPresentation';
 import '../../../styles/sapien-activity.css';
 
 export function SapienActivityControl({ sapien, refreshOnMount = false, onActivityChange, compact = false, hidePausedHelp = false }: {
@@ -25,8 +26,7 @@ export function SapienActivityActions({ sapien, controller, compact = false, hid
   const state = activity?.activityState;
   const label = pending === 'reading' ? 'Checking…' : pending === 'saving' ? 'Saving…'
     : !activity ? 'Check status' : state === 'active' ? 'Pause' : state === 'paused' ? 'Resume' : 'Activate';
-  const status = reason === 'simulation_owned' ? 'Simulation controlled' : reason === 'simulation_only' ? 'Simulation only' : reason === 'deletion_pending' ? 'Deleting'
-    : blocked ? 'Unavailable' : !activity ? 'Status unknown' : state === 'active' ? 'Active' : state === 'paused' ? 'Paused' : 'Inactive';
+  const status = activityStatusLabel(activity);
   const explanation = reason === 'simulation_owned' ? 'Use Simulation Lab to pause or resume this simulation.'
     : reason === 'simulation_only' ? 'Use Simulation Lab to manage runs. Normal activity is disabled for this Sapien.'
     : reason === 'deletion_pending' ? 'Deletion is in progress.'

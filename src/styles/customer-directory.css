@@ -1,0 +1,46 @@
+/* Customer directory: identity first, activity controls available on demand. */
+.customer-directory .customer-home { max-width:880px; padding-bottom:max(32px, env(safe-area-inset-bottom)); }
+.customer-directory .home-intro { padding-block:28px 20px; }
+.customer-directory-toolbar { display:flex; align-items:center; gap:12px; }
+.customer-directory-search { display:flex; align-items:center; gap:10px; flex:1; min-width:0; padding:0 14px; min-height:48px; background:var(--home-panel); border:1px solid var(--home-line); border-radius:12px; color:var(--home-muted); }
+.customer-directory-search input { width:100%; min-width:0; padding-block:12px; background:transparent; color:var(--home-ink); font:inherit; font-size:16px; border:0; }
+.customer-directory-search:focus-within { outline:2px solid var(--home-accent); outline-offset:2px; }
+.customer-directory-search input:focus-visible { outline:none; }
+.customer-directory-create { display:inline-flex; align-items:center; justify-content:center; gap:6px; min-height:48px; padding:12px 16px; border-radius:12px; background:var(--home-action); color:var(--home-action-ink); font-weight:600; }
+.customer-directory-create:hover { filter:brightness(.95); }
+.customer-directory-count { margin:18px 2px 10px; font-size:14px; color:var(--home-muted); }
+.customer-directory-list { display:flex; flex-direction:column; border:1px solid var(--home-line); border-radius:14px; overflow:clip; background:var(--home-panel); }
+.customer-sapien-row + .customer-sapien-row { border-top:1px solid var(--home-line); }
+.customer-sapien-open { display:flex; align-items:center; gap:14px; width:100%; padding:18px; text-align:left; color:var(--home-ink); }
+.customer-sapien-open:hover { background:var(--home-soft); }
+.customer-sapien-open:disabled { opacity:.65; cursor:wait; }
+.customer-sapien-avatar { display:grid; place-items:center; flex-shrink:0; width:46px; height:46px; border-radius:16px; background:var(--home-soft); color:var(--home-accent); font:24px/1 'Source Serif 4',serif; }
+.customer-sapien-identity { display:flex; flex:1; min-width:0; flex-direction:column; gap:3px; }
+.customer-sapien-name { font-size:18px; font-weight:600; line-height:1.3; overflow-wrap:anywhere; }
+.customer-sapien-role { color:var(--home-muted); font-size:15px; line-height:1.4; overflow-wrap:anywhere; }
+.customer-sapien-id { color:var(--home-muted); font-size:13px; }
+.customer-sapien-open > svg { flex-shrink:0; color:var(--home-muted); }
+.customer-sapien-manage { margin-inline:18px; }
+.customer-sapien-manage summary { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px 12px; padding:4px 0 10px; min-height:44px; list-style:none; cursor:pointer; font-size:14px; color:var(--home-muted); }
+.customer-sapien-manage summary::-webkit-details-marker { display:none; }
+.customer-sapien-manage summary:hover { background:var(--home-soft); }
+.customer-sapien-status,.customer-sapien-manage-label { display:inline-flex; align-items:center; gap:7px; }
+.customer-sapien-status > span { width:6px; height:6px; border-radius:50%; background:var(--home-muted); flex-shrink:0; }
+.customer-sapien-status[data-active="true"] { color:var(--home-ink); }
+.customer-sapien-status[data-active="true"] > span { background:var(--home-action); }
+.customer-sapien-manage-label { flex-shrink:0; }
+.customer-sapien-manage[open] .customer-sapien-manage-label > svg:last-child { transform:rotate(90deg); }
+.customer-sapien-controls { padding:10px 0 18px; }
+.customer-sapien-error { padding:0 18px 12px; color:var(--home-accent); }
+.customer-directory .customer-sapien-open:focus-visible,.customer-sapien-manage summary:focus-visible { outline:2px solid var(--home-accent); outline-offset:-4px; }
+.customer-directory :is(button,summary) { touch-action:manipulation; }
+@media(max-width:600px) {
+  .customer-directory.sapiens-home-screen .customer-home { width:calc(100% - 32px); }
+  .customer-directory .home-intro { padding-block:22px 16px; }
+  .customer-directory .home-intro h1 { font-size:30px; }
+  .customer-directory .home-intro h1 + p { margin-top:6px; }
+  .customer-directory-toolbar { gap:8px; }
+  .customer-directory-create { padding-inline:12px; }
+  .customer-sapien-open { padding:16px; gap:12px; }
+  .customer-sapien-manage { margin-inline:16px; }
+}

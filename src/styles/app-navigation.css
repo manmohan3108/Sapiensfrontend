@@ -83,13 +83,18 @@
 .app-account>div>a { display:block; padding:10px 8px; border-radius:6px; }
 .app-account>div>a:hover { background:var(--sp-recessed); }
 
-.app-shell[data-personal-chat] .app-navigation { padding-inline:12px; }
-.app-shell[data-personal-chat] .app-sapien-picker { border:0; padding-left:4px; }
-.app-shell[data-personal-chat] .app-sapien-picker strong { font-size:18px; }
-.app-shell[data-personal-chat] .app-menu-button { min-width:44px; height:44px; border:0; }
+.app-shell[data-mobile-navigation] .app-navigation { padding-inline:12px; }
+.app-shell[data-mobile-navigation] .app-sapien-picker { border:0; padding-left:4px; }
+.app-shell[data-mobile-navigation] .app-sapien-picker strong { font-size:18px; }
+.app-shell[data-mobile-navigation] .app-menu-button { min-width:44px; height:44px; border:0; }
 .personal-chat-menu { display:grid; gap:16px; margin-top:20px; }
 .personal-chat-menu nav { margin-top:0; }
 .personal-chat-menu>button,.personal-chat-theme { display:flex; align-items:center; gap:8px; min-height:44px; padding:8px 10px; }
 .personal-chat-theme { justify-content:space-between; }
 .personal-chat-options { max-height:calc(100dvh - 20px); overflow-y:auto; overscroll-behavior:contain; }
 @media(max-width:767px) { .app-picker-search input { font-size:16px; } }
+
+.app-shell[data-mobile-navigation] .app-sapien-picker { flex:0 1 auto; max-width:calc(100% - 56px); }
+.app-shell[data-mobile-navigation] .app-sapien-picker>span { flex:0 1 auto; }
+.app-shell[data-mobile-navigation] .app-menu-button { margin-left:auto; flex-shrink:0; }
+.mobile-menu-account { padding:12px 10px 0; border-top:1px solid var(--sp-line); color:var(--sp-muted); overflow-wrap:anywhere; }

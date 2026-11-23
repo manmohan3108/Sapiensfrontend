@@ -83,21 +83,21 @@ export function AppNavigationFrame({ children, requiresSelection = false }: { ch
   const links = destinations.map(item => <Link key={item.id} to={hrefFor(item)} aria-current={area === item.id ? 'page' : undefined} onClick={event => follow(event, item)}>{item.id === 'directory' && <LayoutGrid size={16} aria-hidden="true" />}{item.label}</Link>);
   const matched = items.filter(item => [item.name, item.id, item.role].some(value => value?.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())));
 
-  return <div className="app-shell" data-app-area={area || 'other'} data-personal-chat={personalChat || undefined}>
+  return <div className="app-shell" data-app-area={area || 'other'} data-mobile-navigation={mobile || undefined}>
     <header className="app-navigation product-surface science-product-theme">
-      {!personalChat && <Link to="/" className="app-brand" aria-label="Sapiens website"><SapiensBrandMark /></Link>}
-      {!personalChat && <nav className="app-destinations" aria-label="Main navigation">{links}</nav>}
+      {!mobile && <Link to="/" className="app-brand" aria-label="Sapiens website"><SapiensBrandMark /></Link>}
+      {!mobile && <nav className="app-destinations" aria-label="Main navigation">{links}</nav>}
       <button ref={pickerTrigger} className="app-sapien-picker" onClick={() => openPicker(destinationAfterSwitch(location.pathname), true)} aria-haspopup="dialog" aria-expanded={picker}>
-        <span><small>{personalChat ? 'Your personal assistant' : isRun ? 'App Sapien' : 'Selected Sapien'}</small><strong>{selected?.name || 'Choose a Sapiens'}{selected && !personalChat && <em> #{selected.id}</em>}</strong></span><ChevronDown size={16} aria-hidden="true" />
+        <span><small>{mobile ? 'Selected Sapien' : isRun ? 'App Sapien' : 'Selected Sapien'}</small><strong>{selected?.name || 'Choose a Sapiens'}{selected && !mobile && <em> #{selected.id}</em>}</strong></span><ChevronDown size={16} aria-hidden="true" />
       </button>
-      {!personalChat && <div className="app-account-controls"><ThemeToggle /><details className="app-account" onKeyDown={event => { if (event.key === 'Escape') { event.currentTarget.open = false; event.currentTarget.querySelector('summary')?.focus(); } }}>
+      {!mobile && <div className="app-account-controls"><ThemeToggle /><details className="app-account" onKeyDown={event => { if (event.key === 'Escape') { event.currentTarget.open = false; event.currentTarget.querySelector('summary')?.focus(); } }}>
         <summary aria-label="Account menu"><span className="app-account-name" title={accountName}>{accountName}</span><ChevronDown size={14} aria-hidden="true" /></summary>
         <div><p>{accountName}<small>{admin ? 'Admin account' : 'Customer account'}</small></p><Link to="/account/profile" onClick={event => { const menu = event.currentTarget.closest('details'); if (menu) menu.open = false; }}>My profile</Link><button onClick={() => void logout()}><LogOut size={16} />Sign out</button></div>
       </details></div>}
-      <button ref={menuTrigger} className="app-menu-button" aria-label={personalChat ? 'Open assistant menu' : 'Open main navigation'} aria-expanded={menu} onClick={() => setMenu(true)}><Menu size={20} /></button>
+      <button ref={menuTrigger} className="app-menu-button" aria-label="Open main navigation" aria-expanded={menu} onClick={() => setMenu(true)}><Menu size={20} /></button>
     </header>
-    {personalChat && selected ? <PersonalAssistantMenu key={selected.id} sapien={selected}
-      open={menu} onOpenChange={setMenu} trigger={menuTrigger} /> :
+    {mobile ? <PersonalAssistantMenu sapien={personalChat ? selected ?? undefined : undefined}
+      open={menu} onOpenChange={setMenu} trigger={menuTrigger} navigation={links} accountName={accountName} pickerOpen={picker} /> :
       <Dialog.Root open={menu} onOpenChange={setMenu}><Dialog.Portal><Dialog.Overlay className="app-nav-scrim" /><Dialog.Content className="app-menu-dialog product-surface science-product-theme" onCloseAutoFocus={event => { event.preventDefault(); if (!picker) menuTrigger.current?.focus(); }}>
         <Dialog.Title>Go to</Dialog.Title><Dialog.Description className="sr-only">Navigate between your Sapiens and application pages.</Dialog.Description><Dialog.Close className="app-dialog-close" aria-label="Close navigation"><X size={20} /></Dialog.Close>
         <nav aria-label="Main navigation">{links}</nav>

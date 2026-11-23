@@ -3,13 +3,11 @@ import { secondsRemaining } from '../core/api/rateLimits';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import * as Dialog from '@radix-ui/react-dialog';
-import { ArrowUpRight, Plus, X } from 'lucide-react';
+import { Plus, Search, X } from 'lucide-react';
 import { SapiensHomeHeader } from '../components/customer/SapiensHomeHeader';
 import { useRememberedState } from '../components/navigation/NavigationState';
-import { SapiensIdentityRow } from '../components/customer/SapiensIdentityRow';
+import { CustomerSapienRow } from '../components/customer/CustomerSapienRow';
 import { SapiensEmptyState } from '../components/customer/SapiensEmptyState';
-import { ScienceDetail } from '../components/customer/ScienceDetail';
-import { SapiensBrandMark } from '../components/customer/SapiensBrandMark';
 import { SapiensPresence } from '../components/customer/SapiensPresence';
 import { sapiensService } from '../core/services/sapiensService';
 import { useAuth } from '../contexts/AuthContext';
@@ -19,6 +17,7 @@ import type { SapienActivity, Sapiens } from '../types/sapiensTypes';
 import { validateCreation, creationFailureIsDefinitive } from '../core/customer/creation';
 import '../../styles/customer.css';
 import '../../styles/home-science.css';
+import '../../styles/customer-directory.css';
 
 export function CustomerHomePage() {
   const { user } = useAuth();
@@ -109,23 +108,23 @@ export function CustomerHomePage() {
   const inspectHome = () => { setDialogOpen(false); void refresh(); };
   const filtered = list.filter(item => [item.name, item.role, item.id].some(value => value?.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())));
 
-  return <div className="customer-surface sapiens-home-screen"><a className="customer-skip" href="#customer-main">Skip to content</a>{(loading || listError || list.length === 0) && <SapiensHomeHeader onCreate={showCreation} />}
+  return <div className="customer-surface sapiens-home-screen customer-directory"><a className="customer-skip" href="#customer-main">Skip to content</a>{(loading || listError || list.length === 0) && <SapiensHomeHeader onCreate={showCreation} />}
     <main id="customer-main" className="customer-container customer-home">
       {loading ? <div className="customer-state" role="status" aria-busy="true"><SapiensPresence tone="orange" size={64} animated className="mx-auto mb-4" />Loading your Sapiens…</div>
         : listError ? <div className="customer-state" role="alert"><h1>We couldn’t load your Sapiens</h1><p>Your list is unavailable right now.</p><button className="customer-secondary" onClick={() => void refresh()}>Try again</button></div>
         : list.length === 0 ? <SapiensEmptyState onCreate={showCreation} headingRef={heading} />
         : <><section className="home-intro" aria-labelledby="customer-home-title">
-          <div><p className="home-eyebrow">YOUR PERSONAL SPACE</p><h1 id="customer-home-title" ref={heading} tabIndex={-1}>Your Sapiens</h1><p>Create an AI individual shaped by experience, or open one to continue.</p></div>
-          <div className="home-intro-actions">
-            <div className="home-intro-illustration"><ScienceDetail /><SapiensBrandMark className="home-intro-core" /></div>
-            <button type="button" className="home-secondary home-intro-create" onClick={showCreation}><Plus size={17} aria-hidden="true" />Create a Sapiens</button>
-          </div>
+          <div><h1 id="customer-home-title" ref={heading} tabIndex={-1}>Your Sapiens</h1><p>Open a Sapien to continue, or create a new one.</p></div>
         </section>
           <h2 className="sr-only">Your individuals</h2>
-          {list.length > 3 && <div className="customer-search"><label className="sr-only" htmlFor="sapiens-search">Search your Sapiens</label><input id="sapiens-search" type="search" placeholder="Search by name, focus or ID" value={query} onChange={e => setQuery(e.target.value)} /></div>}
-          {filtered.length === 0 ? <div className="customer-state" role="status"><h2>No Sapiens match your search</h2><button className="customer-secondary" onClick={() => setQuery('')}>Clear search</button></div> : <div className="home-identity-list">{filtered.map(item => <SapiensIdentityRow individual={item} key={item.id} onActivityChange={updateActivity}>
-            {openError?.id === item.id && <p role="alert">{openError.message}</p>}
-            <button className="customer-primary home-open-button" disabled={opening !== null} onClick={() => void openIndividual(item)}>{opening === item.id ? 'Opening…' : 'Open'}<ArrowUpRight size={17} className="shrink-0" /><span className="sr-only"> {item.name}</span></button></SapiensIdentityRow>)}</div>}
+          <div className="customer-directory-toolbar">
+            <label className="customer-directory-search" htmlFor="sapiens-search"><Search size={18} aria-hidden="true" /><span className="sr-only">Search your Sapiens by name, focus or ID</span><input id="sapiens-search" type="search" autoComplete="off" placeholder="Search your Sapiens…" value={query} onChange={e => setQuery(e.target.value)} /></label>
+            <button type="button" className="customer-directory-create" onClick={showCreation}><Plus size={19} aria-hidden="true" />Create<span className="sr-only"> a Sapiens</span></button>
+          </div>
+          <p className="customer-directory-count" role="status">{query.trim() ? `${filtered.length} of ${list.length} Sapiens match` : `${list.length} ${list.length === 1 ? 'Sapien' : 'Sapiens'}`}</p>
+          {filtered.length === 0 ? <div className="customer-state" role="status"><h2>No Sapiens match your search</h2><button className="customer-secondary" onClick={() => setQuery('')}>Clear search</button></div> : <div className="customer-directory-list">{filtered.map(item => <CustomerSapienRow individual={item} key={item.id} onActivityChange={updateActivity}
+            opening={opening === item.id} disabled={opening !== null} error={openError?.id === item.id ? openError.message : undefined}
+            onOpen={() => void openIndividual(item)} />)}</div>}
         </>}
       {unknown && !dialogOpen && <div className="customer-notice" role="status"><strong>Creation outcome unknown.</strong> A refreshed list or matching name does not confirm which request created an individual. We have not repeated the request.<br /><button className="customer-secondary" onClick={showCreation}>Review creation outcome</button></div>}
       {confirmed && !dialogOpen && <div className="customer-notice" role="status">{confirmed.name} was created.<br /><button className="customer-secondary" disabled={opening !== null} onClick={() => void openIndividual(confirmed, true)}>Open {confirmed.name}</button></div>}
