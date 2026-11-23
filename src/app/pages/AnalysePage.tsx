@@ -1,3 +1,4 @@
+import { usePresentation } from '../contexts/PresentationContext';
 import { AnalyseIntroduction } from '../components/analyse/AnalyseIntroduction';
 import { WorkingMemoryAnalysis } from '../components/analyse/WorkingMemoryAnalysis';
 import { useEffect, useState } from 'react';
@@ -27,6 +28,8 @@ import { AnalyseOverview } from '../components/analyse/AnalyseOverview';
 
 const panel = 'rounded-xl border border-white/[.07] bg-white/[.025]';
 export function AnalysePage() {
+  const { adminView } = usePresentation();
+  const analyseBase = adminView ? '/admin/analyse' : '/analyse';
   const { user } = useAuth();
   const [scopeParams] = useSearchParams();
   const navigate = useNavigate();
@@ -38,16 +41,16 @@ export function AnalysePage() {
   useOrchestratorStatus();
   const section = (ANALYSE_NAV.some(n => n.id === rawSection) ? rawSection : 'overview') as AnalyseSection;
   const developmentDescription = Object.entries(ANALYSE_DEVELOPMENT_DESCRIPTIONS).find(([id]) => id === section)?.[1];
-  useEffect(() => { if (!currentSapiens) navigate(sapiensDirectoryPath(user?.role ?? 'customer')); }, [currentSapiens, navigate, user?.role]);
+  useEffect(() => { if (!currentSapiens) navigate(sapiensDirectoryPath(adminView ? 'admin' : 'customer')); }, [currentSapiens, navigate, adminView]);
   useEffect(() => { if (section === 'usage') setUsageOpen(true); }, [section]);
   if (!currentSapiens) return null;
   const hrefFor = (id: AnalyseSection, params?: Record<string, string>) => {
     if (id === 'simulation') {
-      const returnTo = (section === 'overview' ? '/admin/analyse' : '/admin/analyse/' + section) + (scopeParams.size ? '?' + scopeParams : '');
+      const returnTo = (section === 'overview' ? analyseBase : analyseBase + '/' + section) + (scopeParams.size ? '?' + scopeParams : '');
       return '/admin/simulations?sapienId=' + encodeURIComponent(currentSapiens.id) + '&sapienName=' + encodeURIComponent(currentSapiens.name) + '&returnTo=' + encodeURIComponent(returnTo);
     }
     const query = params ? '?' + new URLSearchParams(params) : '';
-    return (id === 'overview' ? '/admin/analyse' : '/admin/analyse/' + id) + query;
+    return (id === 'overview' ? analyseBase : analyseBase + '/' + id) + query;
   };
   const go = (id: AnalyseSection, params?: Record<string, string>) => {
     if (id === 'usage') { setUsageOpen(true); return; }

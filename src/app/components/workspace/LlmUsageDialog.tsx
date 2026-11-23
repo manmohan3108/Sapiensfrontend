@@ -1,3 +1,4 @@
+import { usePresentation } from '../../contexts/PresentationContext';
 import { UsageDashboard } from '../analyse/UsageDashboard';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AlertCircle, BarChart3, Loader2, RefreshCw } from 'lucide-react';
@@ -131,7 +132,7 @@ function UsageKindSection({ kind, state, sapienId, sapienName, onRetry, compactD
 
 export function LlmUsageDialog({ open, onOpenChange, sapienId, sapienName, compactDetails = false }: LlmUsageDialogProps) {
   const { user } = useAuth();
-  const showGlobal = user?.role === 'admin';
+  const { adminView: showGlobal } = usePresentation();
   const requests = useRef({ llm: 0, embedding: 0 });
   const [stateOwner, setStateOwner] = useState(sapienId);
   const [states, setStates] = useState<Record<AiUsageKind, KindState>>({ llm: emptyState(), embedding: emptyState() });

@@ -1,3 +1,4 @@
+import { usePresentation } from '../../contexts/PresentationContext';
 import { Navigate, Outlet, useLocation } from 'react-router';
 import { YourSapiensLink } from '../navigation/YourSapiensLink';
 import { AppNavigationFrame } from '../navigation/AppNavigation';
@@ -73,11 +74,20 @@ function SessionLoading() {
 
 export function ProtectedRoute({ roles, analysis = false, selection = true }: { roles?: UserRole[]; analysis?: boolean; selection?: boolean }) {
   const { status, user } = useAuth();
+  const presentation = usePresentation();
   const location = useLocation();
   if (status === 'loading') return <SessionLoading />;
   if (!user) return <Navigate to={authLink('/login', location.pathname + location.search)} replace />;
   if (roles && !roles.includes(user.role)) return <Navigate to="/access-denied" replace />;
   if (analysis && !canAnalyzeAndSimulate(user)) return <Navigate to="/access-denied" replace />;
+  const customerPreview = user.role === 'admin' && presentation.customerPreview;
+  const adminView = user.role === 'admin' && presentation.adminView;
+  if (customerPreview && roles?.includes('admin')) return <Navigate to="/home" replace />;
+  if (customerPreview && analysis && !presentation.analysisAccess) return <Navigate to="/home" replace />;
+  if (location.pathname.startsWith('/admin/analyse') && !adminView)
+    return <Navigate to={location.pathname.replace('/admin/analyse', '/analyse') + location.search + location.hash} replace />;
+  if (location.pathname.startsWith('/analyse') && adminView)
+    return <Navigate to={'/admin' + location.pathname + location.search + location.hash} replace />;
   return <AppNavigationFrame key={`${user.user_id}:${user.role}`} requiresSelection={selection}>{selection ? <SelectionGuard /> : <Outlet />}</AppNavigationFrame>;
 }
 

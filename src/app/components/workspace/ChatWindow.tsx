@@ -27,7 +27,7 @@ import { sapiensService } from '../../core/services/sapiensService';
 import { formatTime } from '../../utils/formatters';
 import { datedMessages } from '../../utils/chatDates';
 import { useWorkspaceChatClock } from '../../hooks/useWorkspaceChatClock';
-import { canAnalyzeAndSimulate } from '../../core/auth/permissions';
+import { usePresentation } from '../../contexts/PresentationContext';
 import { ChatHistoryItem, ChatMessage, UserSignalType } from '../../types/sapiensTypes';
 import { ApiError } from '../../types/apiTypes';
 import { CombinedInputPanel } from './CombinedInputPanel';
@@ -256,6 +256,7 @@ function MessageBubble({
   showTime: boolean;
 }) {
   const { user } = useAuth();
+  const { adminView } = usePresentation();
   const isUser = msg.role === 'user';
   const isError = !msg.isLoading && msg.role === 'assistant' && (msg.isError || (msg.content ?? '').startsWith('An error occurred'));
 
@@ -330,7 +331,7 @@ function MessageBubble({
               </div>
             )}
 
-            {user?.role === 'admin' && !msg.isLoading && !isError && (
+            {adminView && !msg.isLoading && !isError && (
               <SignalControls msg={msg} onSignal={(s) => onSignal(msg.id, s)} />
             )}
           </>
@@ -395,6 +396,7 @@ function EmptyState({ name, onHint, recent, onResume, loading }: { name: string;
 export function ChatWindow({ personalChat = false }: { personalChat?: boolean }) {
   const retrySeconds = useRateLimitCountdown('api_write');
   const { user } = useAuth();
+  const { analysisAccess } = usePresentation();
   const sending = useRef(false);
   const chatUpdates = useChatUpdates();
   const draftSapienId = useSapiensStore(state => state.currentSapiens?.id);
@@ -417,7 +419,7 @@ export function ChatWindow({ personalChat = false }: { personalChat?: boolean })
   const { sendTextInput, editMessage, sendUserSignal, loadChat, startNewChat } = useSapiens();
   const msgs = useSapiensStore((s) => s.chatMessages);
   const currentSapiens = useSapiensStore((s) => s.currentSapiens);
-  const chatClock = useWorkspaceChatClock(currentSapiens, canAnalyzeAndSimulate(user));
+  const chatClock = useWorkspaceChatClock(currentSapiens, analysisAccess);
   const dateRows = datedMessages(msgs, chatClock.now, chatClock.simulation);
   const chatSessionId = useSapiensStore((s) => s.chatSessionId);
   const status = useSapiensStore((s) => s.status);

@@ -1,3 +1,5 @@
+import { usePresentation } from '../../contexts/PresentationContext';
+import { AdminPreviewControls } from './AdminPreviewControls';
 import { useEffect, useRef, useState, type ReactNode, type MouseEvent } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { Link, useLocation } from 'react-router';
@@ -37,13 +39,23 @@ export function AppNavigationFrame({ children, requiresSelection = false }: { ch
   const pickerTrigger = useRef<HTMLButtonElement>(null);
   const menuTrigger = useRef<HTMLButtonElement>(null);
   const page = useRef<HTMLDivElement>(null);
+  const header = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const element = header.current;
+    if (!element) return;
+    const update = () => element.parentElement?.style.setProperty('--app-nav-height', `${element.getBoundingClientRect().height}px`);
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
   const area = appArea(location.pathname);
   useNavigationScroll(page, `${area === 'directory' ? 'directory' : selected?.id || 'none'}:${location.pathname}${location.search}`);
   const isRun = /^\/admin\/simulations\/[^/]+\/world(?:\/|$)/.test(location.pathname);
-  const admin = user?.role === 'admin';
+  const { adminView: admin, analysisAccess } = usePresentation();
   const accountName = user?.profile?.preferred_name || [user?.profile?.first_name, user?.profile?.last_name].filter(Boolean).join(' ') || user?.username || 'Account';
-  const destinations = appDestinations(admin, canAnalyzeAndSimulate(user));
-  const keyFor = (id: string) => `${selected?.id || 'none'}:${id}`;
+  const destinations = appDestinations(admin, analysisAccess);
+  const keyFor = (id: string) => `${admin ? 'admin' : 'customer'}:${selected?.id || 'none'}:${id}`;
 
   useEffect(() => {
     if (requiresSelection && !selected && !selectionStorage.read()) {
@@ -84,7 +96,7 @@ export function AppNavigationFrame({ children, requiresSelection = false }: { ch
   const matched = items.filter(item => [item.name, item.id, item.role].some(value => value?.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())));
 
   return <div className="app-shell" data-app-area={area || 'other'} data-mobile-navigation={mobile || undefined}>
-    <header className="app-navigation product-surface science-product-theme">
+    <header ref={header} data-preview-controls={user?.role === 'admin' || undefined} className="app-navigation product-surface science-product-theme">
       {!mobile && <Link to="/" className="app-brand" aria-label="Sapiens website"><SapiensBrandMark /></Link>}
       {!mobile && <nav className="app-destinations" aria-label="Main navigation">{links}</nav>}
       <button ref={pickerTrigger} className="app-sapien-picker" onClick={() => openPicker(destinationAfterSwitch(location.pathname), true)} aria-haspopup="dialog" aria-expanded={picker}>
@@ -92,9 +104,10 @@ export function AppNavigationFrame({ children, requiresSelection = false }: { ch
       </button>
       {!mobile && <div className="app-account-controls"><ThemeToggle /><details className="app-account" onKeyDown={event => { if (event.key === 'Escape') { event.currentTarget.open = false; event.currentTarget.querySelector('summary')?.focus(); } }}>
         <summary aria-label="Account menu"><span className="app-account-name" title={accountName}>{accountName}</span><ChevronDown size={14} aria-hidden="true" /></summary>
-        <div><p>{accountName}<small>{admin ? 'Admin account' : 'Customer account'}</small></p><Link to="/account/profile" onClick={event => { const menu = event.currentTarget.closest('details'); if (menu) menu.open = false; }}>My profile</Link><button onClick={() => void logout()}><LogOut size={16} />Sign out</button></div>
+        <div><p>{accountName}<small>{user?.role === 'admin' ? 'Admin account' : 'Customer account'}</small></p><Link to="/account/profile" onClick={event => { const menu = event.currentTarget.closest('details'); if (menu) menu.open = false; }}>My profile</Link><button onClick={() => void logout()}><LogOut size={16} />Sign out</button></div>
       </details></div>}
       <button ref={menuTrigger} className="app-menu-button" aria-label="Open main navigation" aria-expanded={menu} onClick={() => setMenu(true)}><Menu size={20} /></button>
+      <AdminPreviewControls />
     </header>
     {mobile ? <PersonalAssistantMenu sapien={personalChat ? selected ?? undefined : undefined}
       open={menu} onOpenChange={setMenu} trigger={menuTrigger} navigation={links} accountName={accountName} pickerOpen={picker} /> :
@@ -104,7 +117,7 @@ export function AppNavigationFrame({ children, requiresSelection = false }: { ch
       </Dialog.Content></Dialog.Portal></Dialog.Root>}
     <Dialog.Root open={picker} onOpenChange={open => { if (!busy) setPicker(open); }}><Dialog.Portal><Dialog.Overlay className="app-nav-scrim" /><Dialog.Content className="app-picker-dialog product-surface science-product-theme" onCloseAutoFocus={event => { event.preventDefault(); pickerTrigger.current?.focus(); }}>
       <Dialog.Title>{selected ? 'Switch Sapiens' : 'Choose a Sapiens'}</Dialog.Title>
-      <Dialog.Description>{personalChat ? 'Choose the assistant you want to chat with.' : isRun ? 'Open the selected Sapien’s Simulation Lab. This run keeps its original Sapien.' : `Choose who to open in ${target.path.startsWith('/admin/analyse') ? 'Analyse' : target.path === '/connections' ? 'Connections' : target.path.startsWith('/admin/simulations') ? 'Simulation Lab' : 'Workspace'}.`}</Dialog.Description>
+      <Dialog.Description>{personalChat ? 'Choose the assistant you want to chat with.' : isRun ? 'Open the selected Sapien’s Simulation Lab. This run keeps its original Sapien.' : `Choose who to open in ${appArea(target.path) === 'analyse' ? 'Analyse' : target.path === '/connections' ? 'Connections' : target.path.startsWith('/admin/simulations') ? 'Simulation Lab' : 'Workspace'}.`}</Dialog.Description>
       <Dialog.Close className="app-dialog-close" aria-label="Close Sapiens picker" disabled={Boolean(busy)}><X size={20} /></Dialog.Close>
       <label className="app-picker-search"><Search size={17} aria-hidden="true" /><input autoComplete="off" aria-label="Search Sapiens by name, ID or role" placeholder="Search name, ID or role" value={query} onChange={event => setQuery(event.target.value)} /></label>
       <div className="app-picker-list" aria-busy={loading || Boolean(busy)}>

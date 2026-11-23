@@ -1,3 +1,4 @@
+import { usePresentation } from '../contexts/PresentationContext';
 import '../../styles/workspace-refresh.css';
 import '../../styles/workspace-context-reader.css';
 import { useEffect, useState, useRef } from 'react';
@@ -94,14 +95,15 @@ export function WorkspacePage() {
   const heading = useRef<HTMLHeadingElement>(null);
   const announced = useRef<string | null>(null);
   const { user } = useAuth();
+  const { adminView } = usePresentation();
   const mobile = useIsMobile();
   const personalChat = mobile;
   const currentSapiens = useSapiensStore(state => state.currentSapiens);
   useOrchestratorStatus();
 
   useEffect(() => {
-    if (!currentSapiens) navigate(user?.role === 'admin' ? '/admin' : '/home');
-  }, [currentSapiens, navigate, user?.role]);
+    if (!currentSapiens) navigate(adminView ? '/admin' : '/home');
+  }, [currentSapiens, navigate, adminView]);
 
   useEffect(() => {
     const createdName = (location.state as { createdName?: string } | null)?.createdName;
@@ -116,7 +118,7 @@ export function WorkspacePage() {
   if (!currentSapiens) return null;
   return <div className={`product-surface workspace-shell${personalChat ? ' personal-chat' : ''}`}>
     {!personalChat && <HeaderBar headingRef={heading} />}
-    {user?.role === 'admin' && <ActivityTicker key={'activity:' + currentSapiens.id} sapienId={currentSapiens.id} />}
+    {adminView && <ActivityTicker key={'activity:' + currentSapiens.id} sapienId={currentSapiens.id} />}
     <WorkspaceViews key={'views:' + currentSapiens.id} sapienId={currentSapiens.id} name={currentSapiens.name} personalChat={personalChat} />
   </div>;
 }

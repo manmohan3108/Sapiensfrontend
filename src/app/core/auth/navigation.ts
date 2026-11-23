@@ -11,6 +11,7 @@ export function authDestination(user: AuthUser, requested: unknown): string {
   if (['/', '/workspace', '/connections'].includes(path) && !query) return path;
   if (user.role === 'admin' && path === '/admin') return requested;
   if (canAnalyzeAndSimulate(user)) {
+    if (/^\/analyse(?:\/[^/?#]+)?$/.test(path)) return requested;
     if (['/engram', '/engine-bus'].includes(path) && !query) return path;
     if (/^\/admin(?:\/analyse(?:\/[^/?#]+)?|\/simulations(?:\/[^/?#]+\/world(?:\/[^?#]*)?)?)$/.test(path)) return requested;
   }

@@ -11,7 +11,7 @@ import { SapiensEmptyState } from '../components/customer/SapiensEmptyState';
 import { SapiensPresence } from '../components/customer/SapiensPresence';
 import { sapiensService } from '../core/services/sapiensService';
 import { useAuth } from '../contexts/AuthContext';
-import { canAnalyzeAndSimulate } from '../core/auth/permissions';
+import { usePresentation } from '../contexts/PresentationContext';
 import { useSapiensStore } from '../core/state/sapiensStore';
 import type { SapienActivity, Sapiens } from '../types/sapiensTypes';
 import { validateCreation, creationFailureIsDefinitive } from '../core/customer/creation';
@@ -21,7 +21,7 @@ import '../../styles/customer-directory.css';
 
 export function CustomerHomePage() {
   const { user } = useAuth();
-  const analysisAccess = canAnalyzeAndSimulate(user);
+  const { analysisAccess } = usePresentation();
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const [list, setList] = useState<Sapiens[]>([]);

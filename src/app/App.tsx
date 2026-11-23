@@ -1,3 +1,4 @@
+import { PresentationProvider } from './contexts/PresentationContext';
 import { RouterProvider } from 'react-router';
 import { RateLimitNotice } from './components/RateLimitNotice';
 import { router } from './routes';
@@ -11,7 +12,7 @@ export default function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <NavigationStateProvider><RouterProvider router={router} /></NavigationStateProvider>
+        <PresentationProvider><NavigationStateProvider><RouterProvider router={router} /></NavigationStateProvider></PresentationProvider>
         <Toaster richColors position="bottom-right" closeButton />
         <BackendUnavailableScreen />
         <RateLimitNotice />

@@ -1,3 +1,4 @@
+import { usePresentation } from './contexts/PresentationContext';
 import { createBrowserRouter, Navigate } from 'react-router';
 import { LandingPage } from './pages/LandingPage';
 import { WorkspacePage } from './pages/WorkspacePage';
@@ -18,7 +19,8 @@ import { YourSapiensLink } from './components/navigation/YourSapiensLink';
 
 function RoleHome() {
   const { user } = useAuth();
-  return user?.role === 'admin' ? <Navigate to="/admin" replace /> : <CustomerHomePage key={user?.user_id} />;
+  const { adminView } = usePresentation();
+  return adminView ? <Navigate to="/admin" replace /> : <CustomerHomePage key={user?.user_id} />;
 }
 
 export const router = createBrowserRouter([
@@ -48,6 +50,8 @@ export const router = createBrowserRouter([
     Component: () => <ProtectedRoute analysis />,
     children: [
       { path: '/admin/analyse', Component: AnalysePage, ErrorBoundary },
+      { path: '/analyse', Component: AnalysePage, ErrorBoundary },
+      { path: '/analyse/:section', Component: AnalysePage, ErrorBoundary },
       { path: '/admin/analyse/:section', Component: AnalysePage, ErrorBoundary },
     ],
   },

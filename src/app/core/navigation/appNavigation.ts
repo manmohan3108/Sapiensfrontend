@@ -4,7 +4,7 @@ export const appDestinations = (admin: boolean, analysisAccess: boolean) => [
   { id: 'workspace' as AppArea, label: 'Workspace', path: '/workspace', needsSapien: true },
   { id: 'connections' as AppArea, label: 'Connections', path: '/connections', needsSapien: true },
   ...(analysisAccess ? [
-    { id: 'analyse' as AppArea, label: 'Analyse', path: '/admin/analyse', needsSapien: true },
+    { id: 'analyse' as AppArea, label: 'Analyse', path: admin ? '/admin/analyse' : '/analyse', needsSapien: true },
     { id: 'simulations' as AppArea, label: 'Simulations', path: '/admin/simulations', needsSapien: false },
   ] : []),
 ];
@@ -13,7 +13,7 @@ export function appArea(path: string): AppArea | null {
   if (path === '/admin' || path === '/home') return 'directory';
   if (path === '/workspace') return 'workspace';
   if (path === '/connections') return 'connections';
-  if (/^\/admin\/analyse(?:\/|$)/.test(path)) return 'analyse';
+  if (/^\/(?:admin\/)?analyse(?:\/|$)/.test(path)) return 'analyse';
   if (/^\/admin\/simulations(?:\/|$)/.test(path)) return 'simulations';
   return null;
 }

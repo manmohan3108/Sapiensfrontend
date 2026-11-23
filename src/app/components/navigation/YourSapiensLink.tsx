@@ -1,3 +1,4 @@
+import { usePresentation } from '../../contexts/PresentationContext';
 import type { MouseEventHandler } from 'react';
 import { LayoutGrid } from 'lucide-react';
 import { Link } from 'react-router';
@@ -11,8 +12,9 @@ export function YourSapiensLink({ className = '', iconOnly = false, onClick }: {
   onClick?: MouseEventHandler<HTMLAnchorElement>;
 }) {
   const { user } = useAuth();
+  const { adminView } = usePresentation();
   if (!user) return null;
-  return <Link to={sapiensDirectoryPath(user.role)} onClick={onClick}
+  return <Link to={sapiensDirectoryPath(adminView ? 'admin' : 'customer')} onClick={onClick}
     className={`inline-flex min-h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-md text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current ${className}`}
     aria-label={iconOnly ? 'Your Sapiens' : undefined} title={iconOnly ? 'Your Sapiens' : undefined}>
     <LayoutGrid size={16} aria-hidden="true" className="shrink-0" />
