@@ -118,15 +118,26 @@
 .mobile-menu-account { padding:12px 10px 0; border-top:1px solid var(--sp-line); color:var(--sp-muted); overflow-wrap:anywhere; }
 
 /* One shared header: navigation remains visible even when controls need two rows. */
-.app-navigation { flex-wrap:wrap; }
-.app-destinations { min-width:0; }
+.app-navigation { flex-wrap:nowrap; }
+.app-destinations { min-width:0; flex-shrink:0; }
 .app-workspace-controls { min-width:0; position:relative; }
 .app-workspace-controls .sapien-activity-control { display:flex; flex-direction:row; align-items:center; flex-wrap:wrap; gap:8px; }
 .app-workspace-controls .sapien-activity-status { font-size:14px; }
 .app-workspace-controls .sapien-directory-more-content:not([hidden]) { position:absolute; top:calc(100% + 10px); right:0; z-index:50; width:min(340px,calc(100vw - 24px)); max-height:65dvh; overflow:auto; overscroll-behavior:contain; display:flex; flex-wrap:wrap; gap:12px; padding:16px; border:1px solid var(--sp-line); border-radius:8px; background:var(--sp-panel); box-shadow:0 12px 30px #0003; }
 .app-workspace-controls .sapien-directory-more-content p { flex-basis:100%; font-size:14px; color:var(--sp-muted); }
 .app-workspace-controls .sapien-activity-error { flex-basis:100%; max-width:280px; }
-@media(max-width:1500px) {
+@media(min-width:1200px) and (max-width:1500px) {
+  .app-navigation { gap:6px; padding-inline:12px; }
+  .app-destinations { gap:0; }
+  .app-destinations a { padding-inline:6px; }
+  .app-sapien-picker { max-width:180px; }
+  .app-account-name { max-width:80px; }
+  .app-workspace-controls .sapien-activity-control { gap:6px; }
+  .app-workspace-controls .sapien-activity-status { max-width:120px; }
+  .admin-preview-controls summary { padding-inline:6px; }
+}
+@media(max-width:1199px) {
+  .app-navigation { flex-wrap:wrap; }
   .app-navigation .app-destinations { display:flex; order:10; flex-basis:100%; flex-wrap:wrap; border-top:1px solid var(--sp-line); padding-top:4px; }
   .app-navigation .app-sapien-picker { margin-left:0; margin-right:auto; }
 }
