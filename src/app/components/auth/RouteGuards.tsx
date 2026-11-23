@@ -4,7 +4,8 @@ import { AppNavigationFrame } from '../navigation/AppNavigation';
 import { Loader2, ShieldX } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import type { UserRole } from '../../types/authTypes';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useSyncExternalStore } from 'react';
+import { backendAvailability } from '../../core/api/backendAvailability';
 import { useSapiensStore } from '../../core/state/sapiensStore';
 import { sapiensService } from '../../core/services/sapiensService';
 import { resourceSession } from '../../core/auth/authSession';
@@ -64,7 +65,10 @@ function SelectionGuard() {
 }
 
 function SessionLoading() {
-  return <div className="grid min-h-screen place-items-center bg-background text-muted-foreground"><div className="flex items-center gap-3 text-sm"><Loader2 className="size-5 animate-spin text-violet-500" />Restoring your session…</div></div>;
+  const availability = useSyncExternalStore(backendAvailability.subscribe, backendAvailability.getSnapshot);
+  // The shared connection notice owns the explanation while session loading is blocked.
+  if (availability !== 'available') return <div className="min-h-screen bg-background" />;
+  return <div className="grid min-h-screen place-items-center bg-background text-muted-foreground"><div role="status" className="flex items-center gap-3 text-sm"><Loader2 aria-hidden="true" className="size-5 animate-spin motion-reduce:animate-none" />Restoring your session…</div></div>;
 }
 
 export function ProtectedRoute({ roles, analysis = false, selection = true }: { roles?: UserRole[]; analysis?: boolean; selection?: boolean }) {

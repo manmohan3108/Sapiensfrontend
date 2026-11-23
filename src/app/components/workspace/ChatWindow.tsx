@@ -1,5 +1,5 @@
 import { ChatMessageEditor, type EditChatMessage } from './ChatMessageEditor';
-import { LinkifiedText } from '../shared/LinkifiedText';
+import { FormattedText } from '../shared/FormattedText';
 import { useRateLimitCountdown } from '../../core/api/rateLimits';
 import { quotaSummary, quotaReset, quotaRecovery } from '../../utils/quotaPresentation';
 import { ConversationHistory } from './ConversationHistory';
@@ -289,19 +289,19 @@ function MessageBubble({
       </div>
 
       {/* Bubble + metadata */}
-      <div className={`flex flex-col gap-1 max-w-[78%] ${isUser ? 'items-end' : 'items-start'}`}>
+      <div className={`flex min-w-0 flex-col gap-1 max-w-[78%] ${isUser ? 'items-end' : 'items-start'}`}>
         {isUser ? (
           <div
-            className="px-4 py-3 rounded-2xl rounded-tr-sm text-sm leading-relaxed text-sp-ink"
+            className="min-w-0 max-w-full px-4 py-3 rounded-2xl rounded-tr-sm text-sm leading-relaxed text-sp-ink"
             style={{ background: 'var(--sp-recessed)', border: '1px solid var(--sp-line)' }}
           >
-            <p className="whitespace-pre-wrap break-words"><LinkifiedText text={msg.content ?? ''} /></p>
+            <FormattedText text={msg.content ?? ''} />
           </div>
         ) : (
           <>
             <div
               role={isError ? 'alert' : undefined}
-              className={`px-4 py-3 rounded-2xl rounded-tl-sm text-sm leading-relaxed ${isError ? 'text-sp-danger' : 'text-sp-ink'}`}
+              className={`min-w-0 max-w-full px-4 py-3 rounded-2xl rounded-tl-sm text-sm leading-relaxed ${isError ? 'text-sp-danger' : 'text-sp-ink'}`}
               style={isError
                 ? { background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)' }
                 : { background: 'rgb(var(--sp-ink-rgb, 255 255 255) / 0.05)', border: '1px solid rgb(var(--sp-ink-rgb, 255 255 255) / 0.1)', backdropFilter: 'blur(8px)' }
@@ -309,7 +309,7 @@ function MessageBubble({
             >
               {msg.isLoading
                 ? <TypingDots name={sapienName} />
-                : <p className="whitespace-pre-wrap break-words"><LinkifiedText text={msg.content ?? ''} /></p>
+                : <FormattedText text={msg.content ?? ''} />
               }
             </div>
 

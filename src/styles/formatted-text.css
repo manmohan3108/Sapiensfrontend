@@ -1,0 +1,26 @@
+.formatted-text { min-width:0; max-width:100%; overflow-wrap:anywhere; line-height:1.6; }
+.formatted-text > :first-child { margin-top:0; }
+.formatted-text > :last-child { margin-bottom:0; }
+.formatted-text p { white-space:pre-wrap; margin-block:.55em; }
+.formatted-text strong { font-weight:700; }
+.formatted-text em { font-style:italic; }
+.formatted-text :is(h1,h2,h3,h4,h5,h6) { font:600 1.1em/1.4 'Source Sans 3',sans-serif; margin-block:1em .4em; }
+.formatted-text :is(ul,ol) { margin-block:.6em; padding-left:1.5em; }
+.formatted-text ul { list-style:disc; }
+.formatted-text ol { list-style:decimal; }
+.formatted-text li + li { margin-top:.25em; }
+.formatted-text li > p { margin-block:.25em; }
+.formatted-text blockquote { margin-block:.75em; padding-left:1em; border-left:3px solid var(--sp-accent,currentColor); }
+.formatted-text a { text-decoration:underline; text-underline-offset:3px; overflow-wrap:anywhere; }
+.formatted-text a:hover { text-decoration-thickness:2px; }
+.formatted-text :is(a,pre,.formatted-text-table):focus-visible { outline:2px solid var(--sp-accent,currentColor); outline-offset:3px; }
+.formatted-text code { font-family:ui-monospace,monospace; font-size:.92em; background:var(--sp-recessed,transparent); border-radius:4px; padding:.1em .3em; white-space:pre-wrap; }
+.formatted-text pre { max-width:100%; overflow-x:auto; padding:12px; margin-block:.75em; border:1px solid var(--sp-line,currentColor); border-radius:6px; background:var(--sp-recessed,transparent); overscroll-behavior-x:contain; }
+.formatted-text pre code { display:block; padding:0; white-space:pre; overflow-wrap:normal; background:none; }
+.formatted-text-table { max-width:100%; overflow-x:auto; margin-block:.75em; overscroll-behavior-x:contain; }
+.formatted-text table { border-collapse:collapse; width:100%; }
+.formatted-text :is(th,td) { border:1px solid var(--sp-line,currentColor); padding:6px 10px; text-align:left; min-width:7em; }
+.formatted-text th { font-weight:600; background:var(--sp-recessed,transparent); }
+.formatted-text hr { border:0; border-top:1px solid var(--sp-line,currentColor); margin-block:1em; }
+.formatted-text .contains-task-list { list-style:none; padding-left:.25em; }
+.formatted-text .task-list-item input { margin-right:.5em; accent-color:var(--sp-action); }

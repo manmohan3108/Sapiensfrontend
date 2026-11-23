@@ -1,14 +1,15 @@
 import { useEffect, useId, useRef, useState, useSyncExternalStore } from 'react';
 import { Pause, Play, RefreshCw, WifiOff } from 'lucide-react';
 import { backendAvailability } from '../core/api/backendAvailability';
+import { useAuth } from '../contexts/AuthContext';
 import { SapiensBrandMark } from './customer/SapiensBrandMark';
 import { ThemeToggle } from './ThemeToggle';
 import '../../styles/science-direction.css';
 import '../../styles/backend-unavailable.css';
 
 const messages = {
-  restarting: { title: 'The server is restarting.', description: 'Sapiens will be available again shortly. We are checking the connection automatically.' },
-  unavailable: { title: 'The server is temporarily unavailable.', description: 'Sapiens returned a server error. We are checking automatically and will return you to your page when it responds.' },
+  restarting: { title: 'Sapiens is restarting.', description: 'Reconnecting automatically. Your page will return when the server is ready.' },
+  unavailable: { title: 'Sapiens is temporarily unavailable.', description: 'The server returned an error. Reconnecting automatically.' },
   recovered: { title: 'Connection restored.', description: 'The server is responding again. Automatic recovery could not finish; reload this page to continue.' },
   restoring: { title: 'Restoring your page…', description: 'The connection is back. We are refreshing this page automatically.' },
 };
@@ -32,6 +33,7 @@ function ConnectionIllustration({ paused }: { paused: boolean }) {
 /** Keep the router and drafts mounted; transport failures never block the page. */
 export function BackendUnavailableScreen() {
   const availability = useSyncExternalStore(backendAvailability.subscribe, backendAvailability.getSnapshot);
+  const { status } = useAuth();
   const dialog = useRef<HTMLDialogElement>(null);
   const [paused, setPaused] = useState(false);
   const titleId = useId();
@@ -46,11 +48,11 @@ export function BackendUnavailableScreen() {
 
   if (availability === 'available') return null;
   if (availability === 'offline' || availability === 'connection') return (
-    <aside className="connection-notice" role="status" aria-live="polite">
-      <WifiOff size={20} aria-hidden="true" />
+    <aside className={status === 'loading' ? 'connection-notice connection-notice--session' : 'connection-notice'} role="status" aria-live="polite">
+      {availability === 'offline' ? <WifiOff size={20} aria-hidden="true" /> : <RefreshCw size={20} aria-hidden="true" />}
       <p>{availability === 'offline'
         ? 'You’re offline. Check your internet connection.'
-        : 'Connection interrupted. Checking automatically…'}
+        : 'Unable to reach Sapiens. Checking automatically…'}
         <span>Your page stays open. Check any interrupted action before trying again.</span>
       </p>
     </aside>
@@ -66,7 +68,7 @@ export function BackendUnavailableScreen() {
     </header>
     <div className="connection-main">
       <div className="connection-copy">
-        <p className="connection-status" role="status" aria-live="polite"><span aria-hidden="true"/>{recovered ? 'Server available' : 'Waiting for connection'}</p>
+        <p className="connection-status" role="status" aria-live="polite"><span aria-hidden="true"/>{recovered ? 'Server available' : 'Server unavailable'}</p>
         <h1 id={titleId}>{message.title}</h1>
         <p id={descriptionId} className="connection-description">{message.description}</p>
         <button type="button" className="connection-reload" onClick={() => window.location.reload()} autoFocus>

@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { ChevronDown, ChevronRight, Pencil } from 'lucide-react';
-import { LinkifiedText } from '../shared/LinkifiedText';
+import { FormattedText } from '../shared/FormattedText';
 import type { ChatMessage } from '../../types/sapiensTypes';
 
 export type EditChatMessage = (messageId: string, text: string, requestId: string) => Promise<void>;
@@ -100,7 +100,7 @@ export function ChatMessageEditor({ message, disabled, onSave, actions, timestam
         {message.revisions!.map((version, index) => <li key={version.id}>
           <span>{index === 0 ? 'Original' : `Version ${index + 1}`}</span>
           {version.timestamp && <time dateTime={version.timestamp} className="ml-2">{new Date(version.timestamp).toLocaleString()}</time>}
-          <p className="whitespace-pre-wrap break-words text-sp-ink"><LinkifiedText text={version.content} /></p>
+          <FormattedText text={version.content} className="text-sp-ink" />
         </li>)}
       </ol>
     </div>}
