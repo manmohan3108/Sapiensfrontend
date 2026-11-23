@@ -36,6 +36,7 @@ const {useEffect,useRef,useState} = React;
 const useAuth = () => ({user:globalThis.navTest.user,logout:()=>{}});
 const usePresentation = () => ({adminView:globalThis.navTest.user?.role === 'admin' && !globalThis.navTest.preview,analysisAccess:globalThis.navTest.user?.role === 'admin' ? !globalThis.navTest.preview || !!globalThis.navTest.customerAnalysis : !!globalThis.navTest.user?.analysis_simulation_access});
 const AdminPreviewControls = () => null;
+const WorkspaceHeaderControls = () => React.createElement('nav', {'aria-label':'Workspace controls'}, 'Pause');
 const useIsMobile = () => false;
 const PersonalAssistantMenu = () => null;
 const useSapiensStore = select => select({currentSapiens:globalThis.navTest.selected});
@@ -55,6 +56,7 @@ const render = () => renderToStaticMarkup(React.createElement(AppNavigationFrame
 let html = render();
 for (const label of ['Your Sapiens','Workspace','Connections','Analyse','Simulations','Sapien 58','Page content']) assert(html.includes(label), label);
 assert.match(html, /href="\/workspace" aria-current="page"/);
+assert.match(html, /<header[\s\S]*Workspace controls[\s\S]*<\/header>/, 'Workspace actions belong in the shared header');
 globalThis.navTest.memory.destinations.set('admin:58:analyse', '/admin/analyse/goals');
 assert(render().includes('href="/admin/analyse/goals"'), 'Return to the last Analyse section');
 globalThis.navTest.user = {user_id:'customer1',role:'customer'};

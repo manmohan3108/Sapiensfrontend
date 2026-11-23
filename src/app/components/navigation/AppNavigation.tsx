@@ -1,5 +1,6 @@
 import { usePresentation } from '../../contexts/PresentationContext';
 import { AdminPreviewControls } from './AdminPreviewControls';
+import { WorkspaceHeaderControls } from '../workspace/WorkspaceHeaderControls';
 import { useEffect, useRef, useState, type ReactNode, type MouseEvent } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { Link, useLocation } from 'react-router';
@@ -25,6 +26,8 @@ export function AppNavigationFrame({ children, requiresSelection = false }: { ch
   const selected = useSapiensStore(state => state.currentSapiens);
   const location = useLocation();
   const mobile = useIsMobile();
+  const narrowHeader = useIsMobile(1100);
+  const workspaceMenu = narrowHeader && location.pathname === '/workspace';
   const personalChat = mobile && location.pathname === '/workspace';
   const memory = useNavigationMemory();
   const [menu, setMenu] = useState(false);
@@ -100,8 +103,9 @@ export function AppNavigationFrame({ children, requiresSelection = false }: { ch
       {!mobile && <Link to="/" className="app-brand" aria-label="Sapiens website"><SapiensBrandMark /></Link>}
       {!mobile && <nav className="app-destinations" aria-label="Main navigation">{links}</nav>}
       <button ref={pickerTrigger} className="app-sapien-picker" onClick={() => openPicker(destinationAfterSwitch(location.pathname), true)} aria-haspopup="dialog" aria-expanded={picker}>
-        <span><small>{mobile ? 'Selected Sapien' : isRun ? 'App Sapien' : 'Selected Sapien'}</small><strong>{selected?.name || 'Choose a Sapiens'}{selected && !mobile && <em> #{selected.id}</em>}</strong></span><ChevronDown size={16} aria-hidden="true" />
+        <span><small>{mobile ? 'Selected Sapien' : isRun ? 'App Sapien' : 'Selected Sapien'}</small><strong>{selected?.name || 'Choose a Sapiens'}{selected && <em> #{selected.id}</em>}</strong>{area === 'workspace' && selected?.role && !mobile && <small className="app-sapien-role" title={selected.role}>{selected.role}</small>}</span><ChevronDown size={16} aria-hidden="true" />
       </button>
+      {area === 'workspace' && selected && !narrowHeader && <WorkspaceHeaderControls key={selected.id} />}
       {!mobile && <div className="app-account-controls"><ThemeToggle /><details className="app-account" onKeyDown={event => { if (event.key === 'Escape') { event.currentTarget.open = false; event.currentTarget.querySelector('summary')?.focus(); } }}>
         <summary aria-label="Account menu"><span className="app-account-name" title={accountName}>{accountName}</span><ChevronDown size={14} aria-hidden="true" /></summary>
         <div><p>{accountName}<small>{user?.role === 'admin' ? 'Admin account' : 'Customer account'}</small></p><Link to="/account/profile" onClick={event => { const menu = event.currentTarget.closest('details'); if (menu) menu.open = false; }}>My profile</Link><button onClick={() => void logout()}><LogOut size={16} />Sign out</button></div>
@@ -109,7 +113,7 @@ export function AppNavigationFrame({ children, requiresSelection = false }: { ch
       <button ref={menuTrigger} className="app-menu-button" aria-label="Open main navigation" aria-expanded={menu} onClick={() => setMenu(true)}><Menu size={20} /></button>
       <AdminPreviewControls />
     </header>
-    {mobile ? <PersonalAssistantMenu sapien={personalChat ? selected ?? undefined : undefined}
+    {mobile || workspaceMenu ? <PersonalAssistantMenu sapien={personalChat || workspaceMenu ? selected ?? undefined : undefined}
       open={menu} onOpenChange={setMenu} trigger={menuTrigger} navigation={links} accountName={accountName} pickerOpen={picker} /> :
       <Dialog.Root open={menu} onOpenChange={setMenu}><Dialog.Portal><Dialog.Overlay className="app-nav-scrim" /><Dialog.Content className="app-menu-dialog product-surface science-product-theme" onCloseAutoFocus={event => { event.preventDefault(); if (!picker) menuTrigger.current?.focus(); }}>
         <Dialog.Title>Go to</Dialog.Title><Dialog.Description className="sr-only">Navigate between your Sapiens and application pages.</Dialog.Description><Dialog.Close className="app-dialog-close" aria-label="Close navigation"><X size={20} /></Dialog.Close>

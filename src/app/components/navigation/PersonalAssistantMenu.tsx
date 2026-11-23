@@ -7,6 +7,7 @@ import { useSapienActivity } from '../../hooks/useSapienActivity';
 import type { Sapiens } from '../../types/sapiensTypes';
 import { SapienActivityActions } from '../customer/SapienActivityControl';
 import { ThemeToggle } from '../ThemeToggle';
+import { RunEngineButton } from '../workspace/RunEngineButton';
 
 interface MobileMenuProps {
   open: boolean; onOpenChange: (open: boolean) => void;
@@ -31,7 +32,7 @@ function AssistantActivityMenu({ sapien, ...props }: MobileMenuProps & { sapien:
 
   useEffect(() => { if (open) refresh(); }, [open, refresh]);
 
-  return <MobileNavigationMenu {...props}><SapienActivityActions sapien={sapien} controller={activity} /></MobileNavigationMenu>;
+  return <MobileNavigationMenu {...props}><SapienActivityActions sapien={sapien} controller={activity} /><RunEngineButton /></MobileNavigationMenu>;
 }
 
 function MobileNavigationMenu({ open, onOpenChange, trigger, navigation, accountName, pickerOpen, children }: MobileMenuProps & { children?: ReactNode }) {

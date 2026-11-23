@@ -32,6 +32,17 @@
 .app-sapien-picker strong { display:block; font-size:14px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .app-sapien-picker em { font-weight:400; font-style:normal; color:var(--sp-muted); }
 .app-sapien-picker svg { flex-shrink:0; }
+.app-sapien-role { max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.app-shell[data-app-area=workspace] .app-navigation { height:auto; min-height:64px; }
+.app-navigation .workspace-header-actions { flex-shrink:0; }
+.app-navigation .workspace-header-actions .sapien-activity-control { max-width:340px; }
+.app-workspace-status { font-size:13px; color:var(--sp-muted); }
+@media(min-width:768px) and (max-width:1600px) {
+  .app-shell[data-app-area=workspace] .app-destinations { display:none; }
+  .app-shell[data-app-area=workspace] .app-navigation .app-menu-button { display:grid; place-items:center; min-width:44px; height:44px; }
+  .app-shell[data-app-area=workspace] .app-account-name { max-width:75px; }
+  .app-shell[data-app-area=workspace] .app-navigation .workspace-header-actions .sapien-activity-control { max-width:240px; }
+}
 .app-account-controls { display:flex; align-items:center; gap:6px; }
 .app-account { position:relative; }
 .app-account summary { display:flex; align-items:center; gap:5px; padding:10px 6px; font-size:13px; cursor:pointer; list-style:none; }
