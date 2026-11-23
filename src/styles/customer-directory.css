@@ -34,6 +34,27 @@
 .customer-sapien-error { padding:0 18px 12px; color:var(--home-accent); }
 .customer-directory .customer-sapien-open:focus-visible,.customer-sapien-manage summary:focus-visible { outline:2px solid var(--home-accent); outline-offset:-4px; }
 .customer-directory :is(button,summary) { touch-action:manipulation; }
+/* Desktop is a directory row, rather than a stretched mobile stack. */
+@media(min-width:801px) {
+  .customer-directory .customer-home { max-width:1100px; }
+  .customer-directory .home-intro { padding-block:24px 16px; }
+  .customer-directory-toolbar { justify-content:space-between; }
+  .customer-directory-search { flex:0 1 540px; }
+  .customer-directory-create { margin-left:auto; }
+  .customer-directory-list { border-radius:10px; }
+  .customer-sapien-row { display:grid; grid-template-columns:minmax(0,1fr) minmax(250px,32%); align-items:start; }
+  .customer-sapien-open { grid-column:1; grid-row:1; min-height:92px; padding:16px 20px; }
+  .customer-sapien-avatar { width:40px; height:40px; border-radius:12px; font-size:22px; }
+  .customer-sapien-identity { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:baseline; gap:4px 14px; }
+  .customer-sapien-name { font-size:17px; }
+  .customer-sapien-id { grid-column:2; grid-row:1; white-space:nowrap; }
+  .customer-sapien-role { grid-column:1 / -1; grid-row:2; }
+  .customer-sapien-manage { grid-column:2; grid-row:1 / span 2; margin:0; padding-inline:16px; }
+  .customer-sapien-manage summary { min-height:92px; padding:16px 0; gap:12px; }
+  .customer-sapien-status { flex:1; min-width:0; }
+  .customer-sapien-controls { border-top:1px solid var(--home-line); padding-top:14px; }
+  .customer-sapien-error { grid-column:1; grid-row:2; padding-inline:20px; }
+}
 @media(max-width:600px) {
   .customer-directory.sapiens-home-screen .customer-home { width:calc(100% - 32px); }
   .customer-directory .home-intro { padding-block:22px 16px; }
