@@ -370,3 +370,23 @@ Completed replies remain visible. Editing during reasoning is allowed; only anot
 HTTP submission temporarily disables Save. Waiting on earlier work is shown explicitly.
 Deploy the matching backend before enabling this UI. An older backend cannot treat
 an edit as an ordinary new message because the edit route is separate.
+
+## Workspace activity ticker
+
+Admin workspaces show a single-line ticker of recent recorded tool results and
+Awareness updates. Customers do not mount the ticker or poll it yet; the backend
+endpoint already uses ordinary Sapien ownership checks. Deploy the backend
+activity-feed endpoint before releasing this frontend.
+
+The ticker reads GET /sapien/<id>/activity-feed?limit=5 through the shared
+authenticated transport. It polls after each completed request, normally every
+15 seconds, only while the workspace is visible. Hiding the tab, leaving the
+workspace or changing Sapien cancels the request. Errors back off and honor
+Retry-After; authorization/not-found responses stop polling.
+
+Hover, keyboard focus and the pause button stop scrolling; reduced-motion
+preferences use static text. Opening the headline shows recorded timestamps and
+links to the existing Analyse records. Entries stay stable while being read.
+These are saved observations, not live execution status. Raw commands and queries
+are excluded by the backend; structured targets are shown where available.
+No LLM call, runtime command or new background job is made by this UI.

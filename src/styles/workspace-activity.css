@@ -1,0 +1,33 @@
+/* One quiet line; full text is available in the existing dialog pattern. */
+.workspace-activity { display:flex; align-items:center; flex:0 0 32px; min-width:0; gap:10px; padding:0 12px; border-bottom:1px solid var(--sp-line); color:var(--sp-muted); font:400 13px/1.4 'Source Sans 3',sans-serif; }
+.workspace-activity-label { flex-shrink:0; font-size:12px; }
+.workspace-activity-open { display:block; flex:1; min-width:0; height:32px; overflow:hidden; text-align:left; cursor:pointer; }
+.workspace-activity-open:hover { color:var(--sp-ink); }
+.workspace-activity-track { display:flex; width:max-content; white-space:nowrap; animation:workspace-activity-scroll var(--activity-duration) linear infinite; }
+.workspace-activity-track>span { flex-shrink:0; }
+.workspace-activity-separator { display:inline-block; padding:0 24px; }
+.workspace-activity[data-paused=true] .workspace-activity-track { animation-play-state:paused; }
+.workspace-activity-empty { display:block; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+.workspace-activity-pause { display:flex; align-items:center; justify-content:center; flex-shrink:0; width:32px; height:32px; border-radius:4px; touch-action:manipulation; }
+.workspace-activity-pause:hover { color:var(--sp-ink); background:var(--sp-recessed); }
+@keyframes workspace-activity-scroll { to { transform:translateX(-50%); } }
+
+.product-surface.workspace-activity-dialog { width:min(560px,calc(100vw - 24px)); max-height:80dvh; overflow-y:auto; overscroll-behavior:contain; border:1px solid var(--sp-line); padding:24px; background-image:none; box-shadow:0 18px 50px #0003; }
+.workspace-activity-dialog>h2 { padding-right:24px; font:500 22px/1.2 'Source Serif 4',Georgia,serif; }
+.workspace-activity-dialog>p { color:var(--sp-muted); font-size:14px; }
+.workspace-activity-dialog ul { margin:0; padding:0; list-style:none; }
+.workspace-activity-dialog li { padding:12px 0; border-bottom:1px solid var(--sp-line); }
+.workspace-activity-dialog li:last-child { border:0; }
+.workspace-activity-dialog li>a { display:block; font-size:15px; line-height:1.5; overflow-wrap:anywhere; color:var(--sp-ink); text-decoration:underline; text-underline-offset:3px; }
+.workspace-activity-dialog li>a:hover { color:var(--sp-accent); }
+.workspace-activity-dialog small { display:block; margin-top:5px; color:var(--sp-muted); font-size:12px; }
+.workspace-activity-dialog .workspace-activity-notice { color:var(--sp-warning); }
+.workspace-activity-dialog .workspace-activity-updated { margin:0; font-size:12px; }
+.workspace-activity-dialog :is(a,button):focus-visible { outline:2px solid var(--sp-accent); outline-offset:3px; }
+.workspace-activity-dialog>button { min-width:32px; min-height:32px; display:flex; align-items:center; justify-content:center; }
+@media(prefers-reduced-motion:reduce) {
+  .workspace-activity-track { animation:none; transform:none; }
+  .workspace-activity-track>span+span { display:none; }
+  .workspace-activity-pause { display:none; }
+  .workspace-activity-dialog { animation:none!important; transition:none!important; }
+}

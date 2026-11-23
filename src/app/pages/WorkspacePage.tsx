@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { BrainCircuit, Eye, Target, CircleHelp, Expand, Minimize2, X } from 'lucide-react';
 import { useIsMobile } from '../components/ui/use-mobile';
 import { HeaderBar } from '../components/workspace/HeaderBar';
+import { ActivityTicker } from '../components/workspace/ActivityTicker';
 import { AwarenessPanel } from '../components/workspace/AwarenessPanel';
 import { ChatWindow } from '../components/workspace/ChatWindow';
 import { MemoryPanel } from '../components/workspace/MemoryPanel';
@@ -115,6 +116,7 @@ export function WorkspacePage() {
   if (!currentSapiens) return null;
   return <div className={`product-surface workspace-shell${personalChat ? ' personal-chat' : ''}`}>
     {!personalChat && <HeaderBar headingRef={heading} />}
+    {user?.role === 'admin' && <ActivityTicker key={currentSapiens.id} sapienId={currentSapiens.id} />}
     <WorkspaceViews key={currentSapiens.id} sapienId={currentSapiens.id} name={currentSapiens.name} personalChat={personalChat} />
   </div>;
 }
