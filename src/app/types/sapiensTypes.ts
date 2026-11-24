@@ -147,7 +147,7 @@ export interface ChatApiResponse {
 /**
  * A single message in the chat window, enriched with observability metadata.
  */
-export type ChatTurnStatus = 'queued' | 'processing' | 'replying' | 'waiting' | 'completed' | 'no_reply' | 'failed' | 'superseded';
+export type ChatTurnStatus = 'queued' | 'processing' | 'replying' | 'waiting' | 'deferred' | 'completed' | 'no_reply' | 'failed' | 'superseded';
 
 export interface ChatMessage {
   latestMessageId?: string;

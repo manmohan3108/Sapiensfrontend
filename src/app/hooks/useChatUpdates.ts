@@ -41,6 +41,7 @@ export function useChatUpdates() {
         state.setChatMessages([...saved, ...unknown]);
         setError(null);
         if (detail.turns?.some(turn => pendingTurn(turn.status))) delay = 5000;
+        else if (detail.turns?.some(turn => turn.status === 'deferred')) delay = 60000;
       } catch (failure) {
         if (!current()) return;
         const status = (failure as { status?: number }).status;
