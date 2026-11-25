@@ -14,7 +14,7 @@ function SavedValue({ value }: { value: unknown }) {
 
 function FieldList({ fields }: { fields: EvidenceField[] }) {
   return <dl className="feedback-facts">{fields.map(field => <div className="feedback-fact-row" key={field.key}>
-    <dt>{field.label}</dt><dd><DiagnosticText text={field.value} limit={220} /></dd>
+    <dt>{field.label}</dt><dd><DiagnosticText text={field.value} limit={220} plain /></dd>
   </div>)}</dl>;
 }
 

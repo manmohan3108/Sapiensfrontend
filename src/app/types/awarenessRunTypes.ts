@@ -62,6 +62,7 @@ export interface AwarenessFocusSelection extends AwarenessFocusDiagnostic<Awaren
 export interface AwarenessRunsResponse {
   sapien_id: number;
   inspection_mode: 'stored';
+  current_understanding?: AwarenessStory;
   items: AwarenessRunSummary[];
   total: number;
   offset: number;
@@ -107,6 +108,7 @@ export interface AwarenessRunDetail {
   focus: AwarenessRunSubject;
   focus_selection?: AwarenessFocusSelection;
   understanding: string;
+  ongoing_understanding?: AwarenessStoryReview;
   assessment: Record<string, unknown>;
   activity: { steps: AwarenessRunStep[]; round_count: number; rounds_inferred?: boolean; truncated: boolean; ordering: string };
   context: Record<string, unknown>;
@@ -119,4 +121,30 @@ export interface AwarenessRunDetail {
     metadata: Record<string, unknown>;
   }>;
   technical: Record<string, unknown>;
+}
+
+export interface AwarenessStory {
+  availability: 'available' | 'empty' | 'unavailable' | 'not_recorded' | 'ambiguous';
+  revision?: number;
+  reference?: string;
+  recorded_at?: string | null;
+  overall_perspective?: string;
+  immediate_perspective?: string;
+  summary_record_id?: string | null;
+}
+
+export interface AwarenessStoryReview {
+  supplied: AwarenessStory;
+  update: {
+    status: 'saved' | 'pending' | 'review_pending' | 'reviewed' | 'failed' | 'no_update_recorded' | 'not_recorded' | 'unavailable' | 'ambiguous';
+    proposal?: {
+      based_revision: number;
+      overall_perspective: string;
+      immediate_perspective: string;
+      edits?: Array<{ perspective?: 'overall_perspective' | 'immediate_perspective'; old_text: string; new_text: string; reason: string; evidence_refs: string[] }>;
+      evidence_refs?: string[];
+    };
+    saved_story?: AwarenessStory;
+    resolution_thought?: string;
+  };
 }

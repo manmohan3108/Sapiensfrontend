@@ -10,6 +10,13 @@ const load = async (text, filename) => {
   return import('data:text/javascript;base64,' + Buffer.from(code).toString('base64'));
 };
 const model = await load(await source('core/navigation/appNavigation.ts'), 'appNavigation.ts');
+const { pendingConnectionCount } = await load((await source('core/navigation/connectionRequests.ts')).replace(/^import .*;\r?\n/gm, ''), 'connectionRequests.ts');
+assert.equal(pendingConnectionCount({sapien_id:58,requests:[
+  {id:1,sapien_id:58,status:'pending'}, {id:1,sapien_id:58,status:'pending'},
+  {id:2,sapien_id:58,status:'connected'}, {id:3,sapien_id:58,status:'denied'},
+  {id:4,sapien_id:58,status:'cancelled'}, {id:5,sapien_id:58,status:'expired'},
+  {id:6,sapien_id:59,status:'pending'}, {id:7,sapien_id:58,status:'needs_attention'},
+]}),1,'Only unique pending requests for this Sapien count');
 assert.deepEqual(model.appDestinations(false, false).map(item => item.id), ['directory','workspace','connections']);
 assert.deepEqual(model.appDestinations(true, true).map(item => item.id), ['directory','workspace','connections','analyse','simulations']);
 assert.equal(model.appArea('/admin/analyse/working-memory'), 'analyse');
@@ -36,6 +43,7 @@ const {useEffect,useRef,useState} = React;
 const useAuth = () => ({user:globalThis.navTest.user,logout:()=>{}});
 const usePresentation = () => ({adminView:globalThis.navTest.user?.role === 'admin' && !globalThis.navTest.preview,analysisAccess:globalThis.navTest.user?.role === 'admin' ? !globalThis.navTest.preview || !!globalThis.navTest.customerAnalysis : !!globalThis.navTest.user?.analysis_simulation_access});
 const AdminPreviewControls = () => null;
+const useConnectionRequestCount = () => globalThis.navTest.pendingConnections ?? null;
 const WorkspaceHeaderControls = () => React.createElement('div', {'aria-label':'Workspace controls'}, 'Pause / More');
 const useIsMobile = (breakpoint=768) => (globalThis.navTest.width ?? 1920) < breakpoint;
 const PersonalAssistantMenu = ({sapien,navigation}) => React.createElement('aside', {'data-workspace-menu':sapien?.id}, navigation);
@@ -54,6 +62,12 @@ const Dialog = new Proxy({}, {get:()=>()=>null});
 const { AppNavigationFrame } = await load(shellPrelude + shellSource, 'AppNavigation.tsx');
 const render = () => renderToStaticMarkup(React.createElement(AppNavigationFrame, null, React.createElement('p',null,'Page content')));
 let html = render();
+globalThis.navTest.pendingConnections=3;
+assert(render().includes('3 pending connection requests requiring your action'));
+assert(render().includes('class="app-request-badge"'));
+globalThis.navTest.pendingConnections=0;
+assert(!render().includes('class="app-request-badge"'));
+globalThis.navTest.pendingConnections=null;
 for (const label of ['Your Sapiens','Workspace','Connections','Analyse','Simulations','Sapien 58','Page content']) assert(html.includes(label), label);
 assert.match(html, /href="\/workspace" aria-current="page"/);
 assert.match(html, /<header[\s\S]*aria-label="Workspace controls"[\s\S]*<\/header>/, 'Workspace actions share the header');

@@ -1,3 +1,4 @@
+import { FormattedText } from '../shared/FormattedText';
 import { AnalyseControls } from './AnalyseControls';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useSearchParams } from 'react-router';
@@ -34,7 +35,7 @@ function Field({ label, value }: { label: string; value: unknown }) {
   return <div className="min-w-0"><dt className="text-[11px] text-white/40">{label}</dt><dd className="mt-1 whitespace-pre-wrap break-words text-xs leading-5 text-white/80 [overflow-wrap:anywhere]">{display(value)}</dd></div>;
 }
 function Stored({ label, value }: { label: string; value: unknown }) {
-  return <section className={`${panel} p-4`}><h3 className="text-sm text-cyan-100">{label}</h3><div className="mt-3 max-h-80 overflow-auto whitespace-pre-wrap break-words text-base leading-7 text-white/85 [overflow-wrap:anywhere]">{display(value)}</div></section>;
+  return <section className={`${panel} p-4`}><h3 className="text-sm text-cyan-100">{label}</h3><div className="mt-3 max-h-80 overflow-auto break-words text-base leading-7 text-white/85 [overflow-wrap:anywhere]">{typeof value === 'string' ? <FormattedText text={display(value)} /> : <pre className="whitespace-pre-wrap">{display(value)}</pre>}</div></section>;
 }
 function Failure({ status, retry }: { status?: number; retry: () => void }) {
   const message = status === 401 ? 'Your session expired. Sign in again.'
@@ -244,3 +245,4 @@ function InquiryList({ sapienId, kind }: { sapienId: string; kind: InquiryKind }
     </DialogContent></Dialog>
   </div>;
 }
+import { FormattedText } from '../shared/FormattedText';

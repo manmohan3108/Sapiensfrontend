@@ -1,3 +1,4 @@
+import { FormattedText } from './load-formatted-text.mjs';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { transformWithEsbuild } from 'vite';
@@ -16,10 +17,12 @@ const h = {
 };
 globalThis.analyseTest = { React, Icons, h };
 const strip = text => text.replace(/^import[\s\S]*?;\r?\n/gm, '');
+globalThis.analyseTest.FormattedText = FormattedText;
 async function load(path, prelude = '', extra = '') {
   const source = await readFile(new URL('../src/app/' + path, import.meta.url), 'utf8');
   const icons = [...source.matchAll(/import \{([^}]+)\} from 'lucide-react'/g)].map(match => `const {${match[1]}} = globalThis.analyseTest.Icons;`).join('\n');
-  const { code } = await transformWithEsbuild(`const React = globalThis.analyseTest.React;\n${icons}\n${prelude}\n${strip(source)}\n${extra}`, path, { loader:'tsx', jsx:'transform', jsxFactory:'React.createElement', jsxFragment:'React.Fragment' });
+  const { code } = await transformWithEsbuild(`const FormattedText=globalThis.analyseTest.FormattedText;
+const React = globalThis.analyseTest.React;\n${icons}\n${prelude}\n${strip(source)}\n${extra}`, path, { loader:'tsx', jsx:'transform', jsxFactory:'React.createElement', jsxFragment:'React.Fragment' });
   return import('data:text/javascript;base64,' + Buffer.from(code).toString('base64'));
 }
 const hooks = `const {h} = globalThis.analyseTest;

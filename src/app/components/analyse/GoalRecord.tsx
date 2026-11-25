@@ -1,3 +1,4 @@
+import { FormattedText } from '../shared/FormattedText';
 import { useId, useRef, useState, type ReactNode } from 'react';
 import type { GoalContext, GoalDetail, WorkflowRecord } from '../../types/goalTypes';
 import { sourceName } from '../workspace/ContextReader';
@@ -21,7 +22,7 @@ function GoalContextView({ context, title }: { context: GoalContext; title: stri
       {question.resolution && <DiagnosticText text={question.resolution} />}
     </li>)}</ul></div>}
     {context.decisions.length > 0 && <div><h5>Recorded decisions</h5><ul>{context.decisions.map((decision, index) => <li key={index}>
-      <DiagnosticText text={decision.decision} />{decision.rationale && <p className="ag-muted">{decision.rationale}</p>}<small>{absoluteTime(decision.at)}</small>
+      <DiagnosticText text={decision.decision} />{decision.rationale && <FormattedText className="ag-muted" text={decision.rationale} />}<small>{absoluteTime(decision.at)}</small>
     </li>)}</ul></div>}
     {context.facts.length > 0 && <div><h5>Saved facts</h5><dl>{context.facts.map((fact, index) => <div key={index}>
       <dt>{fact.key}</dt><dd><DiagnosticText text={fact.value} /><small>Source: {fact.source || 'Not recorded'}</small></dd>
@@ -72,7 +73,7 @@ export function GoalRecord({ detail, actions }: { detail: GoalDetail; actions?: 
 
     {plan && <section className="ag-plan">
       <div className="ag-title-row"><h3>Current plan</h3><span className="ag-muted">{planSummary(plan)}</span></div>
-      <p className="ag-body-text">{goalText(plan.description).text || 'Plan description not recorded'}</p>
+      <FormattedText className="ag-body-text" text={goalText(plan.description).text || 'Plan description not recorded'} />
       <div className="ag-meta"><GoalState record={plan} />{plan.retired === true && <span>{completion(plan)}</span>}</div>
       {plan.tasks.length > 0 && <p className="ag-muted">Steps are shown in the saved plan order, not a history of execution.</p>}
       <ol className="ag-steps">{plan.tasks.map((step, index) => <li key={step.id || index}>

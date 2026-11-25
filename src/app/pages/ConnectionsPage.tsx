@@ -1,3 +1,4 @@
+import { CONNECTION_REQUESTS_UPDATED } from '../core/navigation/connectionRequests';
 import { RateLimitButton } from '../components/shared/RateLimitButton';
 import { secondsRemaining, useRateLimitCountdown } from '../core/api/rateLimits';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -254,6 +255,7 @@ function ConnectionsContent() {
   const sapienId = currentSapiens ? Number.parseInt(currentSapiens.id, 10) : NaN;
   const [data, setData] = useState<ConnectionsResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const loadVersion = useRef(0);
   const [error, setError] = useState('');
   const [activeProvider, setActiveProvider] = useState<string | null>(null);
   const [activeRequest, setActiveRequest] = useState<number | undefined>();
@@ -274,12 +276,18 @@ function ConnectionsContent() {
   useEffect(() => { if (!currentSapiens) navigate('/home'); }, [currentSapiens, navigate]);
   const load = useCallback(async () => {
     if (!Number.isFinite(sapienId)) return;
+    const version = ++loadVersion.current;
     setLoading(true); setError('');
-    try { setData(await connectionsService.list(sapienId)); }
-    catch (err) { setError(errorMessage(err)); }
-    finally { setLoading(false); }
+    try {
+      const latest = await connectionsService.list(sapienId);
+      if (version !== loadVersion.current) return;
+      setData(latest);
+      window.dispatchEvent(new CustomEvent(CONNECTION_REQUESTS_UPDATED, { detail: latest }));
+    }
+    catch (err) { if (version === loadVersion.current) setError(errorMessage(err)); }
+    finally { if (version === loadVersion.current) setLoading(false); }
   }, [sapienId]);
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => { void load(); return () => { loadVersion.current++; }; }, [load]);
   useEffect(() => { setApprovalHint(''); }, [sapienId, activeRequest]);
   useEffect(() => { setDenialReason(''); }, [sapienId, confirm?.kind, confirm?.id]);
 

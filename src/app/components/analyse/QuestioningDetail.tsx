@@ -1,3 +1,4 @@
+import { FormattedText } from '../shared/FormattedText';
 import { useId } from 'react';
 import { Link } from 'react-router';
 import type { InquiryDetail } from '../../types/inquiryTypes';
@@ -12,10 +13,10 @@ function EvidenceBlock({ entry, cited = false }: { entry: QuestionEvidence; cite
     </header>
     <div className="question-evidence-body">
       {(entry.derived || entry.partial) && <p className="question-note">{entry.derived ? 'Saved summary of the source' : 'Partial saved record'}{entry.partial ? ' · some detail is missing' : ''}</p>}
-      {entry.body && <p className="question-text">{entry.body}</p>}
+      {entry.body && <FormattedText className="question-text" text={entry.body} />}
       {entry.messages.map((message, index) => <blockquote key={index} className="question-message">
         <p className="question-message-origin"><strong>{message.author || 'Sender not recorded'}</strong>{message.location && <span>{message.location}</span>}{message.when && <time>{absoluteTime(message.when)}</time>}</p>
-        <p className="question-text">{message.body}</p>
+        <FormattedText className="question-text" text={message.body} />
       </blockquote>)}
       {!entry.body && !entry.messages.length && <p className="question-help">This record has no readable message. Its saved fields are available below.</p>}
       {entry.status && <DiagnosticBadge tone={entry.status.includes('failure') ? 'danger' : entry.status.includes('uncertain') ? 'warning' : 'neutral'}>{entry.status}</DiagnosticBadge>}
@@ -45,10 +46,10 @@ export function QuestioningDetail({ item, asOf }: { item: InquiryDetail['item'];
 
     <section className="question-answer" aria-labelledby={`${id}-answer`}>
       <h3 id={`${id}-answer`}>{view.answer ? 'Sapiens’ recorded answer' : item.state === 'open' ? 'This question is still open' : 'Answer not retained'}</h3>
-      {view.answer ? <p className="question-text">{view.answer}</p> : <p className="question-help">{item.state === 'open' ? 'No answer is stored for this question yet.' : item.state === 'stale' ? 'The record was closed without establishing an answer.' : 'The saved record does not include readable answer text.'}</p>}
+      {view.answer ? <FormattedText className="question-text" text={view.answer} /> : <p className="question-help">{item.state === 'open' ? 'No answer is stored for this question yet.' : item.state === 'stale' ? 'The record was closed without establishing an answer.' : 'The saved record does not include readable answer text.'}</p>}
       {view.answer && <p className="question-help">{item.state === 'open' ? 'The record remains open. This is its latest saved understanding.' : 'This is Sapiens’ assessment of the available evidence, not independent verification.'}</p>}
-      {view.reason && <div className="question-reason"><h4>Reason for this assessment</h4><p className="question-text">{view.reason}</p></div>}
-      {view.remaining && <div className="question-reason"><h4>Still unresolved in this assessment</h4><p className="question-text">{view.remaining}</p></div>}
+      {view.reason && <div className="question-reason"><h4>Reason for this assessment</h4><FormattedText className="question-text" text={view.reason} /></div>}
+      {view.remaining && <div className="question-reason"><h4>Still unresolved in this assessment</h4><FormattedText className="question-text" text={view.remaining} /></div>}
     </section>
 
     <section className="question-evidence-section" aria-labelledby={`${id}-trigger`}>

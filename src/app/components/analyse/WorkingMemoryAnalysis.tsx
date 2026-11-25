@@ -1,3 +1,4 @@
+import { FormattedText } from '../shared/FormattedText';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { ArrowUpRight, Search, X } from 'lucide-react';
@@ -24,7 +25,7 @@ function MemoryDetails({ entry, focused, openEngram }: { entry: WMEntry; focused
   return <>
     <div className="awm-reader-heading"><div><Dialog.Title className="awm-title">{memoryKind(entry)}</Dialog.Title><Dialog.Description>Content and recorded origin of this memory.</Dialog.Description></div><Dialog.Close className="analyse-button" aria-label="Close memory entry"><X size={18} aria-hidden="true" /></Dialog.Close></div>
     <OriginLine entry={entry} />
-    <p className="awm-content">{entry.content || 'Content was not supplied for this memory reference.'}</p>
+    <FormattedText className="awm-content" text={entry.content || 'Content was not supplied for this memory reference.'} />
     {!!entry.tags?.length && <div className="awm-tags" aria-label="Memory tags">{entry.tags.map(tag => <span key={tag} className="awm-tag">{tag}</span>)}</div>}
     <section className="awm-section"><h3>Origin</h3><dl className="awm-facts">
       <dt>Person</dt><dd>{origin.person || 'Not supplied'}</dd><dt>Service</dt><dd>{origin.service || 'Not supplied'}</dd>

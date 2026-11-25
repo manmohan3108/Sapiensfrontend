@@ -5,6 +5,7 @@ import { sapiensService } from '../../core/services/sapiensService';
 import { matchedTrace, traceObject, traceText } from '../workspace/awarenessTrace';
 import { DiagnosticDisclosure, DiagnosticText } from './DiagnosticPrimitives';
 import { AwarenessTechnicalDetails } from './AwarenessTechnicalDetails';
+import { RunUnderstanding } from './AwarenessUnderstanding';
 import { absoluteTime, deliveryAudits, inspectionError, sameReference, sourceGroups, subjectLabel } from './awarenessPresentation';
 
 export function hasOmission(value: unknown): boolean {
@@ -76,6 +77,7 @@ export function AwarenessEvidence({ data }: { data: AwarenessRunDetail }) {
   const selectedContext = Array.isArray(context.selected_context) ? context.selected_context.map(traceObject) : [];
   const groups = sourceGroups(data);
   return <div className="awareness-evidence">
+    <RunUnderstanding review={data.ongoing_understanding}/>
     <h3>Sources that shaped the focus</h3>
     <p className="awareness-caption">Original information is kept separate from Sapiens’ interpretation. One source can have several roles.</p>
     {groups.length ? <ol className="awareness-evidence-list">{groups.map((entry, index) => <li key={index}>
@@ -126,7 +128,7 @@ export function AwarenessEvidence({ data }: { data: AwarenessRunDetail }) {
     </DiagnosticDisclosure>
     <DiagnosticDisclosure title="Technical details">
       <SavedValue value={{ run_id: run.id, title: run.title, mode: run.mode, started_at: run.started_at, completed_at: run.completed_at, understanding: data.understanding,
-        round_count: data.activity.round_count, thought_link: run.thought_link, assessment: data.assessment, ...data.technical }}/>
+        round_count: data.activity.round_count, thought_link: run.thought_link, assessment: data.assessment, ongoing_understanding: data.ongoing_understanding, ...data.technical }}/>
       {run.thought_link.status === 'exact' && run.thought_link.id && <details className="diagnostic-disclosure" onToggle={event => setOriginalOpen(event.currentTarget.open)}>
         <summary>Original trace and flow graph</summary>
         <p className="awareness-caption">The existing advanced view, matched to this exact run. It may contain more retained selection diagnostics.</p>

@@ -1,3 +1,4 @@
+import { FormattedText } from './load-formatted-text.mjs';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { transformWithEsbuild } from 'vite';
@@ -18,10 +19,12 @@ const test = globalThis.awarenessTest = { React, Icons, h, service: {} };
 const hooks = `const {useState,useRef}=globalThis.awarenessTest.h; const useId=()=>"awareness-test"; const useEffect=fn=>globalThis.awarenessTest.h.effects.push(fn);`;
 const realHooks = 'const {useState,useRef,useId,useEffect}=React;';
 const bindings = name => `const {${Object.keys(test[name]).join(',')}}=globalThis.awarenessTest.${name};`;
+globalThis.awarenessTest.FormattedText = FormattedText;
 async function load(file, prelude = '', extra = '') {
   const source = await readFile(new URL('../src/app/' + file, import.meta.url), 'utf8');
   const icons = [...source.matchAll(/import \{([^}]+)\} from 'lucide-react'/g)].map(match => `const {${match[1]}}=globalThis.awarenessTest.Icons;`).join('\n');
-  const { code } = await transformWithEsbuild(`const React=globalThis.awarenessTest.React;\n${icons}\n${prelude}\n${source.replace(/^import[\s\S]*?;\r?\n/gm, '')}\n${extra}`, file,
+  const { code } = await transformWithEsbuild(`const FormattedText=globalThis.awarenessTest.FormattedText;
+const React=globalThis.awarenessTest.React;\n${icons}\n${prelude}\n${source.replace(/^import[\s\S]*?;\r?\n/gm, '')}\n${extra}`, file,
     { loader: 'tsx', jsx: 'transform', jsxFactory: 'React.createElement', jsxFragment: 'React.Fragment' });
   return import('data:text/javascript;base64,' + Buffer.from(code).toString('base64'));
 }

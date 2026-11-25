@@ -58,8 +58,8 @@ export const connectionsService = {
     });
   },
 
-  list(sapienId: number): Promise<ConnectionsResponse> {
-    return connectionFetch<ConnectionsResponse>(collectionPath(sapienId));
+  list(sapienId: number, signal?: AbortSignal): Promise<ConnectionsResponse> {
+    return connectionFetch<ConnectionsResponse>(collectionPath(sapienId), { signal });
   },
 
   create(sapienId: number, payload: CreateConnectionPayload): Promise<ConnectionResponse> {

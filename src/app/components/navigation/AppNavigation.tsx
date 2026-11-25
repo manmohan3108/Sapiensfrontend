@@ -1,5 +1,6 @@
 import { usePresentation } from '../../contexts/PresentationContext';
 import { AdminPreviewControls } from './AdminPreviewControls';
+import { useConnectionRequestCount } from './useConnectionRequestCount';
 import { WorkspaceHeaderControls } from '../workspace/WorkspaceHeaderControls';
 import { useEffect, useRef, useState, type ReactNode, type MouseEvent } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
@@ -23,6 +24,7 @@ import '../../../styles/app-navigation.css';
 export function AppNavigationFrame({ children, requiresSelection = false }: { children: ReactNode; requiresSelection?: boolean }) {
   const { user, logout } = useAuth();
   const selected = useSapiensStore(state => state.currentSapiens);
+  const pendingConnections = useConnectionRequestCount(selected?.id, user?.user_id);
   const location = useLocation();
   const mobile = useIsMobile();
   const personalChat = mobile && location.pathname === '/workspace';
@@ -92,7 +94,12 @@ export function AppNavigationFrame({ children, requiresSelection = false }: { ch
       event.preventDefault(); openPicker(item.path);
     } else setMenu(false);
   };
-  const links = destinations.map(item => <Link key={item.id} to={hrefFor(item)} aria-current={area === item.id ? 'page' : undefined} onClick={event => follow(event, item)}>{item.id === 'directory' && <LayoutGrid size={16} aria-hidden="true" />}{item.label}</Link>);
+  const links = destinations.map(item => <Link key={item.id} to={hrefFor(item)} aria-current={area === item.id ? 'page' : undefined} onClick={event => follow(event, item)}>
+    {item.id === 'directory' && <LayoutGrid size={16} aria-hidden="true" />}
+    {item.id === 'connections' && pendingConnections != null && pendingConnections > 0
+      ? <span className="app-connection-label">{item.label}<span className="app-request-badge" aria-hidden="true">{pendingConnections > 99 ? '99+' : pendingConnections}</span><span className="sr-only"> — {pendingConnections} pending connection {pendingConnections === 1 ? 'request' : 'requests'} requiring your action</span></span>
+      : item.label}
+  </Link>);
   const matched = items.filter(item => [item.name, item.id, item.role].some(value => value?.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())));
 
   return <div className="app-shell" data-app-area={area || 'other'} data-mobile-navigation={mobile || undefined}>

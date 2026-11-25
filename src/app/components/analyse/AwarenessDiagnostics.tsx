@@ -5,6 +5,7 @@ import { sapiensService } from '../../core/services/sapiensService';
 import type { AwarenessRunsResponse } from '../../types/awarenessRunTypes';
 import { DiagnosticBadge, DiagnosticDisclosure } from './DiagnosticPrimitives';
 import { AwarenessRunReader } from './AwarenessRunReader';
+import { CurrentUnderstanding } from './AwarenessUnderstanding';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '../ui/dialog';
 import { absoluteTime, assessmentLabel, inspectionError, processingLabel, processingProblem, reviewView, subjectLabel } from './awarenessPresentation';
 import '../../../styles/awareness-reader.css';
@@ -71,7 +72,9 @@ function RunBrowser({ sapienId }: { sapienId: string }) {
   };
   return <div className="awareness-reader">
     {!scoped && params.has('awarenessFor') && <p role="status" className="awareness-caption">The linked selection belongs to another Sapien. Showing records for the currently selected Sapien.</p>}
-    {error && <div role="alert" className="awareness-error">{data ? 'Refresh failed; showing the last loaded page. ' : ''}{error} <button type="button" className="diagnostic-link" disabled={loading} onClick={() => setRevision(value => value + 1)}>Retry list</button></div>}
+    {error && <div role="alert" className="awareness-error">{loaded ? 'Refresh failed; showing the last loaded information. ' : ''}{error} <button type="button" className="diagnostic-link" disabled={loading} onClick={() => setRevision(value => value + 1)}>Retry list</button></div>}
+    <CurrentUnderstanding story={loaded?.sapien_id === Number(sapienId) ? loaded.current_understanding : undefined}
+      loading={loading} failed={!!error}/>
     <section className="awareness-runs" aria-label="Saved runs">
       <div className="awareness-list-panel">
       <div className="awareness-table-toolbar">

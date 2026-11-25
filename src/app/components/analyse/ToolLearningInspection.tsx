@@ -1,3 +1,4 @@
+import { FormattedText } from '../shared/FormattedText';
 import { AnalyseControls } from './AnalyseControls';
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
@@ -94,10 +95,10 @@ function Lessons({ lessons = [], onEvidence }: { lessons?: (ToolLesson | string)
   return <ol className="analyse-learned-lessons">{lessons.map((lesson, index) => <li key={index}>
     <span className="analyse-lesson-number">{index + 1}</span>
     <div className="min-w-0">
-      <p className="analyse-lesson-guidance">{typeof lesson === 'string' ? lesson : lesson.guidance || 'Guidance text not included in this record.'}</p>
+      <FormattedText className="analyse-lesson-guidance" text={typeof lesson === 'string' ? lesson : lesson.guidance || 'Guidance text not included in this record.'} />
       {typeof lesson === 'string' ? <p className="analyse-inline-note">Saved preview</p> : <>
-        {lesson.conditions && <p className="analyse-lesson-context"><strong>When:</strong> {lesson.conditions}</p>}
-        {lesson.uncertainty && <p className="analyse-lesson-context"><strong>Limits:</strong> {lesson.uncertainty}</p>}
+        {lesson.conditions && <div className="analyse-lesson-context"><strong>When:</strong><FormattedText text={lesson.conditions} /></div>}
+        {lesson.uncertainty && <div className="analyse-lesson-context"><strong>Limits:</strong><FormattedText text={lesson.uncertainty} /></div>}
         {lesson._truncated && <p className="analyse-inline-note">This lesson preview is truncated.</p>}
         <div className="analyse-lesson-references">
           {onEvidence && lesson.evidence_ids?.map((id, i) => id === '[truncated]' ? <span key={i}>More references omitted from preview</span> : <button className={control} key={`${id}-${i}`} onClick={() => onEvidence(id)}>View evidence {i + 1}</button>)}
@@ -118,7 +119,7 @@ function Evidence({ items, selected }: { items: LearningEvidence[]; selected?: s
     {visible.map(item => <article key={item.id} className={`${panel} space-y-3`}>
       <h4 className="text-sm text-cyan-200">{item.provenance?.server || 'Unknown server'} / {item.provenance?.tool || 'Unknown tool'}</h4>
       {!item.available ? <p className="text-amber-200">Evidence unavailable or outside this scope.</p> : <>
-        <p className="max-h-80 overflow-auto whitespace-pre-wrap break-words text-sm leading-6 text-white/80">{item.content || 'No stored text.'}</p>
+        <FormattedText className="max-h-80 overflow-auto break-words text-sm leading-6 text-white/80" text={item.content || 'No stored text.'} />
         {item.truncated && <p className="text-xs text-amber-200">Evidence text is truncated.</p>}
       </>}
       <dl className="grid gap-3 sm:grid-cols-2"><Field label="Caller">{item.provenance?.caller}</Field><Field label="Source">{item.provenance?.source}</Field><Field label="Occurred">{time(item.provenance?.occurred_at)}</Field><Field label="Observed">{time(item.observed_at)}</Field><Field label="Execution">{item.provenance?.execution_id}</Field><Field label="Recorded result">{item.provenance?.is_uncertain === true ? 'Outcome uncertain' : item.provenance?.is_error === true ? 'Tool error' : item.provenance?.is_error === false ? 'No tool error recorded (not proof of task success)' : 'Unknown'}</Field></dl>
@@ -174,7 +175,7 @@ function Usage({ sapienId, profileId }: { sapienId: string; profileId: string })
     <p className="text-xs text-amber-100/75">Usage reports consideration/application—not successful execution. Missing usage does not mean rejection.</p>
     <form onSubmit={event => { event.preventDefault(); setQueryText(String(new FormData(event.currentTarget).get('q') || '').trim()); setOffset(0); }} className="flex gap-2"><input name="q" aria-label="Search usage consumers and reasons" maxLength={160} className={`${control} min-w-0 flex-1`} placeholder="Search consumer or reason" /><button className={control}>Search</button></form>
     <Status {...read} />{read.data && <><Paging page={read.data} onPage={setOffset} />{!read.data.items.length && <p className={panel}>No reported usage matches.</p>}{read.data.items.map(row => <article className={panel} key={row.id}>
-      <h4 className="text-sm text-cyan-200">{row.consumer || 'Unknown consumer'} · {row.outcome || 'Unknown outcome'}</h4><p className="my-2 text-xs text-white/45">{time(row.occurred_at)}</p><p className="whitespace-pre-wrap text-sm text-white/75">{row.reason || 'No overall reason recorded.'}</p>
+      <h4 className="text-sm text-cyan-200">{row.consumer || 'Unknown consumer'} · {row.outcome || 'Unknown outcome'}</h4><p className="my-2 text-xs text-white/45">{time(row.occurred_at)}</p><FormattedText className="text-sm text-white/75" text={row.reason || 'No overall reason recorded.'} />
       {row.items?.map((item, i) => typeof item === 'string' ? <p key={i} className="text-xs text-amber-200">Usage preview: {item}</p> : <dl key={i} className="mt-3 border-t border-white/10 pt-3"><Field label={`Lesson reference · ${item.outcome || 'Unknown'}`}>{item.item_id}</Field><Field label="Reason">{item.reason}</Field></dl>)}<Raw value={row} />
     </article>)}</>}
   </div>;

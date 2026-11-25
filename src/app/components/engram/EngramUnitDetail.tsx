@@ -1,3 +1,4 @@
+import { FormattedText } from '../shared/FormattedText';
 import { useEffect, useState } from 'react';
 import { ChevronDown, ChevronRight, ArrowLeft, ExternalLink, Share2 } from 'lucide-react';
 import { engramService } from '../../core/services/engramService';
@@ -160,7 +161,7 @@ export function EngramUnitDetail({
         className="rounded-xl p-5"
         style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${tc}20` }}
       >
-        <p className="text-sm text-white/80 leading-relaxed whitespace-pre-wrap">{unit.content}</p>
+        <FormattedText className="text-sm text-white/80 leading-relaxed " text={unit.content} />
       </div>
 
       {/* Context slots */}

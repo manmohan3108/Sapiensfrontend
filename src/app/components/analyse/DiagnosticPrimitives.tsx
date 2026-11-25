@@ -1,11 +1,13 @@
 import { useId, useState, type ReactNode } from 'react';
+import { FormattedText } from '../shared/FormattedText';
 
-export function DiagnosticText({ text, limit = 380 }: { text: string; limit?: number }) {
+export function DiagnosticText({ text, limit = 380, plain = false }: { text: string; limit?: number; plain?: boolean }) {
   const [expanded, setExpanded] = useState(false);
   const id = useId();
   const long = text.length > limit;
   const preview = text.slice(0, limit).replace(/\s+\S*$/, '');
-  return <div className="diagnostic-text"><p id={id}>{!long || expanded ? text : `${preview}…`}</p>
+  const visible = !long || expanded ? text : `${preview}…`;
+  return <div className="diagnostic-text"><div id={id}>{plain ? <p>{visible}</p> : <FormattedText text={visible} />}</div>
     {long && <button type="button" className="diagnostic-link" aria-expanded={expanded} aria-controls={id} onClick={() => setExpanded(!expanded)}>{expanded ? 'Show less' : 'Show full text'}</button>}
   </div>;
 }
