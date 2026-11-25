@@ -51,14 +51,34 @@ function Story({ story, historical = false }: { story?: AwarenessStory; historic
   </>;
 }
 
+function currentStoryPreview(story?: AwarenessStory): string {
+  if (!story || story.availability === 'not_recorded') return 'Not recorded';
+  if (story.availability === 'unavailable') return 'Unavailable — use Refresh to retry';
+  if (story.availability === 'ambiguous') return 'Conflicting records';
+  return story.overall_perspective?.trim() || story.immediate_perspective?.trim() || 'No understanding saved yet';
+}
+
 export function CurrentUnderstanding({ story, loading, failed }: { story?: AwarenessStory; loading: boolean; failed: boolean }) {
+  const [expanded, setExpanded] = useState(false);
   const headingId = useId();
+  const contentId = useId();
+  const preview = loading && !story ? 'Loading understanding…'
+    : failed && !story ? 'Could not load — use Refresh to retry' : currentStoryPreview(story);
   return <section className="awareness-current-story" aria-labelledby={headingId} aria-busy={loading}>
-    <h2 id={headingId}>Current understanding</h2>
-    <p className="awareness-caption">How this Sapien currently understands its situation. This is its latest saved account.</p>
-    {loading && !story ? <p role="status" className="awareness-caption">Loading understanding…</p>
-      : failed && !story ? <p className="awareness-caption">Understanding could not be loaded. Retry the refresh below.</p>
-      : <Story story={story}/>}
+    <h2 id={headingId}><button type="button" className="awareness-story-toggle"
+      aria-expanded={expanded} aria-controls={contentId}
+      aria-label={`Current understanding: ${expanded ? 'Collapse' : 'Expand'}`}
+      onClick={() => setExpanded(value => !value)}>
+      <span className="awareness-story-label">Current understanding</span>
+      <span className="awareness-story-inline-preview" aria-hidden="true">{preview}</span>
+      <span className="awareness-story-toggle-label">{expanded ? 'Collapse' : 'Expand'}</span>
+    </button></h2>
+    <div id={contentId} className="awareness-story-content" hidden={!expanded}>
+      <p className="awareness-caption">How this Sapien currently understands its situation. This is its latest saved account.</p>
+      {loading && !story ? <p role="status" className="awareness-caption">Loading understanding…</p>
+        : failed && !story ? <p className="awareness-caption">Understanding could not be loaded. Retry the refresh below.</p>
+        : <Story story={story}/>}
+    </div>
   </section>;
 }
 
