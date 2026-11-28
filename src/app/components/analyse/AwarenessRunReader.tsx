@@ -1,3 +1,4 @@
+import { Link, useSearchParams } from 'react-router';
 import { quotaSummary, quotaReset } from '../../utils/quotaPresentation';
 import { useEffect, useId, useRef, useState } from 'react';
 import { BrainCircuit, ClipboardList, FileText, Workflow } from 'lucide-react';
@@ -59,7 +60,7 @@ export function AwarenessSummary({ data, onActivity }: { data: AwarenessRunDetai
       <DiagnosticText text={data.focus_selection?.reason || 'The reason was not recorded.'}/>
       <p className="awareness-caption">This does not mean that pending work is complete.</p>
     </section> : <div className="awareness-summary-pair">
-      <section className="awareness-summary-block awareness-source-block"><h3><FileText size={19} aria-hidden="true"/>{triggerAvailable ? 'What started this' : focusAvailable ? 'Selected information' : 'What started this'}</h3>
+      <section className="awareness-summary-block awareness-source-block"><h3><FileText size={19} aria-hidden="true"/>{run.mode === 'continuation' ? 'Original event' : triggerAvailable ? 'What started this' : focusAvailable ? 'Selected information' : 'What started this'}</h3>
         {!triggerAvailable && <p className="awareness-caption">{data.trigger.availability === 'not_applicable' ? 'Sapiens started this review without an incoming trigger.' : 'The initiating event was not retained. Any selected information is shown below.'}</p>}
         {source && <SourceExcerpt subject={source}/>}
         {separateFocus && <DiagnosticDisclosure title="Source selected for the focus"><SourceExcerpt subject={data.focus}/></DiagnosticDisclosure>}
@@ -101,14 +102,25 @@ export function AwarenessSummary({ data, onActivity }: { data: AwarenessRunDetai
 
 export function AwarenessRunContent({ data, view, selectedStep, onView }: { data: AwarenessRunDetail } & Pick<ReaderProps, 'view' | 'selectedStep' | 'onView'>) {
   const id = useId();
+  const [params] = useSearchParams();
+  const continued = data.run.mode === 'continuation';
+  const previousId = data.run.continuation?.previous_beat_id;
+  const previousQuery = new URLSearchParams(params);
+  previousQuery.set('awarenessFor', String(data.sapien_id));
+  if (previousId) previousQuery.set('awarenessRun', previousId);
+  previousQuery.delete('awarenessView');
+  previousQuery.delete('awarenessStep');
   const activityButton = useRef<HTMLButtonElement>(null);
   const body = useRef<HTMLDivElement>(null);
   useEffect(() => { body.current?.scrollTo({ top: 0 }); }, [view, selectedStep]);
   const route = traceText(traceObject(data.delivery.communication).reply_route_ref);
   return <div className="awareness-run-reader">
     <header className="awareness-review-header">
-      <div className="awareness-review-meta"><strong>{subjectLabel(data.trigger)}</strong><time dateTime={data.run.started_at || undefined}>Review started {absoluteTime(data.run.started_at)}</time></div>
+      <div className="awareness-review-meta"><strong>{continued ? 'Continued work' : subjectLabel(data.trigger)}</strong><time dateTime={data.run.started_at || undefined}>Review started {absoluteTime(data.run.started_at)}</time></div>
       <p className="awareness-caption">{processingLabel(data.run.processing_state)}{route.startsWith('simulation:') ? ' · Reply route belongs to a simulation' : ''}</p>
+      {continued && <p className="awareness-caption">Resumed earlier work; the original event remains its source.
+        {previousId && previousId !== data.run.id && <> <Link className="diagnostic-link" to={{ search: '?' + previousQuery.toString() }}>View previous run</Link></>}
+      </p>}
       <div role="group" aria-label="Review detail view" className="awareness-reader-views">
         {([['summary', 'Summary'], ['activity', `Activity (${data.activity.steps.length})`], ['sources', 'Sources & details']] as const).map(([value, label]) =>
           <button key={value} ref={value === 'activity' ? activityButton : undefined} type="button" aria-pressed={view === value} aria-controls={id + '-view'} onClick={() => onView(value)}>{label}</button>)}

@@ -125,8 +125,9 @@ function RunBrowser({ sapienId }: { sapienId: string }) {
                 </Link>
                 {preview && preview !== title && <p className="awareness-caption awareness-run-preview">{preview}</p>}
               </td>
-              <td role="cell" data-label="Triggered by"><span>{category || subjectLabel(item.trigger)}</span>
-                {category && item.trigger.origin_relation !== 'related_subject' && item.trigger.sender?.name && <small>{item.trigger.sender.name}</small>}
+              <td role="cell" data-label="Triggered by"><span>{item.mode === 'continuation' ? 'Continued work' : category || subjectLabel(item.trigger)}</span>
+                {item.mode === 'continuation' && <small>Originally: {subjectLabel(item.trigger)}</small>}
+                {item.mode !== 'continuation' && category && item.trigger.origin_relation !== 'related_subject' && item.trigger.sender?.name && <small>{item.trigger.sender.name}</small>}
               </td>
               <td role="cell" data-label="Processing">{processingProblem(item.processing_state)
                 ? <DiagnosticBadge tone={item.quota ? "warning" : "danger"}>{item.quota ? "Call limit reached" : processingLabel(item.processing_state)}</DiagnosticBadge>

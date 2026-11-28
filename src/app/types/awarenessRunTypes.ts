@@ -26,6 +26,12 @@ export interface AwarenessRunSubject {
   causation_id?: string | null;
 }
 
+export interface AwarenessContinuation {
+  previous_beat_id?: string | null;
+  stage?: string;
+  reason?: string;
+}
+
 export interface AwarenessRunSummary {
   id: string;
   mode: string;
@@ -34,6 +40,7 @@ export interface AwarenessRunSummary {
   completed_at?: string | null;
   trigger: AwarenessRunSubject;
   trigger_category?: string;
+  continuation?: AwarenessContinuation | null;
   focus: AwarenessRunSubject;
   record_version?: number;
   focus_selection?: AwarenessFocusSelection;

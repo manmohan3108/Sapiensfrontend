@@ -149,3 +149,12 @@ the current diagnostics exports rather than removed legacy helpers.
 Report each task's test results and remaining verification in the final response.
 Do not append dated reviews, example run IDs, pass/fail logs or implementation diaries
 to this reference.
+
+### Awareness continuation
+
+New resumed runs are labelled **Continued work** in the list, trigger filter and
+reader. The reader keeps the original event separate and links to the recorded
+previous run without clearing the selected Sapien or list filters. Sources & details
+shows the retained starting-context snapshot when available; it is not live history.
+Older traces keep their recorded labels. Missing links or context are not inferred.
+The change reuses the existing layout and theme; no new polling or runtime action.

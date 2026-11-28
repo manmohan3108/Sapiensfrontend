@@ -78,6 +78,12 @@ export function AwarenessEvidence({ data }: { data: AwarenessRunDetail }) {
   const groups = sourceGroups(data);
   return <div className="awareness-evidence">
     <RunUnderstanding review={data.ongoing_understanding}/>
+    {run.mode === 'continuation' && <DiagnosticDisclosure title="Starting context for continued work">
+      <p className="awareness-caption">Saved source context supplied for this run, not a live view of the conversation.</p>
+      {Object.keys(traceObject(data.context.continuation)).length
+        ? <SavedValue value={data.context.continuation}/>
+        : <p className="awareness-caption">The starting context was not retained in this record. Use the previous-run link when one is recorded.</p>}
+    </DiagnosticDisclosure>}
     <h3>Sources that shaped the focus</h3>
     <p className="awareness-caption">Original information is kept separate from Sapiens’ interpretation. One source can have several roles.</p>
     {groups.length ? <ol className="awareness-evidence-list">{groups.map((entry, index) => <li key={index}>
@@ -127,7 +133,7 @@ export function AwarenessEvidence({ data }: { data: AwarenessRunDetail }) {
       </p>)}
     </DiagnosticDisclosure>
     <DiagnosticDisclosure title="Technical details">
-      <SavedValue value={{ run_id: run.id, title: run.title, mode: run.mode, started_at: run.started_at, completed_at: run.completed_at, understanding: data.understanding,
+      <SavedValue value={{ run_id: run.id, title: run.title, mode: run.mode, continuation: run.continuation, started_at: run.started_at, completed_at: run.completed_at, understanding: data.understanding,
         round_count: data.activity.round_count, thought_link: run.thought_link, assessment: data.assessment, ongoing_understanding: data.ongoing_understanding, ...data.technical }}/>
       {run.thought_link.status === 'exact' && run.thought_link.id && <details className="diagnostic-disclosure" onToggle={event => setOriginalOpen(event.currentTarget.open)}>
         <summary>Original trace and flow graph</summary>
